@@ -1,28 +1,252 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, bigint, index } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
+ * Extended with role-based access control for the platform.
  */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: mysqlEnum("role", [
+    "customer",
+    "owner_centre_manager",
+    "owner_marketing_manager",
+    "owner_regional_admin",
+    "owner_state_admin",
+    "owner_super_admin",
+    "mega_state_admin",
+    "mega_admin"
+  ]).default("customer").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
+/**
+ * Customer/Tenant profile with registration details
+ */
+export const customerProfiles = mysqlTable("customer_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  firstName: varchar("firstName", { length: 100 }),
+  lastName: varchar("lastName", { length: 100 }),
+  phone: varchar("phone", { length: 20 }),
+  companyName: varchar("companyName", { length: 255 }),
+  website: varchar("website", { length: 255 }),
+  abn: varchar("abn", { length: 11 }),
+  streetAddress: text("streetAddress"),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 50 }),
+  postcode: varchar("postcode", { length: 10 }),
+  productCategory: varchar("productCategory", { length: 255 }),
+  insuranceCompany: varchar("insuranceCompany", { length: 255 }),
+  insurancePolicyNo: varchar("insurancePolicyNo", { length: 100 }),
+  insuranceAmount: decimal("insuranceAmount", { precision: 12, scale: 2 }),
+  insuranceExpiry: timestamp("insuranceExpiry"),
+  insuranceDocumentUrl: text("insuranceDocumentUrl"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("userId_idx").on(table.userId),
+}));
+
+/**
+ * Shopping centre owners/managers with bank details and fee configuration
+ */
+export const owners = mysqlTable("owners", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 20 }),
+  bankName: varchar("bankName", { length: 255 }),
+  bankAccountName: varchar("bankAccountName", { length: 255 }),
+  bankBsb: varchar("bankBsb", { length: 10 }),
+  bankAccountNumber: varchar("bankAccountNumber", { length: 20 }),
+  monthlyFee: decimal("monthlyFee", { precision: 10, scale: 2 }).default("0.00").notNull(),
+  commissionPercentage: decimal("commissionPercentage", { precision: 5, scale: 2 }).default("0.00").notNull(),
+  remittanceType: mysqlEnum("remittanceType", ["per_booking", "monthly"]).default("monthly").notNull(),
+  invoiceEmail1: varchar("invoiceEmail1", { length: 320 }),
+  invoiceEmail2: varchar("invoiceEmail2", { length: 320 }),
+  invoiceEmail3: varchar("invoiceEmail3", { length: 320 }),
+  remittanceEmail1: varchar("remittanceEmail1", { length: 320 }),
+  remittanceEmail2: varchar("remittanceEmail2", { length: 320 }),
+  remittanceEmail3: varchar("remittanceEmail3", { length: 320 }),
+  remittanceEmail4: varchar("remittanceEmail4", { length: 320 }),
+  remittanceEmail5: varchar("remittanceEmail5", { length: 320 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/**
+ * Shopping centres
+ */
+export const shoppingCentres = mysqlTable("shopping_centres", {
+  id: int("id").autoincrement().primaryKey(),
+  ownerId: int("ownerId").notNull().references(() => owners.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  address: text("address"),
+  suburb: varchar("suburb", { length: 100 }),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 50 }),
+  postcode: varchar("postcode", { length: 10 }),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
+  majors: text("majors"),
+  numberOfSpecialties: int("numberOfSpecialties"),
+  weeklyReportEmail1: varchar("weeklyReportEmail1", { length: 320 }),
+  weeklyReportEmail2: varchar("weeklyReportEmail2", { length: 320 }),
+  weeklyReportEmail3: varchar("weeklyReportEmail3", { length: 320 }),
+  weeklyReportEmail4: varchar("weeklyReportEmail4", { length: 320 }),
+  weeklyReportEmail5: varchar("weeklyReportEmail5", { length: 320 }),
+  weeklyReportEmail6: varchar("weeklyReportEmail6", { length: 320 }),
+  weeklyReportEmail7: varchar("weeklyReportEmail7", { length: 320 }),
+  weeklyReportEmail8: varchar("weeklyReportEmail8", { length: 320 }),
+  weeklyReportEmail9: varchar("weeklyReportEmail9", { length: 320 }),
+  weeklyReportEmail10: varchar("weeklyReportEmail10", { length: 320 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  ownerIdIdx: index("ownerId_idx").on(table.ownerId),
+  nameIdx: index("name_idx").on(table.name),
+}));
+
+/**
+ * Sites/Spaces within shopping centres
+ */
+export const sites = mysqlTable("sites", {
+  id: int("id").autoincrement().primaryKey(),
+  centreId: int("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
+  siteNumber: varchar("siteNumber", { length: 50 }).notNull(),
+  description: text("description"),
+  size: varchar("size", { length: 100 }),
+  maxTables: int("maxTables"),
+  powerAvailable: varchar("powerAvailable", { length: 100 }),
+  restrictions: text("restrictions"),
+  pricePerDay: decimal("pricePerDay", { precision: 10, scale: 2 }).default("150.00").notNull(),
+  pricePerWeek: decimal("pricePerWeek", { precision: 10, scale: 2 }).default("750.00").notNull(),
+  instantBooking: boolean("instantBooking").default(true).notNull(),
+  imageUrl1: text("imageUrl1"),
+  imageUrl2: text("imageUrl2"),
+  imageUrl3: text("imageUrl3"),
+  imageUrl4: text("imageUrl4"),
+  videoUrl: text("videoUrl"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  centreIdIdx: index("centreId_idx").on(table.centreId),
+}));
+
+/**
+ * Usage types for bookings
+ */
+export const usageTypes = mysqlTable("usage_types", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  requiresApproval: boolean("requiresApproval").default(false).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/**
+ * Bookings
+ */
+export const bookings = mysqlTable("bookings", {
+  id: int("id").autoincrement().primaryKey(),
+  bookingNumber: varchar("bookingNumber", { length: 50 }).notNull().unique(),
+  siteId: int("siteId").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  customerId: int("customerId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  usageTypeId: int("usageTypeId").references(() => usageTypes.id),
+  customUsage: text("customUsage"),
+  startDate: timestamp("startDate").notNull(),
+  endDate: timestamp("endDate").notNull(),
+  totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull(),
+  gstAmount: decimal("gstAmount", { precision: 12, scale: 2 }).notNull(),
+  ownerAmount: decimal("ownerAmount", { precision: 12, scale: 2 }).notNull(),
+  platformFee: decimal("platformFee", { precision: 12, scale: 2 }).notNull(),
+  status: mysqlEnum("status", ["pending", "confirmed", "cancelled", "completed"]).default("pending").notNull(),
+  requiresApproval: boolean("requiresApproval").default(false).notNull(),
+  approvedBy: int("approvedBy").references(() => users.id),
+  approvedAt: timestamp("approvedAt"),
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  siteIdIdx: index("siteId_idx").on(table.siteId),
+  customerIdIdx: index("customerId_idx").on(table.customerId),
+  startDateIdx: index("startDate_idx").on(table.startDate),
+  statusIdx: index("status_idx").on(table.status),
+}));
+
+/**
+ * Financial transactions (including reversals for cancellations)
+ */
+export const transactions = mysqlTable("transactions", {
+  id: int("id").autoincrement().primaryKey(),
+  bookingId: int("bookingId").notNull().references(() => bookings.id, { onDelete: "cascade" }),
+  ownerId: int("ownerId").notNull().references(() => owners.id, { onDelete: "cascade" }),
+  type: mysqlEnum("type", ["booking", "cancellation", "monthly_fee"]).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  gstAmount: decimal("gstAmount", { precision: 12, scale: 2 }).notNull(),
+  ownerAmount: decimal("ownerAmount", { precision: 12, scale: 2 }).notNull(),
+  platformFee: decimal("platformFee", { precision: 12, scale: 2 }).notNull(),
+  remitted: boolean("remitted").default(false).notNull(),
+  remittedAt: timestamp("remittedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  bookingIdIdx: index("bookingId_idx").on(table.bookingId),
+  ownerIdIdx: index("ownerId_idx").on(table.ownerId),
+  remittedIdx: index("remitted_idx").on(table.remitted),
+}));
+
+/**
+ * System configuration
+ */
+export const systemConfig = mysqlTable("system_config", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 100 }).notNull().unique(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/**
+ * Audit log for admin changes
+ */
+export const auditLog = mysqlTable("audit_log", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  action: varchar("action", { length: 255 }).notNull(),
+  entityType: varchar("entityType", { length: 100 }),
+  entityId: int("entityId"),
+  changes: text("changes"),
+  ipAddress: varchar("ipAddress", { length: 45 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("userId_idx").on(table.userId),
+  createdAtIdx: index("createdAt_idx").on(table.createdAt),
+}));
+
+// Type exports
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
-
-// TODO: Add your tables here
+export type CustomerProfile = typeof customerProfiles.$inferSelect;
+export type InsertCustomerProfile = typeof customerProfiles.$inferInsert;
+export type Owner = typeof owners.$inferSelect;
+export type InsertOwner = typeof owners.$inferInsert;
+export type ShoppingCentre = typeof shoppingCentres.$inferSelect;
+export type InsertShoppingCentre = typeof shoppingCentres.$inferInsert;
+export type Site = typeof sites.$inferSelect;
+export type InsertSite = typeof sites.$inferInsert;
+export type UsageType = typeof usageTypes.$inferSelect;
+export type InsertUsageType = typeof usageTypes.$inferInsert;
+export type Booking = typeof bookings.$inferSelect;
+export type InsertBooking = typeof bookings.$inferInsert;
+export type Transaction = typeof transactions.$inferSelect;
+export type InsertTransaction = typeof transactions.$inferInsert;
+export type SystemConfig = typeof systemConfig.$inferSelect;
+export type InsertSystemConfig = typeof systemConfig.$inferInsert;
+export type AuditLog = typeof auditLog.$inferSelect;
+export type InsertAuditLog = typeof auditLog.$inferInsert;

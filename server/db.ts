@@ -1,6 +1,17 @@
-import { eq } from "drizzle-orm";
+import { eq, and, gte, lte, sql, or, like, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { 
+  InsertUser, users, 
+  customerProfiles, InsertCustomerProfile,
+  owners, InsertOwner,
+  shoppingCentres, InsertShoppingCentre,
+  sites, InsertSite,
+  usageTypes, InsertUsageType,
+  bookings, InsertBooking,
+  transactions, InsertTransaction,
+  systemConfig, InsertSystemConfig,
+  auditLog, InsertAuditLog
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -56,8 +67,8 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values.role = user.role;
       updateSet.role = user.role;
     } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
+      values.role = 'mega_admin';
+      updateSet.role = 'mega_admin';
     }
 
     if (!values.lastSignedIn) {
@@ -89,4 +100,214 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// Owner operations
+export async function createOwner(owner: InsertOwner) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(owners).values(owner);
+  return result;
+}
+
+export async function getOwners() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(owners);
+}
+
+export async function getOwnerById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(owners).where(eq(owners.id, id)).limit(1);
+  return result[0];
+}
+
+export async function updateOwner(id: number, data: Partial<InsertOwner>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.update(owners).set(data).where(eq(owners.id, id));
+}
+
+// Shopping Centre operations
+export async function createShoppingCentre(centre: InsertShoppingCentre) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(shoppingCentres).values(centre);
+  return result;
+}
+
+export async function getShoppingCentres() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(shoppingCentres);
+}
+
+export async function getShoppingCentreById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(shoppingCentres).where(eq(shoppingCentres.id, id)).limit(1);
+  return result[0];
+}
+
+export async function searchShoppingCentres(query: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(shoppingCentres).where(
+    or(
+      like(shoppingCentres.name, `%${query}%`),
+      like(shoppingCentres.suburb, `%${query}%`),
+      like(shoppingCentres.city, `%${query}%`)
+    )
+  );
+}
+
+export async function updateShoppingCentre(id: number, data: Partial<InsertShoppingCentre>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.update(shoppingCentres).set(data).where(eq(shoppingCentres.id, id));
+}
+
+// Site operations
+export async function createSite(site: InsertSite) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(sites).values(site);
+  return result;
+}
+
+export async function getSitesByCentreId(centreId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(sites).where(eq(sites.centreId, centreId));
+}
+
+export async function getSiteById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(sites).where(eq(sites.id, id)).limit(1);
+  return result[0];
+}
+
+export async function updateSite(id: number, data: Partial<InsertSite>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.update(sites).set(data).where(eq(sites.id, id));
+}
+
+// Booking operations
+export async function createBooking(booking: InsertBooking) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(bookings).values(booking);
+  return result;
+}
+
+export async function getBookingsBySiteId(siteId: number, startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(bookings).where(
+    and(
+      eq(bookings.siteId, siteId),
+      or(
+        and(gte(bookings.startDate, startDate), lte(bookings.startDate, endDate)),
+        and(gte(bookings.endDate, startDate), lte(bookings.endDate, endDate)),
+        and(lte(bookings.startDate, startDate), gte(bookings.endDate, endDate))
+      )
+    )
+  );
+}
+
+export async function getBookingById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
+  return result[0];
+}
+
+export async function updateBooking(id: number, data: Partial<InsertBooking>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.update(bookings).set(data).where(eq(bookings.id, id));
+}
+
+export async function getBookingsByCustomerId(customerId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(bookings).where(eq(bookings.customerId, customerId)).orderBy(desc(bookings.createdAt));
+}
+
+// Customer Profile operations
+export async function createCustomerProfile(profile: InsertCustomerProfile) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(customerProfiles).values(profile);
+  return result;
+}
+
+export async function getCustomerProfileByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(customerProfiles).where(eq(customerProfiles.userId, userId)).limit(1);
+  return result[0];
+}
+
+export async function updateCustomerProfile(userId: number, data: Partial<InsertCustomerProfile>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.update(customerProfiles).set(data).where(eq(customerProfiles.userId, userId));
+}
+
+// Usage Type operations
+export async function createUsageType(usageType: InsertUsageType) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(usageTypes).values(usageType);
+  return result;
+}
+
+export async function getUsageTypes() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(usageTypes).where(eq(usageTypes.isActive, true));
+}
+
+// Transaction operations
+export async function createTransaction(transaction: InsertTransaction) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(transactions).values(transaction);
+  return result;
+}
+
+export async function getTransactionsByOwnerId(ownerId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(transactions).where(eq(transactions.ownerId, ownerId));
+}
+
+// System Config operations
+export async function getSystemConfig(key: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(systemConfig).where(eq(systemConfig.key, key)).limit(1);
+  return result[0];
+}
+
+export async function setSystemConfig(key: string, value: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(systemConfig).values({ key, value }).onDuplicateKeyUpdate({ set: { value } });
+}
+
+// Audit Log operations
+export async function createAuditLog(log: InsertAuditLog) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(auditLog).values(log);
+  return result;
+}
+
+export async function getAuditLogs(limit: number = 100) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(auditLog).orderBy(desc(auditLog.createdAt)).limit(limit);
+}

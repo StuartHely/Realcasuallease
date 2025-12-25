@@ -1,0 +1,50 @@
+[
+  {
+    "Centre Name":"Bass Hill Plaza",
+    "Number of Sites":6,
+    "Majors":"Woolworths, Aldi, Kmart ",
+    "Number of Specialties":50
+  },
+  {
+    "Centre Name":"Campbelltown Mall",
+    "Number of Sites":14,
+    "Majors":"Coles, KMart, Aldi, Target, Woolworths",
+    "Number of Specialties":102
+  },
+  {
+    "Centre Name":"Carnes Hill Marketplace ",
+    "Number of Sites":7,
+    "Majors":"Woolworths, Big W",
+    "Number of Specialties":51
+  },
+  {
+    "Centre Name":"Highlands Marketplace",
+    "Number of Sites":5,
+    "Majors":"Woolworths, BigW",
+    "Number of Specialties":35
+  },
+  {
+    "Centre Name":"Pacific Square",
+    "Number of Sites":6,
+    "Majors":"Coles",
+    "Number of Specialties":60
+  },
+  {
+    "Centre Name":"Rockdale Plaza",
+    "Number of Sites":7,
+    "Majors":"Woolworths, BigW, Aldi, Bing Lee, Rebel",
+    "Number of Specialties":60
+  },
+  {
+    "Centre Name":"Shopping Centre Name",
+    "Number of Sites":1,
+    "Majors":"Majors including Supermarkets, DDS, Mini Majors and Department Stores.",
+    "Number of Specialties":"Number of Specialties (approx)"
+  },
+  {
+    "Centre Name":"Wanneroo Central",
+    "Number of Sites":4,
+    "Majors":"Coles, Kmart, Aldi, Red Dot",
+    "Number of Specialties":50
+  }
+]
