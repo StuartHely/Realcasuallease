@@ -90,6 +90,114 @@ export default function Search() {
 
         {data && data.centres.length > 0 && (
           <div className="space-y-8">
+            {/* Availability Summary */}
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200">
+              <CardHeader>
+                <CardTitle className="text-xl">Availability Summary</CardTitle>
+                <CardDescription>Quick overview of available spaces</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Week 1 Summary */}
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-blue-600" />
+                      Week Starting {data.requestedWeek && format(data.requestedWeek.start, "dd/MM/yyyy")}
+                    </h3>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">Available</span>
+                          <span className="text-2xl font-bold text-green-600">
+                            {data.availability.filter(a => a.week1Available).length}
+                          </span>
+                        </div>
+                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-green-500 transition-all"
+                            style={{
+                              width: `${(data.availability.filter(a => a.week1Available).length / data.availability.length) * 100}%`
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">Booked</span>
+                          <span className="text-2xl font-bold text-red-600">
+                            {data.availability.filter(a => !a.week1Available).length}
+                          </span>
+                        </div>
+                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-red-500 transition-all"
+                            style={{
+                              width: `${(data.availability.filter(a => !a.week1Available).length / data.availability.length) * 100}%`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Week 2 Summary */}
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-blue-600" />
+                      Week Starting {data.followingWeek && format(data.followingWeek.start, "dd/MM/yyyy")}
+                    </h3>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">Available</span>
+                          <span className="text-2xl font-bold text-green-600">
+                            {data.availability.filter(a => a.week2Available).length}
+                          </span>
+                        </div>
+                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-green-500 transition-all"
+                            style={{
+                              width: `${(data.availability.filter(a => a.week2Available).length / data.availability.length) * 100}%`
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">Booked</span>
+                          <span className="text-2xl font-bold text-red-600">
+                            {data.availability.filter(a => !a.week2Available).length}
+                          </span>
+                        </div>
+                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-red-500 transition-all"
+                            style={{
+                              width: `${(data.availability.filter(a => !a.week2Available).length / data.availability.length) * 100}%`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Sites Info */}
+                <div className="mt-4 pt-4 border-t border-blue-200">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Total Sites Found:</span>
+                    <span className="text-lg font-bold text-blue-600">{data.sites.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mt-1">
+                    <span className="font-medium">Shopping Centres:</span>
+                    <span className="text-lg font-bold text-blue-600">{data.centres.length}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Centre Results */}
             {data.centres.map((centre) => {
               const centreSites = data.sites.filter((s) => s.centreId === centre.id);
               

@@ -113,3 +113,7 @@
 - [ ] Create user documentation
 - [ ] Create admin documentation
 - [ ] Final deployment preparation
+
+## User Requested Enhancements (Dec 26, 2024)
+- [x] Add graphic availability summary at top of search results page
+- [x] Improve search to handle partial name matches (e.g., "Highlands" finds "Highlands Marketplace")
