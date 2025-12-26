@@ -135,3 +135,13 @@
 - [x] Update database with image URLs
 - [x] Display images in site detail pages
 - [x] Add image gallery functionality
+
+## Bug Fixes (Dec 26, 2024)
+- [x] Fix search not finding "Highlands Marketplace"
+- [x] Debug search query and database connection
+- [x] Make search case-insensitive
+
+## Data Cleanup (Dec 26, 2024)
+- [x] Remove duplicate Highlands Marketplace entries
+- [x] Verify sites are linked to correct centre ID
+- [x] Clean up any orphaned data

@@ -151,11 +151,12 @@ export async function getShoppingCentreById(id: number) {
 export async function searchShoppingCentres(query: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  const lowerQuery = query.toLowerCase();
   return await db.select().from(shoppingCentres).where(
     or(
-      like(shoppingCentres.name, `%${query}%`),
-      like(shoppingCentres.suburb, `%${query}%`),
-      like(shoppingCentres.city, `%${query}%`)
+      sql`LOWER(${shoppingCentres.name}) LIKE ${`%${lowerQuery}%`}`,
+      sql`LOWER(${shoppingCentres.suburb}) LIKE ${`%${lowerQuery}%`}`,
+      sql`LOWER(${shoppingCentres.city}) LIKE ${`%${lowerQuery}%`}`
     )
   );
 }
