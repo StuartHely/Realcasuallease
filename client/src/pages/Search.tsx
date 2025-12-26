@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle } from "lucide-react";
-import { format, parse } from "date-fns";
+import { format, parse, addDays, isSameDay } from "date-fns";
 
 export default function Search() {
   const [, setLocation] = useLocation();
@@ -41,6 +41,35 @@ export default function Search() {
       </div>
     );
   }
+
+  // Generate date range for heatmap (2 weeks)
+  const generateDateRange = () => {
+    if (!data?.requestedWeek) return [];
+    const dates = [];
+    const startDate = data.requestedWeek.start;
+    for (let i = 0; i < 14; i++) {
+      dates.push(addDays(startDate, i));
+    }
+    return dates;
+  };
+
+  const dateRange = generateDateRange();
+
+  // Check if a site is booked on a specific date
+  const isBookedOnDate = (siteId: number, date: Date) => {
+    if (!data?.availability) return false;
+    const siteAvailability = data.availability.find(a => a.siteId === siteId);
+    if (!siteAvailability) return false;
+
+    // Combine both week's bookings
+    const allBookings = [...siteAvailability.week1Bookings, ...siteAvailability.week2Bookings];
+    
+    return allBookings.some(booking => {
+      const bookingStart = new Date(booking.startDate);
+      const bookingEnd = new Date(booking.endDate);
+      return date >= bookingStart && date <= bookingEnd;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -90,114 +119,39 @@ export default function Search() {
 
         {data && data.centres.length > 0 && (
           <div className="space-y-8">
-            {/* Availability Summary */}
-            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200">
-              <CardHeader>
-                <CardTitle className="text-xl">Availability Summary</CardTitle>
-                <CardDescription>Quick overview of available spaces</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Week 1 Summary */}
-                  <div className="space-y-3">
-                    <h3 className="font-semibold text-lg flex items-center gap-2">
-                      <Calendar className="h-5 w-5 text-blue-600" />
-                      Week Starting {data.requestedWeek && format(data.requestedWeek.start, "dd/MM/yyyy")}
-                    </h3>
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">Available</span>
-                          <span className="text-2xl font-bold text-green-600">
-                            {data.availability.filter(a => a.week1Available).length}
-                          </span>
-                        </div>
-                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-green-500 transition-all"
-                            style={{
-                              width: `${(data.availability.filter(a => a.week1Available).length / data.availability.length) * 100}%`
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">Booked</span>
-                          <span className="text-2xl font-bold text-red-600">
-                            {data.availability.filter(a => !a.week1Available).length}
-                          </span>
-                        </div>
-                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-red-500 transition-all"
-                            style={{
-                              width: `${(data.availability.filter(a => !a.week1Available).length / data.availability.length) * 100}%`
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
+            {/* Quick Stats */}
+            <div className="grid md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-gray-600">Total Sites</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-blue-600">{data.sites.length}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-gray-600">Available (Week 1)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-600">
+                    {data.availability.filter(a => a.week1Available).length}
                   </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-gray-600">Available (Week 2)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-600">
+                    {data.availability.filter(a => a.week2Available).length}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-                  {/* Week 2 Summary */}
-                  <div className="space-y-3">
-                    <h3 className="font-semibold text-lg flex items-center gap-2">
-                      <Calendar className="h-5 w-5 text-blue-600" />
-                      Week Starting {data.followingWeek && format(data.followingWeek.start, "dd/MM/yyyy")}
-                    </h3>
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">Available</span>
-                          <span className="text-2xl font-bold text-green-600">
-                            {data.availability.filter(a => a.week2Available).length}
-                          </span>
-                        </div>
-                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-green-500 transition-all"
-                            style={{
-                              width: `${(data.availability.filter(a => a.week2Available).length / data.availability.length) * 100}%`
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">Booked</span>
-                          <span className="text-2xl font-bold text-red-600">
-                            {data.availability.filter(a => !a.week2Available).length}
-                          </span>
-                        </div>
-                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-red-500 transition-all"
-                            style={{
-                              width: `${(data.availability.filter(a => !a.week2Available).length / data.availability.length) * 100}%`
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Total Sites Info */}
-                <div className="mt-4 pt-4 border-t border-blue-200">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">Total Sites Found:</span>
-                    <span className="text-lg font-bold text-blue-600">{data.sites.length}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm mt-1">
-                    <span className="font-medium">Shopping Centres:</span>
-                    <span className="text-lg font-bold text-blue-600">{data.centres.length}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Centre Results */}
+            {/* Calendar Heatmap */}
             {data.centres.map((centre) => {
               const centreSites = data.sites.filter((s) => s.centreId === centre.id);
               
@@ -213,22 +167,82 @@ export default function Search() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <h4 className="font-semibold mb-2 flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            Week Starting {data.requestedWeek && format(data.requestedWeek.start, "dd/MM/yyyy")}
-                          </h4>
-                        </div>
-                        <div>
-                          <h4 className="font-semibold mb-2 flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            Week Starting {data.followingWeek && format(data.followingWeek.start, "dd/MM/yyyy")}
-                          </h4>
-                        </div>
+                    {/* Legend */}
+                    <div className="flex items-center gap-6 mb-4 pb-4 border-b">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-green-500 rounded"></div>
+                        <span className="text-sm font-medium">Available</span>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-red-500 rounded"></div>
+                        <span className="text-sm font-medium">Booked</span>
+                      </div>
+                    </div>
 
+                    {/* Calendar Heatmap */}
+                    <div className="overflow-x-auto">
+                      <div className="inline-block min-w-full">
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="sticky left-0 bg-white z-10 px-3 py-2 text-left text-sm font-semibold border-b-2 border-r-2">
+                                Site
+                              </th>
+                              {dateRange.map((date, idx) => (
+                                <th 
+                                  key={idx} 
+                                  className="px-2 py-2 text-center text-xs font-medium border-b-2 min-w-[80px]"
+                                >
+                                  <div>{format(date, "dd/MM")}</div>
+                                  <div className="text-gray-500">{format(date, "EEE")}</div>
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {centreSites.map((site) => (
+                              <tr key={site.id} className="hover:bg-gray-50">
+                                <td className="sticky left-0 bg-white z-10 px-3 py-2 font-medium border-r-2 border-b">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm">{site.siteNumber}</span>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 px-2 text-xs"
+                                      onClick={() => setLocation(`/site/${site.id}`)}
+                                    >
+                                      View
+                                    </Button>
+                                  </div>
+                                </td>
+                                {dateRange.map((date, idx) => {
+                                  const isBooked = isBookedOnDate(site.id, date);
+                                  return (
+                                    <td 
+                                      key={idx} 
+                                      className="border border-gray-200 p-0"
+                                    >
+                                      <div 
+                                        className={`h-12 w-full ${
+                                          isBooked 
+                                            ? 'bg-red-500 hover:bg-red-600' 
+                                            : 'bg-green-500 hover:bg-green-600'
+                                        } transition-colors cursor-pointer`}
+                                        title={`Site ${site.siteNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : 'Available'}`}
+                                      />
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Site Details Below Heatmap */}
+                    <div className="mt-8 space-y-4">
+                      <h3 className="text-lg font-semibold">Site Details</h3>
                       {centreSites.map((site) => {
                         const availability = data.availability.find((a) => a.siteId === site.id);
                         
@@ -246,12 +260,12 @@ export default function Search() {
                                   onClick={() => setLocation(`/site/${site.id}`)}
                                   className="bg-blue-600 hover:bg-blue-700"
                                 >
-                                  View Details
+                                  View Details & Book
                                 </Button>
                               </div>
                             </CardHeader>
                             <CardContent>
-                              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                              <div className="grid md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                   <p className="text-sm">
                                     <span className="font-semibold">Size:</span> {site.size}
@@ -272,43 +286,6 @@ export default function Search() {
                                     <p className="text-sm">
                                       <span className="font-semibold">Restrictions:</span> {site.restrictions}
                                     </p>
-                                  )}
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="flex items-center gap-2">
-                                  {availability?.week1Available ? (
-                                    <>
-                                      <CheckCircle className="h-5 w-5 text-green-600" />
-                                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                        Available
-                                      </Badge>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <XCircle className="h-5 w-5 text-red-600" />
-                                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                                        Booked
-                                      </Badge>
-                                    </>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {availability?.week2Available ? (
-                                    <>
-                                      <CheckCircle className="h-5 w-5 text-green-600" />
-                                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                        Available
-                                      </Badge>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <XCircle className="h-5 w-5 text-red-600" />
-                                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                                        Booked
-                                      </Badge>
-                                    </>
                                   )}
                                 </div>
                               </div>

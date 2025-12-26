@@ -121,3 +121,10 @@
 ## Booking Data Import (Dec 26, 2024)
 - [x] Import test availability data from calendar CSV format
 - [x] Create test bookings for Highlands Marketplace sites
+
+## Calendar Heatmap Visualization (Dec 26, 2024)
+- [x] Replace availability summary with calendar heatmap showing dates
+- [x] Color code: Red=Booked, Green=Available
+- [x] Show site numbers in rows, dates in columns
+- [x] Add hover tooltips with booking details
+- [x] Add legend explaining color codes
