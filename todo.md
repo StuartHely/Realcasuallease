@@ -128,3 +128,10 @@
 - [x] Show site numbers in rows, dates in columns
 - [x] Add hover tooltips with booking details
 - [x] Add legend explaining color codes
+
+## Site Images Upload (Dec 26, 2024)
+- [x] Extract images from zip files
+- [x] Upload images to S3 storage
+- [x] Update database with image URLs
+- [x] Display images in site detail pages
+- [x] Add image gallery functionality

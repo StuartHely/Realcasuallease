@@ -114,6 +114,44 @@ export default function SiteDetail() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Site Image Gallery */}
+        {(site.imageUrl1 || site.imageUrl2 || site.imageUrl3 || site.imageUrl4) && (
+          <Card className="mb-8">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {site.imageUrl1 && (
+                  <img
+                    src={site.imageUrl1}
+                    alt={`Site ${site.siteNumber} - Image 1`}
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                )}
+                {site.imageUrl2 && (
+                  <img
+                    src={site.imageUrl2}
+                    alt={`Site ${site.siteNumber} - Image 2`}
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                )}
+                {site.imageUrl3 && (
+                  <img
+                    src={site.imageUrl3}
+                    alt={`Site ${site.siteNumber} - Image 3`}
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                )}
+                {site.imageUrl4 && (
+                  <img
+                    src={site.imageUrl4}
+                    alt={`Site ${site.siteNumber} - Image 4`}
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid md:grid-cols-2 gap-8">
           {/* Site Details */}
           <div>
