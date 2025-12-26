@@ -145,3 +145,9 @@
 - [x] Remove duplicate Highlands Marketplace entries
 - [x] Verify sites are linked to correct centre ID
 - [x] Clean up any orphaned data
+
+## Search Enhancement (Dec 26, 2024)
+- [x] Test if "highland" finds "Highlands Marketplace"
+- [x] Implement fuzzy/typo-tolerant search using Levenshtein distance
+- [x] Test fuzzy search with common misspellings
+- [x] Optimize fuzzy search to avoid false positives on short queries

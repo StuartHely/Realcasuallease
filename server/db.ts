@@ -148,17 +148,98 @@ export async function getShoppingCentreById(id: number) {
   return result[0];
 }
 
+// Levenshtein distance for fuzzy matching
+function levenshteinDistance(a: string, b: string): number {
+  const matrix: number[][] = [];
+  
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+  
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+  
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  
+  return matrix[b.length][a.length];
+}
+
+// Check if query fuzzy matches target with tolerance
+function fuzzyMatch(query: string, target: string, tolerance: number = 2): boolean {
+  const lowerQuery = query.toLowerCase();
+  const lowerTarget = target.toLowerCase();
+  
+  // Exact substring match (fastest)
+  if (lowerTarget.includes(lowerQuery)) {
+    return true;
+  }
+  
+  // For very short queries (< 4 chars), only allow exact matches to avoid false positives
+  if (lowerQuery.length < 4) {
+    return false;
+  }
+  
+  // Split target into words and check each
+  const words = lowerTarget.split(/\s+/);
+  for (const word of words) {
+    // Check if word starts with query (common case)
+    if (word.startsWith(lowerQuery)) {
+      return true;
+    }
+    
+    // Fuzzy match with Levenshtein distance
+    // Adjust tolerance based on query length (longer queries = more tolerance)
+    const adjustedTolerance = lowerQuery.length <= 6 ? 1 : tolerance;
+    const distance = levenshteinDistance(lowerQuery, word);
+    if (distance <= adjustedTolerance) {
+      return true;
+    }
+    
+    // Also check if query is close to substring of word
+    if (word.length > lowerQuery.length) {
+      for (let i = 0; i <= word.length - lowerQuery.length; i++) {
+        const substring = word.substring(i, i + lowerQuery.length);
+        const substringDistance = levenshteinDistance(lowerQuery, substring);
+        if (substringDistance <= adjustedTolerance) {
+          return true;
+        }
+      }
+    }
+  }
+  
+  return false;
+}
+
 export async function searchShoppingCentres(query: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const lowerQuery = query.toLowerCase();
-  return await db.select().from(shoppingCentres).where(
-    or(
-      sql`LOWER(${shoppingCentres.name}) LIKE ${`%${lowerQuery}%`}`,
-      sql`LOWER(${shoppingCentres.suburb}) LIKE ${`%${lowerQuery}%`}`,
-      sql`LOWER(${shoppingCentres.city}) LIKE ${`%${lowerQuery}%`}`
-    )
-  );
+  
+  // Get all centres
+  const allCentres = await db.select().from(shoppingCentres);
+  
+  // Filter using fuzzy matching
+  const matchedCentres = allCentres.filter(centre => {
+    return (
+      fuzzyMatch(query, centre.name || '', 2) ||
+      fuzzyMatch(query, centre.suburb || '', 2) ||
+      fuzzyMatch(query, centre.city || '', 2)
+    );
+  });
+  
+  return matchedCentres;
 }
 
 export async function updateShoppingCentre(id: number, data: Partial<InsertShoppingCentre>) {
