@@ -151,3 +151,10 @@
 - [x] Implement fuzzy/typo-tolerant search using Levenshtein distance
 - [x] Test fuzzy search with common misspellings
 - [x] Optimize fuzzy search to avoid false positives on short queries
+
+## Autocomplete Feature (Dec 26, 2024)
+- [x] Add autocomplete dropdown to search input
+- [x] Show matching centre names as user types
+- [x] Implement debouncing to reduce API calls (300ms)
+- [x] Add keyboard navigation (arrow keys, enter, escape)
+- [x] Style dropdown with hover states and selected state
