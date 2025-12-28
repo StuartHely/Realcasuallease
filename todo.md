@@ -171,3 +171,9 @@
 - [ ] Create financial reports dashboard
 - [ ] Add analytics and statistics views
 - [ ] Implement audit log viewer
+
+## Updated Data Import (Dec 27, 2024)
+- [x] Import updated 98-row dataset from CSV
+- [x] Replace existing sample data with new data
+- [x] Verify all centres and sites imported correctly
+- [x] Successfully imported 8 shopping centres and 58 sites
