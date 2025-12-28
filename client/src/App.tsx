@@ -9,12 +9,18 @@ import Search from "./pages/Search";
 import SiteDetail from "./pages/SiteDetail";
 import MyBookings from "./pages/MyBookings";
 import Profile from "./pages/Profile";
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminCentres from "./pages/admin/Centres";
+import AdminSites from "./pages/admin/Sites";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/search" component={Search} />
+      <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/centres" component={AdminCentres} />
+      <Route path="/admin/sites" component={AdminSites} />
       <Route path="/site/:id" component={SiteDetail} />
       <Route path="/my-bookings" component={MyBookings} />
       <Route path="/profile" component={Profile} />

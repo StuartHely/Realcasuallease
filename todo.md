@@ -158,3 +158,16 @@
 - [x] Implement debouncing to reduce API calls (300ms)
 - [x] Add keyboard navigation (arrow keys, enter, escape)
 - [x] Style dropdown with hover states and selected state
+
+## Admin Dashboard (Dec 27, 2024)
+- [x] Create admin layout with sidebar navigation
+- [x] Implement role-based access control for 8 user roles
+- [x] Create admin dashboard home with statistics
+- [x] Build shopping centre management (CRUD) - PRIORITY
+- [x] Build site management with image upload - PRIORITY
+- [ ] Build booking management and approval system
+- [ ] Build user management interface
+- [ ] Build owner/manager management
+- [ ] Create financial reports dashboard
+- [ ] Add analytics and statistics views
+- [ ] Implement audit log viewer

@@ -132,7 +132,9 @@ export async function createShoppingCentre(centre: InsertShoppingCentre) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const result = await db.insert(shoppingCentres).values(centre);
-  return result;
+  const insertId = Number(result[0].insertId);
+  const created = await db.select().from(shoppingCentres).where(eq(shoppingCentres.id, insertId)).limit(1);
+  return created[0];
 }
 
 export async function getShoppingCentres() {
@@ -253,7 +255,9 @@ export async function createSite(site: InsertSite) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const result = await db.insert(sites).values(site);
-  return result;
+  const insertId = Number(result[0].insertId);
+  const created = await db.select().from(sites).where(eq(sites.id, insertId)).limit(1);
+  return created[0];
 }
 
 export async function getSitesByCentreId(centreId: number) {
@@ -392,4 +396,40 @@ export async function getAuditLogs(limit: number = 100) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return await db.select().from(auditLog).orderBy(desc(auditLog.createdAt)).limit(limit);
+}
+
+
+// Admin helper functions
+export async function getAllSites() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(sites);
+}
+
+export async function getAllBookings() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(bookings);
+}
+
+export async function getAllUsers() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(users);
+}
+
+
+export async function deleteShoppingCentre(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // First delete all sites in this centre
+  await db.delete(sites).where(eq(sites.centreId, id));
+  // Then delete the centre
+  return await db.delete(shoppingCentres).where(eq(shoppingCentres.id, id));
+}
+
+export async function deleteSite(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.delete(sites).where(eq(sites.id, id));
 }

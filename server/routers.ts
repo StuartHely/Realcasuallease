@@ -6,6 +6,14 @@ import { z } from "zod";
 import * as db from "./db";
 import { TRPCError } from "@trpc/server";
 
+// Admin-only procedure
+const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role === 'customer') {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Admin access required' });
+  }
+  return next({ ctx });
+});
+
 export const appRouter = router({
   system: systemRouter,
   
@@ -47,6 +55,11 @@ export const appRouter = router({
 
   // Sites
   sites: router({
+    getByCentreId: publicProcedure
+      .input(z.object({ centreId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getSitesByCentreId(input.centreId);
+      }),
     getById: publicProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
@@ -281,6 +294,141 @@ export const appRouter = router({
           requestedWeek: { start: startOfWeek, end: endOfWeek },
           followingWeek: { start: startOfNextWeek, end: endOfNextWeek },
         };
+      }),
+  }),
+
+  // Admin endpoints
+  admin: router({
+    getStats: adminProcedure.query(async () => {
+      const centres = await db.getShoppingCentres();
+      const sites = await db.getAllSites();
+      const bookings = await db.getAllBookings();
+      const users = await db.getAllUsers();
+      
+      const activeBookings = bookings.filter(
+        (b) => b.status === 'confirmed' || b.status === 'pending'
+      );
+      
+      const totalRevenue = bookings
+        .filter((b: any) => b.status === 'confirmed' || b.status === 'completed')
+        .reduce((sum: number, b: any) => sum + parseFloat(b.totalAmount), 0);
+      
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthlyRevenue = bookings
+        .filter(
+          (b: any) =>
+            (b.status === 'confirmed' || b.status === 'completed') &&
+            new Date(b.createdAt) >= monthStart
+        )
+        .reduce((sum: number, b: any) => sum + parseFloat(b.totalAmount), 0);
+      
+      const recentBookings = bookings
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 5)
+        .map((b: any) => ({
+          id: b.id,
+          siteName: `Site ${b.siteId}`,
+          startDate: b.startDate,
+          endDate: b.endDate,
+          totalPrice: parseFloat(b.totalAmount),
+          status: b.status,
+        }));
+      
+      return {
+        totalCentres: centres.length,
+        totalSites: sites.length,
+        activeBookings: activeBookings.length,
+        totalRevenue,
+        monthlyRevenue,
+        totalUsers: users.length,
+        recentBookings,
+      };
+    }),
+
+    // Shopping Centre Management
+    createCentre: adminProcedure
+      .input(z.object({
+        name: z.string(),
+        address: z.string().optional(),
+        suburb: z.string().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        postcode: z.string().optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createShoppingCentre({
+          ...input,
+          ownerId: 1, // Default owner, should be dynamic based on user
+        });
+      }),
+
+    updateCentre: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string(),
+        address: z.string().optional(),
+        suburb: z.string().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        postcode: z.string().optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.updateShoppingCentre(input.id, input);
+      }),
+
+    deleteCentre: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.deleteShoppingCentre(input.id);
+      }),
+
+    // Site Management
+    createSite: adminProcedure
+      .input(z.object({
+        centreId: z.number(),
+        siteNumber: z.string(),
+        description: z.string().optional(),
+        size: z.string().optional(),
+        maxTables: z.number().optional(),
+        powerAvailable: z.string().optional(),
+        restrictions: z.string().optional(),
+        dailyRate: z.string(),
+        weeklyRate: z.string(),
+        instantBooking: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createSite(input);
+      }),
+
+    updateSite: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        siteNumber: z.string().optional(),
+        description: z.string().optional(),
+        size: z.string().optional(),
+        maxTables: z.number().optional(),
+        powerAvailable: z.string().optional(),
+        restrictions: z.string().optional(),
+        dailyRate: z.string().optional(),
+        weeklyRate: z.string().optional(),
+        instantBooking: z.boolean().optional(),
+        imageUrl1: z.string().optional(),
+        imageUrl2: z.string().optional(),
+        imageUrl3: z.string().optional(),
+        imageUrl4: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return await db.updateSite(id, data);
+      }),
+
+    deleteSite: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.deleteSite(input.id);
       }),
   }),
 });
