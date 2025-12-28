@@ -184,3 +184,10 @@
 - [x] Implement smart query understanding to detect centre + site patterns
 - [x] Auto-filter/highlight specific sites when detected in query
 - [x] Word-based matching for compound queries (e.g., "Pacific Square Outside Prouds")
+
+## Visual Highlighting for Matched Sites (Dec 27, 2024)
+- [x] Highlight matched sites in calendar heatmap with distinct color/border
+- [x] Highlight matched sites in results list with background color
+- [x] Auto-scroll to matched site when specific site is searched
+- [x] Add visual indicator (badge/icon) on matched site cards
+- [x] Ensure highlighting works for all search patterns (site number, description, compound queries)

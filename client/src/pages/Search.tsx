@@ -34,6 +34,26 @@ export default function Search() {
     { enabled: !!searchParams }
   );
 
+  // Determine if a site is matched by the search query
+  const isMatchedSite = (siteId: number) => {
+    if (!data?.matchedSiteIds) return false;
+    return data.matchedSiteIds.includes(siteId);
+  };
+
+  // Auto-scroll to matched site when data loads
+  useEffect(() => {
+    if (data && data.matchedSiteIds && data.matchedSiteIds.length > 0) {
+      // Wait a bit for the DOM to render
+      setTimeout(() => {
+        const firstMatchedId = data.matchedSiteIds[0];
+        const element = document.getElementById(`site-${firstMatchedId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+    }
+  }, [data]);
+
   if (!searchParams) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -200,11 +220,24 @@ export default function Search() {
                             </tr>
                           </thead>
                           <tbody>
-                            {centreSites.map((site) => (
-                              <tr key={site.id} className="hover:bg-gray-50">
-                                <td className="sticky left-0 bg-white z-10 px-3 py-2 font-medium border-r-2 border-b">
+                            {centreSites.map((site) => {
+                              const isMatched = isMatchedSite(site.id);
+                              return (
+                              <tr 
+                                key={site.id} 
+                                className={`hover:bg-gray-50 ${isMatched ? 'bg-yellow-50' : ''}`}
+                                id={`site-${site.id}`}
+                              >
+                                <td className={`sticky left-0 z-10 px-3 py-2 font-medium border-r-2 border-b ${
+                                  isMatched ? 'bg-yellow-50' : 'bg-white'
+                                }`}>
                                   <div className="flex items-center gap-2">
-                                    <span className="text-sm">{site.siteNumber}</span>
+                                    {isMatched && (
+                                      <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">
+                                        Matched
+                                      </Badge>
+                                    )}
+                                    <span className="text-sm font-semibold">{site.siteNumber}</span>
                                     <Button
                                       size="sm"
                                       variant="ghost"
@@ -234,7 +267,8 @@ export default function Search() {
                                   );
                                 })}
                               </tr>
-                            ))}
+                            );
+                            })}
                           </tbody>
                         </table>
                       </div>
@@ -247,7 +281,14 @@ export default function Search() {
                         const availability = data.availability.find((a) => a.siteId === site.id);
                         
                         return (
-                          <Card key={site.id} className="border-l-4 border-l-blue-500">
+                          <Card 
+                            key={site.id} 
+                            className={`border-l-4 ${
+                              isMatchedSite(site.id) 
+                                ? 'border-l-yellow-500 bg-yellow-50 shadow-lg' 
+                                : 'border-l-blue-500'
+                            }`}
+                          >
                             <CardHeader>
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
