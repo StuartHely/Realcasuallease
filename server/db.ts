@@ -229,19 +229,76 @@ export async function searchShoppingCentres(query: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
+  // Parse query for site-specific patterns (e.g., "Pacific Square Site 2")
+  const sitePattern = /site\s+(\d+|[a-z0-9]+)/i;
+  const siteMatch = query.match(sitePattern);
+  
+  // Remove site number from query for centre matching
+  const centreQuery = siteMatch ? query.replace(sitePattern, "").trim() : query;
+  
   // Get all centres
   const allCentres = await db.select().from(shoppingCentres);
   
   // Filter using fuzzy matching
   const matchedCentres = allCentres.filter(centre => {
     return (
-      fuzzyMatch(query, centre.name || '', 2) ||
-      fuzzyMatch(query, centre.suburb || '', 2) ||
-      fuzzyMatch(query, centre.city || '', 2)
+      fuzzyMatch(centreQuery, centre.name || '', 2) ||
+      fuzzyMatch(centreQuery, centre.suburb || '', 2) ||
+      fuzzyMatch(centreQuery, centre.city || '', 2)
     );
   });
   
   return matchedCentres;
+}
+
+export async function searchSites(query: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Get all sites with their centre information
+  const allSites = await db
+    .select({
+      site: sites,
+      centre: shoppingCentres,
+    })
+    .from(sites)
+    .leftJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id));
+
+  const lowerQuery = query.toLowerCase();
+  
+  // Split query into words for better matching
+  const queryWords = lowerQuery.split(/\s+/).filter(w => w.length > 0);
+
+  // Search across site number, description, and centre name
+  const matches = allSites.filter(({ site, centre }) => {
+    const siteNumber = (site.siteNumber || "").toLowerCase();
+    const description = (site.description || "").toLowerCase();
+    const centreName = (centre?.name || "").toLowerCase();
+    const combined = `${centreName} ${siteNumber} ${description}`.toLowerCase();
+
+    // Check if query matches as a whole
+    if (combined.includes(lowerQuery)) return true;
+    
+    // Check if all words in query appear somewhere in the combined text
+    const allWordsMatch = queryWords.every(word => combined.includes(word));
+    if (allWordsMatch) return true;
+    
+    // Check for substring matches in individual fields
+    if (siteNumber.includes(lowerQuery) || 
+        description.includes(lowerQuery) || 
+        centreName.includes(lowerQuery)) {
+      return true;
+    }
+    
+    // Check fuzzy matches
+    return (
+      fuzzyMatch(query, siteNumber, 1) ||
+      fuzzyMatch(query, description, 2) ||
+      fuzzyMatch(query, centreName, 2)
+    );
+  });
+
+  return matches;
 }
 
 export async function updateShoppingCentre(id: number, data: Partial<InsertShoppingCentre>) {

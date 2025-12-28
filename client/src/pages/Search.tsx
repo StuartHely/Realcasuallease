@@ -9,26 +9,26 @@ import { format, parse, addDays, isSameDay } from "date-fns";
 
 export default function Search() {
   const [, setLocation] = useLocation();
-  const [searchParams, setSearchParams] = useState<{ centre: string; date: Date } | null>(null);
+  const [searchParams, setSearchParams] = useState<{ query: string; date: Date } | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const centre = params.get("centre");
+    const query = params.get("query") || params.get("centre"); // Support both for backwards compatibility
     const dateStr = params.get("date");
 
-    if (centre && dateStr) {
+    if (query && dateStr) {
       try {
         const parsedDate = parse(dateStr, "yyyy-MM-dd", new Date());
-        setSearchParams({ centre, date: parsedDate });
+        setSearchParams({ query, date: parsedDate });
       } catch (e) {
         console.error("Invalid date format", e);
       }
     }
   }, []);
 
-  const { data, isLoading } = trpc.search.byNameAndDate.useQuery(
+  const { data, isLoading } = trpc.search.smart.useQuery(
     {
-      centreName: searchParams?.centre || "",
+      query: searchParams?.query || "",
       date: searchParams?.date || new Date(),
     },
     { enabled: !!searchParams }
@@ -44,9 +44,9 @@ export default function Search() {
 
   // Generate date range for heatmap (2 weeks)
   const generateDateRange = () => {
-    if (!data?.requestedWeek) return [];
+    if (!searchParams?.date) return [];
     const dates = [];
-    const startDate = data.requestedWeek.start;
+    const startDate = searchParams.date;
     for (let i = 0; i < 14; i++) {
       dates.push(addDays(startDate, i));
     }
@@ -97,7 +97,7 @@ export default function Search() {
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-blue-900 mb-2">Search Results</h2>
           <p className="text-gray-600">
-            Searching for: <span className="font-semibold">{searchParams.centre}</span> on{" "}
+            Searching for: <span className="font-semibold">{searchParams.query}</span> on{" "}
             <span className="font-semibold">{format(searchParams.date, "dd/MM/yyyy")}</span>
           </p>
         </div>

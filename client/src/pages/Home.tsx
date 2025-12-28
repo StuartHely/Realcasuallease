@@ -60,7 +60,7 @@ export default function Home() {
   const handleSearch = () => {
     if (centreName && date) {
       const searchParams = new URLSearchParams({
-        centre: centreName,
+        query: centreName, // Changed from 'centre' to 'query' for smart search
         date: date,
       });
       setLocation(`/search?${searchParams.toString()}`);

@@ -177,3 +177,10 @@
 - [x] Replace existing sample data with new data
 - [x] Verify all centres and sites imported correctly
 - [x] Successfully imported 8 shopping centres and 58 sites
+
+## Enhanced Search Features (Dec 27, 2024)
+- [x] Parse site-specific queries (e.g., "Pacific Square Site 2")
+- [x] Add site-level search by description (e.g., "Outside Prouds")
+- [x] Implement smart query understanding to detect centre + site patterns
+- [x] Auto-filter/highlight specific sites when detected in query
+- [x] Word-based matching for compound queries (e.g., "Pacific Square Outside Prouds")

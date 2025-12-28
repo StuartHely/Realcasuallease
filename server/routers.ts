@@ -239,6 +239,74 @@ export const appRouter = router({
 
   // Search with date
   search: router({
+    // Smart search with site-level support
+    smart: publicProcedure
+      .input(z.object({ query: z.string(), date: z.date() }))
+      .query(async ({ input }) => {
+        // Try site-level search first
+        const siteResults = await db.searchSites(input.query);
+        
+        // If we found specific sites, use those
+        if (siteResults.length > 0 && siteResults.length <= 10) {
+          const centreIds = Array.from(new Set(siteResults.map(r => r.site.centreId)));
+          const centres = await Promise.all(
+            centreIds.map(async (centreId) => {
+              const centre = siteResults.find(r => r.site.centreId === centreId)?.centre;
+              if (!centre) return null;
+              return centre;
+            })
+          );
+          
+          // Use these centres for the search
+          const validCentres = centres.filter((c): c is NonNullable<typeof c> => c !== null);
+          if (validCentres.length > 0) {
+            input.query = validCentres[0]!.name; // Use first centre name
+          }
+        }
+        
+        // Continue with regular search logic
+        const centres = await db.searchShoppingCentres(input.query);
+        
+        if (centres.length === 0) {
+          return { centres: [], sites: [], availability: [], matchedSiteIds: [] };
+        }
+
+        const startOfWeek = new Date(input.date);
+        startOfWeek.setHours(0, 0, 0, 0);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(endOfWeek.getDate() + 6);
+        
+        const startOfNextWeek = new Date(endOfWeek);
+        startOfNextWeek.setDate(startOfNextWeek.getDate() + 1);
+        const endOfNextWeek = new Date(startOfNextWeek);
+        endOfNextWeek.setDate(endOfNextWeek.getDate() + 6);
+
+        const allSites = [];
+        const availability = [];
+        const matchedSiteIds = siteResults.map(r => r.site.id);
+        
+        for (const centre of centres) {
+          const sites = await db.getSitesByCentreId(centre.id);
+          allSites.push(...sites.map(s => ({ ...s, centreName: centre.name })));
+          
+          for (const site of sites) {
+            const week1Bookings = await db.getBookingsBySiteId(site.id, startOfWeek, endOfWeek);
+            const week2Bookings = await db.getBookingsBySiteId(site.id, startOfNextWeek, endOfNextWeek);
+            
+            availability.push({
+              siteId: site.id,
+              siteNumber: site.siteNumber,
+              centreName: centre.name,
+              week1Available: week1Bookings.length === 0,
+              week2Available: week2Bookings.length === 0,
+              week1Bookings,
+              week2Bookings,
+            });
+          }
+        }
+        
+        return { centres, sites: allSites, availability, matchedSiteIds };
+      }),
     byNameAndDate: publicProcedure
       .input(z.object({
         centreName: z.string(),
