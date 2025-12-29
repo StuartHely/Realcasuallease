@@ -207,6 +207,9 @@ export default function AdminMaps() {
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Don't process clicks if we're dragging a marker
+    if (isDragging !== null) return;
+    
     if (!imageRef.current || sites.length === 0) return;
 
     const rect = imageRef.current.getBoundingClientRect();
@@ -227,7 +230,7 @@ export default function AdminMaps() {
           siteNumber: unmappedSite.siteNumber,
         },
       ]);
-      toast.success(`Marker added for Site ${unmappedSite.siteNumber}`);
+      toast.success(`Marker added for ${unmappedSite.siteNumber}`);
     } else {
       toast.info("All sites already have markers. Remove a marker to add a new one.");
     }

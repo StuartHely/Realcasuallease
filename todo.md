@@ -238,3 +238,8 @@
 - [x] Debug marker placement click handler - issue was sites not assigned to floor levels
 - [x] Verify sites are being loaded correctly for marker placement
 - [x] Assign Carnes Hill sites to Ground Floor level to enable marker placement
+
+## Bug Fixes (Dec 29, 2024 - Part 4)
+- [x] Fix admin maps tool - dragging existing markers shows "all sites already have markers" error
+- [x] Allow repositioning of existing markers without removing them first
+- [x] Distinguish between adding new markers and moving existing ones - added isDragging check
