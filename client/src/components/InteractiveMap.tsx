@@ -87,7 +87,11 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName }: 
 
   const MapContent = () => (
     <div className="bg-white rounded-lg border-2 border-gray-200">
-      <div ref={mapContainerRef} className="relative w-full">
+      <div 
+        ref={mapContainerRef} 
+        className="relative w-full"
+        onMouseLeave={handleMarkerLeave}
+      >
         <img
           src={displayMapUrl}
           alt={`${centreName} floor plan`}

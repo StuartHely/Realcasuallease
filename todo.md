@@ -245,3 +245,8 @@
 - [x] Investigate why isDragging check didn't fix the issue - click fires after mouseUp
 - [x] Find the actual root cause of marker drag error - event timing issue
 - [x] Implement dragOccurred flag to properly suppress clicks after drag operations
+
+## Bug Fixes (Dec 29, 2024 - Part 5)
+- [x] Fix interactive map tooltip staying visible after mouse leaves marker
+- [x] Ensure tooltip clears when mouse moves away from all markers
+- [x] Add proper onMouseLeave handler to map container to clear tooltip state
