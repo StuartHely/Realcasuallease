@@ -208,3 +208,11 @@
 - [x] Show "Map Coming Shortly" placeholder if no map uploaded
 - [x] Upload Carnes Hill Marketplace floor plan
 - [x] Position all 7 site markers on Carnes Hill map
+
+## Bug Fixes (Dec 29, 2024)
+- [x] Fix interactive map not visible on centre detail page - user was on search results, not centre detail
+
+## UX Improvements (Dec 29, 2024)
+- [x] Replace summary cards (Total Sites, Available Week 1/2) with interactive map on search results page
+- [x] Show both floor plan map and availability calendar on same page
+- [x] Improve navigation between map view and availability view

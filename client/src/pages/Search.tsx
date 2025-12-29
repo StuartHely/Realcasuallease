@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle } from "lucide-react";
 import { format, parse, addDays, isSameDay } from "date-fns";
+import InteractiveMap from "@/components/InteractiveMap";
 
 export default function Search() {
   const [, setLocation] = useLocation();
@@ -139,37 +140,24 @@ export default function Search() {
 
         {data && data.centres.length > 0 && (
           <div className="space-y-8">
-            {/* Quick Stats */}
-            <div className="grid md:grid-cols-3 gap-4">
+            {/* Interactive Map - Show if centre has a map */}
+            {data.centres[0]?.mapImageUrl && (
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-600">Total Sites</CardTitle>
+                <CardHeader>
+                  <CardTitle>Centre Floor Plan</CardTitle>
+                  <CardDescription>
+                    Click on any site marker to view details and book
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-600">{data.sites.length}</div>
+                  <InteractiveMap
+                    mapUrl={data.centres[0].mapImageUrl}
+                    sites={data.sites}
+                    centreName={data.centres[0].name}
+                  />
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-600">Available (Week 1)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-green-600">
-                    {data.availability.filter(a => a.week1Available).length}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-600">Available (Week 2)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-green-600">
-                    {data.availability.filter(a => a.week2Available).length}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            )}
 
             {/* Calendar Heatmap */}
             {data.centres.map((centre) => {
