@@ -105,8 +105,8 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName }: 
             key={site.id}
             className="absolute transform -translate-x-1/2 -translate-y-full cursor-pointer hover:scale-110 transition-transform z-10"
             style={{
-              left: `${(site.mapMarkerX! / 646) * 100}%`,
-              top: `${(site.mapMarkerY! / 382) * 100}%`,
+              left: `${site.mapMarkerX}%`,
+              top: `${site.mapMarkerY}%`,
             }}
             onMouseEnter={(e) => handleMarkerHover(site, e)}
             onMouseMove={(e) => handleMarkerHover(site, e)}

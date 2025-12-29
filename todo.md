@@ -250,3 +250,11 @@
 - [x] Fix interactive map tooltip staying visible after mouse leaves marker
 - [x] Ensure tooltip clears when mouse moves away from all markers
 - [x] Add proper onMouseLeave handler to map container to clear tooltip state
+
+## Bug Fixes (Dec 29, 2024 - Part 6)
+- [x] Fix marker positioning offset in admin maps tool
+- [x] Markers appear above and to the left of where they are placed - fixed coordinate system
+- [x] Convert from pixel-based to percentage-based coordinate system
+- [x] Remove hardcoded image dimensions (646x382) from InteractiveMap
+- [x] Migrate existing Carnes Hill markers to percentage coordinates
+- [x] Ensure click position matches marker display position across all screen sizes

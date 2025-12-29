@@ -220,6 +220,10 @@ export default function AdminMaps() {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
+    // Convert to percentage of image dimensions
+    const xPercent = (x / rect.width) * 100;
+    const yPercent = (y / rect.height) * 100;
+
     const unmappedSite = sites.find(
       (site: any) => !markers.some((m) => m.siteId === site.id)
     );
@@ -229,8 +233,8 @@ export default function AdminMaps() {
         ...markers,
         {
           siteId: unmappedSite.id,
-          x: Math.round(x),
-          y: Math.round(y),
+          x: Math.round(xPercent * 10) / 10, // Round to 1 decimal
+          y: Math.round(yPercent * 10) / 10,
           siteNumber: unmappedSite.siteNumber,
         },
       ]);
@@ -255,9 +259,17 @@ export default function AdminMaps() {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
+    // Convert to percentage of image dimensions
+    const xPercent = (x / rect.width) * 100;
+    const yPercent = (y / rect.height) * 100;
+
     setMarkers(
       markers.map((m) =>
-        m.siteId === isDragging ? { ...m, x: Math.round(x), y: Math.round(y) } : m
+        m.siteId === isDragging ? { 
+          ...m, 
+          x: Math.round(xPercent * 10) / 10, // Round to 1 decimal
+          y: Math.round(yPercent * 10) / 10 
+        } : m
       )
     );
   };
@@ -483,7 +495,7 @@ export default function AdminMaps() {
                           <div
                             key={marker.siteId}
                             className="absolute transform -translate-x-1/2 -translate-y-full cursor-move group"
-                            style={{ left: marker.x, top: marker.y }}
+                            style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
                             onMouseDown={() => handleMarkerDragStart(marker.siteId)}
                           >
                             <div className="relative">
