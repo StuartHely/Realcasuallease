@@ -232,3 +232,9 @@
 - [x] Write comprehensive tests (12 tests passing)
 - [x] Test admin authorization for floor level operations
 - [x] Verify database schema with floorLevelId support
+
+## Bug Fixes (Dec 29, 2024 - Part 3)
+- [x] Fix admin maps tool - clicking on map doesn't add markers
+- [x] Debug marker placement click handler - issue was sites not assigned to floor levels
+- [x] Verify sites are being loaded correctly for marker placement
+- [x] Assign Carnes Hill sites to Ground Floor level to enable marker placement
