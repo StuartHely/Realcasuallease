@@ -73,11 +73,22 @@ export default function AdminMaps() {
           y: site.mapMarkerY,
           siteNumber: site.siteNumber,
         }));
-      setMarkers(existingMarkers);
+      
+      // Only update markers if they actually changed
+      setMarkers((prevMarkers) => {
+        const hasChanged = 
+          prevMarkers.length !== existingMarkers.length ||
+          existingMarkers.some((marker, idx) => 
+            prevMarkers[idx]?.siteId !== marker.siteId ||
+            prevMarkers[idx]?.x !== marker.x ||
+            prevMarkers[idx]?.y !== marker.y
+          );
+        return hasChanged ? existingMarkers : prevMarkers;
+      });
     } else {
-      setMarkers([]);
+      setMarkers((prevMarkers) => prevMarkers.length > 0 ? [] : prevMarkers);
     }
-  }, [centre, sites]);
+  }, [centre?.mapImageUrl, centre?.id, sites.length, selectedCentreId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -216,3 +216,7 @@
 - [x] Replace summary cards (Total Sites, Available Week 1/2) with interactive map on search results page
 - [x] Show both floor plan map and availability calendar on same page
 - [x] Improve navigation between map view and availability view
+
+## Bug Fixes (Dec 29, 2024 - Part 2)
+- [x] Fix "An unexpected error occurred" on admin maps page
+- [x] Debug and resolve the error preventing maps page from loading - fixed infinite loop in useEffect
