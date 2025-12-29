@@ -192,17 +192,19 @@
 - [x] Add visual indicator (badge/icon) on matched site cards
 - [x] Ensure highlighting works for all search patterns (site number, description, compound queries)
 
-## Phase 1: State Browsing & Centre Maps (Dec 27, 2024)
-- [ ] Add ownerId, state, includeInMainSite fields to shopping centres table
-- [ ] Update all centres with full street addresses
-- [ ] Add centre floor plan map URL field to database
-- [ ] Create state filter buttons on homepage (NSW, VIC, WA, QLD, SA, NT, ACT, TAS)
-- [ ] Build centre list page filtered by state
-- [ ] Create centre detail page with map viewer
-- [ ] Build admin map upload interface
-- [ ] Create admin map marker placement tool (click-and-drag)
-- [ ] Save marker coordinates to database
-- [ ] Display interactive markers on centre map
-- [ ] Add hover tooltips (rate, description, image)
-- [ ] Click marker to navigate to site booking page
-- [ ] Show "Map Coming Shortly" placeholder if no map uploaded
+## Phase 1: State Browsing & Centre Maps (Dec 27-29, 2024)
+- [x] Add ownerId, state, includeInMainSite fields to shopping centres table
+- [x] Update all centres with full street addresses
+- [x] Add centre floor plan map URL field to database
+- [x] Create state filter buttons on homepage (NSW, VIC, WA, QLD, SA, NT, ACT, TAS)
+- [x] Build centre list page filtered by state
+- [x] Create centre detail page with map viewer
+- [x] Build admin map upload interface
+- [x] Create admin map marker placement tool (drag-and-drop)
+- [x] Save marker coordinates to database
+- [x] Display interactive markers on centre map
+- [x] Add hover tooltips (rate, description, image) - implemented, needs manual testing
+- [x] Click marker to navigate to site booking page
+- [x] Show "Map Coming Shortly" placeholder if no map uploaded
+- [x] Upload Carnes Hill Marketplace floor plan
+- [x] Position all 7 site markers on Carnes Hill map

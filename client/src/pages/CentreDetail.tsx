@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { MapPin, Building2, ArrowLeft, Calendar, DollarSign, Ruler, Zap } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
+import InteractiveMap from "@/components/InteractiveMap";
 
 export default function CentreDetail() {
   const [, setLocation] = useLocation();
@@ -99,15 +100,13 @@ export default function CentreDetail() {
           </CardHeader>
           <CardContent>
             <div className="bg-gray-50 rounded-lg p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Centre Map</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Interactive Centre Map</h3>
               {centre.mapImageUrl ? (
-                <div className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden">
-                  <img
-                    src={centre.mapImageUrl}
-                    alt={`${centre.name} floor plan`}
-                    className="w-full h-auto"
-                  />
-                </div>
+                <InteractiveMap
+                  mapUrl={centre.mapImageUrl}
+                  sites={sites}
+                  centreName={centre.name}
+                />
               ) : (
                 <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
                   <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-3" />
