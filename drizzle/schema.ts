@@ -106,6 +106,8 @@ export const shoppingCentres = mysqlTable("shopping_centres", {
   weeklyReportEmail8: varchar("weeklyReportEmail8", { length: 320 }),
   weeklyReportEmail9: varchar("weeklyReportEmail9", { length: 320 }),
   weeklyReportEmail10: varchar("weeklyReportEmail10", { length: 320 }),
+  includeInMainSite: boolean("includeInMainSite").default(true).notNull(),
+  mapImageUrl: text("mapImageUrl"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
@@ -133,6 +135,8 @@ export const sites = mysqlTable("sites", {
   imageUrl3: text("imageUrl3"),
   imageUrl4: text("imageUrl4"),
   videoUrl: text("videoUrl"),
+  mapMarkerX: int("mapMarkerX"),
+  mapMarkerY: int("mapMarkerY"),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

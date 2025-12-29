@@ -51,6 +51,12 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.getSitesByCentreId(input.centreId);
       }),
+    
+    getByState: publicProcedure
+      .input(z.object({ state: z.string() }))
+      .query(async ({ input }) => {
+        return await db.getShoppingCentresByState(input.state);
+      }),
   }),
 
   // Sites
@@ -497,6 +503,30 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         return await db.deleteSite(input.id);
+      }),
+
+    // Map Management
+    uploadCentreMap: adminProcedure
+      .input(z.object({
+        centreId: z.number(),
+        imageData: z.string(), // base64 encoded image
+        fileName: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.uploadCentreMap(input.centreId, input.imageData, input.fileName);
+      }),
+
+    saveSiteMarkers: adminProcedure
+      .input(z.object({
+        centreId: z.number(),
+        markers: z.array(z.object({
+          siteId: z.number(),
+          x: z.number(),
+          y: z.number(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.saveSiteMarkers(input.markers);
       }),
   }),
 });

@@ -29,7 +29,8 @@ import {
   FileText, 
   Settings,
   Home,
-  LogOut
+  LogOut,
+  Map
 } from "lucide-react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -48,6 +49,7 @@ const getMenuItems = (userRole: string) => {
       ...baseItems,
       { icon: Building2, label: "Shopping Centres", path: "/admin/centres" },
       { icon: MapPin, label: "Sites", path: "/admin/sites" },
+      { icon: Map, label: "Floor Plan Maps", path: "/admin/maps" },
       { icon: Calendar, label: "Bookings", path: "/admin/bookings" },
       { icon: Users, label: "Users", path: "/admin/users" },
       { icon: Users, label: "Owners & Managers", path: "/admin/owners" },

@@ -204,6 +204,33 @@ export default function Home() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* State Filter Buttons */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-white mb-4 text-center">
+                Or browse by state:
+              </h3>
+              <div className="flex flex-wrap justify-center gap-3">
+                {[
+                  { code: "NSW", name: "New South Wales" },
+                  { code: "VIC", name: "Victoria" },
+                  { code: "QLD", name: "Queensland" },
+                  { code: "SA", name: "South Australia" },
+                  { code: "WA", name: "Western Australia" },
+                  { code: "TAS", name: "Tasmania" },
+                ].map((state) => (
+                  <Button
+                    key={state.code}
+                    onClick={() => setLocation(`/centres?state=${state.code}`)}
+                    variant="outline"
+                    className="bg-white/90 hover:bg-white border-2 border-blue-200 hover:border-blue-400 text-blue-900 font-semibold px-6 py-3 h-auto"
+                  >
+                    <MapPin className="mr-2 h-4 w-4" />
+                    {state.code}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 

@@ -150,6 +150,12 @@ export async function getShoppingCentreById(id: number) {
   return result[0];
 }
 
+export async function getShoppingCentresByState(state: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(shoppingCentres).where(eq(shoppingCentres.state, state));
+}
+
 // Levenshtein distance for fuzzy matching
 function levenshteinDistance(a: string, b: string): number {
   const matrix: number[][] = [];
@@ -489,4 +495,53 @@ export async function deleteSite(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return await db.delete(sites).where(eq(sites.id, id));
+}
+
+
+// Map Management
+export async function uploadCentreMap(centreId: number, imageData: string, fileName: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Import storage helper
+  const { storagePut } = await import("./storage");
+  
+  // Extract base64 data (remove data:image/xxx;base64, prefix if present)
+  const base64Data = imageData.includes(',') ? imageData.split(',')[1] : imageData;
+  const buffer = Buffer.from(base64Data, 'base64');
+  
+  // Determine content type from fileName
+  const ext = fileName.toLowerCase().split('.').pop();
+  const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
+  
+  // Generate unique file key
+  const timestamp = Date.now();
+  const fileKey = `centres/maps/${centreId}-${timestamp}.${ext}`;
+  
+  // Upload to S3
+  const { url } = await storagePut(fileKey, buffer, contentType);
+  
+  // Update centre with map URL
+  await db.update(shoppingCentres)
+    .set({ mapImageUrl: url })
+    .where(eq(shoppingCentres.id, centreId));
+  
+  return { mapUrl: url };
+}
+
+export async function saveSiteMarkers(markers: Array<{ siteId: number; x: number; y: number }>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Update each site with marker coordinates
+  for (const marker of markers) {
+    await db.update(sites)
+      .set({
+        mapMarkerX: marker.x,
+        mapMarkerY: marker.y,
+      })
+      .where(eq(sites.id, marker.siteId));
+  }
+  
+  return { success: true, count: markers.length };
 }
