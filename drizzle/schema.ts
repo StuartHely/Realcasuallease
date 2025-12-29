@@ -81,6 +81,22 @@ export const owners = mysqlTable("owners", {
 });
 
 /**
+ * Floor levels for multi-level shopping centres
+ */
+export const floorLevels = mysqlTable("floor_levels", {
+  id: int("id").autoincrement().primaryKey(),
+  centreId: int("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
+  levelName: varchar("levelName", { length: 100 }).notNull(), // e.g., "Ground Floor", "Level 1", "Level 2"
+  levelNumber: int("levelNumber").notNull(), // 0 for ground, 1 for level 1, etc.
+  mapImageUrl: text("mapImageUrl"),
+  displayOrder: int("displayOrder").notNull(), // For custom ordering
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  centreIdIdx: index("centreId_idx").on(table.centreId),
+}));
+
+/**
  * Shopping centres
  */
 export const shoppingCentres = mysqlTable("shopping_centres", {
@@ -135,6 +151,7 @@ export const sites = mysqlTable("sites", {
   imageUrl3: text("imageUrl3"),
   imageUrl4: text("imageUrl4"),
   videoUrl: text("videoUrl"),
+  floorLevelId: int("floorLevelId").references(() => floorLevels.id, { onDelete: "set null" }), // null for single-level centres
   mapMarkerX: int("mapMarkerX"),
   mapMarkerY: int("mapMarkerY"),
   isActive: boolean("isActive").default(true).notNull(),
@@ -240,6 +257,8 @@ export type CustomerProfile = typeof customerProfiles.$inferSelect;
 export type InsertCustomerProfile = typeof customerProfiles.$inferInsert;
 export type Owner = typeof owners.$inferSelect;
 export type InsertOwner = typeof owners.$inferInsert;
+export type FloorLevel = typeof floorLevels.$inferSelect;
+export type InsertFloorLevel = typeof floorLevels.$inferInsert;
 export type ShoppingCentre = typeof shoppingCentres.$inferSelect;
 export type InsertShoppingCentre = typeof shoppingCentres.$inferInsert;
 export type Site = typeof sites.$inferSelect;

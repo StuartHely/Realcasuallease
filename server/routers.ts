@@ -528,6 +528,40 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await db.saveSiteMarkers(input.markers);
       }),
+
+    // Floor Level Management
+    getFloorLevels: adminProcedure
+      .input(z.object({ centreId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getFloorLevelsByCentre(input.centreId);
+      }),
+
+    createFloorLevel: adminProcedure
+      .input(z.object({
+        centreId: z.number(),
+        levelName: z.string(),
+        levelNumber: z.number(),
+        displayOrder: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createFloorLevel(input);
+      }),
+
+    uploadFloorLevelMap: adminProcedure
+      .input(z.object({
+        floorLevelId: z.number(),
+        imageData: z.string(),
+        fileName: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.uploadFloorLevelMap(input.floorLevelId, input.imageData, input.fileName);
+      }),
+
+    getSitesByFloorLevel: adminProcedure
+      .input(z.object({ floorLevelId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getSitesByFloorLevel(input.floorLevelId);
+      }),
   }),
 });
 

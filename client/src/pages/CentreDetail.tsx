@@ -103,6 +103,7 @@ export default function CentreDetail() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Interactive Centre Map</h3>
               {centre.mapImageUrl ? (
                 <InteractiveMap
+                  centreId={centre.id}
                   mapUrl={centre.mapImageUrl}
                   sites={sites}
                   centreName={centre.name}

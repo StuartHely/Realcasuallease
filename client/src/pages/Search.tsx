@@ -151,6 +151,7 @@ export default function Search() {
                 </CardHeader>
                 <CardContent>
                   <InteractiveMap
+                    centreId={data.centres[0].id}
                     mapUrl={data.centres[0].mapImageUrl}
                     sites={data.sites}
                     centreName={data.centres[0].name}

@@ -220,3 +220,15 @@
 ## Bug Fixes (Dec 29, 2024 - Part 2)
 - [x] Fix "An unexpected error occurred" on admin maps page
 - [x] Debug and resolve the error preventing maps page from loading - fixed infinite loop in useEffect
+
+## Feature: Multi-Level Shopping Centres (Dec 29, 2024) - COMPLETED
+- [x] Add floor_levels table (id, centreId, levelName, levelNumber, mapImageUrl, displayOrder)
+- [x] Update sites table to include floorLevelId foreign key
+- [x] Modify admin maps tool to support multiple floor plan uploads per centre
+- [x] Add floor level selector (tabs) in admin map editor
+- [x] Add floor level selector (tabs) in public interactive map viewer
+- [x] Update InteractiveMap component to switch between floor levels
+- [x] Maintain backward compatibility for single-level centres
+- [x] Write comprehensive tests (12 tests passing)
+- [x] Test admin authorization for floor level operations
+- [x] Verify database schema with floorLevelId support

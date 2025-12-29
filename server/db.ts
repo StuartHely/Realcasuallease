@@ -4,6 +4,7 @@ import {
   InsertUser, users, 
   customerProfiles, InsertCustomerProfile,
   owners, InsertOwner,
+  floorLevels, InsertFloorLevel,
   shoppingCentres, InsertShoppingCentre,
   sites, InsertSite,
   usageTypes, InsertUsageType,
@@ -544,4 +545,62 @@ export async function saveSiteMarkers(markers: Array<{ siteId: number; x: number
   }
   
   return { success: true, count: markers.length };
+}
+
+// Floor Level Management
+export async function getFloorLevelsByCentre(centreId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select()
+    .from(floorLevels)
+    .where(eq(floorLevels.centreId, centreId))
+    .orderBy(floorLevels.displayOrder);
+}
+
+export async function createFloorLevel(data: InsertFloorLevel) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [result] = await db.insert(floorLevels).values(data);
+  return result;
+}
+
+export async function uploadFloorLevelMap(floorLevelId: number, imageData: string, fileName: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Import storage helper
+  const { storagePut } = await import("./storage");
+  
+  // Extract base64 data
+  const base64Data = imageData.includes(',') ? imageData.split(',')[1] : imageData;
+  const buffer = Buffer.from(base64Data, 'base64');
+  
+  // Determine content type
+  const ext = fileName.toLowerCase().split('.').pop();
+  const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
+  
+  // Generate unique file key
+  const timestamp = Date.now();
+  const fileKey = `centres/floor-maps/${floorLevelId}-${timestamp}.${ext}`;
+  
+  // Upload to S3
+  const { url } = await storagePut(fileKey, buffer, contentType);
+  
+  // Update floor level with map URL
+  await db.update(floorLevels)
+    .set({ mapImageUrl: url })
+    .where(eq(floorLevels.id, floorLevelId));
+  
+  return { mapUrl: url };
+}
+
+export async function getSitesByFloorLevel(floorLevelId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select()
+    .from(sites)
+    .where(eq(sites.floorLevelId, floorLevelId));
 }

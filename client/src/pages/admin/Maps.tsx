@@ -5,17 +5,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import { Upload, MapPin, Save, X, ArrowLeft } from "lucide-react";
+import { Upload, MapPin, Save, X, ArrowLeft, Plus } from "lucide-react";
 
 export default function AdminMaps() {
   const [, setLocation] = useLocation();
   const [selectedCentreId, setSelectedCentreId] = useState<number>(0);
+  const [selectedFloorLevelId, setSelectedFloorLevelId] = useState<number | null>(null);
   const [mapImage, setMapImage] = useState<File | null>(null);
   const [mapPreviewUrl, setMapPreviewUrl] = useState<string>("");
   const [markers, setMarkers] = useState<Array<{ siteId: number; x: number; y: number; siteNumber: string }>>([]);
   const [isDragging, setIsDragging] = useState<number | null>(null);
+  const [newFloorName, setNewFloorName] = useState("");
+  const [newFloorNumber, setNewFloorNumber] = useState("");
   const canvasRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
@@ -28,13 +32,37 @@ export default function AdminMaps() {
     { enabled: selectedCentreId > 0 }
   );
 
-  // Fetch sites for selected centre
-  const { data: sites = [] } = trpc.centres.getSites.useQuery(
+  // Fetch floor levels for selected centre
+  const { data: floorLevels = [], refetch: refetchFloorLevels } = trpc.admin.getFloorLevels.useQuery(
     { centreId: selectedCentreId },
     { enabled: selectedCentreId > 0 }
   );
 
-  // Upload map mutation
+  // Fetch sites for selected floor level (or all sites if no floor level selected)
+  const { data: sites = [] } = selectedFloorLevelId
+    ? trpc.admin.getSitesByFloorLevel.useQuery(
+        { floorLevelId: selectedFloorLevelId },
+        { enabled: selectedFloorLevelId > 0 }
+      )
+    : trpc.centres.getSites.useQuery(
+        { centreId: selectedCentreId },
+        { enabled: selectedCentreId > 0 && floorLevels.length === 0 }
+      );
+
+  // Create floor level mutation
+  const createFloorLevelMutation = trpc.admin.createFloorLevel.useMutation({
+    onSuccess: () => {
+      toast.success("Floor level created successfully");
+      refetchFloorLevels();
+      setNewFloorName("");
+      setNewFloorNumber("");
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to create floor level: ${error.message}`);
+    },
+  });
+
+  // Upload map mutation (for both single-level and multi-level)
   const uploadMapMutation = trpc.admin.uploadCentreMap.useMutation({
     onSuccess: (data: any) => {
       toast.success("Map uploaded successfully");
@@ -42,6 +70,17 @@ export default function AdminMaps() {
     },
     onError: (error: any) => {
       toast.error(`Failed to upload map: ${error.message}`);
+    },
+  });
+
+  const uploadFloorLevelMapMutation = trpc.admin.uploadFloorLevelMap.useMutation({
+    onSuccess: (data: any) => {
+      toast.success("Floor plan uploaded successfully");
+      setMapPreviewUrl(data.mapUrl);
+      refetchFloorLevels();
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to upload floor plan: ${error.message}`);
     },
   });
 
@@ -55,9 +94,17 @@ export default function AdminMaps() {
     },
   });
 
-  // Load existing map and markers when centre changes
+  // Load map and markers when floor level changes
   useEffect(() => {
-    if (centre?.mapImageUrl) {
+    if (floorLevels.length > 0 && selectedFloorLevelId) {
+      const currentFloor = floorLevels.find((fl: any) => fl.id === selectedFloorLevelId);
+      if (currentFloor?.mapImageUrl) {
+        setMapPreviewUrl(currentFloor.mapImageUrl);
+      } else {
+        setMapPreviewUrl("");
+      }
+    } else if (floorLevels.length === 0 && centre?.mapImageUrl) {
+      // Single-level centre
       setMapPreviewUrl(centre.mapImageUrl);
     } else {
       setMapPreviewUrl("");
@@ -74,7 +121,6 @@ export default function AdminMaps() {
           siteNumber: site.siteNumber,
         }));
       
-      // Only update markers if they actually changed
       setMarkers((prevMarkers) => {
         const hasChanged = 
           prevMarkers.length !== existingMarkers.length ||
@@ -88,7 +134,16 @@ export default function AdminMaps() {
     } else {
       setMarkers((prevMarkers) => prevMarkers.length > 0 ? [] : prevMarkers);
     }
-  }, [centre?.mapImageUrl, centre?.id, sites.length, selectedCentreId]);
+  }, [centre?.mapImageUrl, centre?.id, sites.length, selectedCentreId, selectedFloorLevelId, floorLevels]);
+
+  // Auto-select first floor level when floor levels are loaded
+  useEffect(() => {
+    if (floorLevels.length > 0 && !selectedFloorLevelId) {
+      setSelectedFloorLevelId(floorLevels[0].id);
+    } else if (floorLevels.length === 0) {
+      setSelectedFloorLevelId(null);
+    }
+  }, [floorLevels, selectedFloorLevelId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -111,13 +166,44 @@ export default function AdminMaps() {
     const reader = new FileReader();
     reader.onload = async (event) => {
       const base64 = event.target?.result as string;
-      await uploadMapMutation.mutateAsync({
-        centreId: selectedCentreId,
-        imageData: base64,
-        fileName: mapImage.name,
-      });
+      
+      if (selectedFloorLevelId) {
+        // Upload to specific floor level
+        await uploadFloorLevelMapMutation.mutateAsync({
+          floorLevelId: selectedFloorLevelId,
+          imageData: base64,
+          fileName: mapImage.name,
+        });
+      } else {
+        // Upload to centre (single-level)
+        await uploadMapMutation.mutateAsync({
+          centreId: selectedCentreId,
+          imageData: base64,
+          fileName: mapImage.name,
+        });
+      }
     };
     reader.readAsDataURL(mapImage);
+  };
+
+  const handleCreateFloorLevel = async () => {
+    if (!newFloorName || !newFloorNumber || selectedCentreId === 0) {
+      toast.error("Please enter floor name and number");
+      return;
+    }
+
+    const levelNum = parseInt(newFloorNumber);
+    if (isNaN(levelNum)) {
+      toast.error("Floor number must be a valid number");
+      return;
+    }
+
+    await createFloorLevelMutation.mutateAsync({
+      centreId: selectedCentreId,
+      levelName: newFloorName,
+      levelNumber: levelNum,
+      displayOrder: floorLevels.length,
+    });
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -127,7 +213,6 @@ export default function AdminMaps() {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // Find a site that doesn't have a marker yet
     const unmappedSite = sites.find(
       (site: any) => !markers.some((m) => m.siteId === site.id)
     );
@@ -223,7 +308,12 @@ export default function AdminMaps() {
                 <Label htmlFor="centre">Shopping Centre</Label>
                 <Select
                   value={selectedCentreId.toString()}
-                  onValueChange={(value) => setSelectedCentreId(parseInt(value))}
+                  onValueChange={(value) => {
+                    setSelectedCentreId(parseInt(value));
+                    setSelectedFloorLevelId(null);
+                    setMapPreviewUrl("");
+                    setMarkers([]);
+                  }}
                 >
                   <SelectTrigger id="centre">
                     <SelectValue placeholder="Select a centre" />
@@ -241,11 +331,11 @@ export default function AdminMaps() {
               {selectedCentreId > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-900">
-                    <strong>{sites.length}</strong> sites available for this centre
+                    <strong>{sites.length}</strong> sites available{selectedFloorLevelId ? " on this floor" : " for this centre"}
                   </p>
-                  {centre?.mapImageUrl && (
+                  {floorLevels.length > 0 && (
                     <p className="text-sm text-green-700 mt-2">
-                      ✓ Floor plan map already uploaded
+                      ✓ Multi-level centre with {floorLevels.length} floor(s)
                     </p>
                   )}
                 </div>
@@ -256,12 +346,75 @@ export default function AdminMaps() {
 
         {selectedCentreId > 0 && (
           <>
+            {/* Floor Level Management */}
+            <Card className="mb-8 shadow-lg">
+              <CardHeader>
+                <CardTitle>Floor Levels</CardTitle>
+                <CardDescription>
+                  {floorLevels.length === 0
+                    ? "This is a single-level centre. Add floor levels if this centre has multiple floors."
+                    : "Select a floor level to manage its map and markers."}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {floorLevels.length > 0 && (
+                    <Tabs value={selectedFloorLevelId?.toString() || ""} onValueChange={(val) => setSelectedFloorLevelId(parseInt(val))}>
+                      <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${floorLevels.length}, 1fr)` }}>
+                        {floorLevels.map((floor: any) => (
+                          <TabsTrigger key={floor.id} value={floor.id.toString()}>
+                            {floor.levelName}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                    </Tabs>
+                  )}
+
+                  {/* Add New Floor Level */}
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-semibold mb-3">Add New Floor Level</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="floor-name">Floor Name</Label>
+                        <Input
+                          id="floor-name"
+                          placeholder="e.g., Ground Floor, Level 1"
+                          value={newFloorName}
+                          onChange={(e) => setNewFloorName(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="floor-number">Floor Number</Label>
+                        <Input
+                          id="floor-number"
+                          type="number"
+                          placeholder="0 for ground, 1 for level 1"
+                          value={newFloorNumber}
+                          onChange={(e) => setNewFloorNumber(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <Button
+                          onClick={handleCreateFloorLevel}
+                          disabled={createFloorLevelMutation.isPending}
+                          className="w-full bg-green-600 hover:bg-green-700"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          {createFloorLevelMutation.isPending ? "Creating..." : "Add Floor"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Upload Map */}
             <Card className="mb-8 shadow-lg">
               <CardHeader>
                 <CardTitle>Upload Floor Plan Map</CardTitle>
                 <CardDescription>
-                  Upload a floor plan image for this shopping centre (PNG, JPG, or JPEG)
+                  Upload a floor plan image {selectedFloorLevelId ? "for the selected floor level" : "for this centre"} (PNG, JPG, or JPEG)
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -278,11 +431,11 @@ export default function AdminMaps() {
                   </div>
                   <Button
                     onClick={handleUploadMap}
-                    disabled={!mapImage || uploadMapMutation.isPending}
+                    disabled={!mapImage || uploadMapMutation.isPending || uploadFloorLevelMapMutation.isPending}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     <Upload className="mr-2 h-4 w-4" />
-                    {uploadMapMutation.isPending ? "Uploading..." : "Upload Map"}
+                    {uploadMapMutation.isPending || uploadFloorLevelMapMutation.isPending ? "Uploading..." : "Upload Map"}
                   </Button>
                 </div>
               </CardContent>

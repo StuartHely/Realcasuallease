@@ -1,6 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { MapPin, DollarSign, Ruler } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { trpc } from "@/lib/trpc";
 
 interface Site {
   id: number;
@@ -12,35 +14,54 @@ interface Site {
   imageUrl1: string | null;
   mapMarkerX: number | null;
   mapMarkerY: number | null;
+  floorLevelId: number | null;
 }
 
 interface InteractiveMapProps {
-  mapUrl: string;
+  centreId: number;
+  mapUrl?: string; // Legacy single-level map URL
   sites: Site[];
   centreName: string;
 }
 
-export default function InteractiveMap({ mapUrl, sites, centreName }: InteractiveMapProps) {
+export default function InteractiveMap({ centreId, mapUrl, sites, centreName }: InteractiveMapProps) {
   const [, setLocation] = useLocation();
   const [hoveredSite, setHoveredSite] = useState<Site | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [selectedFloorId, setSelectedFloorId] = useState<number | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
-  // Filter sites that have marker positions
-  const sitesWithMarkers = sites.filter(
-    (site: Site) => site.mapMarkerX !== null && site.mapMarkerY !== null
-  );
+  // Fetch floor levels for this centre
+  const { data: floorLevels = [] } = trpc.admin.getFloorLevels.useQuery({ centreId });
+
+  // Auto-select first floor level
+  useEffect(() => {
+    if (floorLevels.length > 0 && !selectedFloorId) {
+      setSelectedFloorId(floorLevels[0].id);
+    }
+  }, [floorLevels, selectedFloorId]);
+
+  // Determine which map to show
+  const isMultiLevel = floorLevels.length > 0;
+  const currentFloor = isMultiLevel && selectedFloorId 
+    ? floorLevels.find((fl: any) => fl.id === selectedFloorId)
+    : null;
+  const displayMapUrl = currentFloor?.mapImageUrl || mapUrl;
+
+  // Filter sites for current floor (or all sites if single-level)
+  const sitesWithMarkers = sites.filter((site: Site) => {
+    const hasMarkers = site.mapMarkerX !== null && site.mapMarkerY !== null;
+    if (!isMultiLevel) return hasMarkers;
+    return hasMarkers && site.floorLevelId === selectedFloorId;
+  });
 
   const handleMarkerHover = (site: Site, event: React.MouseEvent) => {
-    console.log('Marker hovered:', site.siteNumber);
     setHoveredSite(site);
     
-    // Calculate tooltip position relative to the map container
     if (mapContainerRef.current) {
       const rect = mapContainerRef.current.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
-      console.log('Tooltip position:', { x, y });
       setTooltipPosition({ x, y });
     }
   };
@@ -53,11 +74,22 @@ export default function InteractiveMap({ mapUrl, sites, centreName }: Interactiv
     setLocation(`/site/${siteId}`);
   };
 
-  return (
+  if (!displayMapUrl) {
+    return (
+      <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
+        <p className="text-gray-600">Map Coming Shortly</p>
+        <p className="text-sm text-gray-500 mt-2">
+          The floor plan for this centre will be available soon
+        </p>
+      </div>
+    );
+  }
+
+  const MapContent = () => (
     <div className="bg-white rounded-lg border-2 border-gray-200">
       <div ref={mapContainerRef} className="relative w-full">
         <img
-          src={mapUrl}
+          src={displayMapUrl}
           alt={`${centreName} floor plan`}
           className="w-full h-auto"
           draggable={false}
@@ -170,7 +202,7 @@ export default function InteractiveMap({ mapUrl, sites, centreName }: Interactiv
               <span className="text-gray-700">Available Site</span>
             </div>
             <span className="text-gray-500">
-              {sitesWithMarkers.length} of {sites.length} sites shown
+              {sitesWithMarkers.length} of {isMultiLevel ? sites.filter(s => s.floorLevelId === selectedFloorId).length : sites.length} sites shown
             </span>
           </div>
           <p className="text-gray-600 italic">Hover over markers for details</p>
@@ -178,4 +210,29 @@ export default function InteractiveMap({ mapUrl, sites, centreName }: Interactiv
       </div>
     </div>
   );
+
+  // Multi-level centre with tabs
+  if (isMultiLevel && floorLevels.length > 0) {
+    return (
+      <div className="space-y-4">
+        <Tabs value={selectedFloorId?.toString() || ""} onValueChange={(val) => setSelectedFloorId(parseInt(val))}>
+          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${floorLevels.length}, 1fr)` }}>
+            {floorLevels.map((floor: any) => (
+              <TabsTrigger key={floor.id} value={floor.id.toString()}>
+                {floor.levelName}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {floorLevels.map((floor: any) => (
+            <TabsContent key={floor.id} value={floor.id.toString()}>
+              <MapContent />
+            </TabsContent>
+          ))}
+        </Tabs>
+      </div>
+    );
+  }
+
+  // Single-level centre (legacy)
+  return <MapContent />;
 }
