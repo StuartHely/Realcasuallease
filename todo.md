@@ -242,4 +242,6 @@
 ## Bug Fixes (Dec 29, 2024 - Part 4)
 - [x] Fix admin maps tool - dragging existing markers shows "all sites already have markers" error
 - [x] Allow repositioning of existing markers without removing them first
-- [x] Distinguish between adding new markers and moving existing ones - added isDragging check
+- [x] Investigate why isDragging check didn't fix the issue - click fires after mouseUp
+- [x] Find the actual root cause of marker drag error - event timing issue
+- [x] Implement dragOccurred flag to properly suppress clicks after drag operations

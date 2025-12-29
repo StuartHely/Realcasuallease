@@ -18,6 +18,7 @@ export default function AdminMaps() {
   const [mapPreviewUrl, setMapPreviewUrl] = useState<string>("");
   const [markers, setMarkers] = useState<Array<{ siteId: number; x: number; y: number; siteNumber: string }>>([]);
   const [isDragging, setIsDragging] = useState<number | null>(null);
+  const [dragOccurred, setDragOccurred] = useState(false);
   const [newFloorName, setNewFloorName] = useState("");
   const [newFloorNumber, setNewFloorNumber] = useState("");
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -207,8 +208,11 @@ export default function AdminMaps() {
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Don't process clicks if we're dragging a marker
-    if (isDragging !== null) return;
+    // Don't process clicks if a drag just occurred
+    if (dragOccurred) {
+      setDragOccurred(false);
+      return;
+    }
     
     if (!imageRef.current || sites.length === 0) return;
 
@@ -238,10 +242,14 @@ export default function AdminMaps() {
 
   const handleMarkerDragStart = (siteId: number) => {
     setIsDragging(siteId);
+    setDragOccurred(false);
   };
 
   const handleMarkerDrag = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isDragging === null || !imageRef.current) return;
+
+    // Mark that a drag occurred
+    setDragOccurred(true);
 
     const rect = imageRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
