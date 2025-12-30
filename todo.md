@@ -284,3 +284,8 @@
 - [x] Investigate why 2 sites are not displaying in marker positioning area - Sites 3 and 5 have markers at (50%, 50%) overlapping floor plan
 - [x] Fix map turning all blue when adding sites to the left side - Not a bug, user needs to remove mispositioned markers
 - [x] Debug map display/rendering issue in admin maps tool - Added resetSiteMarker procedure and X button to remove markers
+
+## Bug Fixes (Dec 30, 2024 - Part 11)
+- [x] Remove hidden markers for Sites 3 and 5 in Highlands Marketplace - pixel-based coordinates cleared
+- [x] Sites still showing as "marked" but not visible in admin or live - root cause was pixel vs percentage coordinate mismatch
+- [x] Use resetSiteMarker to clear their coordinates so they can be repositioned - all 5 sites now show 0 markers, ready to position
