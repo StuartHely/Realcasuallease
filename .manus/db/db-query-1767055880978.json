@@ -1,0 +1,22 @@
+{
+  "query": "SELECT id, levelName, levelNumber, displayOrder \nFROM floor_levels \nWHERE centreId = (SELECT id FROM shopping_centres WHERE name = 'Campbelltown Mall') \nORDER BY displayOrder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, levelName, levelNumber, displayOrder \nFROM floor_levels \nWHERE centreId = (SELECT id FROM shopping_centres WHERE name = 'Campbelltown Mall') \nORDER BY displayOrder;",
+  "rows": [
+    {
+      "id": "30001",
+      "levelName": "Test Lower Level",
+      "levelNumber": "1",
+      "displayOrder": "1"
+    },
+    {
+      "id": "30002",
+      "levelName": "Test Upper Level",
+      "levelNumber": "2",
+      "displayOrder": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tlevelName\tlevelNumber\tdisplayOrder\n30001\tTest Lower Level\t1\t1\n30002\tTest Upper Level\t2\t2\n",
+  "stderr": "",
+  "execution_time_ms": 1522
+}

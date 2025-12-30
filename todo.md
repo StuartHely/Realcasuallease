@@ -271,3 +271,10 @@
 - [x] Fix scrolling issue on Site Assignment page
 - [x] Bottom 2 sites' dropdowns are not accessible - fixed with max-h-[calc(100vh-400px)] overflow-y-auto
 - [x] Enable proper page scrolling to reach all site rows - all 13 Campbelltown Mall sites now accessible
+
+## Bug Fixes (Dec 29, 2024 - Part 9)
+- [x] Fix incorrect floor level assignments for Campbelltown Mall
+- [x] Site 2 (Upper Level) incorrectly showing on Lower Level map - moved to Upper Level
+- [x] Site 7 (Upper Level) incorrectly showing on Lower Level map - moved to Upper Level
+- [x] Investigate why upper level sites are assigned to Test Lower Level - user manually assigned them incorrectly
+- [x] Correct floor assignments to match actual site levels - SQL update applied successfully
