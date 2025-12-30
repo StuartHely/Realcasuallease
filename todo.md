@@ -289,3 +289,10 @@
 - [x] Remove hidden markers for Sites 3 and 5 in Highlands Marketplace - pixel-based coordinates cleared
 - [x] Sites still showing as "marked" but not visible in admin or live - root cause was pixel vs percentage coordinate mismatch
 - [x] Use resetSiteMarker to clear their coordinates so they can be repositioned - all 5 sites now show 0 markers, ready to position
+
+## Improvements (Dec 30, 2024 - Part 12)
+- [x] Audit all centres for legacy pixel-based coordinates - 0 sites found with coordinates > 100
+- [x] Implement coordinate validation in saveSiteMarkers procedure - added .min(0).max(100) to x and y
+- [x] Ensure coordinates are within 0-100% range - Zod validation enforces this
+- [x] Add validation to reject pixel values > 100 - any value > 100 will be rejected by schema
+- [x] Test validation with various coordinate inputs - all 4 tests passed (valid, >100, negative, pixel)

@@ -521,8 +521,8 @@ export const appRouter = router({
         centreId: z.number(),
         markers: z.array(z.object({
           siteId: z.number(),
-          x: z.number(),
-          y: z.number(),
+          x: z.number().min(0).max(100),
+          y: z.number().min(0).max(100),
         })),
       }))
       .mutation(async ({ input }) => {
