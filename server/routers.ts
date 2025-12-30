@@ -562,6 +562,17 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.getSitesByFloorLevel(input.floorLevelId);
       }),
+
+    updateSiteFloorAssignment: adminProcedure
+      .input(z.object({
+        assignments: z.array(z.object({
+          siteId: z.number(),
+          floorLevelId: z.number().nullable()
+        }))
+      }))
+      .mutation(async ({ input }) => {
+        return await db.updateSiteFloorAssignments(input.assignments);
+      }),
   }),
 });
 

@@ -604,3 +604,17 @@ export async function getSitesByFloorLevel(floorLevelId: number) {
     .from(sites)
     .where(eq(sites.floorLevelId, floorLevelId));
 }
+
+export async function updateSiteFloorAssignments(assignments: Array<{ siteId: number; floorLevelId: number | null }>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Update each site's floorLevelId
+  for (const assignment of assignments) {
+    await db.update(sites)
+      .set({ floorLevelId: assignment.floorLevelId })
+      .where(eq(sites.id, assignment.siteId));
+  }
+  
+  return { success: true, updated: assignments.length };
+}

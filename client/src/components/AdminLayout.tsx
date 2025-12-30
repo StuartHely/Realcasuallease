@@ -50,6 +50,7 @@ const getMenuItems = (userRole: string) => {
       { icon: Building2, label: "Shopping Centres", path: "/admin/centres" },
       { icon: MapPin, label: "Sites", path: "/admin/sites" },
       { icon: Map, label: "Floor Plan Maps", path: "/admin/maps" },
+      { icon: MapPin, label: "Site Assignment", path: "/admin/site-assignment" },
       { icon: Calendar, label: "Bookings", path: "/admin/bookings" },
       { icon: Users, label: "Users", path: "/admin/users" },
       { icon: Users, label: "Owners & Managers", path: "/admin/owners" },

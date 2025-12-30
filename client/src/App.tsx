@@ -15,6 +15,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import AdminCentres from "./pages/admin/Centres";
 import AdminSites from "./pages/admin/Sites";
 import AdminMaps from "./pages/admin/Maps";
+import AdminSiteAssignment from "./pages/admin/SiteAssignment";
 
 function Router() {
   return (
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/admin/centres" component={AdminCentres} />
       <Route path="/admin/sites" component={AdminSites} />
       <Route path="/admin/maps" component={AdminMaps} />
+      <Route path="/admin/site-assignment" component={AdminSiteAssignment} />
       <Route path="/site/:id" component={SiteDetail} />
       <Route path="/my-bookings" component={MyBookings} />
       <Route path="/profile" component={Profile} />

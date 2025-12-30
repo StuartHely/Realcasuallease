@@ -258,3 +258,11 @@
 - [x] Remove hardcoded image dimensions (646x382) from InteractiveMap
 - [x] Migrate existing Carnes Hill markers to percentage coordinates
 - [x] Ensure click position matches marker display position across all screen sizes
+
+## Bug Fixes (Dec 29, 2024 - Part 7)
+- [x] Fix admin maps tool showing all sites from all levels - root cause identified
+- [x] Filter sites to only show those belonging to the selected floor level - backend works correctly
+- [x] Create admin UI for assigning sites to floor levels
+- [x] Add backend procedure for bulk site floor assignment
+- [x] Test site assignment functionality (7 tests passing)
+- [x] Add Site Assignment menu item to admin navigation
