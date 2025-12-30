@@ -296,3 +296,13 @@
 - [x] Ensure coordinates are within 0-100% range - Zod validation enforces this
 - [x] Add validation to reject pixel values > 100 - any value > 100 will be rejected by schema
 - [x] Test validation with various coordinate inputs - all 4 tests passed (valid, >100, negative, pixel)
+
+## Feature: Site Image Upload (Dec 30, 2024 - Part 13)
+- [x] Review existing site schema for image fields (imageUrl1-4, videoUrl) - schema already has 4 image URL fields
+- [x] Create image upload UI in admin site management page - UI already exists in Sites.tsx
+- [x] Add image preview and delete functionality - preview already implemented
+- [x] Implement backend tRPC procedure for image upload - created uploadSiteImage procedure
+- [x] Integrate S3 storage for image persistence - using storagePut from storage.ts
+- [x] Add automatic image resizing for consistent display - sharp resizes to 1200x800, converts to WebP
+- [x] Update site detail pages to display uploaded images - already displays imageUrl1
+- [x] Test image upload, resize, and display functionality - all 4 tests passed (validation, processing, base64 handling)

@@ -49,6 +49,7 @@ export default function AdminSites() {
   const createMutation = trpc.admin.createSite.useMutation();
   const updateMutation = trpc.admin.updateSite.useMutation();
   const deleteMutation = trpc.admin.deleteSite.useMutation();
+  const uploadImageMutation = trpc.admin.uploadSiteImage.useMutation();
 
   const [formData, setFormData] = useState({
     siteNumber: "",
@@ -167,24 +168,14 @@ export default function AdminSites() {
       reader.onload = async () => {
         const base64 = reader.result as string;
         
-        // Upload to storage (you'll need to implement this endpoint)
-        const response = await fetch('/api/upload-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: base64, siteId, slot: imageSlot }),
+        // Upload via tRPC
+        await uploadImageMutation.mutateAsync({
+          siteId,
+          imageSlot,
+          base64Image: base64,
         });
         
-        if (!response.ok) throw new Error("Upload failed");
-        
-        const { url } = await response.json();
-        
-        // Update site with image URL
-        await updateMutation.mutateAsync({
-          id: siteId,
-          [`imageUrl${imageSlot}`]: url,
-        } as any);
-        
-        toast.success("Image uploaded successfully");
+        toast.success("Image uploaded and resized successfully");
         refetch();
       };
       reader.onerror = () => {
@@ -544,6 +535,68 @@ export default function AdminSites() {
                   onCheckedChange={(checked) => setFormData({ ...formData, instantBooking: checked })}
                 />
                 <Label htmlFor="edit-instantBooking">Enable Instant Booking</Label>
+              </div>
+              
+              {/* Image Upload Section */}
+              <div className="grid gap-2">
+                <Label>Site Images</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  {[1, 2, 3, 4].map((slot) => {
+                    const imageUrl = selectedSite?.[`imageUrl${slot}`];
+                    return (
+                      <div key={slot} className="border rounded-lg p-3">
+                        <div className="text-sm font-medium mb-2">Image {slot}</div>
+                        {imageUrl ? (
+                          <div className="relative">
+                            <img
+                              src={imageUrl}
+                              alt={`Site image ${slot}`}
+                              className="w-full h-32 object-cover rounded-md"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-1 right-1"
+                              onClick={async () => {
+                                await updateMutation.mutateAsync({
+                                  id: selectedSite.id,
+                                  [`imageUrl${slot}`]: null,
+                                } as any);
+                                refetch();
+                              }}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="border-2 border-dashed rounded-md p-4 text-center">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              id={`image-upload-${slot}`}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file && selectedSite) {
+                                  handleImageUpload(selectedSite.id, slot, file);
+                                }
+                              }}
+                            />
+                            <label htmlFor={`image-upload-${slot}`} className="cursor-pointer">
+                              <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                              <div className="text-sm text-gray-600">Click to upload</div>
+                              <div className="text-xs text-gray-400 mt-1">Max 5MB</div>
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {uploadingImage && (
+                  <div className="text-sm text-blue-600">Uploading and resizing image...</div>
+                )}
               </div>
             </div>
             <DialogFooter>

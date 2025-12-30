@@ -499,6 +499,28 @@ export const appRouter = router({
         return await db.updateSite(id, data);
       }),
 
+    uploadSiteImage: adminProcedure
+      .input(z.object({
+        siteId: z.number(),
+        imageSlot: z.number().min(1).max(4),
+        base64Image: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { processSiteImage } = await import('./imageProcessing');
+        const { url } = await processSiteImage(
+          input.base64Image,
+          input.siteId,
+          input.imageSlot
+        );
+        
+        // Update the site with the new image URL
+        await db.updateSite(input.siteId, {
+          [`imageUrl${input.imageSlot}`]: url,
+        } as any);
+        
+        return { url };
+      }),
+
     deleteSite: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
