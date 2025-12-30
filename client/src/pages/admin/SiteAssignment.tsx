@@ -150,7 +150,7 @@ export default function AdminSiteAssignment() {
                   )}
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="max-h-[calc(100vh-400px)] overflow-y-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>

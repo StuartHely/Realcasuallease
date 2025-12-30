@@ -266,3 +266,8 @@
 - [x] Add backend procedure for bulk site floor assignment
 - [x] Test site assignment functionality (7 tests passing)
 - [x] Add Site Assignment menu item to admin navigation
+
+## Bug Fixes (Dec 29, 2024 - Part 8)
+- [x] Fix scrolling issue on Site Assignment page
+- [x] Bottom 2 sites' dropdowns are not accessible - fixed with max-h-[calc(100vh-400px)] overflow-y-auto
+- [x] Enable proper page scrolling to reach all site rows - all 13 Campbelltown Mall sites now accessible
