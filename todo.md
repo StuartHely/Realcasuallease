@@ -278,3 +278,9 @@
 - [x] Site 7 (Upper Level) incorrectly showing on Lower Level map - moved to Upper Level
 - [x] Investigate why upper level sites are assigned to Test Lower Level - user manually assigned them incorrectly
 - [x] Correct floor assignments to match actual site levels - SQL update applied successfully
+
+## Bug Fixes (Dec 29, 2024 - Part 10)
+- [x] Fix Highlands Marketplace admin maps showing "5 sites available" but only 3 visible
+- [x] Investigate why 2 sites are not displaying in marker positioning area - Sites 3 and 5 have markers at (50%, 50%) overlapping floor plan
+- [x] Fix map turning all blue when adding sites to the left side - Not a bug, user needs to remove mispositioned markers
+- [x] Debug map display/rendering issue in admin maps tool - Added resetSiteMarker procedure and X button to remove markers

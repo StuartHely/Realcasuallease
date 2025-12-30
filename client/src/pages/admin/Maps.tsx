@@ -95,6 +95,16 @@ export default function AdminMaps() {
     },
   });
 
+  // Reset site marker mutation
+  const resetSiteMarkerMutation = trpc.admin.resetSiteMarker.useMutation({
+    onSuccess: () => {
+      toast.success("Marker removed successfully");
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to remove marker: ${error.message}`);
+    },
+  });
+
   // Load map and markers when floor level changes
   useEffect(() => {
     if (floorLevels.length > 0 && selectedFloorLevelId) {
@@ -278,8 +288,17 @@ export default function AdminMaps() {
     setIsDragging(null);
   };
 
-  const handleRemoveMarker = (siteId: number) => {
+  const handleRemoveMarker = async (siteId: number) => {
+    // Remove from local state immediately for instant feedback
     setMarkers(markers.filter((m) => m.siteId !== siteId));
+    
+    // Also remove from database
+    try {
+      await resetSiteMarkerMutation.mutateAsync({ siteId });
+    } catch (error) {
+      // If database update fails, revert the local change
+      console.error("Failed to reset marker in database:", error);
+    }
   };
 
   const handleSaveMarkers = async () => {

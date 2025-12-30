@@ -1,0 +1,45 @@
+{
+  "query": "SELECT s.id, s.siteNumber, s.mapMarkerX, s.mapMarkerY, sc.name as centreName FROM sites s JOIN shopping_centres sc ON s.centreId = sc.id WHERE sc.name = 'Highlands Marketplace' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT s.id, s.siteNumber, s.mapMarkerX, s.mapMarkerY, sc.name as centreName FROM sites s JOIN shopping_centres sc ON s.centreId = sc.id WHERE sc.name = 'Highlands Marketplace' LIMIT 10;",
+  "rows": [
+    {
+      "id": "60018",
+      "siteNumber": "1",
+      "mapMarkerX": "43",
+      "mapMarkerY": "56",
+      "centreName": "Highlands Marketplace"
+    },
+    {
+      "id": "60019",
+      "siteNumber": "3",
+      "mapMarkerX": "200",
+      "mapMarkerY": "150",
+      "centreName": "Highlands Marketplace"
+    },
+    {
+      "id": "60020",
+      "siteNumber": "5",
+      "mapMarkerX": "350",
+      "mapMarkerY": "200",
+      "centreName": "Highlands Marketplace"
+    },
+    {
+      "id": "60021",
+      "siteNumber": "7",
+      "mapMarkerX": "59",
+      "mapMarkerY": "61",
+      "centreName": "Highlands Marketplace"
+    },
+    {
+      "id": "60022",
+      "siteNumber": "8",
+      "mapMarkerX": "38",
+      "mapMarkerY": "56",
+      "centreName": "Highlands Marketplace"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsiteNumber\tmapMarkerX\tmapMarkerY\tcentreName\n60018\t1\t43\t56\tHighlands Marketplace\n60019\t3\t200\t150\tHighlands Marketplace\n60020\t5\t350\t200\tHighlands Marketplace\n60021\t7\t59\t61\tHighlands Marketplace\n60022\t8\t38\t56\tHighlands Marketplace\n",
+  "stderr": "",
+  "execution_time_ms": 1490
+}

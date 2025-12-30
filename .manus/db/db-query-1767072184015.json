@@ -1,0 +1,13 @@
+{
+  "query": "SELECT id FROM shopping_centres WHERE name = 'Highlands Marketplace';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id FROM shopping_centres WHERE name = 'Highlands Marketplace';",
+  "rows": [
+    {
+      "id": "60003"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\n60003\n",
+  "stderr": "",
+  "execution_time_ms": 1527
+}

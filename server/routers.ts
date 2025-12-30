@@ -529,6 +529,14 @@ export const appRouter = router({
         return await db.saveSiteMarkers(input.markers);
       }),
 
+    resetSiteMarker: adminProcedure
+      .input(z.object({
+        siteId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.resetSiteMarker(input.siteId);
+      }),
+
     // Floor Level Management
     getFloorLevels: adminProcedure
       .input(z.object({ centreId: z.number() }))

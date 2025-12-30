@@ -547,6 +547,20 @@ export async function saveSiteMarkers(markers: Array<{ siteId: number; x: number
   return { success: true, count: markers.length };
 }
 
+export async function resetSiteMarker(siteId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(sites)
+    .set({
+      mapMarkerX: null,
+      mapMarkerY: null,
+    })
+    .where(eq(sites.id, siteId));
+  
+  return { success: true };
+}
+
 // Floor Level Management
 export async function getFloorLevelsByCentre(centreId: number) {
   const db = await getDb();
