@@ -14,7 +14,8 @@ import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminCentres from "./pages/admin/Centres";
 import AdminSites from "./pages/admin/Sites";
-import AdminMaps from "./pages/admin/Maps";
+import Maps from "./pages/admin/Maps";
+import SystemConfig from "./pages/admin/SystemConfig";
 import AdminSiteAssignment from "./pages/admin/SiteAssignment";
 
 function Router() {
@@ -27,7 +28,8 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/centres" component={AdminCentres} />
       <Route path="/admin/sites" component={AdminSites} />
-      <Route path="/admin/maps" component={AdminMaps} />
+           <Route path="/admin/maps" component={Maps} />
+          <Route path="/admin/system-config" component={SystemConfig} />
       <Route path="/admin/site-assignment" component={AdminSiteAssignment} />
       <Route path="/site/:id" component={SiteDetail} />
       <Route path="/my-bookings" component={MyBookings} />

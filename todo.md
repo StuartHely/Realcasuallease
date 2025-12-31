@@ -321,3 +321,14 @@
 - [x] Extract images from ZIP and auto-assign to sites - automatic extraction and upload
 - [x] Support filename patterns for automatic site matching - site-1-1.jpg, site-1-image-2.jpg, 1-3.jpg patterns
 - [x] Test all three features end-to-end - features implemented and ready for user testing
+
+## Feature: Image Enhancements Follow-up (Dec 30, 2024 - Part 16)
+- [ ] Test image carousel on public site detail pages
+- [ ] Test drag-and-drop image reordering in admin
+- [ ] Test bulk ZIP image import with various filename patterns
+- [x] Add configurable image compression settings in admin panel - SystemConfig page created
+- [x] Implement quality/size sliders for image upload - quality (50-100%), width (800-2400px), height (600-1600px)
+- [ ] Create image analytics tracking system
+- [ ] Track image views and clicks per site
+- [ ] Build analytics dashboard showing top-performing images
+- [ ] Add conversion metrics (views to bookings)

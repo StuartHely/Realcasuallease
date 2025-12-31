@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import { getSystemConfig as getSystemConfigDb, updateSystemConfig as updateSystemConfigDb } from "./systemConfigDb";
 import { TRPCError } from "@trpc/server";
 
 // Admin-only procedure
@@ -497,6 +498,22 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
         return await db.updateSite(id, data);
+      }),
+
+    getSystemConfig: protectedProcedure
+      .query(async () => {
+        return await getSystemConfigDb();
+      }),
+
+    updateSystemConfig: adminProcedure
+      .input(z.object({
+        imageQuality: z.number().min(50).max(100),
+        imageMaxWidth: z.number().min(800).max(2400),
+        imageMaxHeight: z.number().min(600).max(1600),
+      }))
+      .mutation(async ({ input }) => {
+        await updateSystemConfigDb(input);
+        return { success: true };
       }),
 
     uploadSiteImage: adminProcedure

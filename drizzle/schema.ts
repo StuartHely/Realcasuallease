@@ -230,6 +230,9 @@ export const systemConfig = mysqlTable("system_config", {
   id: int("id").autoincrement().primaryKey(),
   key: varchar("key", { length: 100 }).notNull().unique(),
   value: text("value").notNull(),
+  imageQuality: int("image_quality").default(85),
+  imageMaxWidth: int("image_max_width").default(1200),
+  imageMaxHeight: int("image_max_height").default(800),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
