@@ -332,3 +332,15 @@
 - [ ] Track image views and clicks per site
 - [ ] Build analytics dashboard showing top-performing images
 - [ ] Add conversion metrics (views to bookings)
+
+## Feature: Image Analytics Dashboard (Dec 30, 2024 - Part 17)
+- [x] Create database schema for image analytics tracking
+- [x] Add imageAnalytics table with siteId, imageSlot, viewCount, clickCount - migration applied
+- [x] Implement tracking endpoints for image views and clicks
+- [x] Add tRPC procedures for trackImageView and trackImageClick - public procedures added
+- [x] Build analytics dashboard UI showing top-performing images - ImageAnalytics page with table and summary cards
+- [x] Display image performance metrics per site - views, clicks, CTR, rankings displayed
+- [x] Add tracking to public site detail pages - useEffect tracks views, onClick tracks clicks
+- [x] Add conversion metrics linking image views to bookings - booking count per site added to analytics
+- [x] Calculate conversion rate (bookings / image views) - conversion rate calculated and displayed
+- [x] Test analytics tracking and dashboard display - tests pass with valid site IDs, feature fully functional

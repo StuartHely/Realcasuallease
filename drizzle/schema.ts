@@ -237,6 +237,24 @@ export const systemConfig = mysqlTable("system_config", {
 });
 
 /**
+ * Image analytics tracking
+ */
+export const imageAnalytics = mysqlTable("image_analytics", {
+  id: int("id").autoincrement().primaryKey(),
+  siteId: int("site_id").notNull().references(() => sites.id, { onDelete: 'cascade' }),
+  imageSlot: int("image_slot").notNull(), // 1-4
+  viewCount: int("view_count").default(0).notNull(),
+  clickCount: int("click_count").default(0).notNull(),
+  lastViewedAt: timestamp("last_viewed_at"),
+  lastClickedAt: timestamp("last_clicked_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type InsertImageAnalytics = typeof imageAnalytics.$inferInsert;
+export type SelectImageAnalytics = typeof imageAnalytics.$inferSelect;
+
+/**
  * Audit log for admin changes
  */
 export const auditLog = mysqlTable("audit_log", {

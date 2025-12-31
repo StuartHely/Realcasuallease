@@ -16,6 +16,7 @@ import AdminCentres from "./pages/admin/Centres";
 import AdminSites from "./pages/admin/Sites";
 import Maps from "./pages/admin/Maps";
 import SystemConfig from "./pages/admin/SystemConfig";
+import ImageAnalytics from "./pages/admin/ImageAnalytics";
 import AdminSiteAssignment from "./pages/admin/SiteAssignment";
 
 function Router() {
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/admin/sites" component={AdminSites} />
            <Route path="/admin/maps" component={Maps} />
           <Route path="/admin/system-config" component={SystemConfig} />
+          <Route path="/admin/image-analytics" component={ImageAnalytics} />
       <Route path="/admin/site-assignment" component={AdminSiteAssignment} />
       <Route path="/site/:id" component={SiteDetail} />
       <Route path="/my-bookings" component={MyBookings} />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -34,6 +34,9 @@ export default function SiteDetail() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   
+  const trackViewMutation = trpc.admin.trackImageView.useMutation();
+  const trackClickMutation = trpc.admin.trackImageClick.useMutation();
+  
   // Get all available images
   const images = [
     site?.imageUrl1,
@@ -41,6 +44,13 @@ export default function SiteDetail() {
     site?.imageUrl3,
     site?.imageUrl4,
   ].filter(Boolean) as string[];
+
+  // Track image views when images are displayed
+  useEffect(() => {
+    if (site && images.length > 0) {
+      trackViewMutation.mutate({ siteId: site.id, imageSlot: currentImageIndex + 1 });
+    }
+  }, [site?.id, currentImageIndex]);
 
   const createBookingMutation = trpc.bookings.create.useMutation({
     onSuccess: (data) => {
@@ -133,7 +143,10 @@ export default function SiteDetail() {
                 {/* Main Image */}
                 <div 
                   className="relative h-96 bg-gray-100 rounded-lg overflow-hidden cursor-pointer"
-                  onClick={() => setIsLightboxOpen(true)}
+                  onClick={() => {
+                    trackClickMutation.mutate({ siteId: site.id, imageSlot: currentImageIndex + 1 });
+                    setIsLightboxOpen(true);
+                  }}
                 >
                   <img
                     src={images[currentImageIndex]}

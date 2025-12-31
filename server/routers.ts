@@ -5,6 +5,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
 import { getSystemConfig as getSystemConfigDb, updateSystemConfig as updateSystemConfigDb } from "./systemConfigDb";
+import { trackImageView, trackImageClick, getTopPerformingImages, getImageAnalyticsBySite } from "./imageAnalyticsDb";
 import { TRPCError } from "@trpc/server";
 
 // Admin-only procedure
@@ -514,6 +515,43 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await updateSystemConfigDb(input);
         return { success: true };
+      }),
+
+    // Image Analytics
+    trackImageView: publicProcedure
+      .input(z.object({
+        siteId: z.number(),
+        imageSlot: z.number().min(1).max(4),
+      }))
+      .mutation(async ({ input }) => {
+        await trackImageView(input.siteId, input.imageSlot);
+        return { success: true };
+      }),
+
+    trackImageClick: publicProcedure
+      .input(z.object({
+        siteId: z.number(),
+        imageSlot: z.number().min(1).max(4),
+      }))
+      .mutation(async ({ input }) => {
+        await trackImageClick(input.siteId, input.imageSlot);
+        return { success: true };
+      }),
+
+    getTopPerformingImages: protectedProcedure
+      .input(z.object({
+        limit: z.number().optional().default(10),
+      }))
+      .query(async ({ input }) => {
+        return await getTopPerformingImages(input.limit);
+      }),
+
+    getImageAnalyticsBySite: protectedProcedure
+      .input(z.object({
+        siteId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await getImageAnalyticsBySite(input.siteId);
       }),
 
     uploadSiteImage: adminProcedure
