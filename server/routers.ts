@@ -187,6 +187,39 @@ export const appRouter = router({
         };
       }),
 
+    calculatePreview: publicProcedure
+      .input(z.object({
+        siteId: z.number(),
+        startDate: z.date(),
+        endDate: z.date(),
+      }))
+      .query(async ({ input }) => {
+        // Get site details for pricing
+        const site = await db.getSiteById(input.siteId);
+        if (!site) throw new TRPCError({ code: "NOT_FOUND", message: "Site not found" });
+
+        // Calculate booking cost with seasonal rates
+        const { totalAmount, weekdayCount, weekendCount, seasonalDays } = await import("./bookingCalculation").then(m => 
+          m.calculateBookingCost(site, input.startDate, input.endDate)
+        );
+
+        // Get GST rate
+        const gstConfig = await db.getSystemConfig("gst_percentage");
+        const gstRate = gstConfig ? Number(gstConfig.value) / 100 : 0.1;
+        const gstAmount = totalAmount * gstRate;
+
+        return {
+          weekdayCount,
+          weekendCount,
+          weekdayRate: Number(site.pricePerDay),
+          weekendRate: site.weekendPricePerDay ? Number(site.weekendPricePerDay) : Number(site.pricePerDay),
+          subtotal: totalAmount,
+          gstAmount,
+          total: totalAmount + gstAmount,
+          seasonalDays: seasonalDays || [],
+        };
+      }),
+
     myBookings: protectedProcedure.query(async ({ ctx }) => {
       return await db.getBookingsByCustomerId(ctx.user.id);
     }),

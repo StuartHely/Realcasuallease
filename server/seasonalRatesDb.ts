@@ -1,15 +1,6 @@
-import mysql from 'mysql2/promise';
-import { ENV } from './_core/env';
-
-async function query(sql: string, params: any[] = []) {
-  const connection = await mysql.createConnection(ENV.databaseUrl);
-  try {
-    const [rows] = await connection.execute(sql, params);
-    return rows as any[];
-  } finally {
-    await connection.end();
-  }
-}
+import { getDb } from "./db";
+import { seasonalRates } from "../drizzle/schema";
+import { eq, and, lte, gte, or, desc } from "drizzle-orm";
 
 export interface SeasonalRate {
   id: number;
@@ -19,30 +10,56 @@ export interface SeasonalRate {
   endDate: string;
   weekdayRate: string | null;
   weekendRate: string | null;
-  createdAt: Date;
+  createdAt: Date | null;
 }
 
 export async function getSeasonalRatesBySiteId(siteId: number): Promise<SeasonalRate[]> {
-  const sql = `
-    SELECT * FROM seasonalRates 
-    WHERE siteId = ? 
-    ORDER BY startDate ASC
-  `;
-  return await query(sql, [siteId]);
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(seasonalRates)
+    .where(eq(seasonalRates.siteId, siteId))
+    .orderBy(seasonalRates.startDate);
 }
 
 export async function getActiveSeasonalRate(siteId: number, date: Date): Promise<SeasonalRate | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
   const dateStr = date.toISOString().split('T')[0];
-  const sql = `
-    SELECT * FROM seasonalRates 
-    WHERE siteId = ? 
-      AND startDate <= ? 
-      AND endDate >= ?
-    ORDER BY createdAt DESC
-    LIMIT 1
-  `;
-  const results = await query(sql, [siteId, dateStr, dateStr]);
+  const results = await db.select().from(seasonalRates)
+    .where(and(
+      eq(seasonalRates.siteId, siteId),
+      lte(seasonalRates.startDate, dateStr),
+      gte(seasonalRates.endDate, dateStr)
+    ))
+    .orderBy(desc(seasonalRates.createdAt))
+    .limit(1);
+  
   return results.length > 0 ? results[0] : null;
+}
+
+/**
+ * Get all seasonal rates for a site that overlap with the given date range
+ * This is more efficient than querying for each individual day
+ */
+export async function getSeasonalRatesForDateRange(
+  siteId: number,
+  startDate: string,
+  endDate: string
+): Promise<SeasonalRate[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Find all seasonal rates that overlap with the booking period
+  // A seasonal rate overlaps if: rate.startDate <= booking.endDate AND rate.endDate >= booking.startDate
+  return await db.select().from(seasonalRates)
+    .where(and(
+      eq(seasonalRates.siteId, siteId),
+      lte(seasonalRates.startDate, endDate),
+      gte(seasonalRates.endDate, startDate)
+    ))
+    .orderBy(desc(seasonalRates.createdAt));
 }
 
 export async function createSeasonalRate(data: {
@@ -53,22 +70,23 @@ export async function createSeasonalRate(data: {
   weekdayRate?: number;
   weekendRate?: number;
 }): Promise<SeasonalRate> {
-  const sql = `
-    INSERT INTO seasonalRates (siteId, name, startDate, endDate, weekdayRate, weekendRate)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `;
-  const result: any = await query(sql, [
-    data.siteId,
-    data.name,
-    data.startDate,
-    data.endDate,
-    data.weekdayRate || null,
-    data.weekendRate || null,
-  ]);
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(seasonalRates).values({
+    siteId: data.siteId,
+    name: data.name,
+    startDate: data.startDate,
+    endDate: data.endDate,
+    weekdayRate: data.weekdayRate ? data.weekdayRate.toString() : null,
+    weekendRate: data.weekendRate ? data.weekendRate.toString() : null,
+  });
   
   // Fetch the inserted record
-  const selectSql = 'SELECT * FROM seasonalRates WHERE id = ?';
-  const rows = await query(selectSql, [result.insertId]);
+  const rows = await db.select().from(seasonalRates)
+    .where(eq(seasonalRates.id, Number(result[0].insertId)))
+    .limit(1);
+  
   return rows[0];
 }
 
@@ -79,40 +97,32 @@ export async function updateSeasonalRate(id: number, data: {
   weekdayRate?: number;
   weekendRate?: number;
 }): Promise<boolean> {
-  const updates: string[] = [];
-  const values: any[] = [];
+  const db = await getDb();
+  if (!db) return false;
+  
+  const updates: any = {};
 
-  if (data.name !== undefined) {
-    updates.push('name = ?');
-    values.push(data.name);
-  }
-  if (data.startDate !== undefined) {
-    updates.push('startDate = ?');
-    values.push(data.startDate);
-  }
-  if (data.endDate !== undefined) {
-    updates.push('endDate = ?');
-    values.push(data.endDate);
-  }
-  if (data.weekdayRate !== undefined) {
-    updates.push('weekdayRate = ?');
-    values.push(data.weekdayRate);
-  }
-  if (data.weekendRate !== undefined) {
-    updates.push('weekendRate = ?');
-    values.push(data.weekendRate);
-  }
+  if (data.name !== undefined) updates.name = data.name;
+  if (data.startDate !== undefined) updates.startDate = data.startDate;
+  if (data.endDate !== undefined) updates.endDate = data.endDate;
+  if (data.weekdayRate !== undefined) updates.weekdayRate = data.weekdayRate.toString();
+  if (data.weekendRate !== undefined) updates.weekendRate = data.weekendRate.toString();
 
-  if (updates.length === 0) return false;
+  if (Object.keys(updates).length === 0) return false;
 
-  values.push(id);
-  const sql = `UPDATE seasonalRates SET ${updates.join(', ')} WHERE id = ?`;
-  const result: any = await query(sql, values);
-  return result.affectedRows > 0;
+  const result = await db.update(seasonalRates)
+    .set(updates)
+    .where(eq(seasonalRates.id, id));
+  
+  return result[0].affectedRows > 0;
 }
 
 export async function deleteSeasonalRate(id: number): Promise<boolean> {
-  const sql = `DELETE FROM seasonalRates WHERE id = ?`;
-  const result: any = await query(sql, [id]);
-  return result.affectedRows > 0;
+  const db = await getDb();
+  if (!db) return false;
+  
+  const result = await db.delete(seasonalRates)
+    .where(eq(seasonalRates.id, id));
+  
+  return result[0].affectedRows > 0;
 }

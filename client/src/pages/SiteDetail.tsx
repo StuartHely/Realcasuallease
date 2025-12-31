@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ArrowLeft, MapPin, Calendar, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { toast } from "sonner";
+import { PriceCalculator } from "@/components/PriceCalculator";
 
 export default function SiteDetail() {
   const [, params] = useRoute("/site/:id");
@@ -388,6 +389,15 @@ export default function SiteDetail() {
                           placeholder="Describe your intended use..."
                         />
                       </div>
+                    )}
+
+                    {/* Price Calculator */}
+                    {startDate && endDate && (
+                      <PriceCalculator
+                        siteId={siteId}
+                        startDate={new Date(startDate)}
+                        endDate={new Date(endDate)}
+                      />
                     )}
 
                     <Button

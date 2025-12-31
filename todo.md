@@ -362,11 +362,17 @@
 - [x] Display itemized costs: "X weekdays @ $Y" + "Z weekend days @ $W" - shown in toast message with GST
 - [x] Create seasonal pricing database schema
 - [x] Add seasonalRates table with siteId, startDate, endDate, dailyRate, weekendRate - migration 0007 applied
-- [ ] Build admin UI for managing seasonal rates
-- [ ] Implement seasonal rate calculation with priority rules
-- [ ] Priority: seasonal rates > weekend rates > base weekday rates
-- [ ] Test seasonal pricing with overlapping date ranges
-- [ ] Test booking cost breakdown with various scenarios
+- [x] Build admin UI for managing seasonal rates
+- [x] Add CRUD operations for seasonal rate periods
+- [x] Implement date range picker for seasonal periods
+- [x] Add "Seasonal Pricing" menu item to admin navigation
+- [x] Implement seasonal rate calculation with priority rules
+- [x] Priority: seasonal rates > weekend rates > base weekday rates
+- [x] Test seasonal pricing with overlapping date ranges (8/8 tests passing)
+- [x] Fix timezone/DST issues in date calculations
+- [x] Optimize database queries (single query for date range instead of per-day queries)
+- [ ] Add real-time price preview calculator on site detail pages
+- [ ] Build dynamic pricing recommendations dashboard
 
 ## Feature: Advanced Pricing Features (Dec 30, 2024 - Part 18)
 - [ ] Build seasonal pricing admin UI
@@ -396,12 +402,17 @@
 - [x] Implement date range picker for seasonal periods
 - [x] Add "Seasonal Pricing" menu item to admin navigation
 - [x] Test seasonal rate database functions (12 tests passing)
-- [ ] Update calculateBookingCost to apply priority rules: seasonal > weekend > base
-- [ ] Handle overlapping date ranges with seasonal rates
-- [ ] Add real-time price preview calculator on site detail page
-- [ ] Show live cost breakdown as user selects dates
-- [ ] Display weekday count, weekend count, seasonal periods if applicable
-- [ ] Show total cost with GST before "Book Now" button
+- [x] Update calculateBookingCost to apply priority rules: seasonal > weekend > base
+- [x] Handle overlapping date ranges with seasonal rates
+- [x] Fix timezone/DST issues in date calculations (all 8 tests passing)
+- [x] Optimize database queries (single query for date range instead of per-day queries)
+- [x] Add real-time price preview calculator on site detail page
+- [x] Create tRPC calculatePreview procedure (6/6 tests passing)
+- [x] Build PriceCalculator component with cost breakdown
+- [x] Integrate calculator into SiteDetail page
+- [x] Show live cost breakdown as user selects dates
+- [x] Display weekday count, weekend count, seasonal periods if applicable
+- [x] Show total cost with GST before "Book Now" button
 - [ ] Create /admin/pricing-recommendations page
 - [ ] Analyze historical booking data for demand patterns
 - [ ] Calculate optimal pricing suggestions per site
