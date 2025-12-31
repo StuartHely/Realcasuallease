@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, MapPin, Calendar } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ArrowLeft, MapPin, Calendar, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SiteDetail() {
@@ -30,6 +31,16 @@ export default function SiteDetail() {
   const [endDate, setEndDate] = useState("");
   const [usageTypeId, setUsageTypeId] = useState<string>("");
   const [customUsage, setCustomUsage] = useState("");
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  
+  // Get all available images
+  const images = [
+    site?.imageUrl1,
+    site?.imageUrl2,
+    site?.imageUrl3,
+    site?.imageUrl4,
+  ].filter(Boolean) as string[];
 
   const createBookingMutation = trpc.bookings.create.useMutation({
     onSuccess: (data) => {
@@ -114,43 +125,116 @@ export default function SiteDetail() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Site Image Gallery */}
-        {(site.imageUrl1 || site.imageUrl2 || site.imageUrl3 || site.imageUrl4) && (
+        {/* Site Image Gallery Carousel */}
+        {images.length > 0 && (
           <Card className="mb-8">
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {site.imageUrl1 && (
+              <div className="relative">
+                {/* Main Image */}
+                <div 
+                  className="relative h-96 bg-gray-100 rounded-lg overflow-hidden cursor-pointer"
+                  onClick={() => setIsLightboxOpen(true)}
+                >
                   <img
-                    src={site.imageUrl1}
-                    alt={`Site ${site.siteNumber} - Image 1`}
-                    className="w-full h-64 object-cover rounded-lg"
+                    src={images[currentImageIndex]}
+                    alt={`Site ${site.siteNumber} - Image ${currentImageIndex + 1}`}
+                    className="w-full h-full object-contain"
                   />
+                  <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
+                    {currentImageIndex + 1} / {images.length}
+                  </div>
+                </div>
+                
+                {/* Navigation Arrows */}
+                {images.length > 1 && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white"
+                      onClick={() => setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
+                    >
+                      <ChevronLeft className="h-6 w-6" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white"
+                      onClick={() => setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
+                    >
+                      <ChevronRight className="h-6 w-6" />
+                    </Button>
+                  </>
                 )}
-                {site.imageUrl2 && (
-                  <img
-                    src={site.imageUrl2}
-                    alt={`Site ${site.siteNumber} - Image 2`}
-                    className="w-full h-64 object-cover rounded-lg"
-                  />
-                )}
-                {site.imageUrl3 && (
-                  <img
-                    src={site.imageUrl3}
-                    alt={`Site ${site.siteNumber} - Image 3`}
-                    className="w-full h-64 object-cover rounded-lg"
-                  />
-                )}
-                {site.imageUrl4 && (
-                  <img
-                    src={site.imageUrl4}
-                    alt={`Site ${site.siteNumber} - Image 4`}
-                    className="w-full h-64 object-cover rounded-lg"
-                  />
+                
+                {/* Thumbnail Navigation */}
+                {images.length > 1 && (
+                  <div className="flex gap-2 mt-4 overflow-x-auto">
+                    {images.map((img, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentImageIndex(idx)}
+                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                          idx === currentImageIndex ? 'border-blue-600' : 'border-gray-300 opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <img
+                          src={img}
+                          alt={`Thumbnail ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
             </CardContent>
           </Card>
         )}
+        
+        {/* Lightbox Modal */}
+        <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
+          <DialogContent className="max-w-7xl w-full h-[90vh] p-0">
+            <div className="relative w-full h-full bg-black">
+              <img
+                src={images[currentImageIndex]}
+                alt={`Site ${site.siteNumber} - Image ${currentImageIndex + 1}`}
+                className="w-full h-full object-contain"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                className="absolute top-4 right-4 bg-white/90 hover:bg-white"
+                onClick={() => setIsLightboxOpen(false)}
+              >
+                <X className="h-6 w-6" />
+              </Button>
+              {images.length > 1 && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white"
+                    onClick={() => setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white"
+                    onClick={() => setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
+                  >
+                    <ChevronRight className="h-6 w-6" />
+                  </Button>
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full">
+                    {currentImageIndex + 1} / {images.length}
+                  </div>
+                </>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* Site Details */}

@@ -310,3 +310,14 @@
 ## Bug Fixes (Dec 30, 2024 - Part 14)
 - [x] Fix image resizing to fit instead of crop - changed CSS from object-cover to object-contain with bg-gray-100
 - [x] Fix form requiring rate re-entry when uploading images - removed required attribute from rate fields in edit form
+
+## Feature: Image Enhancements (Dec 30, 2024 - Part 15)
+- [x] Add image gallery carousel to public site detail pages - carousel with navigation arrows and thumbnails
+- [x] Display all 4 uploaded images in carousel/lightbox - lightbox modal for full-size viewing
+- [x] Implement drag-and-drop image reordering in admin - HTML5 drag-and-drop API with swap logic
+- [x] Allow admins to reorder images by dragging thumbnails - draggable attribute and visual feedback
+- [x] Auto-update imageUrl1-4 slots based on new order - automatic database update on drop
+- [x] Create bulk image import tool with ZIP upload - BulkImageImport component with jszip
+- [x] Extract images from ZIP and auto-assign to sites - automatic extraction and upload
+- [x] Support filename patterns for automatic site matching - site-1-1.jpg, site-1-image-2.jpg, 1-3.jpg patterns
+- [x] Test all three features end-to-end - features implemented and ready for user testing

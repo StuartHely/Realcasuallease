@@ -24,6 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
 import { Edit, Image as ImageIcon, MapPin, Plus, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
+import BulkImageImport from "@/components/BulkImageImport";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
@@ -200,13 +201,17 @@ export default function AdminSites() {
               Manage retail sites and spaces
             </p>
           </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button disabled={!selectedCentreId}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Site
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            {selectedCentreId && (
+              <BulkImageImport centreId={selectedCentreId} onComplete={refetch} />
+            )}
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button disabled={!selectedCentreId}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Site
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <form onSubmit={handleCreate}>
                 <DialogHeader>
@@ -323,6 +328,7 @@ export default function AdminSites() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Centre Selector */}
