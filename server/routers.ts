@@ -6,6 +6,7 @@ import { z } from "zod";
 import * as db from "./db";
 import { getSystemConfig as getSystemConfigDb, updateSystemConfig as updateSystemConfigDb } from "./systemConfigDb";
 import { trackImageView, trackImageClick, getTopPerformingImages, getImageAnalyticsBySite } from "./imageAnalyticsDb";
+import { getSeasonalRatesBySiteId, createSeasonalRate, updateSeasonalRate, deleteSeasonalRate } from "./seasonalRatesDb";
 import { TRPCError } from "@trpc/server";
 
 // Admin-only procedure
@@ -665,6 +666,46 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         return await db.updateSiteFloorAssignments(input.assignments);
+      }),
+
+    // Seasonal Pricing Management
+    getSeasonalRatesBySite: adminProcedure
+      .input(z.object({ siteId: z.number() }))
+      .query(async ({ input }) => {
+        return await getSeasonalRatesBySiteId(input.siteId);
+      }),
+
+    createSeasonalRate: adminProcedure
+      .input(z.object({
+        siteId: z.number(),
+        name: z.string(),
+        startDate: z.string(),
+        endDate: z.string(),
+        weekdayRate: z.number().optional(),
+        weekendRate: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await createSeasonalRate(input);
+      }),
+
+    updateSeasonalRate: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        weekdayRate: z.number().optional(),
+        weekendRate: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return await updateSeasonalRate(id, data);
+      }),
+
+    deleteSeasonalRate: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await deleteSeasonalRate(input.id);
       }),
   }),
 });

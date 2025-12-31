@@ -367,3 +367,43 @@
 - [ ] Priority: seasonal rates > weekend rates > base weekday rates
 - [ ] Test seasonal pricing with overlapping date ranges
 - [ ] Test booking cost breakdown with various scenarios
+
+## Feature: Advanced Pricing Features (Dec 30, 2024 - Part 18)
+- [ ] Build seasonal pricing admin UI
+- [ ] Create SeasonalRates admin page with add/edit/delete functionality
+- [ ] Add date range picker for seasonal rate periods
+- [ ] Implement seasonal rate database helpers (CRUD operations)
+- [ ] Add seasonal rate tRPC procedures
+- [ ] Implement seasonal rate calculation with priority rules
+- [ ] Priority: seasonal rates > weekend rates > base weekday rates
+- [ ] Update calculateBookingCost to check for seasonal rates first
+- [ ] Add real-time price preview calculator to site detail page
+- [ ] Show live cost estimate as users select booking dates
+- [ ] Display breakdown: weekdays, weekends, seasonal rates, GST, total
+- [ ] Update preview automatically when dates change
+- [ ] Create dynamic pricing recommendations dashboard
+- [ ] Analyze historical booking data for demand patterns
+- [ ] Calculate optimal pricing based on booking conversion rates
+- [ ] Display pricing suggestions with expected revenue impact
+- [ ] Test all pricing features end-to-end
+- [ ] Test seasonal rate priority over weekend/base rates
+- [ ] Test price preview calculator accuracy
+- [ ] Test pricing recommendations with sample data
+
+## Seasonal Pricing Feature (Dec 30, 2024) - IN PROGRESS
+- [x] Create seasonal rates admin UI at /admin/seasonal-rates
+- [x] Add CRUD operations for seasonal rate periods
+- [x] Implement date range picker for seasonal periods
+- [x] Add "Seasonal Pricing" menu item to admin navigation
+- [x] Test seasonal rate database functions (12 tests passing)
+- [ ] Update calculateBookingCost to apply priority rules: seasonal > weekend > base
+- [ ] Handle overlapping date ranges with seasonal rates
+- [ ] Add real-time price preview calculator on site detail page
+- [ ] Show live cost breakdown as user selects dates
+- [ ] Display weekday count, weekend count, seasonal periods if applicable
+- [ ] Show total cost with GST before "Book Now" button
+- [ ] Create /admin/pricing-recommendations page
+- [ ] Analyze historical booking data for demand patterns
+- [ ] Calculate optimal pricing suggestions per site
+- [ ] Show metrics: booking rate, revenue, occupancy percentage
+- [ ] Provide actionable insights for maximizing revenue
