@@ -306,3 +306,7 @@
 - [x] Add automatic image resizing for consistent display - sharp resizes to 1200x800, converts to WebP
 - [x] Update site detail pages to display uploaded images - already displays imageUrl1
 - [x] Test image upload, resize, and display functionality - all 4 tests passed (validation, processing, base64 handling)
+
+## Bug Fixes (Dec 30, 2024 - Part 14)
+- [x] Fix image resizing to fit instead of crop - changed CSS from object-cover to object-contain with bg-gray-100
+- [x] Fix form requiring rate re-entry when uploading images - removed required attribute from rate fields in edit form

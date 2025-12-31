@@ -21,11 +21,11 @@ export async function processSiteImage(
   const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
   const imageBuffer = Buffer.from(base64Data, 'base64');
 
-  // Process image with sharp
+  // Process image with sharp - resize to fit within 1200x800 while maintaining aspect ratio
   const processedImage = await sharp(imageBuffer)
     .resize(1200, 800, {
-      fit: 'inside',
-      withoutEnlargement: true,
+      fit: 'inside', // Resize to fit within bounds, preserving aspect ratio
+      withoutEnlargement: true, // Don't upscale small images
     })
     .webp({ quality: 85 })
     .toBuffer();

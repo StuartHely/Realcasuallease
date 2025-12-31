@@ -385,7 +385,7 @@ export default function AdminSites() {
                     <img
                       src={site.imageUrl1}
                       alt={`Site ${site.siteNumber}`}
-                      className="w-full h-32 object-cover rounded-md"
+                      className="w-full h-32 object-contain rounded-md bg-gray-100"
                     />
                   )}
                   <div className="grid grid-cols-2 gap-2 text-sm">
@@ -510,21 +510,19 @@ export default function AdminSites() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-dailyRate">Daily Rate ($) *</Label>
+                  <Label htmlFor="edit-dailyRate">Daily Rate ($)</Label>
                   <Input
                     id="edit-dailyRate"
                     value={formData.dailyRate}
                     onChange={(e) => setFormData({ ...formData, dailyRate: e.target.value })}
-                    required
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-weeklyRate">Weekly Rate ($) *</Label>
+                  <Label htmlFor="edit-weeklyRate">Weekly Rate ($)</Label>
                   <Input
                     id="edit-weeklyRate"
                     value={formData.weeklyRate}
                     onChange={(e) => setFormData({ ...formData, weeklyRate: e.target.value })}
-                    required
                   />
                 </div>
               </div>
@@ -551,7 +549,7 @@ export default function AdminSites() {
                             <img
                               src={imageUrl}
                               alt={`Site image ${slot}`}
-                              className="w-full h-32 object-cover rounded-md"
+                              className="w-full h-32 object-contain rounded-md bg-gray-100"
                             />
                             <Button
                               type="button"
