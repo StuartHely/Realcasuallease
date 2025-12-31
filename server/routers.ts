@@ -117,11 +117,10 @@ export const appRouter = router({
         const site = await db.getSiteById(input.siteId);
         if (!site) throw new TRPCError({ code: "NOT_FOUND", message: "Site not found" });
 
-        // Calculate booking duration and price
-        const days = Math.ceil((input.endDate.getTime() - input.startDate.getTime()) / (1000 * 60 * 60 * 24));
-        const weeks = Math.floor(days / 7);
-        const remainingDays = days % 7;
-        const totalAmount = (weeks * Number(site.pricePerWeek)) + (remainingDays * Number(site.pricePerDay));
+        // Calculate booking duration and price with weekend rate support
+        const { totalAmount, weekdayCount, weekendCount } = await import("./bookingCalculation").then(m => 
+          m.calculateBookingCost(site, input.startDate, input.endDate)
+        );
 
         // Get GST rate
         const gstConfig = await db.getSystemConfig("gst_percentage");

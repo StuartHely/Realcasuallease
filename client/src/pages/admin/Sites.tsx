@@ -61,6 +61,7 @@ export default function AdminSites() {
     restrictions: "",
     dailyRate: "",
     weeklyRate: "",
+    weekendRate: "",
     instantBooking: false,
   });
 
@@ -74,6 +75,7 @@ export default function AdminSites() {
       restrictions: "",
       dailyRate: "",
       weeklyRate: "",
+      weekendRate: "",
       instantBooking: false,
     });
   };
@@ -109,8 +111,9 @@ export default function AdminSites() {
       maxTables: site.maxTables?.toString() || "",
       powerAvailable: site.powerAvailable || "No",
       restrictions: site.restrictions || "",
-      dailyRate: site.dailyRate,
-      weeklyRate: site.weeklyRate,
+      dailyRate: site.pricePerDay || "",
+      weeklyRate: site.pricePerWeek || "",
+      weekendRate: site.weekendPricePerDay || "",
       instantBooking: site.instantBooking || false,
     });
     setIsEditOpen(true);
@@ -288,7 +291,7 @@ export default function AdminSites() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="dailyRate">Daily Rate ($) *</Label>
+                      <Label htmlFor="dailyRate">Mon-Fri Daily Rate ($) *</Label>
                       <Input
                         id="dailyRate"
                         value={formData.dailyRate}
@@ -298,15 +301,24 @@ export default function AdminSites() {
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="weeklyRate">Weekly Rate ($) *</Label>
+                      <Label htmlFor="weekendRate">Weekend Daily Rate ($)</Label>
                       <Input
-                        id="weeklyRate"
-                        value={formData.weeklyRate}
-                        onChange={(e) => setFormData({ ...formData, weeklyRate: e.target.value })}
-                        placeholder="750.00"
-                        required
+                        id="weekendRate"
+                        value={formData.weekendRate}
+                        onChange={(e) => setFormData({ ...formData, weekendRate: e.target.value })}
+                        placeholder="Leave empty to use Mon-Fri rate"
                       />
                     </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="weeklyRate">Weekly Rate ($) *</Label>
+                    <Input
+                      id="weeklyRate"
+                      value={formData.weeklyRate}
+                      onChange={(e) => setFormData({ ...formData, weeklyRate: e.target.value })}
+                      placeholder="750.00"
+                      required
+                    />
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -516,7 +528,7 @@ export default function AdminSites() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-dailyRate">Daily Rate ($)</Label>
+                  <Label htmlFor="edit-dailyRate">Mon-Fri Daily Rate ($)</Label>
                   <Input
                     id="edit-dailyRate"
                     value={formData.dailyRate}
@@ -524,13 +536,22 @@ export default function AdminSites() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-weeklyRate">Weekly Rate ($)</Label>
+                  <Label htmlFor="edit-weekendRate">Weekend Daily Rate ($)</Label>
                   <Input
-                    id="edit-weeklyRate"
-                    value={formData.weeklyRate}
-                    onChange={(e) => setFormData({ ...formData, weeklyRate: e.target.value })}
+                    id="edit-weekendRate"
+                    value={formData.weekendRate}
+                    onChange={(e) => setFormData({ ...formData, weekendRate: e.target.value })}
+                    placeholder="Leave empty to use Mon-Fri rate"
                   />
                 </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-weeklyRate">Weekly Rate ($)</Label>
+                <Input
+                  id="edit-weeklyRate"
+                  value={formData.weeklyRate}
+                  onChange={(e) => setFormData({ ...formData, weeklyRate: e.target.value })}
+                />
               </div>
               <div className="flex items-center space-x-2">
                 <Switch

@@ -145,6 +145,7 @@ export const sites = mysqlTable("sites", {
   restrictions: text("restrictions"),
   pricePerDay: decimal("pricePerDay", { precision: 10, scale: 2 }).default("150.00").notNull(),
   pricePerWeek: decimal("pricePerWeek", { precision: 10, scale: 2 }).default("750.00").notNull(),
+  weekendPricePerDay: decimal("weekendPricePerDay", { precision: 10, scale: 2 }),
   instantBooking: boolean("instantBooking").default(true).notNull(),
   imageUrl1: text("imageUrl1"),
   imageUrl2: text("imageUrl2"),

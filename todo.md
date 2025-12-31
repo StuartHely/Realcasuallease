@@ -344,3 +344,13 @@
 - [x] Add conversion metrics linking image views to bookings - booking count per site added to analytics
 - [x] Calculate conversion rate (bookings / image views) - conversion rate calculated and displayed
 - [x] Test analytics tracking and dashboard display - tests pass with valid site IDs, feature fully functional
+
+## Feature: Weekend Rate Pricing (Dec 31, 2024 - Part 17)
+- [x] Add weekendDailyRate field to sites table schema - weekendPricePerDay added
+- [x] Push database migration for new field - migration 0006 applied successfully
+- [x] Update admin Sites UI to include weekend rate input - added to both create and edit forms
+- [x] Add default behavior: weekend rate defaults to weekday rate if empty - placeholder text guides users
+- [x] Implement booking calculation logic for weekday vs weekend rates - calculateBookingCost function created
+- [x] Calculate total cost using appropriate rates based on days of week - counts weekdays/weekends and applies appropriate rates
+- [x] Test rate calculation with various date ranges (weekdays only, weekends only, mixed) - all 9 tests pass
+- [ ] Update site detail page to display both weekday and weekend rates

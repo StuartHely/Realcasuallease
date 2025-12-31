@@ -1,0 +1,1 @@
+ALTER TABLE `sites` ADD `weekendPricePerDay` decimal(10,2);
