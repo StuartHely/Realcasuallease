@@ -54,10 +54,13 @@ export default function SiteDetail() {
 
   const createBookingMutation = trpc.bookings.create.useMutation({
     onSuccess: (data) => {
+      const { costBreakdown } = data;
+      const breakdownMessage = `\n\nCost Breakdown:\n${costBreakdown.weekdayCount} weekdays @ $${costBreakdown.weekdayRate}/day${costBreakdown.weekendCount > 0 ? `\n${costBreakdown.weekendCount} weekend days @ $${costBreakdown.weekendRate}/day` : ''}\nSubtotal: $${costBreakdown.subtotal.toFixed(2)}\nGST: $${costBreakdown.gstAmount.toFixed(2)}\nTotal: $${costBreakdown.total.toFixed(2)}`;
+      
       toast.success(
         data.requiresApproval
-          ? "Booking request submitted! Awaiting approval."
-          : "Booking confirmed! Booking number: " + data.bookingNumber
+          ? "Booking request submitted! Awaiting approval." + breakdownMessage
+          : "Booking confirmed! Booking number: " + data.bookingNumber + breakdownMessage
       );
       setLocation("/my-bookings");
     },
@@ -291,8 +294,22 @@ export default function SiteDetail() {
 
                 <div className="border-t pt-4">
                   <h3 className="font-semibold mb-2">Pricing</h3>
-                  <p className="text-2xl font-bold text-blue-600">${site.pricePerDay}/day</p>
-                  <p className="text-lg text-gray-600">${site.pricePerWeek}/week</p>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm text-gray-600">Mon-Fri</p>
+                      <p className="text-2xl font-bold text-blue-600">${site.pricePerDay}/day</p>
+                    </div>
+                    {site.weekendPricePerDay && site.weekendPricePerDay !== site.pricePerDay && (
+                      <div>
+                        <p className="text-sm text-gray-600">Weekend (Sat-Sun)</p>
+                        <p className="text-2xl font-bold text-purple-600">${site.weekendPricePerDay}/day</p>
+                      </div>
+                    )}
+                    <div className="pt-2 border-t">
+                      <p className="text-sm text-gray-600">Weekly Rate</p>
+                      <p className="text-lg font-semibold text-gray-700">${site.pricePerWeek}/week</p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

@@ -240,7 +240,18 @@ export const systemConfig = mysqlTable("system_config", {
 /**
  * Image analytics tracking
  */
-export const imageAnalytics = mysqlTable("image_analytics", {
+export const seasonalRates = mysqlTable("seasonalRates", {
+  id: int("id").autoincrement().primaryKey(),
+  siteId: int("siteId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(), // e.g., "Christmas 2024", "Summer Sale"
+  startDate: varchar("startDate", { length: 10 }).notNull(), // YYYY-MM-DD format
+  endDate: varchar("endDate", { length: 10 }).notNull(), // YYYY-MM-DD format
+  weekdayRate: decimal("weekdayRate", { precision: 10, scale: 2 }),
+  weekendRate: decimal("weekendRate", { precision: 10, scale: 2 }),
+  createdAt: timestamp("createdAt").defaultNow(),
+});
+
+export const imageAnalytics = mysqlTable("imageAnalytics", {
   id: int("id").autoincrement().primaryKey(),
   siteId: int("site_id").notNull().references(() => sites.id, { onDelete: 'cascade' }),
   imageSlot: int("image_slot").notNull(), // 1-4

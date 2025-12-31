@@ -174,6 +174,15 @@ export const appRouter = router({
           bookingNumber,
           totalAmount,
           requiresApproval,
+          costBreakdown: {
+            weekdayCount,
+            weekendCount,
+            weekdayRate: Number(site.pricePerDay),
+            weekendRate: site.weekendPricePerDay ? Number(site.weekendPricePerDay) : Number(site.pricePerDay),
+            subtotal: totalAmount,
+            gstAmount,
+            total: totalAmount + gstAmount,
+          },
         };
       }),
 

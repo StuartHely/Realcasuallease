@@ -354,3 +354,16 @@
 - [x] Calculate total cost using appropriate rates based on days of week - counts weekdays/weekends and applies appropriate rates
 - [x] Test rate calculation with various date ranges (weekdays only, weekends only, mixed) - all 9 tests pass
 - [ ] Update site detail page to display both weekday and weekend rates
+
+## Feature: Pricing Enhancements (Dec 30, 2024 - Part 17)
+- [x] Update site detail page to display both weekday and weekend rates clearly
+- [x] Show "Mon-Fri: $X/day" and "Weekend: $Y/day" in pricing section - purple color for weekend rate
+- [x] Add booking cost breakdown in booking confirmation
+- [x] Display itemized costs: "X weekdays @ $Y" + "Z weekend days @ $W" - shown in toast message with GST
+- [x] Create seasonal pricing database schema
+- [x] Add seasonalRates table with siteId, startDate, endDate, dailyRate, weekendRate - migration 0007 applied
+- [ ] Build admin UI for managing seasonal rates
+- [ ] Implement seasonal rate calculation with priority rules
+- [ ] Priority: seasonal rates > weekend rates > base weekday rates
+- [ ] Test seasonal pricing with overlapping date ranges
+- [ ] Test booking cost breakdown with various scenarios
