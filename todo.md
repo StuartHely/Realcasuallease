@@ -471,3 +471,65 @@
 - [x] Integrate into search results page
 - [x] Integrate into centre detail page
 - [x] Test distance calculations and UI (13/13 tests passing)
+
+## Google Maps Integration for Nearby Centres (Jan 1, 2026)
+- [ ] Replace "Show Nearby Centres" button with interactive Google Maps
+- [ ] Display all centres within 10km radius on map
+- [ ] Add clickable markers for each nearby centre
+- [ ] Show centre name, address, and distance in info windows
+- [ ] Add "Get Directions" link to open Google Maps navigation
+- [ ] Center map on current centre location
+- [ ] Add zoom controls and map type selector
+- [ ] Test map rendering and marker interactions
+
+## Booking Approval Workflow (Jan 1, 2026)
+- [ ] Add booking status field (pending, approved, rejected, cancelled)
+- [ ] Create admin bookings management page at /admin/bookings
+- [ ] Build booking review queue with filter by status
+- [ ] Add approve/reject buttons with confirmation dialogs
+- [ ] Implement bulk approval actions for multiple bookings
+- [ ] Add automated email notifications for booking status changes
+- [ ] Send confirmation email when booking is approved
+- [ ] Send rejection email with optional reason when booking is rejected
+- [ ] Add configurable auto-approval rules (booking value threshold, user history)
+- [ ] Test approval workflow and email notifications
+
+## Dynamic Pricing Analytics Dashboard (Jan 1, 2026)
+- [ ] Create pricing analytics page at /admin/pricing-analytics
+- [ ] Calculate and display occupancy rate by site and centre
+- [ ] Show revenue trends over time (daily, weekly, monthly)
+- [ ] Add seasonal performance comparison charts
+- [ ] Display average booking value and duration metrics
+- [ ] Implement AI-powered pricing recommendations
+- [ ] Analyze demand patterns and suggest optimal rates
+- [ ] Show revenue impact projections for rate changes
+- [ ] Add export functionality for analytics reports
+- [ ] Test analytics calculations and visualizations
+
+## Google Maps Integration for Nearby Centres (Jan 1, 2026) - COMPLETE
+- [x] Replace nearby centres list with interactive Google Maps
+- [x] Add clickable markers for each centre within 10km
+- [x] Show centre info windows with name, address, distance
+- [x] Add "Get Directions" links in info windows
+- [x] Integrate into search results page
+- [x] Integrate into centre detail page
+- [x] Update backend to include latitude/longitude in nearby centres response
+
+## Booking Approval Workflow (Jan 1, 2026) - IN PROGRESS
+- [x] Build admin bookings management page at /admin/bookings
+- [x] Add tabs for pending/confirmed/cancelled/completed bookings
+- [x] Implement approve booking action with confirmation dialog
+- [x] Implement reject booking action with reason input
+- [x] Add backend procedures: list, approve, reject
+- [x] Update booking status in database
+- [x] Add "Bookings" menu item to admin navigation
+- [ ] Add automated email notifications for approvals and rejections
+- [ ] Implement configurable auto-approval rules
+
+## Pricing Analytics Dashboard (Jan 1, 2026) - TODO
+- [ ] Create /admin/pricing-analytics page
+- [ ] Show occupancy rates by site and centre
+- [ ] Display revenue trends and comparisons
+- [ ] Add seasonal performance analysis
+- [ ] Implement AI-powered pricing recommendations
+- [ ] Show demand patterns and booking rate metrics

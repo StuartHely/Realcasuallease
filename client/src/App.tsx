@@ -19,6 +19,7 @@ import SystemConfig from "./pages/admin/SystemConfig";
 import ImageAnalytics from "./pages/admin/ImageAnalytics";
 import AdminSiteAssignment from "./pages/admin/SiteAssignment";
 import SeasonalRates from "./pages/admin/SeasonalRates";
+import AdminBookings from "./pages/admin/Bookings";
 
 function Router() {
   return (
@@ -35,6 +36,7 @@ function Router() {
           <Route path="/admin/image-analytics" component={ImageAnalytics} />
       <Route path="/admin/site-assignment" component={AdminSiteAssignment} />
       <Route path="/admin/seasonal-rates" component={SeasonalRates} />
+      <Route path="/admin/bookings" component={AdminBookings} />
       <Route path="/site/:id" component={SiteDetail} />
       <Route path="/my-bookings" component={MyBookings} />
       <Route path="/profile" component={Profile} />

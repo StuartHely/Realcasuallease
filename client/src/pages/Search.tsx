@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle } from "lucide-react";
 import { format, parse, addDays, isSameDay } from "date-fns";
 import InteractiveMap from "@/components/InteractiveMap";
-import { NearbyCentres } from "@/components/NearbyCentres";
+import { NearbyCentresMap } from "@/components/NearbyCentresMap";
 
 export default function Search() {
   const [, setLocation] = useLocation();
@@ -330,12 +330,14 @@ export default function Search() {
               );
             })}
             
-            {/* Nearby Centres */}
-            {data.centres.length > 0 && (
+            {/* Nearby Centres Map */}
+            {data.centres.length > 0 && data.centres[0].latitude && data.centres[0].longitude && (
               <div className="mt-8">
-                <NearbyCentres 
+                <NearbyCentresMap 
                   centreId={data.centres[0].id} 
                   centreName={data.centres[0].name}
+                  centreLatitude={data.centres[0].latitude}
+                  centreLongitude={data.centres[0].longitude}
                   radiusKm={10}
                 />
               </div>

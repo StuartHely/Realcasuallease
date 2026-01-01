@@ -6,7 +6,7 @@ import { MapPin, Building2, ArrowLeft, Calendar, DollarSign, Ruler, Zap } from "
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
 import InteractiveMap from "@/components/InteractiveMap";
-import { NearbyCentres } from "@/components/NearbyCentres";
+import { NearbyCentresMap } from "@/components/NearbyCentresMap";
 
 export default function CentreDetail() {
   const [, setLocation] = useLocation();
@@ -218,14 +218,18 @@ export default function CentreDetail() {
           )}
         </div>
         
-        {/* Nearby Centres */}
-        <div className="mt-12">
-          <NearbyCentres 
-            centreId={centre.id} 
-            centreName={centre.name}
-            radiusKm={10}
-          />
-        </div>
+        {/* Nearby Centres Map */}
+        {centre.latitude && centre.longitude && (
+          <div className="mt-12">
+            <NearbyCentresMap 
+              centreId={centre.id} 
+              centreName={centre.name}
+              centreLatitude={centre.latitude}
+              centreLongitude={centre.longitude}
+              radiusKm={10}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -57,6 +57,8 @@ export function findNearbyCentres(
   name: string;
   address: string | null;
   state: string | null;
+  latitude: string;
+  longitude: string;
   distance: number;
 }> {
   // Find the target centre
@@ -91,6 +93,8 @@ export function findNearbyCentres(
         name: c.name,
         address: c.address || null,
         state: c.state || null,
+        latitude: c.latitude!,
+        longitude: c.longitude!,
         distance,
       };
     })

@@ -717,3 +717,66 @@ export async function getNearbyCentres(centreId: number, radiusKm: number = 10) 
   
   return nearby;
 }
+
+// Booking management
+export async function getBookingsByStatus(status?: "pending" | "confirmed" | "cancelled" | "completed") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const query = db
+    .select({
+      id: bookings.id,
+      bookingNumber: bookings.bookingNumber,
+      siteId: bookings.siteId,
+      customerId: bookings.customerId,
+      customerName: users.name,
+      customerEmail: users.email,
+      siteName: sites.description,
+      centreName: shoppingCentres.name,
+      startDate: bookings.startDate,
+      endDate: bookings.endDate,
+      totalAmount: bookings.totalAmount,
+      status: bookings.status,
+      requiresApproval: bookings.requiresApproval,
+      approvedBy: bookings.approvedBy,
+      approvedAt: bookings.approvedAt,
+      createdAt: bookings.createdAt,
+    })
+    .from(bookings)
+    .innerJoin(users, eq(bookings.customerId, users.id))
+    .innerJoin(sites, eq(bookings.siteId, sites.id))
+    .innerJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
+    .orderBy(desc(bookings.createdAt));
+
+  if (status) {
+    return await query.where(eq(bookings.status, status));
+  }
+
+  return await query;
+}
+
+export async function approveBooking(bookingId: number, approvedBy: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(bookings)
+    .set({
+      status: "confirmed",
+      approvedBy,
+      approvedAt: new Date(),
+    })
+    .where(eq(bookings.id, bookingId));
+}
+
+export async function rejectBooking(bookingId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(bookings)
+    .set({
+      status: "cancelled",
+    })
+    .where(eq(bookings.id, bookingId));
+}

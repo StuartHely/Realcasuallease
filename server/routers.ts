@@ -246,6 +246,51 @@ export const appRouter = router({
         
         return booking;
       }),
+
+    list: adminProcedure
+      .input(z.object({
+        status: z.enum(["pending", "confirmed", "cancelled", "completed"]).optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getBookingsByStatus(input.status);
+      }),
+
+    approve: adminProcedure
+      .input(z.object({ bookingId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const booking = await db.getBookingById(input.bookingId);
+        if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
+        
+        if (booking.status !== "pending") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending bookings can be approved" });
+        }
+
+        await db.approveBooking(input.bookingId, ctx.user.id);
+        
+        // TODO: Send confirmation email to customer
+        
+        return { success: true };
+      }),
+
+    reject: adminProcedure
+      .input(z.object({ 
+        bookingId: z.number(),
+        reason: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const booking = await db.getBookingById(input.bookingId);
+        if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
+        
+        if (booking.status !== "pending") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending bookings can be rejected" });
+        }
+
+        await db.rejectBooking(input.bookingId);
+        
+        // TODO: Send rejection email to customer with reason
+        
+        return { success: true };
+      }),
   }),
 
   // Customer Profile
