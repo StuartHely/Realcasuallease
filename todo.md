@@ -444,3 +444,30 @@
 - [x] Handle partial weeks (e.g., 10 days = 1 week + 3 days)
 - [x] Update sites admin page to show weekday, weekend, and weekly rate columns
 - [x] Test all new features (10/10 tests passing)
+
+## Nearby Centres Feature (Jan 1, 2026)
+- [ ] Add latitude and longitude fields to shopping centres schema
+- [ ] Update database schema with lat/long columns
+- [ ] Parse updated CSV file with 109 rows
+- [ ] Update existing 8 centres with latitude/longitude coordinates
+- [ ] Import 29 new centres with addresses and coordinates (no sites yet)
+- [ ] Implement Haversine distance calculation function
+- [ ] Create tRPC procedure to get nearby centres within 10km radius
+- [ ] Build NearbyCentres UI component with distance display
+- [ ] Add "Show Nearby Centres" button to search results page
+- [ ] Add "Show Nearby Centres" button to centre detail page
+- [ ] Display nearby centres regardless of availability
+- [ ] Show distance in km for each nearby centre
+- [ ] Test nearby centres calculation with various locations
+
+## Nearby Centres Feature (Jan 1, 2026) - COMPLETE
+- [x] Add latitude/longitude fields to shopping centres schema
+- [x] Update existing centres with coordinates from CSV (8 centres)
+- [x] Import 31 new centres from CSV with addresses and coordinates
+- [x] Implement Haversine distance calculation function
+- [x] Create getNearbyCentres database function
+- [x] Create getNearby tRPC endpoint
+- [x] Build NearbyCentres UI component with show/hide toggle
+- [x] Integrate into search results page
+- [x] Integrate into centre detail page
+- [x] Test distance calculations and UI (13/13 tests passing)

@@ -60,6 +60,15 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.getShoppingCentresByState(input.state);
       }),
+    
+    getNearby: publicProcedure
+      .input(z.object({ 
+        centreId: z.number(),
+        radiusKm: z.number().optional().default(10),
+      }))
+      .query(async ({ input }) => {
+        return await db.getNearbyCentres(input.centreId, input.radiusKm);
+      }),
   }),
 
   // Sites

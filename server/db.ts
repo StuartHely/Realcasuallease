@@ -632,3 +632,88 @@ export async function updateSiteFloorAssignments(assignments: Array<{ siteId: nu
   
   return { success: true, updated: assignments.length };
 }
+
+export async function getCentreByName(name: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const results = await db.select()
+    .from(shoppingCentres)
+    .where(eq(shoppingCentres.name, name))
+    .limit(1);
+  
+  return results[0] || null;
+}
+
+export async function updateCentreCoordinates(
+  centreId: number,
+  latitude: string,
+  longitude: string,
+  address?: string | null
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const updateData: any = {
+    latitude,
+    longitude,
+  };
+  
+  if (address) {
+    updateData.address = address;
+  }
+  
+  await db.update(shoppingCentres)
+    .set(updateData)
+    .where(eq(shoppingCentres.id, centreId));
+  
+  return { success: true };
+}
+
+export async function createCentre(data: {
+  ownerId: number;
+  name: string;
+  address?: string | null;
+  state?: string | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  includeInMainSite?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(shoppingCentres).values({
+    ownerId: data.ownerId,
+    name: data.name,
+    address: data.address || null,
+    state: data.state || null,
+    latitude: data.latitude || null,
+    longitude: data.longitude || null,
+    includeInMainSite: data.includeInMainSite ?? true,
+  });
+  
+  return { success: true };
+}
+
+export async function getNearbyCentres(centreId: number, radiusKm: number = 10) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Import geo utils
+  const { findNearbyCentres } = await import("./geoUtils");
+  
+  // Get all centres with coordinates
+  const allCentres = await db.select({
+    id: shoppingCentres.id,
+    name: shoppingCentres.name,
+    latitude: shoppingCentres.latitude,
+    longitude: shoppingCentres.longitude,
+    address: shoppingCentres.address,
+    state: shoppingCentres.state,
+  }).from(shoppingCentres);
+  
+  // Find nearby centres
+  const nearby = findNearbyCentres(allCentres, centreId, radiusKm);
+  
+  return nearby;
+}
