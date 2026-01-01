@@ -10,6 +10,7 @@ export interface SeasonalRate {
   endDate: string;
   weekdayRate: string | null;
   weekendRate: string | null;
+  weeklyRate: string | null;
   createdAt: Date | null;
 }
 
@@ -69,6 +70,7 @@ export async function createSeasonalRate(data: {
   endDate: string;
   weekdayRate?: number;
   weekendRate?: number;
+  weeklyRate?: number;
 }): Promise<SeasonalRate> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -80,6 +82,7 @@ export async function createSeasonalRate(data: {
     endDate: data.endDate,
     weekdayRate: data.weekdayRate ? data.weekdayRate.toString() : null,
     weekendRate: data.weekendRate ? data.weekendRate.toString() : null,
+    weeklyRate: data.weeklyRate ? data.weeklyRate.toString() : null,
   });
   
   // Fetch the inserted record
@@ -96,6 +99,7 @@ export async function updateSeasonalRate(id: number, data: {
   endDate?: string;
   weekdayRate?: number;
   weekendRate?: number;
+  weeklyRate?: number;
 }): Promise<boolean> {
   const db = await getDb();
   if (!db) return false;
@@ -107,6 +111,7 @@ export async function updateSeasonalRate(id: number, data: {
   if (data.endDate !== undefined) updates.endDate = data.endDate;
   if (data.weekdayRate !== undefined) updates.weekdayRate = data.weekdayRate.toString();
   if (data.weekendRate !== undefined) updates.weekendRate = data.weekendRate.toString();
+  if (data.weeklyRate !== undefined) updates.weeklyRate = data.weeklyRate.toString();
 
   if (Object.keys(updates).length === 0) return false;
 

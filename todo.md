@@ -418,3 +418,29 @@
 - [ ] Calculate optimal pricing suggestions per site
 - [ ] Show metrics: booking rate, revenue, occupancy percentage
 - [ ] Provide actionable insights for maximizing revenue
+
+## Seasonal Pricing Enhancements (Dec 31, 2024)
+- [ ] Add weeklyRate field to seasonal_rates table schema
+- [ ] Update seasonal rates admin UI to include weekly rate input
+- [ ] Build bulk percentage increase tool on seasonal rates page
+- [ ] Add centre selection checkboxes grouped by owner
+- [ ] Implement backend procedure to create seasonal rates for all sites in selected centres
+- [ ] Apply percentage increase to weekday, weekend, and weekly rates uniformly
+- [ ] Update booking calculation logic to use seasonal weekly rate when booking is 7+ days
+- [ ] Update sites admin page to show separate "Weekday Rate" and "Weekend Rate" columns
+- [ ] Test bulk seasonal rate creation with multiple centres
+- [ ] Test weekly rate override in booking calculations
+
+## Seasonal Pricing Enhancements (Jan 1, 2026) - COMPLETE
+- [x] Add weekly rate field to seasonal rates schema
+- [x] Update database schema with weeklyRate field
+- [x] Build bulk percentage increase UI with centre selection checkboxes
+- [x] Create BulkIncreaseForm component with owner-grouped centre selection
+- [x] Implement backend getOwners procedure
+- [x] Implement backend bulkCreateSeasonalRates procedure
+- [x] Apply percentage increase to weekday, weekend, and weekly rates
+- [x] Update booking calculation to use weekly rate when applicable (7+ days)
+- [x] Priority: Seasonal weekly rate > Base weekly rate > Daily rates
+- [x] Handle partial weeks (e.g., 10 days = 1 week + 3 days)
+- [x] Update sites admin page to show weekday, weekend, and weekly rate columns
+- [x] Test all new features (10/10 tests passing)

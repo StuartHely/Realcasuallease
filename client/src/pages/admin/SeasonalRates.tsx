@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Edit, Trash2, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import { BulkIncreaseForm } from "@/components/BulkIncreaseForm";
 
 export default function SeasonalRates() {
   const [selectedCentreId, setSelectedCentreId] = useState<string>("");
@@ -69,6 +70,7 @@ export default function SeasonalRates() {
       endDate: formData.get("endDate") as string,
       weekdayRate: formData.get("weekdayRate") ? parseFloat(formData.get("weekdayRate") as string) : undefined,
       weekendRate: formData.get("weekendRate") ? parseFloat(formData.get("weekendRate") as string) : undefined,
+      weeklyRate: formData.get("weeklyRate") ? parseFloat(formData.get("weeklyRate") as string) : undefined,
     };
 
     if (editingRate) {
@@ -91,6 +93,19 @@ export default function SeasonalRates() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Bulk Percentage Increase */}
+          <Card className="bg-blue-50 border-blue-200">
+            <CardHeader>
+              <CardTitle className="text-lg">Bulk Seasonal Rate Increase</CardTitle>
+              <CardDescription>
+                Apply a percentage increase to all sites in selected centres for a specific period (e.g., Christmas 30% from Dec 1-31)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BulkIncreaseForm centres={centres || []} onSuccess={() => refetch()} />
+            </CardContent>
+          </Card>
+
           {/* Centre and Site Selection */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -147,13 +162,14 @@ export default function SeasonalRates() {
                     <TableHead>End Date</TableHead>
                     <TableHead>Weekday Rate</TableHead>
                     <TableHead>Weekend Rate</TableHead>
+                    <TableHead>Weekly Rate</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {seasonalRates?.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-gray-500">
+                      <TableCell colSpan={7} className="text-center text-gray-500">
                         No seasonal rates configured
                       </TableCell>
                     </TableRow>
@@ -165,6 +181,7 @@ export default function SeasonalRates() {
                       <TableCell>{rate.endDate}</TableCell>
                       <TableCell>${rate.weekdayRate || "-"}</TableCell>
                       <TableCell>${rate.weekendRate || "-"}</TableCell>
+                      <TableCell>${rate.weeklyRate || "-"}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button
@@ -246,7 +263,7 @@ export default function SeasonalRates() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="weekdayRate">Weekday Rate ($)</Label>
                   <Input
@@ -268,6 +285,18 @@ export default function SeasonalRates() {
                     placeholder="Leave empty to use default"
                     defaultValue={editingRate?.weekendRate}
                   />
+                </div>
+                <div>
+                  <Label htmlFor="weeklyRate">Weekly Rate ($)</Label>
+                  <Input
+                    id="weeklyRate"
+                    name="weeklyRate"
+                    type="number"
+                    step="0.01"
+                    placeholder="Leave empty to use default"
+                    defaultValue={editingRate?.weeklyRate}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Overrides daily rates for 7+ day bookings</p>
                 </div>
               </div>
             </div>

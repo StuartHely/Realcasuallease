@@ -416,8 +416,12 @@ export default function AdminSites() {
                       <p className="font-medium">{site.powerAvailable || "No"}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Daily:</span>
+                      <span className="text-muted-foreground">Weekday:</span>
                       <p className="font-medium">${site.pricePerDay}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Weekend:</span>
+                      <p className="font-medium">${site.weekendPricePerDay || site.pricePerDay}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Weekly:</span>

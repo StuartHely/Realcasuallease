@@ -20,6 +20,7 @@ interface SeasonalRate {
   endDate: string;
   weekdayRate: string | null;
   weekendRate: string | null;
+  weeklyRate: string | null;
   createdAt: Date | null;
 }
 
@@ -34,6 +35,98 @@ export async function calculateBookingCost(
 
   // Calculate total days (inclusive of both start and end dates)
   const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+  // Check if booking is 7+ days and if weekly rate should be used
+  if (totalDays >= 7) {
+    // Fetch seasonal rates to check for weekly rate
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+    const seasonalRatesInRange = await getSeasonalRatesForDateRange(site.id, startDateStr, endDateStr);
+    
+    // Check if there's a seasonal rate that covers the entire booking period with a weekly rate
+    for (const rate of seasonalRatesInRange) {
+      const rateStart = new Date(rate.startDate + 'T00:00:00Z');
+      const rateEnd = new Date(rate.endDate + 'T00:00:00Z');
+      
+      // Check if this seasonal rate covers the entire booking period
+      if (rateStart <= startDate && rateEnd >= endDate && rate.weeklyRate) {
+        const weeklyRate = Number(rate.weeklyRate);
+        const weeks = Math.floor(totalDays / 7);
+        const remainingDays = totalDays % 7;
+        
+        // Calculate cost: full weeks at weekly rate + remaining days at daily rate
+        let totalAmount = weeks * weeklyRate;
+        
+        // Add remaining days (use seasonal daily rates if available)
+        if (remainingDays > 0) {
+          const dailyRate = rate.weekdayRate ? Number(rate.weekdayRate) : basePricePerDay;
+          totalAmount += remainingDays * dailyRate;
+        }
+        
+        // Count weekdays/weekends for display
+        let weekdayCount = 0;
+        let weekendCount = 0;
+        const tempDate = new Date(startDate);
+        tempDate.setUTCHours(0, 0, 0, 0);
+        const tempEndDate = new Date(endDate);
+        tempEndDate.setUTCHours(0, 0, 0, 0);
+        
+        while (tempDate <= tempEndDate) {
+          const dayOfWeek = tempDate.getUTCDay();
+          if (dayOfWeek === 0 || dayOfWeek === 6) {
+            weekendCount++;
+          } else {
+            weekdayCount++;
+          }
+          tempDate.setUTCDate(tempDate.getUTCDate() + 1);
+        }
+        
+        return {
+          totalAmount,
+          weekdayCount,
+          weekendCount,
+          seasonalDays: [{ date: startDateStr, rate: weeklyRate, name: `${rate.name} (Weekly Rate)` }],
+        };
+      }
+    }
+    
+    // No seasonal weekly rate found, use base weekly rate if available
+    if (pricePerWeek && pricePerWeek > 0) {
+      const weeks = Math.floor(totalDays / 7);
+      const remainingDays = totalDays % 7;
+      
+      let totalAmount = weeks * pricePerWeek;
+      
+      // Add remaining days at base daily rate
+      if (remainingDays > 0) {
+        totalAmount += remainingDays * basePricePerDay;
+      }
+      
+      // Count weekdays/weekends for display
+      let weekdayCount = 0;
+      let weekendCount = 0;
+      const tempDate = new Date(startDate);
+      tempDate.setUTCHours(0, 0, 0, 0);
+      const tempEndDate = new Date(endDate);
+      tempEndDate.setUTCHours(0, 0, 0, 0);
+      
+      while (tempDate <= tempEndDate) {
+        const dayOfWeek = tempDate.getUTCDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+          weekendCount++;
+        } else {
+          weekdayCount++;
+        }
+        tempDate.setUTCDate(tempDate.getUTCDate() + 1);
+      }
+      
+      return {
+        totalAmount,
+        weekdayCount,
+        weekendCount,
+      };
+    }
+  }
 
   // Collect seasonal rates for each day
   const seasonalDays: { date: string; rate: number; name: string; isWeekend: boolean }[] = [];

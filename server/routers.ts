@@ -716,6 +716,7 @@ export const appRouter = router({
         endDate: z.string(),
         weekdayRate: z.number().optional(),
         weekendRate: z.number().optional(),
+        weeklyRate: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
         return await createSeasonalRate(input);
@@ -729,6 +730,7 @@ export const appRouter = router({
         endDate: z.string().optional(),
         weekdayRate: z.number().optional(),
         weekendRate: z.number().optional(),
+        weeklyRate: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
@@ -739,6 +741,53 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         return await deleteSeasonalRate(input.id);
+      }),
+
+    getOwners: adminProcedure
+      .query(async () => {
+        return await db.getOwners();
+      }),
+
+    bulkCreateSeasonalRates: adminProcedure
+      .input(z.object({
+        centreIds: z.array(z.number()),
+        name: z.string(),
+        startDate: z.string(),
+        endDate: z.string(),
+        percentageIncrease: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const { centreIds, name, startDate, endDate, percentageIncrease } = input;
+        
+        // Get all sites for the selected centres
+        const allSites = [];
+        for (const centreId of centreIds) {
+          const sites = await db.getSitesByCentreId(centreId);
+          allSites.push(...sites);
+        }
+
+        // Create seasonal rates for each site
+        let created = 0;
+        for (const site of allSites) {
+          // Calculate increased rates
+          const multiplier = 1 + (percentageIncrease / 100);
+          const weekdayRate = site.pricePerDay ? Math.round(parseFloat(site.pricePerDay) * multiplier * 100) / 100 : undefined;
+          const weekendRate = site.weekendPricePerDay ? Math.round(parseFloat(site.weekendPricePerDay) * multiplier * 100) / 100 : undefined;
+          const weeklyRate = site.pricePerWeek ? Math.round(parseFloat(site.pricePerWeek) * multiplier * 100) / 100 : undefined;
+
+          await createSeasonalRate({
+            siteId: site.id,
+            name,
+            startDate,
+            endDate,
+            weekdayRate,
+            weekendRate,
+            weeklyRate,
+          });
+          created++;
+        }
+
+        return { created, totalSites: allSites.length };
       }),
   }),
 });

@@ -248,6 +248,7 @@ export const seasonalRates = mysqlTable("seasonalRates", {
   endDate: varchar("endDate", { length: 10 }).notNull(), // YYYY-MM-DD format
   weekdayRate: decimal("weekdayRate", { precision: 10, scale: 2 }),
   weekendRate: decimal("weekendRate", { precision: 10, scale: 2 }),
+  weeklyRate: decimal("weeklyRate", { precision: 10, scale: 2 }), // Override for 7+ day bookings
   createdAt: timestamp("createdAt").defaultNow(),
 });
 
