@@ -93,7 +93,7 @@ export default function AdminSiteAssignment() {
             Assign sites to floor levels for multi-level shopping centres
           </p>
         </div>
-        <Button variant="outline" onClick={() => setLocation("/admin/dashboard")}>
+        <Button variant="outline" onClick={() => setLocation("/admin")}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Dashboard
         </Button>

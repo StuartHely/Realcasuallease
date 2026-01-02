@@ -20,6 +20,11 @@ import ImageAnalytics from "./pages/admin/ImageAnalytics";
 import AdminSiteAssignment from "./pages/admin/SiteAssignment";
 import SeasonalRates from "./pages/admin/SeasonalRates";
 import AdminBookings from "./pages/admin/Bookings";
+import AdminUsers from "./pages/admin/Users";
+import AdminOwners from "./pages/admin/Owners";
+import AdminFinancials from "./pages/admin/Financials";
+import AdminAudit from "./pages/admin/Audit";
+import AdminSettings from "./pages/admin/Settings";
 
 function Router() {
   return (
@@ -37,6 +42,11 @@ function Router() {
       <Route path="/admin/site-assignment" component={AdminSiteAssignment} />
       <Route path="/admin/seasonal-rates" component={SeasonalRates} />
       <Route path="/admin/bookings" component={AdminBookings} />
+      <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/owners" component={AdminOwners} />
+      <Route path="/admin/financials" component={AdminFinancials} />
+      <Route path="/admin/audit" component={AdminAudit} />
+      <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/site/:id" component={SiteDetail} />
       <Route path="/my-bookings" component={MyBookings} />
       <Route path="/profile" component={Profile} />
