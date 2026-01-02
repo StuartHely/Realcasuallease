@@ -396,7 +396,9 @@ export const appRouter = router({
         
         // Track if any sites match the size requirement
         let hasMatchingSites = false;
+        const hasRequirements = parsedQuery.minSizeM2 !== undefined || parsedQuery.minTables !== undefined;
         
+        // First pass: check if any sites match the requirements
         for (const centre of centres) {
           const sites = await db.getSitesByCentreId(centre.id);
           
@@ -409,12 +411,30 @@ export const appRouter = router({
           // Check if any sites match
           if (sitesWithMatch.some(s => s.matchesRequirements)) {
             hasMatchingSites = true;
+            break; // Found at least one match, no need to continue
           }
+        }
+        
+        // Second pass: collect sites based on whether matches were found
+        for (const centre of centres) {
+          const sites = await db.getSitesByCentreId(centre.id);
           
-          // Always include all sites, but mark which ones match requirements
-          allSites.push(...sitesWithMatch.map(({ site }) => ({ ...site, centreName: centre.name })));
+          // Check which sites match the requirements
+          const sitesWithMatch = sites.map(site => ({
+            site,
+            matchesRequirements: siteMatchesRequirements(site, parsedQuery)
+          }));
           
-          for (const { site } of sitesWithMatch) {
+          // If requirements specified and matches found, only include matching sites
+          // If requirements specified but no matches found, include all sites as fallback
+          // If no requirements specified, include all sites
+          const sitesToInclude = (hasRequirements && hasMatchingSites)
+            ? sitesWithMatch.filter(s => s.matchesRequirements)
+            : sitesWithMatch;
+          
+          allSites.push(...sitesToInclude.map(({ site }) => ({ ...site, centreName: centre.name })));
+          
+          for (const { site } of sitesToInclude) {
             const week1Bookings = await db.getBookingsBySiteId(site.id, startOfWeek, endOfWeek);
             const week2Bookings = await db.getBookingsBySiteId(site.id, startOfNextWeek, endOfNextWeek);
             
@@ -431,7 +451,7 @@ export const appRouter = router({
         }
         
         // Return flag indicating if size requirement was met
-        const sizeNotAvailable = (parsedQuery.minSizeM2 !== undefined || parsedQuery.minTables !== undefined) && !hasMatchingSites;
+        const sizeNotAvailable = hasRequirements && !hasMatchingSites;
         
         return { centres, sites: allSites, availability, matchedSiteIds, sizeNotAvailable };
       }),

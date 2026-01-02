@@ -600,3 +600,17 @@
 - [x] Add helpful message when requested size is not available: "Your requested size is not available. Let me show you the other sites."
 - [x] Display all available sites even when size filter doesn't match any results
 - [x] Test complete user flow with unavailable size requests - verified with "10x10" search
+
+## Search Filtering Logic Fix (Jan 2, 2026)
+- [ ] Fix search to only show sites matching requirements when user specifies size/tables
+- [ ] Show all sites as fallback ONLY when zero matches are found
+- [ ] Test with "campbelltown 6 tables" - should only show sites with 6+ tables
+- [ ] Test with "campbelltown 4x4" - should only show sites ≥16m²
+- [ ] Test with "campbelltown 10x10" - should show message + all sites (zero matches)
+
+## Search Filtering Logic Fix (Jan 2, 2026) - COMPLETE
+- [x] Fix search to only show sites matching requirements when user specifies size/tables
+- [x] Show all sites as fallback ONLY when zero matches are found
+- [x] Test with "campbelltown 6 tables" - shows only 4 sites with 6 tables
+- [x] Test with "campbelltown 4x4" - shows message + all 13 sites (zero matches ≥16m²)
+- [x] Test with "campbelltown 3x3" - shows only 10 sites ≥9m² without message
