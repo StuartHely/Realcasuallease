@@ -347,8 +347,13 @@ export const appRouter = router({
     smart: publicProcedure
       .input(z.object({ query: z.string(), date: z.date() }))
       .query(async ({ input }) => {
-        // Try site-level search first
-        const siteResults = await db.searchSites(input.query);
+        // Parse query to extract requirements
+        const { parseSearchQuery, siteMatchesRequirements } = await import("../shared/queryParser");
+        const parsedQuery = parseSearchQuery(input.query);
+        
+        // Try site-level search first using the extracted centre name
+        const searchQuery = parsedQuery.centreName || input.query;
+        const siteResults = await db.searchSites(searchQuery);
         
         // If we found specific sites, use those
         if (siteResults.length > 0 && siteResults.length <= 10) {
@@ -391,9 +396,15 @@ export const appRouter = router({
         
         for (const centre of centres) {
           const sites = await db.getSitesByCentreId(centre.id);
-          allSites.push(...sites.map(s => ({ ...s, centreName: centre.name })));
           
-          for (const site of sites) {
+          // Filter sites based on parsed requirements
+          const filteredSites = sites.filter(site => 
+            siteMatchesRequirements(site, parsedQuery)
+          );
+          
+          allSites.push(...filteredSites.map(s => ({ ...s, centreName: centre.name })));
+          
+          for (const site of filteredSites) {
             const week1Bookings = await db.getBookingsBySiteId(site.id, startOfWeek, endOfWeek);
             const week2Bookings = await db.getBookingsBySiteId(site.id, startOfNextWeek, endOfNextWeek);
             

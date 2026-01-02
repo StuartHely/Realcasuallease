@@ -144,7 +144,7 @@ export default function Home() {
                     <Input
                       ref={inputRef}
                       type="text"
-                      placeholder="Shopping centre name or suburb..."
+                      placeholder="e.g., Highlands Marketplace 3x4m or Campbelltown 5 tables"
                       value={centreName}
                       onChange={(e) => setCentreName(e.target.value)}
                       onKeyDown={handleKeyDown}

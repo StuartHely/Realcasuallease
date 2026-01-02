@@ -546,3 +546,24 @@
 - [x] Fix 404 error for /admin/settings page
 - [x] Create placeholder pages for missing routes
 - [x] Add routes to App.tsx
+
+## Smart Query Parsing for Site Requirements (Jan 1, 2026)
+- [ ] Create query parser to extract size requirements (3x4m, 12sqm, etc.)
+- [ ] Parse table requirements (5 tables, 3 trestle tables, etc.)
+- [ ] Handle combined queries (centre name + requirements)
+- [ ] Update search API to filter by parsed requirements
+- [ ] Add visual tags showing detected requirements
+- [ ] Update placeholder text with examples
+- [ ] Filter search results to show only matching sites
+- [ ] Highlight sites that meet requirements
+- [ ] Test with various query formats
+
+## Smart Query Parsing for Site Requirements (Jan 1, 2026) - COMPLETE
+- [x] Create query parser to extract size requirements (3x4m, 12sqm, 15m², etc.)
+- [x] Create query parser to extract table requirements (5 tables, trestle tables)
+- [x] Support combined queries ("Campbelltown 3x4m 5 tables")
+- [x] Update search API to filter sites by parsed requirements
+- [x] Add visual indicators showing detected requirements in search UI
+- [x] Update search placeholder text with examples
+- [x] Display site size and table count in search results
+- [x] Test with various query formats (22/22 tests passing)

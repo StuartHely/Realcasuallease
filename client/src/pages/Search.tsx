@@ -8,6 +8,7 @@ import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle } from "lucide-react"
 import { format, parse, addDays, isSameDay } from "date-fns";
 import InteractiveMap from "@/components/InteractiveMap";
 import { NearbyCentresMap } from "@/components/NearbyCentresMap";
+import { parseSearchQuery } from "@/../../shared/queryParser";
 
 export default function Search() {
   const [, setLocation] = useLocation();
@@ -122,6 +123,28 @@ export default function Search() {
             Searching for: <span className="font-semibold">{searchParams.query}</span> on{" "}
             <span className="font-semibold">{format(searchParams.date, "dd/MM/yyyy")}</span>
           </p>
+          {(() => {
+            const parsed = parseSearchQuery(searchParams.query);
+            const hasRequirements = parsed.minSizeM2 !== undefined || parsed.minTables !== undefined;
+            if (hasRequirements) {
+              return (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="text-sm text-gray-600">Filtering by:</span>
+                  {parsed.minSizeM2 !== undefined && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                      Minimum {parsed.minSizeM2}m² site size
+                    </Badge>
+                  )}
+                  {parsed.minTables !== undefined && (
+                    <Badge variant="secondary" className="bg-green-100 text-green-700">
+                      Minimum {parsed.minTables} tables
+                    </Badge>
+                  )}
+                </div>
+              );
+            }
+            return null;
+          })()}
         </div>
 
         {isLoading && (
@@ -221,21 +244,27 @@ export default function Search() {
                                 <td className={`sticky left-0 z-10 px-3 py-2 font-medium border-r-2 border-b ${
                                   isMatched ? 'bg-yellow-50' : 'bg-white'
                                 }`}>
-                                  <div className="flex items-center gap-2">
-                                    {isMatched && (
-                                      <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">
-                                        Matched
-                                      </Badge>
-                                    )}
-                                    <span className="text-sm font-semibold">{site.siteNumber}</span>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-6 px-2 text-xs"
-                                      onClick={() => setLocation(`/site/${site.id}`)}
-                                    >
-                                      View
-                                    </Button>
+                                  <div className="flex flex-col gap-1">
+                                    <div className="flex items-center gap-2">
+                                      {isMatched && (
+                                        <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">
+                                          Matched
+                                        </Badge>
+                                      )}
+                                      <span className="text-sm font-semibold">{site.siteNumber}</span>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 px-2 text-xs"
+                                        onClick={() => setLocation(`/site/${site.id}`)}
+                                      >
+                                        View
+                                      </Button>
+                                    </div>
+                                    <div className="flex gap-2 text-xs text-gray-600">
+                                      {site.size && <span>{site.size}</span>}
+                                      {site.maxTables && <span>• {site.maxTables} tables</span>}
+                                    </div>
                                   </div>
                                 </td>
                                 {dateRange.map((date, idx) => {
