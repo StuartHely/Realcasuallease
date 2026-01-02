@@ -567,3 +567,18 @@
 - [x] Update search placeholder text with examples
 - [x] Display site size and table count in search results
 - [x] Test with various query formats (22/22 tests passing)
+
+## Bug Fix - Smart Query Parsing Not Finding 3x3 Sites (Jan 1, 2026)
+- [ ] Check database for actual size format of Campbelltown sites 1, 2, 3
+- [ ] Debug why query parser doesn't match "3m x 3m" with "3x3" stored format
+- [ ] Fix parsing or matching logic to handle various size formats
+- [ ] Test with user's exact query: "campbelltown 3m x 3m"
+- [ ] Verify sites 1, 2, 3 appear in filtered results
+
+## Bug Fix - Smart Query Parsing Not Finding Sites (Jan 1, 2026) - COMPLETE
+- [x] Investigate why "campbelltown 3m x 3m" search returns no results
+- [x] Check if query parser is working correctly (parser was fine)
+- [x] Check if search API is using parsed centre name (found the bug!)
+- [x] Fix the search logic to use parsed centre name instead of full query
+- [x] Changed line 377 in routers.ts from `input.query` to `searchQuery`
+- [x] Verified fix: search now finds 10 sites including Sites 1, 2, 3

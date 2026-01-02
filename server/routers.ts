@@ -373,8 +373,8 @@ export const appRouter = router({
           }
         }
         
-        // Continue with regular search logic
-        const centres = await db.searchShoppingCentres(input.query);
+        // Continue with regular search logic using the parsed centre name
+        const centres = await db.searchShoppingCentres(searchQuery);
         
         if (centres.length === 0) {
           return { centres: [], sites: [], availability: [], matchedSiteIds: [] };

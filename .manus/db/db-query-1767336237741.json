@@ -1,0 +1,40 @@
+{
+  "query": "SELECT s.siteNumber, s.size, s.maxTables, c.name as centreName \nFROM sites s \nJOIN shopping_centres c ON s.centreId = c.id \nWHERE c.name LIKE '%Campbelltown%' \nORDER BY s.siteNumber \nLIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT s.siteNumber, s.size, s.maxTables, c.name as centreName \nFROM sites s \nJOIN shopping_centres c ON s.centreId = c.id \nWHERE c.name LIKE '%Campbelltown%' \nORDER BY s.siteNumber \nLIMIT 5",
+  "rows": [
+    {
+      "siteNumber": "Site 1 (Upper Level)",
+      "size": "3m x 3m x 1.5m high",
+      "maxTables": "5",
+      "centreName": "Campbelltown Mall"
+    },
+    {
+      "siteNumber": "Site 12 (Upper Level)",
+      "size": "3m x 3m x 1.5m high",
+      "maxTables": "5",
+      "centreName": "Campbelltown Mall"
+    },
+    {
+      "siteNumber": "Site 13 (Upper Level)",
+      "size": "2.4m x 3m x 1.5m high",
+      "maxTables": "6",
+      "centreName": "Campbelltown Mall"
+    },
+    {
+      "siteNumber": "Site 18 (Upper Level)",
+      "size": "2m x 4m x 1.5m high",
+      "maxTables": "5",
+      "centreName": "Campbelltown Mall"
+    },
+    {
+      "siteNumber": "Site 2 (Upper Level)",
+      "size": "3m x 3m x 1.5m high",
+      "maxTables": "5",
+      "centreName": "Campbelltown Mall"
+    }
+  ],
+  "messages": [],
+  "stdout": "siteNumber\tsize\tmaxTables\tcentreName\nSite 1 (Upper Level)\t3m x 3m x 1.5m high\t5\tCampbelltown Mall\nSite 12 (Upper Level)\t3m x 3m x 1.5m high\t5\tCampbelltown Mall\nSite 13 (Upper Level)\t2.4m x 3m x 1.5m high\t6\tCampbelltown Mall\nSite 18 (Upper Level)\t2m x 4m x 1.5m high\t5\tCampbelltown Mall\nSite 2 (Upper Level)\t3m x 3m x 1.5m high\t5\tCampbelltown Mall\n",
+  "stderr": "",
+  "execution_time_ms": 1913
+}
