@@ -17,8 +17,8 @@ export interface ParsedQuery {
  * - "15m2", "15 m2"
  */
 function parseSizeRequirement(query: string): number | undefined {
-  // Match dimensions like "3x4m", "3 x 4m", "3m x 4m"
-  const dimensionMatch = query.match(/(\d+\.?\d*)\s*m?\s*[xX×]\s*(\d+\.?\d*)\s*m/i);
+  // Match dimensions like "3x4m", "3 x 4m", "3m x 4m", "3x3" (with or without 'm' unit)
+  const dimensionMatch = query.match(/(\d+\.?\d*)\s*m?\s*[xX×]\s*(\d+\.?\d*)\s*m?/i);
   if (dimensionMatch) {
     const width = parseFloat(dimensionMatch[1]);
     const length = parseFloat(dimensionMatch[2]);
@@ -54,8 +54,8 @@ function parseTableRequirement(query: string): number | undefined {
 function extractCentreName(query: string): string {
   let centreName = query;
 
-  // Remove dimension patterns (handles "3x4m", "3 x 4m", "3m x 4m")
-  centreName = centreName.replace(/\d+\.?\d*\s*m?\s*[xX×]\s*\d+\.?\d*\s*m/gi, '');
+  // Remove dimension patterns (handles "3x4m", "3 x 4m", "3m x 4m", "3x3")
+  centreName = centreName.replace(/\d+\.?\d*\s*m?\s*[xX×]\s*\d+\.?\d*\s*m?/gi, '');
   
   // Remove area patterns
   centreName = centreName.replace(/\d+\.?\d*\s*(?:sqm|sq\s*m|square\s*meters?|m2|m\s*2)/gi, '');

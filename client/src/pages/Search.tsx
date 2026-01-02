@@ -39,8 +39,8 @@ export default function Search() {
 
   // Determine if a site is matched by the search query
   const isMatchedSite = (siteId: number) => {
-    if (!data?.matchedSiteIds) return false;
-    return data.matchedSiteIds.includes(siteId);
+    if (!data?.matchedSiteIds || !Array.isArray(data.matchedSiteIds)) return false;
+    return (data.matchedSiteIds as number[]).includes(siteId);
   };
 
   // Auto-scroll to matched site when data loads
@@ -145,6 +145,14 @@ export default function Search() {
             }
             return null;
           })()}
+          {/* Show message if size requirement not met */}
+          {data?.sizeNotAvailable && (
+            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-amber-800 font-medium">
+                Your requested size is not available. Let me show you the other sites.
+              </p>
+            </div>
+          )}
         </div>
 
         {isLoading && (

@@ -390,21 +390,31 @@ export const appRouter = router({
         const endOfNextWeek = new Date(startOfNextWeek);
         endOfNextWeek.setDate(endOfNextWeek.getDate() + 6);
 
-        const allSites = [];
-        const availability = [];
-        const matchedSiteIds = siteResults.map(r => r.site.id);
+        const allSites: any[] = [];
+        const availability: any[] = [];
+        const matchedSiteIds: number[] = siteResults.map(r => r.site.id);
+        
+        // Track if any sites match the size requirement
+        let hasMatchingSites = false;
         
         for (const centre of centres) {
           const sites = await db.getSitesByCentreId(centre.id);
           
-          // Filter sites based on parsed requirements
-          const filteredSites = sites.filter(site => 
-            siteMatchesRequirements(site, parsedQuery)
-          );
+          // Check which sites match the requirements
+          const sitesWithMatch = sites.map(site => ({
+            site,
+            matchesRequirements: siteMatchesRequirements(site, parsedQuery)
+          }));
           
-          allSites.push(...filteredSites.map(s => ({ ...s, centreName: centre.name })));
+          // Check if any sites match
+          if (sitesWithMatch.some(s => s.matchesRequirements)) {
+            hasMatchingSites = true;
+          }
           
-          for (const site of filteredSites) {
+          // Always include all sites, but mark which ones match requirements
+          allSites.push(...sitesWithMatch.map(({ site }) => ({ ...site, centreName: centre.name })));
+          
+          for (const { site } of sitesWithMatch) {
             const week1Bookings = await db.getBookingsBySiteId(site.id, startOfWeek, endOfWeek);
             const week2Bookings = await db.getBookingsBySiteId(site.id, startOfNextWeek, endOfNextWeek);
             
@@ -420,7 +430,10 @@ export const appRouter = router({
           }
         }
         
-        return { centres, sites: allSites, availability, matchedSiteIds };
+        // Return flag indicating if size requirement was met
+        const sizeNotAvailable = (parsedQuery.minSizeM2 !== undefined || parsedQuery.minTables !== undefined) && !hasMatchingSites;
+        
+        return { centres, sites: allSites, availability, matchedSiteIds, sizeNotAvailable };
       }),
     byNameAndDate: publicProcedure
       .input(z.object({

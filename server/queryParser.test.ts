@@ -84,6 +84,24 @@ describe("Query Parser", () => {
       expect(result.centreName).toBe("Highlands");
       expect(result.minSizeM2).toBe(12);
     });
+
+    it("should parse dimension format without 'm' unit (3x3)", () => {
+      const result = parseSearchQuery("Campbelltown 3x3");
+      expect(result.centreName).toBe("Campbelltown");
+      expect(result.minSizeM2).toBe(9);
+    });
+
+    it("should parse dimension format without 'm' unit (3x4)", () => {
+      const result = parseSearchQuery("Highlands 3x4");
+      expect(result.centreName).toBe("Highlands");
+      expect(result.minSizeM2).toBe(12);
+    });
+
+    it("should parse dimension format without 'm' unit (4x3)", () => {
+      const result = parseSearchQuery("Pacific 4x3");
+      expect(result.centreName).toBe("Pacific");
+      expect(result.minSizeM2).toBe(12);
+    });
   });
 
   describe("siteMatchesRequirements", () => {

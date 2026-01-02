@@ -582,3 +582,21 @@
 - [x] Fix the search logic to use parsed centre name instead of full query
 - [x] Changed line 377 in routers.ts from `input.query` to `searchQuery`
 - [x] Verified fix: search now finds 10 sites including Sites 1, 2, 3
+
+## Query Parser & Search UX Improvements (Jan 2, 2026)
+- [ ] Fix query parser to recognize "3x3" format (without "m" unit) as equivalent to "3m x 3m"
+- [ ] Update regex pattern to handle dimensions with or without "m" unit
+- [ ] Test parser with "3x3", "3x4", "4x3" formats
+- [ ] Change search behavior to always show available sites for requested date
+- [ ] Add helpful message when requested size is not available: "Your requested size is not available. Let me show you the other sites."
+- [ ] Display all available sites even when size filter doesn't match any results
+- [ ] Test complete user flow with unavailable size requests
+
+## Query Parser & Search UX Improvements (Jan 2, 2026) - COMPLETE
+- [x] Fix query parser to recognize "3x3" format (without "m" unit) as equivalent to "3m x 3m"
+- [x] Update regex pattern to handle dimensions with or without "m" unit
+- [x] Test parser with "3x3", "3x4", "4x3" formats - all 25 tests passing
+- [x] Change search behavior to always show available sites for requested date
+- [x] Add helpful message when requested size is not available: "Your requested size is not available. Let me show you the other sites."
+- [x] Display all available sites even when size filter doesn't match any results
+- [x] Test complete user flow with unavailable size requests - verified with "10x10" search
