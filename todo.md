@@ -744,3 +744,8 @@
 - [x] Check database for marker coordinates for all 5 sites - Site 3: X=200, Y=150; Site 5: X=350, Y=200 (invalid)
 - [x] Reset sites 3 and 5 coordinates to NULL - now shows "3 of 5 sites marked" correctly
 - [x] User can now click map to position Sites 3 and 5
+
+
+## Bug Fix (Jan 3, 2026) - Highlands Marker Save Error - RESOLVED
+- [x] Fix Site 3 marker appearing off the map - Reset Sites 3 & 5 coordinates to NULL (were 200,150 and 350,200)
+- [x] Fix "Failed to save markers" error - Validation exists (0-100%), issue was legacy pixel coords. Now shows "3 of 5 sites marked"
