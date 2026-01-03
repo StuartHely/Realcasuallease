@@ -716,3 +716,31 @@
 - [x] Add "Rebook" buttons to booking cards
 - [x] Include centre and site names in booking history
 - [x] Test analytics with real booking data (2 bookings, $1035 total, $517.50 average)
+
+
+## Bug Fixes (Jan 3, 2026)
+- [ ] Fix search green screen error when searching "highlands 4 tables"
+- [ ] Fix floor plan maps showing only 3 sites instead of 5 for Highlands Marketplace
+- [ ] Test search with various table requirements
+- [ ] Test floor plan maps site display for all centres
+
+
+## Bug Investigation (Jan 3, 2026)
+- [x] Investigate "green screen" issue on search page for "highlands 4 tables" query
+  * ROOT CAUSE: Highlands floor plan image is 1x1 pixel (corrupted/placeholder)
+  * Image URL: https://d2xsxph8kpxj0f.cloudfront.net/.../centres/maps/60003-1767183882027.png
+  * naturalWidth: 1, naturalHeight: 1 (invalid image)
+  * SOLUTION: Re-upload proper floor plan image in Admin > Maps > Highlands Marketplace
+- [x] Investigate floor plan maps showing only 3 sites instead of 5 for Highlands Marketplace
+  * NOT A BUG: All 5 sites (1, 3, 5, 7, 8) are correctly available for marker placement
+  * Site labels visible in "Position Site Markers" section when scrolling down
+  * Status shows "5 of 5 sites marked" correctly
+  * User confusion likely due to: (1) labels require scrolling to see all, or (2) testing before map upload
+
+
+## Bug Fix (Jan 3, 2026) - Highlands Markers - RESOLVED
+- [x] Fix Highlands Marketplace showing only 3 markers (1, 7, 8) instead of 5 after map re-upload
+- [x] Investigate why sites 3 and 5 are not displaying markers - ROOT CAUSE: pixel-based coordinates (200, 150) and (350, 200) instead of percentages
+- [x] Check database for marker coordinates for all 5 sites - Site 3: X=200, Y=150; Site 5: X=350, Y=200 (invalid)
+- [x] Reset sites 3 and 5 coordinates to NULL - now shows "3 of 5 sites marked" correctly
+- [x] User can now click map to position Sites 3 and 5
