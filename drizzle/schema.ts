@@ -124,6 +124,8 @@ export const shoppingCentres = mysqlTable("shopping_centres", {
   weeklyReportEmail10: varchar("weeklyReportEmail10", { length: 320 }),
   includeInMainSite: boolean("includeInMainSite").default(true).notNull(),
   mapImageUrl: text("mapImageUrl"),
+  totalTablesAvailable: int("totalTablesAvailable").default(0),
+  totalChairsAvailable: int("totalChairsAvailable").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
@@ -193,6 +195,8 @@ export const bookings = mysqlTable("bookings", {
   requiresApproval: boolean("requiresApproval").default(false).notNull(),
   approvedBy: int("approvedBy").references(() => users.id),
   approvedAt: timestamp("approvedAt"),
+  tablesRequested: int("tablesRequested").default(0),
+  chairsRequested: int("chairsRequested").default(0),
   stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

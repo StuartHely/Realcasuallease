@@ -18,6 +18,7 @@ import Maps from "./pages/admin/Maps";
 import SystemConfig from "./pages/admin/SystemConfig";
 import ImageAnalytics from "./pages/admin/ImageAnalytics";
 import AdminSiteAssignment from "./pages/admin/SiteAssignment";
+import Equipment from "./pages/admin/Equipment";
 import SeasonalRates from "./pages/admin/SeasonalRates";
 import AdminBookings from "./pages/admin/Bookings";
 import AdminUsers from "./pages/admin/Users";
@@ -40,6 +41,7 @@ function Router() {
           <Route path="/admin/system-config" component={SystemConfig} />
           <Route path="/admin/image-analytics" component={ImageAnalytics} />
       <Route path="/admin/site-assignment" component={AdminSiteAssignment} />
+      <Route path="/admin/equipment" component={Equipment} />
       <Route path="/admin/seasonal-rates" component={SeasonalRates} />
       <Route path="/admin/bookings" component={AdminBookings} />
       <Route path="/admin/users" component={AdminUsers} />

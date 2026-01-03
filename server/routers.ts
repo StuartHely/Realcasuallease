@@ -115,6 +115,8 @@ export const appRouter = router({
         customUsage: z.string().optional(),
         startDate: z.date(),
         endDate: z.date(),
+        tablesRequested: z.number().optional().default(0),
+        chairsRequested: z.number().optional().default(0),
       }))
       .mutation(async ({ input, ctx }) => {
         // Check availability
@@ -150,6 +152,23 @@ export const appRouter = router({
         // Generate booking number
         const bookingNumber = `BK${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
+        // Check equipment availability if requested
+        let equipmentWarning: string | undefined;
+        if ((input.tablesRequested || 0) > 0 || (input.chairsRequested || 0) > 0) {
+          const { checkEquipmentAvailability } = await import("./equipmentAvailability");
+          const equipmentCheck = await checkEquipmentAvailability(
+            site.centreId,
+            input.startDate,
+            input.endDate,
+            input.tablesRequested || 0,
+            input.chairsRequested || 0
+          );
+          
+          if (!equipmentCheck.available) {
+            equipmentWarning = equipmentCheck.message;
+          }
+        }
+
         // Determine if approval is needed
         let requiresApproval = false;
         if (input.customUsage) {
@@ -177,6 +196,8 @@ export const appRouter = router({
           platformFee: platformFee.toFixed(2),
           status: requiresApproval ? "pending" : (site.instantBooking ? "confirmed" : "pending"),
           requiresApproval,
+          tablesRequested: input.tablesRequested || 0,
+          chairsRequested: input.chairsRequested || 0,
         });
 
         return {
@@ -184,6 +205,7 @@ export const appRouter = router({
           bookingNumber,
           totalAmount,
           requiresApproval,
+          equipmentWarning,
           costBreakdown: {
             weekdayCount,
             weekendCount,
@@ -844,6 +866,32 @@ export const appRouter = router({
     getOwners: adminProcedure
       .query(async () => {
         return await db.getOwners();
+      }),
+
+    getAllCentres: adminProcedure
+      .query(async () => {
+        const centres = await db.getShoppingCentres();
+        // Get sites for each centre to calculate max tables needed
+        const centresWithSites = await Promise.all(
+          centres.map(async (centre) => {
+            const sites = await db.getSitesByCentreId(centre.id);
+            return { ...centre, sites };
+          })
+        );
+        return centresWithSites;
+      }),
+
+    updateCentreEquipment: adminProcedure
+      .input(z.object({
+        centreId: z.number(),
+        totalTablesAvailable: z.number().min(0),
+        totalChairsAvailable: z.number().min(0),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.updateShoppingCentre(input.centreId, {
+          totalTablesAvailable: input.totalTablesAvailable,
+          totalChairsAvailable: input.totalChairsAvailable,
+        });
       }),
 
     bulkCreateSeasonalRates: adminProcedure

@@ -31,7 +31,8 @@ import {
   Home,
   LogOut,
   Map,
-  TrendingUp
+  TrendingUp,
+  Package
 } from "lucide-react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -52,6 +53,7 @@ const getMenuItems = (userRole: string) => {
       { icon: MapPin, label: "Sites", path: "/admin/sites" },
       { icon: Map, label: "Floor Plan Maps", path: "/admin/maps" },
       { icon: MapPin, label: "Site Assignment", path: "/admin/site-assignment" },
+      { icon: Package, label: "Equipment", path: "/admin/equipment" },
       { icon: TrendingUp, label: "Seasonal Pricing", path: "/admin/seasonal-rates" },
       { icon: Calendar, label: "Bookings", path: "/admin/bookings" },
       { icon: Users, label: "Users", path: "/admin/users" },

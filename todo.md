@@ -614,3 +614,41 @@
 - [x] Test with "campbelltown 6 tables" - shows only 4 sites with 6 tables
 - [x] Test with "campbelltown 4x4" - shows message + all 13 sites (zero matches ≥16m²)
 - [x] Test with "campbelltown 3x3" - shows only 10 sites ≥9m² without message
+
+## Equipment Management System (Jan 2, 2026)
+- [ ] Add totalTablesAvailable and totalChairsAvailable to shoppingCentres table
+- [ ] Add calculated maxTables field to sites table based on dimensions
+- [ ] Add tablesRequested and chairsRequested to bookings table
+- [ ] Create admin equipment management page with inventory tracking
+- [ ] Show max tables needed vs available with shortfall calculation
+- [ ] Implement site capacity calculation (floor(area ÷ 1.396m²))
+- [ ] Add "Tables required" field to booking form (max = site's maxTables)
+- [ ] Add "Chairs required" field to booking form
+- [ ] Implement real-time equipment availability checking per date
+- [ ] Show warning when insufficient equipment available
+- [ ] Display "No equipment provided by the centre" when applicable
+- [ ] Test equipment tracking across multiple bookings
+
+## Equipment Management System - COMPLETE (Jan 2, 2026)
+- [x] Add totalTablesAvailable and totalChairsAvailable to shoppingCentres table
+- [x] Add calculated maxTables field to sites table based on dimensions
+- [x] Add tablesRequested and chairsRequested to bookings table
+- [x] Create admin equipment management page with inventory tracking
+- [x] Show max tables needed vs available with shortfall calculation
+- [x] Implement site capacity calculation (floor(area ÷ 1.396m²))
+- [x] Add "Tables required" field to booking form (max = site's maxTables)
+- [x] Add "Chairs required" field to booking form
+- [x] Implement real-time equipment availability checking per date
+- [x] Show warning when insufficient equipment available
+- [x] Display "No equipment provided by the centre" when applicable
+- [ ] Test equipment tracking across multiple bookings
+
+## Equipment Management System - COMPLETE (Jan 3, 2026)
+- [x] Add equipment fields to database schema (totalTablesAvailable, totalChairsAvailable to centres; tablesRequested, chairsRequested to bookings)
+- [x] Calculate maxTables for each site based on dimensions (762mm × 1835mm table size)
+- [x] Build admin equipment management page (/admin/equipment)
+- [x] Show equipment inventory with shortfall calculations
+- [x] Add equipment request fields to booking form
+- [x] Implement equipment availability tracking per date
+- [x] Display equipment warning when insufficient equipment available
+- [x] Test end-to-end: Carnes Hill with 2 tables/5 chairs, requested 4 tables/10 chairs → warning displayed ✓

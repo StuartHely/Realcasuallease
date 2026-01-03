@@ -32,6 +32,8 @@ export default function SiteDetail() {
   const [endDate, setEndDate] = useState("");
   const [usageTypeId, setUsageTypeId] = useState<string>("");
   const [customUsage, setCustomUsage] = useState("");
+  const [tablesRequested, setTablesRequested] = useState<string>("0");
+  const [chairsRequested, setChairsRequested] = useState<string>("0");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   
@@ -55,13 +57,15 @@ export default function SiteDetail() {
 
   const createBookingMutation = trpc.bookings.create.useMutation({
     onSuccess: (data) => {
-      const { costBreakdown } = data;
+      const { costBreakdown, equipmentWarning } = data;
       const breakdownMessage = `\n\nCost Breakdown:\n${costBreakdown.weekdayCount} weekdays @ $${costBreakdown.weekdayRate}/day${costBreakdown.weekendCount > 0 ? `\n${costBreakdown.weekendCount} weekend days @ $${costBreakdown.weekendRate}/day` : ''}\nSubtotal: $${costBreakdown.subtotal.toFixed(2)}\nGST: $${costBreakdown.gstAmount.toFixed(2)}\nTotal: $${costBreakdown.total.toFixed(2)}`;
+      
+      const equipmentMessage = equipmentWarning ? `\n\n⚠️ ${equipmentWarning}` : '';
       
       toast.success(
         data.requiresApproval
-          ? "Booking request submitted! Awaiting approval." + breakdownMessage
-          : "Booking confirmed! Booking number: " + data.bookingNumber + breakdownMessage
+          ? "Booking request submitted! Awaiting approval." + breakdownMessage + equipmentMessage
+          : "Booking confirmed! Booking number: " + data.bookingNumber + breakdownMessage + equipmentMessage
       );
       setLocation("/my-bookings");
     },
@@ -85,13 +89,14 @@ export default function SiteDetail() {
       toast.error("Please select a usage type or enter custom usage");
       return;
     }
-
     createBookingMutation.mutate({
       siteId,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
       usageTypeId: usageTypeId ? parseInt(usageTypeId) : undefined,
       customUsage: customUsage || undefined,
+      tablesRequested: parseInt(tablesRequested) || 0,
+      chairsRequested: parseInt(chairsRequested) || 0,
     });
   };
 
@@ -388,6 +393,46 @@ export default function SiteDetail() {
                           onChange={(e) => setCustomUsage(e.target.value)}
                           placeholder="Describe your intended use..."
                         />
+                      </div>
+                    )}
+
+                    {/* Equipment Request */}
+                    {centre && ((centre.totalTablesAvailable || 0) > 0 || (centre.totalChairsAvailable || 0) > 0) && (
+                      <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                        <h3 className="font-semibold text-sm">Equipment Request (Optional)</h3>
+                        
+                        {(centre.totalTablesAvailable || 0) > 0 && (
+                          <div>
+                            <Label htmlFor="tablesRequested">
+                              Tables Required (Max: {site?.maxTables || 0} for this site)
+                            </Label>
+                            <Input
+                              id="tablesRequested"
+                              type="number"
+                              min="0"
+                              max={site?.maxTables || 0}
+                              value={tablesRequested}
+                              onChange={(e) => setTablesRequested(e.target.value)}
+                            />
+                          </div>
+                        )}
+                        
+                        {(centre.totalChairsAvailable || 0) > 0 && (
+                          <div>
+                            <Label htmlFor="chairsRequested">Chairs Required</Label>
+                            <Input
+                              id="chairsRequested"
+                              type="number"
+                              min="0"
+                              value={chairsRequested}
+                              onChange={(e) => setChairsRequested(e.target.value)}
+                            />
+                          </div>
+                        )}
+                        
+                        <p className="text-xs text-muted-foreground">
+                          Equipment availability will be checked when you submit your booking.
+                        </p>
                       </div>
                     )}
 
