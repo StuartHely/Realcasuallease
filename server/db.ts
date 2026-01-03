@@ -382,7 +382,38 @@ export async function updateBooking(id: number, data: Partial<InsertBooking>) {
 export async function getBookingsByCustomerId(customerId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return await db.select().from(bookings).where(eq(bookings.customerId, customerId)).orderBy(desc(bookings.createdAt));
+  
+  return await db
+    .select({
+      id: bookings.id,
+      bookingNumber: bookings.bookingNumber,
+      siteId: bookings.siteId,
+      customerId: bookings.customerId,
+      usageTypeId: bookings.usageTypeId,
+      customUsage: bookings.customUsage,
+      startDate: bookings.startDate,
+      endDate: bookings.endDate,
+      totalAmount: bookings.totalAmount,
+      gstAmount: bookings.gstAmount,
+      ownerAmount: bookings.ownerAmount,
+      platformFee: bookings.platformFee,
+      status: bookings.status,
+      requiresApproval: bookings.requiresApproval,
+      approvedBy: bookings.approvedBy,
+      approvedAt: bookings.approvedAt,
+      tablesRequested: bookings.tablesRequested,
+      chairsRequested: bookings.chairsRequested,
+      stripePaymentIntentId: bookings.stripePaymentIntentId,
+      createdAt: bookings.createdAt,
+      updatedAt: bookings.updatedAt,
+      siteName: sites.description,
+      centreName: shoppingCentres.name,
+    })
+    .from(bookings)
+    .innerJoin(sites, eq(bookings.siteId, sites.id))
+    .innerJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
+    .where(eq(bookings.customerId, customerId))
+    .orderBy(desc(bookings.createdAt));
 }
 
 // Customer Profile operations
@@ -736,10 +767,15 @@ export async function getBookingsByStatus(status?: "pending" | "confirmed" | "ca
       startDate: bookings.startDate,
       endDate: bookings.endDate,
       totalAmount: bookings.totalAmount,
+      gstAmount: bookings.gstAmount,
       status: bookings.status,
       requiresApproval: bookings.requiresApproval,
       approvedBy: bookings.approvedBy,
       approvedAt: bookings.approvedAt,
+      usageTypeId: bookings.usageTypeId,
+      customUsage: bookings.customUsage,
+      tablesRequested: bookings.tablesRequested,
+      chairsRequested: bookings.chairsRequested,
       createdAt: bookings.createdAt,
     })
     .from(bookings)
@@ -779,4 +815,31 @@ export async function rejectBooking(bookingId: number) {
       status: "cancelled",
     })
     .where(eq(bookings.id, bookingId));
+}
+
+
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, id))
+    .limit(1);
+  
+  return result[0] || null;
+}
+
+export async function getUsageTypeById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db
+    .select()
+    .from(usageTypes)
+    .where(eq(usageTypes.id, id))
+    .limit(1);
+  
+  return result[0] || null;
 }

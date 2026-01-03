@@ -20,6 +20,7 @@ import ImageAnalytics from "./pages/admin/ImageAnalytics";
 import AdminSiteAssignment from "./pages/admin/SiteAssignment";
 import Equipment from "./pages/admin/Equipment";
 import SeasonalRates from "./pages/admin/SeasonalRates";
+import PendingApprovals from "./pages/admin/PendingApprovals";
 import AdminBookings from "./pages/admin/Bookings";
 import AdminUsers from "./pages/admin/Users";
 import AdminOwners from "./pages/admin/Owners";
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/admin/site-assignment" component={AdminSiteAssignment} />
       <Route path="/admin/equipment" component={Equipment} />
       <Route path="/admin/seasonal-rates" component={SeasonalRates} />
+      <Route path="/admin/pending-approvals" component={PendingApprovals} />
       <Route path="/admin/bookings" component={AdminBookings} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/owners" component={AdminOwners} />

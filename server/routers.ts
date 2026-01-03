@@ -8,6 +8,7 @@ import { getSystemConfig as getSystemConfigDb, updateSystemConfig as updateSyste
 import { trackImageView, trackImageClick, getTopPerformingImages, getImageAnalyticsBySite } from "./imageAnalyticsDb";
 import { getSeasonalRatesBySiteId, createSeasonalRate, updateSeasonalRate, deleteSeasonalRate } from "./seasonalRatesDb";
 import { TRPCError } from "@trpc/server";
+import { notifyOwner } from "./_core/notification";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -892,6 +893,78 @@ export const appRouter = router({
           totalTablesAvailable: input.totalTablesAvailable,
           totalChairsAvailable: input.totalChairsAvailable,
         });
+      }),
+
+    // Booking Approval Management
+    getPendingApprovals: adminProcedure
+      .query(async () => {
+        const pendingBookings = await db.getBookingsByStatus('pending');
+        
+        // Get additional details for each booking
+        const bookingsWithDetails = await Promise.all(
+          pendingBookings
+            .filter(b => b.requiresApproval)
+            .map(async (booking) => {
+              const site = await db.getSiteById(booking.siteId);
+              const centre = site ? await db.getShoppingCentreById(site.centreId) : null;
+              const customer = await db.getUserById(booking.customerId);
+              const usageType = booking.usageTypeId ? await db.getUsageTypeById(booking.usageTypeId) : null;
+              
+              return {
+                ...booking,
+                centreName: centre?.name || 'Unknown Centre',
+                siteNumber: site?.siteNumber || 'Unknown',
+                siteDescription: site?.description,
+                customerName: customer?.name || 'Unknown Customer',
+                customerEmail: customer?.email,
+                usageTypeName: usageType?.name,
+              };
+            })
+        );
+        
+        return bookingsWithDetails;
+      }),
+
+    approveBooking: adminProcedure
+      .input(z.object({ bookingId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.approveBooking(input.bookingId, ctx.user.id);
+        
+        // Get booking details for notification
+        const booking = await db.getBookingById(input.bookingId);
+        const site = booking ? await db.getSiteById(booking.siteId) : null;
+        const centre = site ? await db.getShoppingCentreById(site.centreId) : null;
+        
+        // Notify owner
+        await notifyOwner({
+          title: 'Booking Approved',
+          content: `Booking #${booking?.bookingNumber} at ${centre?.name} - Site ${site?.siteNumber} has been approved.`,
+        });
+        
+        // TODO: Send confirmation email to customer
+        
+        return { success: true };
+      }),
+
+    rejectBooking: adminProcedure
+      .input(z.object({ bookingId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.rejectBooking(input.bookingId);
+        
+        // Get booking details for notification
+        const booking = await db.getBookingById(input.bookingId);
+        const site = booking ? await db.getSiteById(booking.siteId) : null;
+        const centre = site ? await db.getShoppingCentreById(site.centreId) : null;
+        
+        // Notify owner
+        await notifyOwner({
+          title: 'Booking Rejected',
+          content: `Booking #${booking?.bookingNumber} at ${centre?.name} - Site ${site?.siteNumber} has been rejected.`,
+        });
+        
+        // TODO: Send rejection email to customer with reason
+        
+        return { success: true };
       }),
 
     bulkCreateSeasonalRates: adminProcedure

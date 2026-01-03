@@ -652,3 +652,67 @@
 - [x] Implement equipment availability tracking per date
 - [x] Display equipment warning when insufficient equipment available
 - [x] Test end-to-end: Carnes Hill with 2 tables/5 chairs, requested 4 tables/10 chairs → warning displayed ✓
+
+## Booking Approval Workflow (Jan 3, 2026)
+- [ ] Create email notification system for centre managers when bookings require approval
+- [ ] Build approve/reject action handlers with secure tokens
+- [ ] Send confirmation emails to customers when bookings are approved/rejected
+- [ ] Create admin dashboard page showing all pending approvals
+- [ ] Add bulk approve/reject functionality for managers
+- [ ] Test approval workflow end-to-end
+
+## Customer Dashboard Analytics (Jan 3, 2026)
+- [ ] Create customer dashboard page with booking history
+- [ ] Add spending summary and statistics
+- [ ] Build visual charts for booking patterns over time
+- [ ] Implement personalized site recommendations based on booking history
+- [ ] Show favorite centres and usage type preferences
+- [ ] Add quick rebook functionality for past bookings
+- [ ] Test customer dashboard with real booking data
+
+
+## Booking Approval Workflow (Jan 3, 2026)
+- [ ] Create email notification system for centre managers when bookings require approval
+- [ ] Build approve/reject action handlers with secure tokens
+- [ ] Send confirmation emails to customers when bookings are approved/rejected
+- [ ] Create admin dashboard page showing all pending approvals
+- [ ] Add bulk approve/reject functionality for managers
+- [ ] Test approval workflow end-to-end
+
+## Customer Dashboard Analytics (Jan 3, 2026)
+- [ ] Create customer dashboard page with booking history
+- [ ] Add spending summary and statistics
+- [ ] Build visual charts for booking patterns over time
+- [ ] Implement personalized site recommendations based on booking history
+- [ ] Show favorite centres and usage type preferences
+- [ ] Add quick rebook functionality for past bookings
+- [ ] Test customer dashboard with real booking data
+
+## Booking Approval & Customer Analytics - COMPLETE (Jan 3, 2026)
+- [x] Create admin pending approvals page (/admin/pending-approvals)
+- [x] Build getPendingApprovals query with booking details
+- [x] Add approveBooking and rejectBooking procedures
+- [x] Integrate notification system for approval/rejection
+- [x] Add Pending Approvals menu item to admin navigation
+- [x] Enhance My Bookings page with analytics features
+- [x] Add spending summary cards (Total Spent, Average Booking, Favorite Centre)
+- [x] Display favorite centres with booking counts
+- [x] Add "Book Again" quick action buttons
+- [x] Add "Rebook" buttons to booking cards
+- [x] Include centre and site names in booking history
+- [x] Test analytics with real booking data (2 bookings, $1035 total, $517.50 average)
+
+
+## Booking Approval & Customer Analytics - COMPLETE (Jan 3, 2026)
+- [x] Create admin pending approvals page (/admin/pending-approvals)
+- [x] Build getPendingApprovals query with booking details
+- [x] Add approveBooking and rejectBooking procedures
+- [x] Integrate notification system for approval/rejection
+- [x] Add Pending Approvals menu item to admin navigation
+- [x] Enhance My Bookings page with analytics features
+- [x] Add spending summary cards (Total Spent, Average Booking, Favorite Centre)
+- [x] Display favorite centres with booking counts
+- [x] Add "Book Again" quick action buttons
+- [x] Add "Rebook" buttons to booking cards
+- [x] Include centre and site names in booking history
+- [x] Test analytics with real booking data (2 bookings, $1035 total, $517.50 average)
