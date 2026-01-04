@@ -783,3 +783,7 @@
 ## Marker Size Adjustment (Jan 4, 2026)
 - [x] Reduce front-end site markers by 20% with proportionately larger text
 - [x] Update admin markers to match front-end styling
+
+## Carnes Hill Marker Position Fix (Jan 4, 2026)
+- [x] Fix Sites 1 and 2 markers appearing off the page
+- [x] Reset invalid marker coordinates for Carnes Hill Sites 1 and 2

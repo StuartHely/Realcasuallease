@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE sites SET mapMarkerX = NULL, mapMarkerY = NULL WHERE centreId = (SELECT id FROM shopping_centres WHERE name = 'Carnes Hill Marketplace') AND siteNumber IN ('1', '2')",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute UPDATE sites SET mapMarkerX = NULL, mapMarkerY = NULL WHERE centreId = (SELECT id FROM shopping_centres WHERE name = 'Carnes Hill Marketplace') AND siteNumber IN ('1', '2')",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1544
+}
