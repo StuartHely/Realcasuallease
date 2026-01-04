@@ -347,8 +347,9 @@ export default function Search() {
                                 </div>
                                 <div className="space-y-2">
                                   <p className="text-sm">
-                                    <span className="font-semibold">Price:</span> ${site.pricePerDay}/day or $
-                                    {site.pricePerWeek}/week
+                                    <span className="font-semibold">Price:</span> ${site.weekdayRate || site.pricePerDay}/day
+                                    {site.weekendRate && ` (weekday) | $${site.weekendRate}/day (weekend)`}
+                                    {' '}or ${site.pricePerWeek}/week
                                   </p>
                                   {site.restrictions && (
                                     <p className="text-sm">

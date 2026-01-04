@@ -749,3 +749,11 @@
 ## Bug Fix (Jan 3, 2026) - Highlands Marker Save Error - RESOLVED
 - [x] Fix Site 3 marker appearing off the map - Reset Sites 3 & 5 coordinates to NULL (were 200,150 and 350,200)
 - [x] Fix "Failed to save markers" error - Validation exists (0-100%), issue was legacy pixel coords. Now shows "3 of 5 sites marked"
+
+
+## Carnes Hill Bugs (Jan 3, 2026)
+- [x] Address shows "Horningsea Park NSW 2171" three times - NOT REPRODUCIBLE
+- [x] Map not displaying on search results - FALSE, map displays correctly
+- [x] 3 sites off the map - Reset all Carnes Hill markers to NULL (coordinates >100%)
+- [x] All site names show "Site" twice - Fixed seed-data.mjs to strip "Site " prefix
+- [x] Weekend rates not showing - Updated Search.tsx to display weekdayRate and weekendRate

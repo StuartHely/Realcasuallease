@@ -41,7 +41,7 @@ async function seedData() {
     const maxTablesValue = (typeof maxTables === 'number' && !isNaN(maxTables)) ? maxTables : null;
     
     centreMap.get(centreName).sites.push({
-      siteNumber: String(row['Site Number']),
+      siteNumber: String(row['Site Number']).replace(/^Site\s+/i, ''),
       description: row['Site Description'] || '',
       size: row['Site Size'] || '',
       maxTables: maxTablesValue,
