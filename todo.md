@@ -796,3 +796,8 @@
 
 ## Duplicate Suburb Display Fix (Jan 4, 2026)
 - [x] Fix suburbs showing 3 times on Browse Shopping Centres by State NSW page
+
+## Browse Centres Enhancements (Jan 4, 2026)
+- [x] Add centre count badges to state filter buttons (e.g., NSW (24))
+- [x] Implement centre search/filter on state pages
+- [x] Add View on Map links to centre cards

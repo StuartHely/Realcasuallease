@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Building2, ArrowRight } from "lucide-react";
+import { MapPin, Building2, ArrowRight, Search, ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 
 export default function Centres() {
   const [, setLocation] = useLocation();
   const [selectedState, setSelectedState] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Get state from URL query parameter
   useEffect(() => {
@@ -17,6 +19,9 @@ export default function Centres() {
       setSelectedState(stateParam);
     }
   }, []);
+
+  // Fetch all centres for count badges
+  const { data: allCentres = [] } = trpc.centres.list.useQuery();
 
   // Fetch centres filtered by state
   const { data: centres = [], isLoading } = trpc.centres.getByState.useQuery(
@@ -32,6 +37,24 @@ export default function Centres() {
     { code: "WA", name: "Western Australia" },
     { code: "TAS", name: "Tasmania" },
   ];
+
+  // Filter centres by search query
+  const filteredCentres = centres.filter((centre: any) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      centre.name?.toLowerCase().includes(query) ||
+      centre.suburb?.toLowerCase().includes(query) ||
+      centre.city?.toLowerCase().includes(query) ||
+      centre.address?.toLowerCase().includes(query)
+    );
+  });
+
+  // Calculate centre counts per state
+  const stateCounts = states.map(state => ({
+    ...state,
+    count: allCentres.filter((c: any) => c.state === state.code).length
+  }));
 
   const handleStateChange = (stateCode: string) => {
     setSelectedState(stateCode);
@@ -81,6 +104,9 @@ export default function Centres() {
                 >
                   <MapPin className="mr-2 h-4 w-4" />
                   {state.code}
+                  {stateCounts.find(s => s.code === state.code)?.count ? (
+                    <span className="ml-2 text-xs opacity-75">({stateCounts.find(s => s.code === state.code)?.count})</span>
+                  ) : null}
                 </Button>
               ))}
             </div>
@@ -90,15 +116,39 @@ export default function Centres() {
         {/* Results */}
         {selectedState && (
           <div>
-            <h2 className="text-3xl font-bold text-blue-900 mb-6">
-              Shopping Centres in {selectedStateName}
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-3xl font-bold text-blue-900">
+                Shopping Centres in {selectedStateName}
+              </h2>
+              <div className="relative w-full max-w-sm">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search centres by name or suburb..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 border-blue-200 focus:border-blue-400"
+                />
+              </div>
+            </div>
 
             {isLoading ? (
               <div className="text-center py-12">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                 <p className="mt-4 text-gray-600">Loading centres...</p>
               </div>
+            ) : filteredCentres.length === 0 && centres.length > 0 ? (
+              <Card className="shadow-lg">
+                <CardContent className="py-12 text-center">
+                  <Search className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                    No centres match your search
+                  </h3>
+                  <p className="text-gray-500">
+                    Try adjusting your search terms or clear the search to see all centres.
+                  </p>
+                </CardContent>
+              </Card>
             ) : centres.length === 0 ? (
               <Card className="shadow-lg">
                 <CardContent className="py-12 text-center">
@@ -113,7 +163,7 @@ export default function Centres() {
               </Card>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {centres.map((centre: any) => (
+                {filteredCentres.map((centre: any) => (
                   <Card
                     key={centre.id}
                     className="shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
@@ -134,7 +184,7 @@ export default function Centres() {
                         </span>
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-2">
                       <Button
                         className="w-full bg-blue-600 hover:bg-blue-700"
                         onClick={(e) => {
@@ -145,6 +195,21 @@ export default function Centres() {
                         View Details
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
+                      {centre.address && (
+                        <Button
+                          variant="outline"
+                          className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const query = encodeURIComponent(`${centre.name} ${centre.address}`);
+                            window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+                          }}
+                        >
+                          <MapPin className="mr-2 h-4 w-4" />
+                          View on Map
+                          <ExternalLink className="ml-2 h-3 w-3" />
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
