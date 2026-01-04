@@ -787,3 +787,9 @@
 ## Carnes Hill Marker Position Fix (Jan 4, 2026)
 - [x] Fix Sites 1 and 2 markers appearing off the page
 - [x] Reset invalid marker coordinates for Carnes Hill Sites 1 and 2
+
+## Marker Save Issues & Weekend Rates (Jan 4, 2026)
+- [x] Fix Site 3 not appearing in Position Site Markers
+- [x] Fix marker save failures in admin Maps tool (Site 3 coordinate issue resolved)
+- [x] Add weekend rate display to search results
+- [x] Add weekend rate display to site detail cards
