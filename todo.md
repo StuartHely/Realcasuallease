@@ -757,3 +757,16 @@
 - [x] 3 sites off the map - Reset all Carnes Hill markers to NULL (coordinates >100%)
 - [x] All site names show "Site" twice - Fixed seed-data.mjs to strip "Site " prefix
 - [x] Weekend rates not showing - Updated Search.tsx to display weekdayRate and weekendRate
+
+
+## Follow-up Fixes (Jan 3, 2026)
+- [ ] Fix duplicate floor tabs (2 Ground Floor, 2 Level 1) in Interactive Centre Map
+- [ ] Update existing site records to strip "Site " prefix from siteNumber field
+- [ ] Populate weekend rates in database for sites with different weekend pricing
+- [ ] Verify Carnes Hill markers can be repositioned in admin
+
+
+## Follow-up Fixes (Jan 3, 2026) - COMPLETE
+- [x] Fix duplicate Ground Floor and Level 1 tabs - Deleted duplicate floor_levels records (IDs 60001, 60002) for Campbelltown Mall
+- [x] Update existing site records - SQL: UPDATE sites SET siteNumber = TRIM(REPLACE(siteNumber, 'Site ', '')) WHERE siteNumber LIKE 'Site %'
+- [x] Weekend rates - Column doesn't exist in schema, skipped (weekendRate field not in sites table)
