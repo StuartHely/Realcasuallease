@@ -779,3 +779,7 @@
 - [x] Update marker styling to round circles with #123047 background - Changed from MapPin icon to round div
 - [x] Display site numbers in markers with #F5F7FA color - Applied inline styles
 - [ ] Position all 7 Carnes Hill site markers on floor plan - User action required in Admin → Maps
+
+## Marker Size Adjustment (Jan 4, 2026)
+- [x] Reduce front-end site markers by 20% with proportionately larger text
+- [x] Update admin markers to match front-end styling

@@ -112,7 +112,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName }: 
             onMouseLeave={() => setHoveredSite(null)}
             onClick={() => handleMarkerClick(site.id)}
           >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold" style={{ backgroundColor: '#123047', color: '#F5F7FA' }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ backgroundColor: '#123047', color: '#F5F7FA' }}>
               {site.siteNumber}
             </div>
           </div>

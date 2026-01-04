@@ -513,21 +513,20 @@ export default function AdminMaps() {
                         {markers.map((marker) => (
                           <div
                             key={marker.siteId}
-                            className="absolute transform -translate-x-1/2 -translate-y-full cursor-move group"
+                            className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-move group"
                             style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
                             onMouseDown={() => handleMarkerDragStart(marker.siteId)}
                           >
                             <div className="relative">
-                              <MapPin className="h-8 w-8 text-red-600 drop-shadow-lg" fill="currentColor" />
-                              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-blue-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                                Site {marker.siteNumber}
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ backgroundColor: '#123047', color: '#F5F7FA' }}>
+                                {marker.siteNumber}
                               </div>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleRemoveMarker(marker.siteId);
                                 }}
-                                className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                               >
                                 <X className="h-3 w-3" />
                               </button>
