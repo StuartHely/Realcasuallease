@@ -128,6 +128,7 @@ export default function Centres() {
                           <div>
                             {[centre.suburb, centre.city, centre.state, centre.postcode]
                               .filter(Boolean)
+                              .filter((value, index, self) => self.indexOf(value) === index)
                               .join(", ")}
                           </div>
                         </span>

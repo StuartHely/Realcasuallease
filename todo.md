@@ -793,3 +793,6 @@
 - [x] Fix marker save failures in admin Maps tool (Site 3 coordinate issue resolved)
 - [x] Add weekend rate display to search results
 - [x] Add weekend rate display to site detail cards
+
+## Duplicate Suburb Display Fix (Jan 4, 2026)
+- [x] Fix suburbs showing 3 times on Browse Shopping Centres by State NSW page
