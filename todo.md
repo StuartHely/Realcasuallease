@@ -770,3 +770,12 @@
 - [x] Fix duplicate Ground Floor and Level 1 tabs - Deleted duplicate floor_levels records (IDs 60001, 60002) for Campbelltown Mall
 - [x] Update existing site records - SQL: UPDATE sites SET siteNumber = TRIM(REPLACE(siteNumber, 'Site ', '')) WHERE siteNumber LIKE 'Site %'
 - [x] Weekend rates - Column doesn't exist in schema, skipped (weekendRate field not in sites table)
+
+
+## New Features (Jan 4, 2026)
+- [x] Add weekendRate column to sites table schema - Already exists as weekendPricePerDay
+- [x] Run database migration for weekendRate field - Not needed
+- [x] Populate weekend rates (1.2x weekday rate) for all sites - SQL: UPDATE sites SET weekendPricePerDay = ROUND(pricePerDay * 1.2, 2) WHERE weekendPricePerDay IS NULL
+- [x] Update marker styling to round circles with #123047 background - Changed from MapPin icon to round div
+- [x] Display site numbers in markers with #F5F7FA color - Applied inline styles
+- [ ] Position all 7 Carnes Hill site markers on floor plan - User action required in Admin → Maps

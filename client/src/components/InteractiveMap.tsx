@@ -101,20 +101,18 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName }: 
         
         {/* Site Markers */}
         {sitesWithMarkers.map((site: Site) => (
-          <div
+           <div
             key={site.id}
-            className="absolute transform -translate-x-1/2 -translate-y-full cursor-pointer hover:scale-110 transition-transform z-10"
+            className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform z-10"
             style={{
               left: `${site.mapMarkerX}%`,
               top: `${site.mapMarkerY}%`,
             }}
             onMouseEnter={(e) => handleMarkerHover(site, e)}
-            onMouseMove={(e) => handleMarkerHover(site, e)}
-            onMouseLeave={handleMarkerLeave}
+            onMouseLeave={() => setHoveredSite(null)}
             onClick={() => handleMarkerClick(site.id)}
           >
-            <MapPin className="h-8 w-8 text-red-600 drop-shadow-lg" fill="currentColor" />
-            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-blue-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap font-semibold">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold" style={{ backgroundColor: '#123047', color: '#F5F7FA' }}>
               {site.siteNumber}
             </div>
           </div>
