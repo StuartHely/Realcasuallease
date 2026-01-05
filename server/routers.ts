@@ -661,7 +661,14 @@ export const appRouter = router({
         imageUrl4: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, dailyRate, weeklyRate, weekendRate, ...rest } = input;
+        const data: any = { ...rest };
+        
+        // Map frontend field names to database column names
+        if (dailyRate !== undefined) data.pricePerDay = dailyRate;
+        if (weeklyRate !== undefined) data.pricePerWeek = weeklyRate;
+        if (weekendRate !== undefined) data.weekendPricePerDay = weekendRate;
+        
         return await db.updateSite(id, data);
       }),
 

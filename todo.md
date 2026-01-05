@@ -826,3 +826,8 @@
 
 - [x] Sort centre dropdown selections alphabetically in Admin pages
 - [x] Fix daily/weekly rate updates defaulting back to $150/$750
+
+## Rate Management Enhancements (Jan 5, 2026)
+- [x] Test rate persistence - verify rates save correctly without reverting
+- [ ] Implement bulk rate update tool for admin
+- [ ] Add rate history tracking with audit log
