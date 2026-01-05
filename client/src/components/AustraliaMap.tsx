@@ -145,9 +145,58 @@ export default function AustraliaMap({ centres }: AustraliaMapProps) {
       markerClustererRef.current.clearMarkers();
     }
 
+    // Custom cluster renderer with navy theme
+    const renderer = {
+      render: ({ count, position }: { count: number; position: google.maps.LatLng }) => {
+        // Create cluster marker element
+        const clusterDiv = document.createElement('div');
+        clusterDiv.className = 'cluster-marker';
+        clusterDiv.style.cssText = `
+          background-color: #123047;
+          color: #F5F7FA;
+          border-radius: 50%;
+          width: 50px;
+          height: 50px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          font-size: 16px;
+          cursor: pointer;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          border: 2px solid #F5F7FA;
+        `;
+        clusterDiv.textContent = String(count);
+
+        // Create advanced marker for cluster
+        const clusterMarker = new AdvancedMarkerElement({
+          position,
+          content: clusterDiv,
+          map,
+        });
+
+        // Add click analytics tracking
+        clusterDiv.addEventListener('click', () => {
+          console.log('Cluster clicked:', {
+            count,
+            position: { lat: position.lat(), lng: position.lng() },
+            zoom: map.getZoom(),
+            timestamp: new Date().toISOString(),
+          });
+          
+          // Zoom into cluster
+          map.setCenter(position);
+          map.setZoom((map.getZoom() || 4) + 2);
+        });
+
+        return clusterMarker;
+      },
+    };
+
     markerClustererRef.current = new MarkerClusterer({
       map,
       markers,
+      renderer,
     });
 
     // Fit bounds to show all markers
