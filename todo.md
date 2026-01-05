@@ -810,3 +810,8 @@
 - [x] Move state buttons closer to search box on home page
 - [x] Add Australia map with clustered markers on home page
 - [x] Add hover preview showing floor plan thumbnail on map markers
+
+## Marker Clustering Fix
+
+- [x] Fix Google Maps duplicate loading error
+- [x] Fix marker clustering not working on Australia map when zoomed out

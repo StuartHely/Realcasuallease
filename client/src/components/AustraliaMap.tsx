@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { MapView } from "@/components/Map";
+import { MarkerClusterer } from "@googlemaps/markerclusterer";
 
 interface Centre {
   id: number;
@@ -139,9 +140,6 @@ export default function AustraliaMap({ centres }: AustraliaMapProps) {
 
     markersRef.current = markers;
 
-    // Load MarkerClusterer
-    const { MarkerClusterer } = await window.google.maps.importLibrary("markerClusterer") as any;
-    
     // Create marker clusterer
     if (markerClustererRef.current) {
       markerClustererRef.current.clearMarkers();
@@ -150,7 +148,6 @@ export default function AustraliaMap({ centres }: AustraliaMapProps) {
     markerClustererRef.current = new MarkerClusterer({
       map,
       markers,
-      algorithm: new (MarkerClusterer as any).SuperClusterAlgorithm({ radius: 100 }),
     });
 
     // Fit bounds to show all markers
