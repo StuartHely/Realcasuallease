@@ -801,3 +801,12 @@
 - [x] Add centre count badges to state filter buttons (e.g., NSW (24))
 - [x] Implement centre search/filter on state pages
 - [x] Add View on Map links to centre cards
+
+## Centre Page & Map Improvements (Jan 4, 2026)
+- [x] Fix centre page map to auto-fit within visible screen
+- [x] Add site images to Site Details section (use existing images or 'Image coming soon')
+- [x] Standardize Admin markers to round style matching front-end (already matching)
+- [x] Update pricing display: weekday/weekend/week format everywhere (already implemented)
+- [x] Move state buttons closer to search box on home page
+- [x] Add Australia map with clustered markers on home page
+- [x] Add hover preview showing floor plan thumbnail on map markers

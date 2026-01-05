@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, Calendar, CheckCircle, MapPin } from "lucide-react";
+import AustraliaMap from "@/components/AustraliaMap";
 import { format } from "date-fns";
 import { trpc } from "@/lib/trpc";
 
@@ -31,6 +32,9 @@ export default function Home() {
     { query: debouncedQuery },
     { enabled: debouncedQuery.length >= 2 }
   );
+
+  // Fetch all centres for map
+  const { data: allCentres = [] } = trpc.centres.list.useQuery();
 
   // Show suggestions when typing
   useEffect(() => {
@@ -202,15 +206,12 @@ export default function Home() {
                     Search
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* State Filter Buttons */}
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold text-white mb-4 text-center">
-                Or browse by state:
-              </h3>
-              <div className="flex flex-wrap justify-center gap-3">
+                {/* State Filter Buttons */}
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <p className="text-sm text-gray-600 mb-3 text-center">
+                    Or browse by state:
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-3">
                 {[
                   { code: "NSW", name: "New South Wales" },
                   { code: "VIC", name: "Victoria" },
@@ -229,7 +230,24 @@ export default function Home() {
                     {state.code}
                   </Button>
                 ))}
-              </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Australia Map with Centre Markers - Coming in Phase 6 */}
+            <div className="mt-12">
+              <Card className="shadow-xl">
+                <CardHeader>
+                  <CardTitle className="text-2xl">Explore Centres Across Australia</CardTitle>
+                  <CardDescription>
+                    Click on any marker to view centre details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AustraliaMap centres={allCentres} />
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>

@@ -95,7 +95,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName }: 
         <img
           src={displayMapUrl}
           alt={`${centreName} floor plan`}
-          className="w-full h-auto"
+          className="w-full h-auto max-h-[600px] object-contain"
           draggable={false}
         />
         

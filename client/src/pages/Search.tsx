@@ -317,7 +317,21 @@ export default function Search() {
                             }`}
                           >
                             <CardHeader>
-                              <div className="flex items-start justify-between">
+                              <div className="flex items-start justify-between gap-4">
+                                {/* Site Image */}
+                                <div className="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                                  {site.imageUrl1 ? (
+                                    <img
+                                      src={site.imageUrl1}
+                                      alt={`Site ${site.siteNumber}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 text-center p-2">
+                                      Image coming soon
+                                    </div>
+                                  )}
+                                </div>
                                 <div className="flex-1">
                                   <CardTitle className="text-lg">Site {site.siteNumber}</CardTitle>
                                   <CardDescription className="mt-2">
