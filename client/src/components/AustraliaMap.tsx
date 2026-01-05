@@ -25,16 +25,28 @@ export default function AustraliaMap({ centres }: AustraliaMapProps) {
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   const markerClustererRef = useRef<any>(null);
 
-  const handleMapReady = async (map: google.maps.Map) => {
-    // Filter centres with valid coordinates
-    const validCentres = centres.filter(
-      (c) => c.latitude && c.longitude && !isNaN(parseFloat(c.latitude)) && !isNaN(parseFloat(c.longitude))
-    );
+  // Check if any centres have valid coordinates
+  const validCentres = centres.filter(
+    (c) => c.latitude && c.longitude && !isNaN(parseFloat(c.latitude)) && !isNaN(parseFloat(c.longitude))
+  );
 
-    if (validCentres.length === 0) {
-      console.warn("No centres with valid coordinates found");
-      return;
-    }
+  // Show placeholder if no coordinates
+  if (validCentres.length === 0) {
+    return (
+      <div className="w-full h-[600px] rounded-lg overflow-hidden border-2 border-gray-200 flex items-center justify-center bg-gray-50">
+        <div className="text-center p-8">
+          <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Map Coming Soon</h3>
+          <p className="text-gray-600">Centre locations are being added. Please use the state filters above to browse centres.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleMapReady = async (map: google.maps.Map) => {
+    // validCentres already filtered above
 
     // Clear existing markers
     markersRef.current.forEach((marker) => marker.map = null);

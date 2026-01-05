@@ -1,0 +1,80 @@
+{
+  "query": "SELECT id, name, latitude, longitude, state FROM shopping_centres LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, name, latitude, longitude, state FROM shopping_centres LIMIT 10",
+  "rows": [
+    {
+      "id": "60003",
+      "name": "Highlands Marketplace",
+      "latitude": "-34.4474000",
+      "longitude": "150.4379400",
+      "state": "NSW"
+    },
+    {
+      "id": "60004",
+      "name": "Campbelltown Mall",
+      "latitude": "-34.0699200",
+      "longitude": "150.8113500",
+      "state": "NSW"
+    },
+    {
+      "id": "60005",
+      "name": "Carnes Hill Marketplace",
+      "latitude": "-33.9356400",
+      "longitude": "150.8431100",
+      "state": "NSW"
+    },
+    {
+      "id": "60006",
+      "name": "Pacific Square",
+      "latitude": "-33.9356400",
+      "longitude": "150.8431100",
+      "state": "NSW"
+    },
+    {
+      "id": "60007",
+      "name": "Wanneroo Central",
+      "latitude": "-31.7520600",
+      "longitude": "115.8054900",
+      "state": "WA"
+    },
+    {
+      "id": "60008",
+      "name": "Rockdale Plaza",
+      "latitude": "-33.9572700",
+      "longitude": "151.1394300",
+      "state": "NSW"
+    },
+    {
+      "id": "60009",
+      "name": "Bass Hill Plaza",
+      "latitude": "-33.8980000",
+      "longitude": "150.9942400",
+      "state": "NSW"
+    },
+    {
+      "id": "60010",
+      "name": "Corio Village",
+      "latitude": "-38.0741500",
+      "longitude": "144.3587100",
+      "state": "VIC"
+    },
+    {
+      "id": "90001",
+      "name": "Test Centre",
+      "latitude": "NULL",
+      "longitude": "NULL",
+      "state": "NSW"
+    },
+    {
+      "id": "90002",
+      "name": "Test Centre for Site",
+      "latitude": "NULL",
+      "longitude": "NULL",
+      "state": "NSW"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tlatitude\tlongitude\tstate\n60003\tHighlands Marketplace\t-34.4474000\t150.4379400\tNSW\n60004\tCampbelltown Mall\t-34.0699200\t150.8113500\tNSW\n60005\tCarnes Hill Marketplace\t-33.9356400\t150.8431100\tNSW\n60006\tPacific Square\t-33.9356400\t150.8431100\tNSW\n60007\tWanneroo Central\t-31.7520600\t115.8054900\tWA\n60008\tRockdale Plaza\t-33.9572700\t151.1394300\tNSW\n60009\tBass Hill Plaza\t-33.8980000\t150.9942400\tNSW\n60010\tCorio Village\t-38.0741500\t144.3587100\tVIC\n90001\tTest Centre\tNULL\tNULL\tNSW\n90002\tTest Centre for Site\tNULL\tNULL\tNSW\n",
+  "stderr": "",
+  "execution_time_ms": 1518
+}

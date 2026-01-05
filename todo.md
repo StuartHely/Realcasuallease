@@ -857,3 +857,7 @@
 - [x] L2-99 site visibility investigated (NOT missing - on Mezzanine Level)
 - [x] Long site names font size reduced (text-sm → text-xs)
 - [x] Eastgate map issue documented (needs floor plan images uploaded)
+
+## Australia Map Not Showing (Jan 5, 2026)
+- [x] Investigate why Australia map is not displaying on home page - centres have no coordinates
+- [x] Fix map rendering issue - added placeholder message when no coordinates
