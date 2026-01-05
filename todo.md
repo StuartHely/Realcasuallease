@@ -881,3 +881,10 @@
 - [x] Check if floor plan images were saved - images exist in floor_levels table
 - [x] Investigate InteractiveMap - found getShoppingCentreById missing floor level data
 - [x] Fix floor plan display - modified getShoppingCentreById to include first floor mapImageUrl
+
+## Floor-Level Filtering for InteractiveMap (Jan 5, 2026)
+- [x] Modify InteractiveMap - already implemented, loads floor levels via trpc.admin.getFloorLevels
+- [x] Add floor level tabs - already implemented with Tabs component
+- [x] Filter displayed sites - already implemented, filters by floorLevelId
+- [x] Update map image - already implemented, switches mapImageUrl per floor
+- [x] Test on Eastgate - VERIFIED WORKING: Ground Floor shows 3 sites, Mezzanine shows 2 sites
