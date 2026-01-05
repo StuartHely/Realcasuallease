@@ -861,3 +861,18 @@
 ## Australia Map Not Showing (Jan 5, 2026)
 - [x] Investigate why Australia map is not displaying on home page - centres have no coordinates
 - [x] Fix map rendering issue - added placeholder message when no coordinates
+
+## Eastgate Floor Plan Not Showing (Jan 5, 2026)
+- [x] Investigate why Eastgate floor plan is not displaying - no floor plan images uploaded yet
+- [x] Check if floor levels have map images uploaded - confirmed NULL mapImageUrl
+- [x] Fix floor plan display issue - no fix needed, user must upload images via Admin → Maps
+
+## Australia Map Not Showing in Manus Preview (Jan 5, 2026)
+- [ ] Investigate why map works in dev URL but not in Manus Preview iframe
+- [ ] Check for iframe/CSP restrictions affecting Google Maps API
+- [ ] Fix map rendering in iframe context
+
+## Server and Mezzanine Level Issues (Jan 5, 2026)
+- [x] Fix tRPC API error returning HTML instead of JSON - restarted server
+- [x] Investigate Eastgate Mezzanine Level sites not appearing - fixed by server restart
+- [x] Fix Mezzanine Level sites display issue - resolved after server restart
