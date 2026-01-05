@@ -199,6 +199,10 @@ export const bookings = mysqlTable("bookings", {
   tablesRequested: int("tablesRequested").default(0),
   chairsRequested: int("chairsRequested").default(0),
   stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
+  customerEmail: varchar("customerEmail", { length: 320 }),
+  confirmationEmailSent: boolean("confirmationEmailSent").default(false).notNull(),
+  reminderEmailSent: boolean("reminderEmailSent").default(false).notNull(),
+  completionEmailSent: boolean("completionEmailSent").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

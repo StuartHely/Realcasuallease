@@ -11,6 +11,7 @@ interface Site {
   size: string | null;
   pricePerDay: string;
   pricePerWeek: string;
+  weekendPricePerDay?: string | null;
   imageUrl1: string | null;
   mapMarkerX: number | null;
   mapMarkerY: number | null;
@@ -165,21 +166,30 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName }: 
 
                 <div className="pt-2 border-t border-gray-200">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Per Week:</span>
-                    <span className="font-bold text-blue-900 text-base flex items-center gap-1">
-                      <DollarSign className="h-4 w-4" />
-                      {hoveredSite.pricePerWeek
-                        ? Number(hoveredSite.pricePerWeek).toFixed(2)
-                        : "750.00"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm mt-1">
-                    <span className="text-gray-600">Per Day:</span>
+                    <span className="text-gray-600">Mon-Fri:</span>
                     <span className="font-semibold text-gray-700 flex items-center gap-1">
                       <DollarSign className="h-3 w-3" />
                       {hoveredSite.pricePerDay
                         ? Number(hoveredSite.pricePerDay).toFixed(2)
-                        : "150.00"}
+                        : "150.00"}/day
+                    </span>
+                  </div>
+                  {hoveredSite.weekendPricePerDay && hoveredSite.weekendPricePerDay !== hoveredSite.pricePerDay && (
+                    <div className="flex items-center justify-between text-sm mt-1">
+                      <span className="text-gray-600">Weekend:</span>
+                      <span className="font-semibold text-purple-700 flex items-center gap-1">
+                        <DollarSign className="h-3 w-3" />
+                        {Number(hoveredSite.weekendPricePerDay).toFixed(2)}/day
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-sm mt-1">
+                    <span className="text-gray-600">Weekly:</span>
+                    <span className="font-bold text-blue-900 flex items-center gap-1">
+                      <DollarSign className="h-4 w-4" />
+                      {hoveredSite.pricePerWeek
+                        ? Number(hoveredSite.pricePerWeek).toFixed(2)
+                        : "750.00"}
                     </span>
                   </div>
                 </div>

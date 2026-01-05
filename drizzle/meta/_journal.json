@@ -78,6 +78,13 @@
       "when": 1767588910266,
       "tag": "0010_ancient_patch",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1767608819445,
+      "tag": "0011_glossy_hobgoblin",
+      "breakpoints": true
     }
   ]
 }

@@ -888,3 +888,19 @@
 - [x] Filter displayed sites - already implemented, filters by floorLevelId
 - [x] Update map image - already implemented, switches mapImageUrl per floor
 - [x] Test on Eastgate - VERIFIED WORKING: Ground Floor shows 3 sites, Mezzanine shows 2 sites
+
+## Pricing Display Standardization (Jan 5, 2026)
+- [ ] Audit all pages showing prices (Search, Site Details, Admin, Booking pages)
+- [ ] Update InteractiveMap hover tooltip to show weekday/weekend/weekly rates
+- [ ] Update site detail pages to show all three rate types
+- [ ] Update admin pages to show all three rate types
+- [ ] Update booking confirmation pages to show all three rate types
+
+## Automated Email Notifications (Jan 5, 2026)
+- [ ] Design email notification system architecture
+- [ ] Create email template for booking confirmation
+- [ ] Create email template for 24h reminder before lease start
+- [ ] Create email template for booking completion receipt
+- [ ] Implement email sending via notifyOwner or custom email service
+- [ ] Add email triggers to booking workflow
+- [ ] Test all email notifications end-to-end

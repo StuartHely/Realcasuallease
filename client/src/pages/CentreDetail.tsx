@@ -188,16 +188,24 @@ export default function CentreDetail() {
                         <span>Power Available</span>
                       </div>
                     )}
-                    <div className="pt-3 border-t border-gray-200">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-600">Per Day:</span>
-                        <span className="font-semibold text-blue-900">
-                          ${site.pricePerDay ? Number(site.pricePerDay).toFixed(2) : "150.00"}
+                    <div className="pt-3 border-t border-gray-200 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Mon-Fri:</span>
+                        <span className="font-semibold text-gray-900">
+                          ${site.pricePerDay ? Number(site.pricePerDay).toFixed(2) : "150.00"}/day
                         </span>
                       </div>
+                      {site.weekendPricePerDay && site.weekendPricePerDay !== site.pricePerDay && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Weekend:</span>
+                          <span className="font-semibold text-purple-700">
+                            ${Number(site.weekendPricePerDay).toFixed(2)}/day
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Per Week:</span>
-                        <span className="font-semibold text-blue-900">
+                        <span className="text-sm text-gray-600">Weekly:</span>
+                        <span className="font-bold text-blue-900">
                           ${site.pricePerWeek ? Number(site.pricePerWeek).toFixed(2) : "750.00"}
                         </span>
                       </div>
