@@ -361,7 +361,7 @@ export default function AdminMaps() {
                     <SelectValue placeholder="Select a centre" />
                   </SelectTrigger>
                   <SelectContent>
-                    {centres.map((centre: any) => (
+                    {centres.sort((a: any, b: any) => a.name.localeCompare(b.name)).map((centre: any) => (
                       <SelectItem key={centre.id} value={centre.id.toString()}>
                         {centre.name} - {centre.suburb}, {centre.state}
                       </SelectItem>

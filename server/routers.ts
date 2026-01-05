@@ -653,6 +653,7 @@ export const appRouter = router({
         restrictions: z.string().optional(),
         dailyRate: z.string().optional(),
         weeklyRate: z.string().optional(),
+        weekendRate: z.string().optional(),
         instantBooking: z.boolean().optional(),
         imageUrl1: z.string().optional(),
         imageUrl2: z.string().optional(),

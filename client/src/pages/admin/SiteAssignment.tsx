@@ -112,7 +112,7 @@ export default function AdminSiteAssignment() {
               <SelectValue placeholder="Select a shopping centre..." />
             </SelectTrigger>
             <SelectContent>
-              {centres.map((c) => (
+              {centres.sort((a, b) => a.name.localeCompare(b.name)).map((c) => (
                 <SelectItem key={c.id} value={c.id.toString()}>
                   {c.name}
                 </SelectItem>

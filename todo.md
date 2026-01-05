@@ -821,3 +821,8 @@
 - [x] Test marker clustering behavior on Australia map
 - [x] Add custom cluster styling with navy theme colors
 - [x] Implement cluster click analytics tracking
+
+## Admin Fixes
+
+- [x] Sort centre dropdown selections alphabetically in Admin pages
+- [x] Fix daily/weekly rate updates defaulting back to $150/$750
