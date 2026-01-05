@@ -876,3 +876,8 @@
 - [x] Fix tRPC API error returning HTML instead of JSON - restarted server
 - [x] Investigate Eastgate Mezzanine Level sites not appearing - fixed by server restart
 - [x] Fix Mezzanine Level sites display issue - resolved after server restart
+
+## Eastgate Floor Plan Not Displaying on Front-End (Jan 5, 2026)
+- [x] Check if floor plan images were saved - images exist in floor_levels table
+- [x] Investigate InteractiveMap - found getShoppingCentreById missing floor level data
+- [x] Fix floor plan display - modified getShoppingCentreById to include first floor mapImageUrl

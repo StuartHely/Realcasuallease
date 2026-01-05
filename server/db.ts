@@ -147,8 +147,27 @@ export async function getShoppingCentres() {
 export async function getShoppingCentreById(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.select().from(shoppingCentres).where(eq(shoppingCentres.id, id)).limit(1);
-  return result[0];
+  
+  // Get centre with first available floor level's map
+  const centreResult = await db.select().from(shoppingCentres).where(eq(shoppingCentres.id, id)).limit(1);
+  const centre = centreResult[0];
+  
+  if (!centre) return undefined;
+  
+  // Get first floor level with a map image
+  const floorResult = await db.select()
+    .from(floorLevels)
+    .where(eq(floorLevels.centreId, id))
+    .orderBy(floorLevels.levelNumber)
+    .limit(1);
+  
+  const firstFloor = floorResult[0];
+  
+  // Add mapImageUrl from first floor level if available
+  return {
+    ...centre,
+    mapImageUrl: firstFloor?.mapImageUrl || null
+  };
 }
 
 export async function getShoppingCentresByState(state: string) {
