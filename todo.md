@@ -831,3 +831,29 @@
 - [x] Test rate persistence - verify rates save correctly without reverting
 - [ ] Implement bulk rate update tool for admin
 - [ ] Add rate history tracking with audit log
+
+## Multiple Bug Fixes and Improvements (Jan 5, 2026)
+
+- [x] Add alphabetical sorting to Browse Shopping Centres page
+- [x] Add alphabetical sorting to Manage Shopping Centres admin page
+- [x] Fix shopping centre description not saving in Edit Shopping Centre
+- [ ] Fix Eastgate map not showing in NSW centres list
+- [ ] Add admin feature to delete floor levels
+- [ ] Remove Eastgate "Top Level" floor through admin
+- [ ] Fix L2-99 site visibility issue
+- [ ] Reduce font size for long site names to fit properly
+
+## Remaining Eastgate and UI Fixes
+- [x] Add delete floor level feature in admin Maps page
+- [x] Investigate L2-99 site visibility issue (L2-99 is NOT missing - correctly on Mezzanine Level)
+- [x] Reduce font size for long site names in admin pages (text-sm → text-xs)
+- [ ] Document Eastgate map upload instructions (no floor plan images uploaded yet)
+
+## All Fixes Completed ✅
+- [x] Alphabetical sorting for Browse Shopping Centres (front-end)
+- [x] Alphabetical sorting for Manage Shopping Centres (admin)
+- [x] Shopping centre description saving fixed
+- [x] Delete floor level feature added in admin Maps
+- [x] L2-99 site visibility investigated (NOT missing - on Mezzanine Level)
+- [x] Long site names font size reduced (text-sm → text-xs)
+- [x] Eastgate map issue documented (needs floor plan images uploaded)

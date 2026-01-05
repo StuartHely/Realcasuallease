@@ -1,0 +1,31 @@
+{
+  "query": "SELECT id, centreId, levelName, levelNumber, displayOrder \nFROM floor_levels \nWHERE centreId = 120010 \nORDER BY displayOrder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, centreId, levelName, levelNumber, displayOrder \nFROM floor_levels \nWHERE centreId = 120010 \nORDER BY displayOrder;",
+  "rows": [
+    {
+      "id": "90001",
+      "centreId": "120010",
+      "levelName": "Ground Floor",
+      "levelNumber": "0",
+      "displayOrder": "0"
+    },
+    {
+      "id": "90002",
+      "centreId": "120010",
+      "levelName": "Top Level",
+      "levelNumber": "1",
+      "displayOrder": "1"
+    },
+    {
+      "id": "120001",
+      "centreId": "120010",
+      "levelName": "Mezzanine Level",
+      "levelNumber": "1",
+      "displayOrder": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcentreId\tlevelName\tlevelNumber\tdisplayOrder\n90001\t120010\tGround Floor\t0\t0\n90002\t120010\tTop Level\t1\t1\n120001\t120010\tMezzanine Level\t1\t2\n",
+  "stderr": "",
+  "execution_time_ms": 1612
+}

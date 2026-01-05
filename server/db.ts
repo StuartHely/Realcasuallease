@@ -611,6 +611,25 @@ export async function createFloorLevel(data: InsertFloorLevel) {
   return result;
 }
 
+export async function deleteFloorLevel(floorLevelId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Check if floor has any sites assigned
+  const sitesOnFloor = await db
+    .select()
+    .from(sites)
+    .where(eq(sites.floorLevelId, floorLevelId));
+  
+  if (sitesOnFloor.length > 0) {
+    throw new Error(`Cannot delete floor level with ${sitesOnFloor.length} sites assigned. Please reassign or delete sites first.`);
+  }
+  
+  // Delete the floor level
+  await db.delete(floorLevels).where(eq(floorLevels.id, floorLevelId));
+  return { success: true };
+}
+
 export async function uploadFloorLevelMap(floorLevelId: number, imageData: string, fileName: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

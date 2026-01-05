@@ -38,17 +38,19 @@ export default function Centres() {
     { code: "TAS", name: "Tasmania" },
   ];
 
-  // Filter centres by search query
-  const filteredCentres = centres.filter((centre: any) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      centre.name?.toLowerCase().includes(query) ||
-      centre.suburb?.toLowerCase().includes(query) ||
-      centre.city?.toLowerCase().includes(query) ||
-      centre.address?.toLowerCase().includes(query)
-    );
-  });
+  // Filter centres by search query and sort alphabetically
+  const filteredCentres = centres
+    .filter((centre: any) => {
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        centre.name?.toLowerCase().includes(query) ||
+        centre.suburb?.toLowerCase().includes(query) ||
+        centre.city?.toLowerCase().includes(query) ||
+        centre.address?.toLowerCase().includes(query)
+      );
+    })
+    .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
 
   // Calculate centre counts per state
   const stateCounts = states.map(state => ({

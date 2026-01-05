@@ -63,6 +63,18 @@ export default function AdminMaps() {
     },
   });
 
+  // Delete floor level mutation
+  const deleteFloorLevelMutation = trpc.admin.deleteFloorLevel.useMutation({
+    onSuccess: () => {
+      toast.success("Floor level deleted successfully");
+      refetchFloorLevels();
+      setSelectedFloorLevelId(null);
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to delete floor level: ${error.message}`);
+    },
+  });
+
   // Upload map mutation (for both single-level and multi-level)
   const uploadMapMutation = trpc.admin.uploadCentreMap.useMutation({
     onSuccess: (data: any) => {
@@ -195,6 +207,13 @@ export default function AdminMaps() {
       }
     };
     reader.readAsDataURL(mapImage);
+  };
+
+  const handleDeleteFloorLevel = async (floorLevelId: number, levelName: string) => {
+    if (!confirm(`Are you sure you want to delete "${levelName}"? This action cannot be undone.`)) {
+      return;
+    }
+    await deleteFloorLevelMutation.mutateAsync({ floorLevelId });
   };
 
   const handleCreateFloorLevel = async () => {
@@ -401,15 +420,33 @@ export default function AdminMaps() {
               <CardContent>
                 <div className="space-y-4">
                   {floorLevels.length > 0 && (
-                    <Tabs value={selectedFloorLevelId?.toString() || ""} onValueChange={(val) => setSelectedFloorLevelId(parseInt(val))}>
-                      <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${floorLevels.length}, 1fr)` }}>
-                        {floorLevels.map((floor: any) => (
-                          <TabsTrigger key={floor.id} value={floor.id.toString()}>
-                            {floor.levelName}
-                          </TabsTrigger>
-                        ))}
-                      </TabsList>
-                    </Tabs>
+                    <div className="space-y-2">
+                      <Tabs value={selectedFloorLevelId?.toString() || ""} onValueChange={(val) => setSelectedFloorLevelId(parseInt(val))}>
+                        <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${floorLevels.length}, 1fr)` }}>
+                          {floorLevels.map((floor: any) => (
+                            <TabsTrigger key={floor.id} value={floor.id.toString()}>
+                              {floor.levelName}
+                            </TabsTrigger>
+                          ))}
+                        </TabsList>
+                      </Tabs>
+                      {selectedFloorLevelId && (
+                        <div className="flex justify-end">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              const floor = floorLevels.find((f: any) => f.id === selectedFloorLevelId);
+                              if (floor) handleDeleteFloorLevel(floor.id, floor.levelName);
+                            }}
+                            disabled={deleteFloorLevelMutation.isPending}
+                          >
+                            <X className="mr-2 h-4 w-4" />
+                            {deleteFloorLevelMutation.isPending ? "Deleting..." : "Delete Selected Floor"}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   {/* Add New Floor Level */}
@@ -518,7 +555,7 @@ export default function AdminMaps() {
                             onMouseDown={() => handleMarkerDragStart(marker.siteId)}
                           >
                             <div className="relative">
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ backgroundColor: '#123047', color: '#F5F7FA' }}>
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: '#123047', color: '#F5F7FA' }}>
                                 {marker.siteNumber}
                               </div>
                               <button

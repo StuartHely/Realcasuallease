@@ -108,6 +108,7 @@ export const shoppingCentres = mysqlTable("shopping_centres", {
   city: varchar("city", { length: 100 }),
   state: varchar("state", { length: 50 }),
   postcode: varchar("postcode", { length: 10 }),
+  description: text("description"),
   latitude: decimal("latitude", { precision: 10, scale: 7 }),
   longitude: decimal("longitude", { precision: 10, scale: 7 }),
   majors: text("majors"),

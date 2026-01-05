@@ -300,7 +300,7 @@ export default function AdminCentres() {
 
         {/* Centres List */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {centres?.map((centre) => (
+          {centres?.sort((a, b) => (a.name || '').localeCompare(b.name || '')).map((centre) => (
             <Card key={centre.id}>
               <CardHeader>
                 <div className="flex items-start justify-between">

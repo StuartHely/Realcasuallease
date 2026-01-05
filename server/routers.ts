@@ -803,6 +803,12 @@ export const appRouter = router({
         return await db.createFloorLevel(input);
       }),
 
+    deleteFloorLevel: adminProcedure
+      .input(z.object({ floorLevelId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.deleteFloorLevel(input.floorLevelId);
+      }),
+
     uploadFloorLevelMap: adminProcedure
       .input(z.object({
         floorLevelId: z.number(),
