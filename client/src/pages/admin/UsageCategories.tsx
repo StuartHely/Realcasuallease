@@ -52,10 +52,16 @@ export default function UsageCategories() {
     
     // Load existing approved categories for this site
     const site = sitesWithCategories?.find(s => s.id === id);
-    if (site) {
-      setSelectedCategories(site.approvedCategoryIds);
-      // Check if all categories are selected
-      setAllTickedOverride(site.approvedCategoryIds.length === categories?.length);
+    if (site && categories) {
+      // If no approvals exist yet (empty array), default to all approved
+      if (site.approvedCategoryIds.length === 0) {
+        setSelectedCategories(categories.map(c => c.id));
+        setAllTickedOverride(false);
+      } else {
+        setSelectedCategories(site.approvedCategoryIds);
+        // Check if all categories are selected
+        setAllTickedOverride(site.approvedCategoryIds.length === categories.length);
+      }
     }
   };
   

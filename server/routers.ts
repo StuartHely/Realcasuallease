@@ -182,28 +182,54 @@ export const appRouter = router({
             requiresApproval = true;
           } else {
             // Check if category is approved for this site
-            const { isCategoryApprovedForSite } = await import("./usageCategoriesDb");
-            const isApproved = await isCategoryApprovedForSite(input.siteId, input.usageCategoryId);
+            const { isCategoryApprovedForSite, getApprovedCategoriesForSite } = await import("./usageCategoriesDb");
+            const approvedCategories = await getApprovedCategoriesForSite(input.siteId);
             
-            if (!isApproved) {
-              requiresApproval = true;
+            // If no approvals exist (empty), treat as all approved (default behavior - skip duplicate check)
+            if (approvedCategories.length === 0) {
+              // Default all approved - no additional checks needed
+              requiresApproval = false;
             } else {
-              // Check for duplicate bookings with same category
+              // Approvals exist - check if this specific category is approved
+              const isApproved = await isCategoryApprovedForSite(input.siteId, input.usageCategoryId);
+              
+              if (!isApproved) {
+                requiresApproval = true;
+              } else {
+                // Category is explicitly approved - check for duplicates
+                // Check for duplicate bookings: same customer + category + centre (any site)
               const { getDb } = await import("./db");
-              const { bookings } = await import("../drizzle/schema");
+              const { bookings, sites: sitesTable } = await import("../drizzle/schema");
               const { eq, and } = await import("drizzle-orm");
-              const db = await getDb();
-              if (db) {
-                const duplicates = await db.select().from(bookings)
-                  .where(and(
-                    eq(bookings.customerId, ctx.user.id),
-                    eq(bookings.usageCategoryId, input.usageCategoryId),
-                    eq(bookings.siteId, input.siteId)
-                  ));
+              const dbInstance = await getDb();
+              if (dbInstance) {
+                // Get the centre ID for the current site
+                const currentSite = await dbInstance.select().from(sitesTable)
+                  .where(eq(sitesTable.id, input.siteId))
+                  .limit(1);
                 
-                if (duplicates.length > 0) {
-                  requiresApproval = true;
+                if (currentSite.length > 0) {
+                  const centreId = currentSite[0].centreId;
+                  
+                  // Find all bookings by this customer with same category at same centre
+                  const duplicates = await dbInstance.select({
+                    bookingId: bookings.id,
+                    siteId: bookings.siteId,
+                    centreId: sitesTable.centreId,
+                  })
+                    .from(bookings)
+                    .innerJoin(sitesTable, eq(bookings.siteId, sitesTable.id))
+                    .where(and(
+                      eq(bookings.customerId, ctx.user.id),
+                      eq(bookings.usageCategoryId, input.usageCategoryId),
+                      eq(sitesTable.centreId, centreId)
+                    ));
+                  
+                  if (duplicates.length > 0) {
+                    requiresApproval = true;
+                  }
                 }
+              }
               }
             }
           }

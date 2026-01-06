@@ -923,3 +923,10 @@
 - [x] Identify centre and site mappings from CSV
 - [x] Create bookings for all dates marked with "Y"
 - [x] Verify bookings imported correctly
+
+## Usage Categories Default Behavior Fix (Jan 6, 2026)
+- [x] Update admin UI to pre-select all 34 categories by default when site is first loaded
+- [x] Change auto-approval logic: empty approvals = all approved (not none approved)
+- [x] Update backend to treat no entries in site_usage_categories as "all approved"
+- [x] Test that new sites auto-approve all categories until admin unticks specific ones
+- [x] Update tests to reflect new default-all-approved behavior

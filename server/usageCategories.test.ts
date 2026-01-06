@@ -265,38 +265,75 @@ describe("Usage Categories System", () => {
       expect(booking.requiresApproval).toBe(false); // Should be auto-approved
     });
 
-    it("should require approval for non-approved category", async () => {
+    it("should auto-approve when no approvals configured (default all approved)", async () => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      // Get a different category that's not approved
-      const allCategories = await db.select().from(usageCategories).limit(5);
-      const unapprovedCategory = allCategories.find(c => c.id !== testCategoryId);
+      // Get any category
+      const allCategories = await db.select().from(usageCategories).limit(1);
+      const anyCategory = allCategories[0];
       
-      if (!unapprovedCategory) throw new Error("Could not find unapproved category");
-      
-      // Clear all approvals
+      // Clear all approvals (empty = all approved by default)
       await adminCaller.usageCategories.setApprovedCategories({
         siteId: testSiteId,
         categoryIds: [],
       });
       
-      // Try to book with unapproved category
+      // Verify approvals are actually empty
+      const approvedAfterClear = await adminCaller.usageCategories.getApprovedForSite({
+        siteId: testSiteId,
+      });
+      expect(approvedAfterClear.length).toBe(0);
+      
+      // Try to book with any category - should auto-approve
       const startDate = new Date();
-      startDate.setDate(startDate.getDate() + 40);
+      startDate.setDate(startDate.getDate() + 100);
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + 6);
       
       const booking = await customerCaller.bookings.create({
         siteId: testSiteId,
-        usageCategoryId: unapprovedCategory.id,
+        usageCategoryId: anyCategory.id,
         startDate,
         endDate,
         tablesRequested: 0,
         chairsRequested: 0,
       });
       
-      expect(booking.requiresApproval).toBe(true); // Should require approval
+      expect(booking.requiresApproval).toBe(false); // Should auto-approve (default all approved)
+    });
+
+    it("should require approval when category is explicitly excluded", async () => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      // Get two different categories
+      const allCategories = await db.select().from(usageCategories).limit(2);
+      const approvedCategory = allCategories[0];
+      const excludedCategory = allCategories[1];
+      
+      // Approve only one category (excludes the other)
+      await adminCaller.usageCategories.setApprovedCategories({
+        siteId: testSiteId,
+        categoryIds: [approvedCategory.id],
+      });
+      
+      // Try to book with excluded category
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() + 110);
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 6);
+      
+      const booking = await customerCaller.bookings.create({
+        siteId: testSiteId,
+        usageCategoryId: excludedCategory.id,
+        startDate,
+        endDate,
+        tablesRequested: 0,
+        chairsRequested: 0,
+      });
+      
+      expect(booking.requiresApproval).toBe(true); // Should require approval (explicitly excluded)
     });
 
     it("should require approval when additional text is provided", async () => {
@@ -308,7 +345,7 @@ describe("Usage Categories System", () => {
       
       // Create booking with additional text
       const startDate = new Date();
-      startDate.setDate(startDate.getDate() + 50);
+      startDate.setDate(startDate.getDate() + 120);
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + 6);
       
@@ -325,19 +362,38 @@ describe("Usage Categories System", () => {
       expect(booking.requiresApproval).toBe(true); // Should require approval due to additional text
     });
 
-    it("should require approval for duplicate bookings with same category", async () => {
+    it("should require approval for duplicate bookings with same category at same centre", { timeout: 10000 }, async () => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      // Set category as approved
+      // Create a second site at the same centre
+      const site2Result = await db.insert(sites).values({
+        centreId: testCentreId,
+        siteNumber: "TEST-2",
+        description: "Test Site 2 for Duplicates",
+        size: "3x4m",
+        pricePerDay: "100",
+        weeklyRate: "600",
+        instantBooking: true,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      const testSiteId2 = Number(site2Result[0].insertId);
+      
+      // Set category as approved for both sites
       await adminCaller.usageCategories.setApprovedCategories({
         siteId: testSiteId,
         categoryIds: [testCategoryId],
       });
+      await adminCaller.usageCategories.setApprovedCategories({
+        siteId: testSiteId2,
+        categoryIds: [testCategoryId],
+      });
       
-      // Create first booking
+      // Create first booking at site 1
       const startDate1 = new Date();
-      startDate1.setDate(startDate1.getDate() + 60);
+      startDate1.setDate(startDate1.getDate() + 80);
       const endDate1 = new Date(startDate1);
       endDate1.setDate(endDate1.getDate() + 6);
       
@@ -350,14 +406,14 @@ describe("Usage Categories System", () => {
         chairsRequested: 0,
       });
       
-      // Try to create second booking with same category and site (different dates)
+      // Try to create second booking at site 2 (same centre, same category)
       const startDate2 = new Date();
-      startDate2.setDate(startDate2.getDate() + 70);
+      startDate2.setDate(startDate2.getDate() + 90);
       const endDate2 = new Date(startDate2);
       endDate2.setDate(endDate2.getDate() + 6);
       
       const booking2 = await customerCaller.bookings.create({
-        siteId: testSiteId,
+        siteId: testSiteId2,
         usageCategoryId: testCategoryId,
         startDate: startDate2,
         endDate: endDate2,
@@ -365,7 +421,7 @@ describe("Usage Categories System", () => {
         chairsRequested: 0,
       });
       
-      expect(booking2.requiresApproval).toBe(true); // Should require approval due to duplicate
+      expect(booking2.requiresApproval).toBe(true); // Should require approval due to duplicate at same centre
     });
   });
 
