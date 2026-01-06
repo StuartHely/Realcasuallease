@@ -947,3 +947,11 @@
 - [x] Deactivate specified categories in database
 - [x] Verify categories no longer appear in admin UI
 - [x] Test that existing bookings with removed categories still work
+
+## Replace with Final 41 Categories (Jan 6, 2026)
+- [x] Parse CSV to extract 41 category names with descriptions
+- [x] Deactivate ALL existing categories
+- [x] Create 41 new categories from final list
+- [x] Identify which categories are free (Charities free, Government free)
+- [x] Verify 41 categories appear in admin UI
+- [x] Test booking form shows all 41 categories
