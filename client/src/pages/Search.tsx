@@ -229,6 +229,28 @@ export default function Search() {
                     </div>
 
                     {/* Calendar Heatmap */}
+                    {/* Top scrollbar */}
+                    <div 
+                      className="overflow-x-auto mb-2" 
+                      ref={(el) => {
+                        if (el) {
+                          const bottomScroll = el.nextElementSibling as HTMLElement;
+                          if (bottomScroll) {
+                            el.addEventListener('scroll', () => {
+                              bottomScroll.scrollLeft = el.scrollLeft;
+                            });
+                            bottomScroll.addEventListener('scroll', () => {
+                              el.scrollLeft = bottomScroll.scrollLeft;
+                            });
+                          }
+                        }
+                      }}
+                    >
+                      <div style={{ width: 'max-content', height: '1px' }}>
+                        {/* Spacer to create scrollbar width matching table */}
+                        <div style={{ width: `${centreSites.length > 0 ? 80 * 14 + 200 : 1000}px` }}></div>
+                      </div>
+                    </div>
                     <div className="overflow-x-auto">
                       <div className="inline-block min-w-full">
                         <table className="w-full border-collapse">
