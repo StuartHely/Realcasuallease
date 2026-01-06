@@ -88,3 +88,40 @@ export async function getSitesWithCategoriesForCentre(centreId: number) {
   
   return sitesWithCategories;
 }
+
+/**
+ * Create a new usage category
+ */
+export async function createUsageCategory(name: string, isFree: boolean, displayOrder: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(usageCategories).values({
+    name,
+    isFree,
+    displayOrder,
+    isActive: true,
+    createdAt: new Date(),
+  });
+  
+  return Number(result[0].insertId);
+}
+
+/**
+ * Apply category approvals to all sites in a centre
+ */
+export async function applyApprovalsToAllSitesInCentre(centreId: number, categoryIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Get all sites in the centre
+  const centreSites = await db.select().from(sites)
+    .where(eq(sites.centreId, centreId));
+  
+  // Apply approvals to each site
+  for (const site of centreSites) {
+    await setApprovedCategoriesForSite(site.id, categoryIds);
+  }
+  
+  return centreSites.length;
+}

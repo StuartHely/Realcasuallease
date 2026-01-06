@@ -5,13 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function UsageCategories() {
   const [selectedCentreId, setSelectedCentreId] = useState<number | null>(null);
   const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [allTickedOverride, setAllTickedOverride] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryIsFree, setNewCategoryIsFree] = useState(false);
   
 
   
@@ -23,11 +29,35 @@ export default function UsageCategories() {
     { enabled: !!selectedCentreId }
   );
   
-  // Mutation
+  // Mutations
   const setApprovedMutation = trpc.usageCategories.setApprovedCategories.useMutation({
     onSuccess: () => {
       toast.success("Approved categories updated successfully");
       refetchSites();
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+  
+  const applyToAllSitesMutation = trpc.usageCategories.applyToAllSites.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Applied to ${data.sitesUpdated} sites in this centre`);
+      refetchSites();
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+  
+  const createCategoryMutation = trpc.usageCategories.createCategory.useMutation({
+    onSuccess: () => {
+      toast.success("Category created successfully");
+      setShowAddDialog(false);
+      setNewCategoryName("");
+      setNewCategoryIsFree(false);
+      // Refetch categories list
+      window.location.reload();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -105,15 +135,95 @@ export default function UsageCategories() {
     });
   };
   
+  // Handle apply to all sites
+  const handleApplyToAll = () => {
+    if (!selectedCentreId) {
+      toast.error("Please select a centre");
+      return;
+    }
+    
+    applyToAllSitesMutation.mutate({
+      centreId: selectedCentreId,
+      categoryIds: selectedCategories,
+    });
+  };
+  
+  // Handle create category
+  const handleCreateCategory = () => {
+    if (!newCategoryName.trim()) {
+      toast.error("Please enter a category name");
+      return;
+    }
+    
+    // Get next display order
+    const maxOrder = categories ? Math.max(...categories.map(c => c.displayOrder)) : 0;
+    
+    createCategoryMutation.mutate({
+      name: newCategoryName.trim(),
+      isFree: newCategoryIsFree,
+      displayOrder: maxOrder + 1,
+    });
+  };
+  
   return (
     <div className="container py-8">
       <Card>
         <CardHeader>
-          <CardTitle>Usage Categories Management</CardTitle>
-          <CardDescription>
-            Manage which usage categories are approved for each site. All categories are ticked by default.
-            Untick individual categories or use "Untick All" to deselect everything.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Usage Categories Management</CardTitle>
+              <CardDescription>
+                Manage which usage categories are approved for each site. All categories are ticked by default.
+                Untick individual categories or use "Untick All" to deselect everything.
+              </CardDescription>
+            </div>
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Category
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Usage Category</DialogTitle>
+                  <DialogDescription>
+                    Create a new usage category that will be available across all sites.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="category-name">Category Name</Label>
+                    <Input
+                      id="category-name"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="e.g., Custom Category"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="is-free"
+                      checked={newCategoryIsFree}
+                      onCheckedChange={(checked) => setNewCategoryIsFree(checked as boolean)}
+                    />
+                    <Label htmlFor="is-free" className="cursor-pointer">
+                      This is a free category (no charge)
+                    </Label>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    onClick={handleCreateCategory}
+                    disabled={createCategoryMutation.isPending}
+                  >
+                    {createCategoryMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Create Category
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Centre Selection */}
@@ -189,13 +299,23 @@ export default function UsageCategories() {
                 <p className="text-sm text-muted-foreground">
                   {selectedCategories.length} of {categories.length} categories selected
                 </p>
-                <Button 
-                  onClick={handleSave}
-                  disabled={setApprovedMutation.isPending}
-                >
-                  {setApprovedMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Approved Categories
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleApplyToAll}
+                    disabled={applyToAllSitesMutation.isPending}
+                    variant="outline"
+                  >
+                    {applyToAllSitesMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Apply to All Sites in Centre
+                  </Button>
+                  <Button 
+                    onClick={handleSave}
+                    disabled={setApprovedMutation.isPending}
+                  >
+                    {setApprovedMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save for This Site
+                  </Button>
+                </div>
               </div>
             </div>
           )}

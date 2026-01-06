@@ -1116,6 +1116,29 @@ export const appRouter = router({
         await setApprovedCategoriesForSite(input.siteId, input.categoryIds);
         return { success: true };
       }),
+    
+    createCategory: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        isFree: z.boolean(),
+        displayOrder: z.number().int().positive(),
+      }))
+      .mutation(async ({ input }) => {
+        const { createUsageCategory } = await import("./usageCategoriesDb");
+        const categoryId = await createUsageCategory(input.name, input.isFree, input.displayOrder);
+        return { success: true, categoryId };
+      }),
+    
+    applyToAllSites: adminProcedure
+      .input(z.object({
+        centreId: z.number(),
+        categoryIds: z.array(z.number()),
+      }))
+      .mutation(async ({ input }) => {
+        const { applyApprovalsToAllSitesInCentre } = await import("./usageCategoriesDb");
+        const sitesUpdated = await applyApprovalsToAllSitesInCentre(input.centreId, input.categoryIds);
+        return { success: true, sitesUpdated };
+      }),
   }),
 });
 

@@ -930,3 +930,14 @@
 - [x] Update backend to treat no entries in site_usage_categories as "all approved"
 - [x] Test that new sites auto-approve all categories until admin unticks specific ones
 - [x] Update tests to reflect new default-all-approved behavior
+
+## Usage Categories Corrections & Enhancements (Jan 6, 2026)
+- [x] Review user's original 34-category list from conversation history
+- [x] Identify categories that were incorrectly added
+- [x] Identify categories that are missing from current list
+- [x] Update seed script to match exact list provided by user
+- [x] Re-seed database with corrected categories
+- [x] Build admin UI to add new custom categories (name, isFree, displayOrder)
+- [x] Add "Apply to All Sites in Centre" button on Usage Categories page
+- [x] Implement backend logic to copy approvals to all sites in selected centre
+- [x] Test category corrections and new features
