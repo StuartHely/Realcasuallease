@@ -941,3 +941,9 @@
 - [x] Add "Apply to All Sites in Centre" button on Usage Categories page
 - [x] Implement backend logic to copy approvals to all sites in selected centre
 - [x] Test category corrections and new features
+
+## Remove Specific Categories (Jan 6, 2026)
+- [x] Parse CSV file to extract category names to remove
+- [x] Deactivate specified categories in database
+- [x] Verify categories no longer appear in admin UI
+- [x] Test that existing bookings with removed categories still work
