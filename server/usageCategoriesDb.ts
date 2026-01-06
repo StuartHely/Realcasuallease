@@ -1,0 +1,90 @@
+import { getDb } from "./db";
+import { usageCategories, siteUsageCategories, sites } from "../drizzle/schema";
+import { eq, and, inArray } from "drizzle-orm";
+
+/**
+ * Get all usage categories ordered by displayOrder
+ */
+export async function getAllUsageCategories() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(usageCategories)
+    .where(eq(usageCategories.isActive, true))
+    .orderBy(usageCategories.displayOrder);
+}
+
+/**
+ * Get approved category IDs for a specific site
+ */
+export async function getApprovedCategoriesForSite(siteId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select({
+    categoryId: siteUsageCategories.categoryId,
+  })
+  .from(siteUsageCategories)
+  .where(eq(siteUsageCategories.siteId, siteId));
+}
+
+/**
+ * Set approved categories for a site (replaces all existing)
+ */
+export async function setApprovedCategoriesForSite(siteId: number, categoryIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Delete all existing approvals for this site
+  await db.delete(siteUsageCategories)
+    .where(eq(siteUsageCategories.siteId, siteId));
+  
+  // Insert new approvals
+  if (categoryIds.length > 0) {
+    const values = categoryIds.map(categoryId => ({
+      siteId,
+      categoryId,
+      createdAt: new Date(),
+    }));
+    
+    await db.insert(siteUsageCategories).values(values);
+  }
+  
+  return true;
+}
+
+/**
+ * Check if a category is approved for a site
+ */
+export async function isCategoryApprovedForSite(siteId: number, categoryId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select()
+    .from(siteUsageCategories)
+    .where(and(
+      eq(siteUsageCategories.siteId, siteId),
+      eq(siteUsageCategories.categoryId, categoryId)
+    ));
+  
+  return result.length > 0;
+}
+
+/**
+ * Get all sites with their approved categories for a centre
+ */
+export async function getSitesWithCategoriesForCentre(centreId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const centreSites = await db.select().from(sites)
+    .where(eq(sites.centreId, centreId))
+    .orderBy(sites.siteNumber);
+  
+  const sitesWithCategories = await Promise.all(
+    centreSites.map(async (site: any) => {
+      const approvals = await getApprovedCategoriesForSite(site.id);
+      return {
+        ...site,
+        approvedCategoryIds: approvals.map((a: any) => a.categoryId),
+      };
+    })
+  );
+  
+  return sitesWithCategories;
+}

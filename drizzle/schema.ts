@@ -166,7 +166,33 @@ export const sites = mysqlTable("sites", {
 }));
 
 /**
- * Usage types for bookings
+ * Usage categories for bookings (34 predefined categories)
+ */
+export const usageCategories = mysqlTable("usage_categories", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull().unique(),
+  isFree: boolean("isFree").default(false).notNull(), // true for "Charities (Free)" and "Government (Free)"
+  displayOrder: int("displayOrder").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/**
+ * Junction table: which usage categories are approved for which sites
+ */
+export const siteUsageCategories = mysqlTable("site_usage_categories", {
+  id: int("id").autoincrement().primaryKey(),
+  siteId: int("siteId").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  categoryId: int("categoryId").notNull().references(() => usageCategories.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  siteIdIdx: index("siteId_idx").on(table.siteId),
+  categoryIdIdx: index("categoryId_idx").on(table.categoryId),
+  uniqueSiteCategory: index("unique_site_category").on(table.siteId, table.categoryId),
+}));
+
+/**
+ * Legacy usage types table (kept for backward compatibility)
  */
 export const usageTypes = mysqlTable("usage_types", {
   id: int("id").autoincrement().primaryKey(),
@@ -186,6 +212,8 @@ export const bookings = mysqlTable("bookings", {
   customerId: int("customerId").notNull().references(() => users.id, { onDelete: "cascade" }),
   usageTypeId: int("usageTypeId").references(() => usageTypes.id),
   customUsage: text("customUsage"),
+  usageCategoryId: int("usageCategoryId").references(() => usageCategories.id),
+  additionalCategoryText: text("additionalCategoryText"), // triggers manual approval if filled
   startDate: timestamp("startDate").notNull(),
   endDate: timestamp("endDate").notNull(),
   totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull(),

@@ -904,3 +904,22 @@
 - [ ] Implement email sending via notifyOwner or custom email service
 - [ ] Add email triggers to booking workflow
 - [ ] Test all email notifications end-to-end
+
+## Usage Categories & Auto-Approval System (Jan 5, 2026)
+- [x] Create usage_categories table with 34 predefined categories
+- [x] Add site_usage_approvals junction table for site-category approval settings
+- [x] Update sites table to add autoApprovalEnabled boolean field
+- [x] Create admin UI for managing site usage category approvals (tick/untick)
+- [x] Add "untick all" checkbox in admin site setup
+- [x] Update booking form to show usage category dropdown
+- [x] Add optional text field when top-level category selected
+- [x] Implement auto-approval logic based on category, site settings, and text input
+- [x] Add duplicate booking detection for same category/dates/centre
+- [x] Update booking status to reflect auto-approved vs manual approval required
+- [x] Test complete workflow from site setup to booking creation
+
+## Booking Data Import (Jan 6, 2026)
+- [x] Read and parse SampleBookingDataCL06012026.csv
+- [x] Identify centre and site mappings from CSV
+- [x] Create bookings for all dates marked with "Y"
+- [x] Verify bookings imported correctly

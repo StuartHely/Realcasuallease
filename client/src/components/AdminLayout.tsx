@@ -33,7 +33,8 @@ import {
   Map,
   TrendingUp,
   Package,
-  CheckCircle
+  CheckCircle,
+  Tag
 } from "lucide-react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -56,6 +57,7 @@ const getMenuItems = (userRole: string) => {
       { icon: MapPin, label: "Site Assignment", path: "/admin/site-assignment" },
       { icon: Package, label: "Equipment", path: "/admin/equipment" },
       { icon: TrendingUp, label: "Seasonal Pricing", path: "/admin/seasonal-rates" },
+      { icon: Tag, label: "Usage Categories", path: "/admin/usage-categories" },
       { icon: CheckCircle, label: "Pending Approvals", path: "/admin/pending-approvals" },
       { icon: Calendar, label: "Bookings", path: "/admin/bookings" },
       { icon: Users, label: "Users", path: "/admin/users" },

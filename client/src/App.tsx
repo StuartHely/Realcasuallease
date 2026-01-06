@@ -27,6 +27,7 @@ import AdminOwners from "./pages/admin/Owners";
 import AdminFinancials from "./pages/admin/Financials";
 import AdminAudit from "./pages/admin/Audit";
 import AdminSettings from "./pages/admin/Settings";
+import UsageCategories from "./pages/admin/UsageCategories";
 
 function Router() {
   return (
@@ -44,6 +45,7 @@ function Router() {
       <Route path="/admin/site-assignment" component={AdminSiteAssignment} />
       <Route path="/admin/equipment" component={Equipment} />
       <Route path="/admin/seasonal-rates" component={SeasonalRates} />
+      <Route path="/admin/usage-categories" component={UsageCategories} />
       <Route path="/admin/pending-approvals" component={PendingApprovals} />
       <Route path="/admin/bookings" component={AdminBookings} />
       <Route path="/admin/users" component={AdminUsers} />

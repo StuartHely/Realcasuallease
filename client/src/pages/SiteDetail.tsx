@@ -26,11 +26,12 @@ export default function SiteDetail() {
     { id: site?.centreId || 0 },
     { enabled: !!site?.centreId }
   );
-  const { data: usageTypes } = trpc.usageTypes.list.useQuery();
+  const { data: usageCategories } = trpc.usageCategories.list.useQuery();
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [usageTypeId, setUsageTypeId] = useState<string>("");
+  const [usageCategoryId, setUsageCategoryId] = useState<string>("");
+  const [additionalCategoryText, setAdditionalCategoryText] = useState("");
   const [customUsage, setCustomUsage] = useState("");
   const [tablesRequested, setTablesRequested] = useState<string>("0");
   const [chairsRequested, setChairsRequested] = useState<string>("0");
@@ -85,16 +86,16 @@ export default function SiteDetail() {
       return;
     }
 
-    if (!usageTypeId && !customUsage) {
-      toast.error("Please select a usage type or enter custom usage");
+    if (!usageCategoryId) {
+      toast.error("Please select a usage category");
       return;
     }
     createBookingMutation.mutate({
       siteId,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
-      usageTypeId: usageTypeId ? parseInt(usageTypeId) : undefined,
-      customUsage: customUsage || undefined,
+      usageCategoryId: parseInt(usageCategoryId),
+      additionalCategoryText: additionalCategoryText || undefined,
       tablesRequested: parseInt(tablesRequested) || 0,
       chairsRequested: parseInt(chairsRequested) || 0,
     });
@@ -368,30 +369,29 @@ export default function SiteDetail() {
                     </div>
 
                     <div>
-                      <Label htmlFor="usageType">Usage Type</Label>
-                      <Select value={usageTypeId} onValueChange={setUsageTypeId}>
+                      <Label htmlFor="usageCategory">Usage Category *</Label>
+                      <Select value={usageCategoryId} onValueChange={setUsageCategoryId}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select usage type" />
+                          <SelectValue placeholder="Select usage category" />
                         </SelectTrigger>
                         <SelectContent>
-                          {usageTypes?.map((type) => (
-                            <SelectItem key={type.id} value={String(type.id)}>
-                              {type.name}
-                              {type.requiresApproval && " (Requires Approval)"}
+                          {usageCategories?.map((category) => (
+                            <SelectItem key={category.id} value={String(category.id)}>
+                              {category.name}{category.isFree && " (FREE)"}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
 
-                    {usageTypeId === String(usageTypes?.find((t) => t.name === "Other")?.id) && (
+                    {usageCategoryId && (
                       <div>
-                        <Label htmlFor="customUsage">Custom Usage Description</Label>
+                        <Label htmlFor="additionalCategoryText">Additional Details (optional)</Label>
                         <Textarea
-                          id="customUsage"
-                          value={customUsage}
-                          onChange={(e) => setCustomUsage(e.target.value)}
-                          placeholder="Describe your intended use..."
+                          id="additionalCategoryText"
+                          placeholder="Provide any additional information about your usage..."
+                          value={additionalCategoryText}
+                          onChange={(e) => setAdditionalCategoryText(e.target.value)}
                         />
                       </div>
                     )}

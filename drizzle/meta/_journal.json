@@ -85,6 +85,13 @@
       "when": 1767608819445,
       "tag": "0011_glossy_hobgoblin",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1767675245398,
+      "tag": "0012_eminent_baron_strucker",
+      "breakpoints": true
     }
   ]
 }

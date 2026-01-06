@@ -7,6 +7,7 @@ import * as db from "./db";
 import { getSystemConfig as getSystemConfigDb, updateSystemConfig as updateSystemConfigDb } from "./systemConfigDb";
 import { trackImageView, trackImageClick, getTopPerformingImages, getImageAnalyticsBySite } from "./imageAnalyticsDb";
 import { getSeasonalRatesBySiteId, createSeasonalRate, updateSeasonalRate, deleteSeasonalRate } from "./seasonalRatesDb";
+import { getAllUsageCategories, getApprovedCategoriesForSite, setApprovedCategoriesForSite, getSitesWithCategoriesForCentre } from "./usageCategoriesDb";
 import { TRPCError } from "@trpc/server";
 import { notifyOwner } from "./_core/notification";
 
@@ -112,8 +113,10 @@ export const appRouter = router({
     create: protectedProcedure
       .input(z.object({
         siteId: z.number(),
-        usageTypeId: z.number().optional(),
-        customUsage: z.string().optional(),
+        usageTypeId: z.number().optional(), // legacy field
+        customUsage: z.string().optional(), // legacy field
+        usageCategoryId: z.number().optional(),
+        additionalCategoryText: z.string().optional(),
         startDate: z.date(),
         endDate: z.date(),
         tablesRequested: z.number().optional().default(0),
@@ -170,11 +173,45 @@ export const appRouter = router({
           }
         }
 
-        // Determine if approval is needed
+        // Determine if approval is needed based on usage categories
         let requiresApproval = false;
-        if (input.customUsage) {
+        
+        if (input.usageCategoryId) {
+          // Check if additional text was provided (triggers manual approval)
+          if (input.additionalCategoryText && input.additionalCategoryText.trim().length > 0) {
+            requiresApproval = true;
+          } else {
+            // Check if category is approved for this site
+            const { isCategoryApprovedForSite } = await import("./usageCategoriesDb");
+            const isApproved = await isCategoryApprovedForSite(input.siteId, input.usageCategoryId);
+            
+            if (!isApproved) {
+              requiresApproval = true;
+            } else {
+              // Check for duplicate bookings with same category
+              const { getDb } = await import("./db");
+              const { bookings } = await import("../drizzle/schema");
+              const { eq, and } = await import("drizzle-orm");
+              const db = await getDb();
+              if (db) {
+                const duplicates = await db.select().from(bookings)
+                  .where(and(
+                    eq(bookings.customerId, ctx.user.id),
+                    eq(bookings.usageCategoryId, input.usageCategoryId),
+                    eq(bookings.siteId, input.siteId)
+                  ));
+                
+                if (duplicates.length > 0) {
+                  requiresApproval = true;
+                }
+              }
+            }
+          }
+        } else if (input.customUsage) {
+          // Legacy: custom usage always requires approval
           requiresApproval = true;
         } else if (input.usageTypeId) {
+          // Legacy: check old usage types
           const usageType = await db.getUsageTypes();
           const selectedUsage = usageType.find(u => u.id === input.usageTypeId);
           if (selectedUsage?.requiresApproval) {
@@ -189,6 +226,8 @@ export const appRouter = router({
           customerId: ctx.user.id,
           usageTypeId: input.usageTypeId,
           customUsage: input.customUsage,
+          usageCategoryId: input.usageCategoryId,
+          additionalCategoryText: input.additionalCategoryText,
           startDate: input.startDate,
           endDate: input.endDate,
           totalAmount: totalAmount.toFixed(2),
@@ -1021,6 +1060,35 @@ export const appRouter = router({
         }
 
         return { created, totalSites: allSites.length };
+      }),
+  }),
+
+  // Usage Categories
+  usageCategories: router({
+    list: publicProcedure.query(async () => {
+      return await getAllUsageCategories();
+    }),
+    
+    getApprovedForSite: publicProcedure
+      .input(z.object({ siteId: z.number() }))
+      .query(async ({ input }) => {
+        return await getApprovedCategoriesForSite(input.siteId);
+      }),
+    
+    getSitesWithCategories: adminProcedure
+      .input(z.object({ centreId: z.number() }))
+      .query(async ({ input }) => {
+        return await getSitesWithCategoriesForCentre(input.centreId);
+      }),
+    
+    setApprovedCategories: adminProcedure
+      .input(z.object({
+        siteId: z.number(),
+        categoryIds: z.array(z.number()),
+      }))
+      .mutation(async ({ input }) => {
+        await setApprovedCategoriesForSite(input.siteId, input.categoryIds);
+        return { success: true };
       }),
   }),
 });

@@ -1,0 +1,394 @@
+{
+  "query": "\nSELECT \n  sc.name as centre_name,\n  s.siteNumber,\n  s.id,\n  s.centreId\nFROM sites s\nJOIN shopping_centres sc ON s.centreId = sc.id\nORDER BY sc.name, CAST(s.siteNumber AS UNSIGNED)\nLIMIT 100\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute \nSELECT \n  sc.name as centre_name,\n  s.siteNumber,\n  s.id,\n  s.centreId\nFROM sites s\nJOIN shopping_centres sc ON s.centreId = sc.id\nORDER BY sc.name, CAST(s.siteNumber AS UNSIGNED)\nLIMIT 100\n",
+  "rows": [
+    {
+      "centre_name": "Bass Hill Plaza",
+      "siteNumber": "3",
+      "id": "60060",
+      "centreId": "60009"
+    },
+    {
+      "centre_name": "Bass Hill Plaza",
+      "siteNumber": "4",
+      "id": "60061",
+      "centreId": "60009"
+    },
+    {
+      "centre_name": "Bass Hill Plaza",
+      "siteNumber": "6",
+      "id": "60062",
+      "centreId": "60009"
+    },
+    {
+      "centre_name": "Bass Hill Plaza",
+      "siteNumber": "7",
+      "id": "60063",
+      "centreId": "60009"
+    },
+    {
+      "centre_name": "Bass Hill Plaza",
+      "siteNumber": "9",
+      "id": "60064",
+      "centreId": "60009"
+    },
+    {
+      "centre_name": "Bass Hill Plaza",
+      "siteNumber": "10",
+      "id": "60065",
+      "centreId": "60009"
+    },
+    {
+      "centre_name": "Campbelltown Mall",
+      "siteNumber": "VK13",
+      "id": "60035",
+      "centreId": "60004"
+    },
+    {
+      "centre_name": "Campbelltown Mall",
+      "siteNumber": "1",
+      "id": "60023",
+      "centreId": "60004"
+    },
+    {
+      "centre_name": "Campbelltown Mall",
+      "siteNumber": "2",
+      "id": "60024",
+      "centreId": "60004"
+    },
+    {
+      "centre_name": "Campbelltown Mall",
+      "siteNumber": "3",
+      "id": "60025",
+      "centreId": "60004"
+    },
+    {
+      "centre_name": "Campbelltown Mall",
+      "siteNumber": "4",
+      "id": "60026",
+      "centreId": "60004"
+    },
+    {
+      "centre_name": "Campbelltown Mall",
+      "siteNumber": "7",
+      "id": "60027",
+      "centreId": "60004"
+    },
+    {
+      "centre_name": "Campbelltown Mall",
+      "siteNumber": "8",
+      "id": "60028",
+      "centreId": "60004"
+    },
+    {
+      "centre_name": "Campbelltown Mall",
+      "siteNumber": "9",
+      "id": "60029",
+      "centreId": "60004"
+    },
+    {
+      "centre_name": "Campbelltown Mall",
+      "siteNumber": "9a",
+      "id": "60030",
+      "centreId": "60004"
+    },
+    {
+      "centre_name": "Campbelltown Mall",
+      "siteNumber": "12",
+      "id": "60031",
+      "centreId": "60004"
+    },
+    {
+      "centre_name": "Campbelltown Mall",
+      "siteNumber": "13",
+      "id": "60032",
+      "centreId": "60004"
+    },
+    {
+      "centre_name": "Campbelltown Mall",
+      "siteNumber": "18",
+      "id": "60033",
+      "centreId": "60004"
+    },
+    {
+      "centre_name": "Campbelltown Mall",
+      "siteNumber": "22",
+      "id": "60034",
+      "centreId": "60004"
+    },
+    {
+      "centre_name": "Carnes Hill Marketplace",
+      "siteNumber": "1",
+      "id": "60036",
+      "centreId": "60005"
+    },
+    {
+      "centre_name": "Carnes Hill Marketplace",
+      "siteNumber": "2",
+      "id": "60037",
+      "centreId": "60005"
+    },
+    {
+      "centre_name": "Carnes Hill Marketplace",
+      "siteNumber": "3",
+      "id": "60038",
+      "centreId": "60005"
+    },
+    {
+      "centre_name": "Carnes Hill Marketplace",
+      "siteNumber": "4",
+      "id": "60039",
+      "centreId": "60005"
+    },
+    {
+      "centre_name": "Carnes Hill Marketplace",
+      "siteNumber": "5",
+      "id": "60040",
+      "centreId": "60005"
+    },
+    {
+      "centre_name": "Carnes Hill Marketplace",
+      "siteNumber": "6",
+      "id": "60041",
+      "centreId": "60005"
+    },
+    {
+      "centre_name": "Carnes Hill Marketplace",
+      "siteNumber": "7",
+      "id": "60042",
+      "centreId": "60005"
+    },
+    {
+      "centre_name": "Corio Village",
+      "siteNumber": "1",
+      "id": "60066",
+      "centreId": "60010"
+    },
+    {
+      "centre_name": "Corio Village",
+      "siteNumber": "2",
+      "id": "60067",
+      "centreId": "60010"
+    },
+    {
+      "centre_name": "Corio Village",
+      "siteNumber": "3",
+      "id": "60068",
+      "centreId": "60010"
+    },
+    {
+      "centre_name": "Corio Village",
+      "siteNumber": "4",
+      "id": "60069",
+      "centreId": "60010"
+    },
+    {
+      "centre_name": "Corio Village",
+      "siteNumber": "5",
+      "id": "60070",
+      "centreId": "60010"
+    },
+    {
+      "centre_name": "Corio Village",
+      "siteNumber": "8",
+      "id": "60071",
+      "centreId": "60010"
+    },
+    {
+      "centre_name": "Corio Village",
+      "siteNumber": "11",
+      "id": "60072",
+      "centreId": "60010"
+    },
+    {
+      "centre_name": "Corio Village",
+      "siteNumber": "12",
+      "id": "60073",
+      "centreId": "60010"
+    },
+    {
+      "centre_name": "Corio Village",
+      "siteNumber": "15",
+      "id": "60074",
+      "centreId": "60010"
+    },
+    {
+      "centre_name": "Corio Village",
+      "siteNumber": "19",
+      "id": "60075",
+      "centreId": "60010"
+    },
+    {
+      "centre_name": "Eastgate Bondi Junction",
+      "siteNumber": "L2-99",
+      "id": "120005",
+      "centreId": "120010"
+    },
+    {
+      "centre_name": "Eastgate Bondi Junction",
+      "siteNumber": "L2-33",
+      "id": "120004",
+      "centreId": "120010"
+    },
+    {
+      "centre_name": "Eastgate Bondi Junction",
+      "siteNumber": "2",
+      "id": "120001",
+      "centreId": "120010"
+    },
+    {
+      "centre_name": "Eastgate Bondi Junction",
+      "siteNumber": "10",
+      "id": "120002",
+      "centreId": "120010"
+    },
+    {
+      "centre_name": "Eastgate Bondi Junction",
+      "siteNumber": "11",
+      "id": "120003",
+      "centreId": "120010"
+    },
+    {
+      "centre_name": "Highlands Marketplace",
+      "siteNumber": "1",
+      "id": "60018",
+      "centreId": "60003"
+    },
+    {
+      "centre_name": "Highlands Marketplace",
+      "siteNumber": "3",
+      "id": "60019",
+      "centreId": "60003"
+    },
+    {
+      "centre_name": "Highlands Marketplace",
+      "siteNumber": "5",
+      "id": "60020",
+      "centreId": "60003"
+    },
+    {
+      "centre_name": "Highlands Marketplace",
+      "siteNumber": "7",
+      "id": "60021",
+      "centreId": "60003"
+    },
+    {
+      "centre_name": "Highlands Marketplace",
+      "siteNumber": "8",
+      "id": "60022",
+      "centreId": "60003"
+    },
+    {
+      "centre_name": "Pacific Square",
+      "siteNumber": "2",
+      "id": "60043",
+      "centreId": "60006"
+    },
+    {
+      "centre_name": "Pacific Square",
+      "siteNumber": "3",
+      "id": "60044",
+      "centreId": "60006"
+    },
+    {
+      "centre_name": "Pacific Square",
+      "siteNumber": "5",
+      "id": "60045",
+      "centreId": "60006"
+    },
+    {
+      "centre_name": "Pacific Square",
+      "siteNumber": "6",
+      "id": "60046",
+      "centreId": "60006"
+    },
+    {
+      "centre_name": "Pacific Square",
+      "siteNumber": "7",
+      "id": "60047",
+      "centreId": "60006"
+    },
+    {
+      "centre_name": "Pacific Square",
+      "siteNumber": "8",
+      "id": "60048",
+      "centreId": "60006"
+    },
+    {
+      "centre_name": "Rockdale Plaza",
+      "siteNumber": "1",
+      "id": "60053",
+      "centreId": "60008"
+    },
+    {
+      "centre_name": "Rockdale Plaza",
+      "siteNumber": "2",
+      "id": "60054",
+      "centreId": "60008"
+    },
+    {
+      "centre_name": "Rockdale Plaza",
+      "siteNumber": "3",
+      "id": "60055",
+      "centreId": "60008"
+    },
+    {
+      "centre_name": "Rockdale Plaza",
+      "siteNumber": "4",
+      "id": "60056",
+      "centreId": "60008"
+    },
+    {
+      "centre_name": "Rockdale Plaza",
+      "siteNumber": "6",
+      "id": "60057",
+      "centreId": "60008"
+    },
+    {
+      "centre_name": "Rockdale Plaza",
+      "siteNumber": "7",
+      "id": "60058",
+      "centreId": "60008"
+    },
+    {
+      "centre_name": "Rockdale Plaza",
+      "siteNumber": "12",
+      "id": "60059",
+      "centreId": "60008"
+    },
+    {
+      "centre_name": "Test Centre for Site",
+      "siteNumber": "TEST-1",
+      "id": "90001",
+      "centreId": "90002"
+    },
+    {
+      "centre_name": "Wanneroo Central",
+      "siteNumber": "1",
+      "id": "60049",
+      "centreId": "60007"
+    },
+    {
+      "centre_name": "Wanneroo Central",
+      "siteNumber": "2",
+      "id": "60050",
+      "centreId": "60007"
+    },
+    {
+      "centre_name": "Wanneroo Central",
+      "siteNumber": "4",
+      "id": "60051",
+      "centreId": "60007"
+    },
+    {
+      "centre_name": "Wanneroo Central",
+      "siteNumber": "6",
+      "id": "60052",
+      "centreId": "60007"
+    }
+  ],
+  "messages": [],
+  "stdout": "centre_name\tsiteNumber\tid\tcentreId\nBass Hill Plaza\t3\t60060\t60009\nBass Hill Plaza\t4\t60061\t60009\nBass Hill Plaza\t6\t60062\t60009\nBass Hill Plaza\t7\t60063\t60009\nBass Hill Plaza\t9\t60064\t60009\nBass Hill Plaza\t10\t60065\t60009\nCampbelltown Mall\tVK13\t60035\t60004\nCampbelltown Mall\t1\t60023\t60004\nCampbelltown Mall\t2\t60024\t60004\nCampbelltown Mall\t3\t60025\t60004\nCampbelltown Mall\t4\t60026\t60004\nCampbelltown Mall\t7\t60027\t60004\nCampbelltown Mall\t8\t60028\t60004\nCampbelltown Mall\t9\t60029\t60004\nCampbelltown Mall\t9a\t60030\t60004\nCampbelltown Mall\t12\t60031\t60004\nCampbelltown Mall\t13\t60032\t60004\nCampbelltown Mall\t18\t60033\t60004\nCampbelltown Mall\t22\t60034\t60004\nCarnes Hill Marketplace\t1\t60036\t60005\nCarnes Hill Marketplace\t2\t60037\t60005\nCarnes Hill Marketplace\t3\t60038\t60005\nCarnes Hill Marketplace\t4\t60039\t60005\nCarnes Hill Marketplace\t5\t60040\t60005\nCarnes Hill Marketplace\t6\t60041\t60005\nCarnes Hill Marketplace\t7\t60042\t60005\nCorio Village\t1\t60066\t60010\nCorio Village\t2\t60067\t60010\nCorio Village\t3\t60068\t60010\nCorio Village\t4\t60069\t60010\nCorio Village\t5\t60070\t60010\nCorio Village\t8\t60071\t60010\nCorio Village\t11\t60072\t60010\nCorio Village\t12\t60073\t60010\nCorio Village\t15\t60074\t60010\nCorio Village\t19\t60075\t60010\nEastgate Bondi Junction\tL2-99\t120005\t120010\nEastgate Bondi Junction\tL2-33\t120004\t120010\nEastgate Bondi Junction\t2\t120001\t120010\nEastgate Bondi Junction\t10\t120002\t120010\nEastgate Bondi Junction\t11\t120003\t120010\nHighlands Marketplace\t1\t60018\t60003\nHighlands Marketplace\t3\t60019\t60003\nHighlands Marketplace\t5\t60020\t60003\nHighlands Marketplace\t7\t60021\t60003\nHighlands Marketplace\t8\t60022\t60003\nPacific Square\t2\t60043\t60006\nPacific Square\t3\t60044\t60006\nPacific Square\t5\t60045\t60006\nPacific Square\t6\t60046\t60006\nPacific Square\t7\t60047\t60006\nPacific Square\t8\t60048\t60006\nRockdale Plaza\t1\t60053\t60008\nRockdale Plaza\t2\t60054\t60008\nRockdale Plaza\t3\t60055\t60008\nRockdale Plaza\t4\t60056\t60008\nRockdale Plaza\t6\t60057\t60008\nRockdale Plaza\t7\t60058\t60008\nRockdale Plaza\t12\t60059\t60008\nTest Centre for Site\tTEST-1\t90001\t90002\nWanneroo Central\t1\t60049\t60007\nWanneroo Central\t2\t60050\t60007\nWanneroo Central\t4\t60051\t60007\nWanneroo Central\t6\t60052\t60007\n",
+  "stderr": "",
+  "execution_time_ms": 1503
+}
