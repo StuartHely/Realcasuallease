@@ -955,3 +955,15 @@
 - [x] Identify which categories are free (Charities free, Government free)
 - [x] Verify 41 categories appear in admin UI
 - [x] Test booking form shows all 41 categories
+
+## Fix Calendar Heatmap - All Dates Showing Green (Jan 6, 2026)
+- [x] Verify imported bookings exist in database for Campbelltown June 2026
+- [x] Confirmed search returns booking data correctly
+- [x] Debug isBookedOnDate function - why returning false for existing bookings
+- [x] Fix date comparison logic (timezone or format issue)
+- [x] Test heatmap shows red cells for booked dates at Campbelltown
+
+## Cleanup and Polish (Jan 6, 2026)
+- [x] Remove debug console.log from Search.tsx
+- [x] Update Campbelltown Mall floor plan labels - remove "Test" prefix
+- [x] Verify heatmap shows red for booked dates correctly

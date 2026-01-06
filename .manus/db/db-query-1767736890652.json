@@ -1,0 +1,50 @@
+{
+  "query": "SELECT id, siteNumber\nFROM sites\nWHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Campbelltown%' LIMIT 1)\nORDER BY siteNumber\nLIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, siteNumber\nFROM sites\nWHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Campbelltown%' LIMIT 1)\nORDER BY siteNumber\nLIMIT 10",
+  "rows": [
+    {
+      "id": "60023",
+      "siteNumber": "1"
+    },
+    {
+      "id": "60031",
+      "siteNumber": "12"
+    },
+    {
+      "id": "60032",
+      "siteNumber": "13"
+    },
+    {
+      "id": "60033",
+      "siteNumber": "18"
+    },
+    {
+      "id": "60024",
+      "siteNumber": "2"
+    },
+    {
+      "id": "60034",
+      "siteNumber": "22"
+    },
+    {
+      "id": "60025",
+      "siteNumber": "3"
+    },
+    {
+      "id": "60026",
+      "siteNumber": "4"
+    },
+    {
+      "id": "60027",
+      "siteNumber": "7"
+    },
+    {
+      "id": "60028",
+      "siteNumber": "8"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsiteNumber\n60023\t1\n60031\t12\n60032\t13\n60033\t18\n60024\t2\n60034\t22\n60025\t3\n60026\t4\n60027\t7\n60028\t8\n",
+  "stderr": "",
+  "execution_time_ms": 1516
+}

@@ -87,10 +87,18 @@ export default function Search() {
     // Combine both week's bookings
     const allBookings = [...siteAvailability.week1Bookings, ...siteAvailability.week2Bookings];
     
+    // Normalize the check date to midnight for comparison
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+    
     return allBookings.some(booking => {
       const bookingStart = new Date(booking.startDate);
+      bookingStart.setHours(0, 0, 0, 0);
       const bookingEnd = new Date(booking.endDate);
-      return date >= bookingStart && date <= bookingEnd;
+      bookingEnd.setHours(0, 0, 0, 0);
+      
+      // Check if the date falls within the booking range (inclusive)
+      return checkDate >= bookingStart && checkDate <= bookingEnd;
     });
   };
 

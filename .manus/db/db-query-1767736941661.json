@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE floor_levels\nSET levelName = CASE\n  WHEN levelName LIKE '%Test%Lower%' THEN 'Lower Level'\n  WHEN levelName LIKE '%Test%Upper%' THEN 'Upper Level'\n  ELSE levelName\nEND\nWHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Campbelltown%' LIMIT 1)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute UPDATE floor_levels\nSET levelName = CASE\n  WHEN levelName LIKE '%Test%Lower%' THEN 'Lower Level'\n  WHEN levelName LIKE '%Test%Upper%' THEN 'Upper Level'\n  ELSE levelName\nEND\nWHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Campbelltown%' LIMIT 1)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1506
+}

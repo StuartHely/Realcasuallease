@@ -1,0 +1,50 @@
+{
+  "query": "SELECT id, siteId, startDate, endDate, DATE_FORMAT(startDate, '%Y-%m-%d') as startDateFormatted, DATE_FORMAT(endDate, '%Y-%m-%d') as endDateFormatted\nFROM bookings\nWHERE siteId IN (SELECT id FROM sites WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Campbelltown%' LIMIT 1))\n  AND startDate >= '2026-06-01'\n  AND startDate < '2026-06-08'\nLIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, siteId, startDate, endDate, DATE_FORMAT(startDate, '%Y-%m-%d') as startDateFormatted, DATE_FORMAT(endDate, '%Y-%m-%d') as endDateFormatted\nFROM bookings\nWHERE siteId IN (SELECT id FROM sites WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Campbelltown%' LIMIT 1))\n  AND startDate >= '2026-06-01'\n  AND startDate < '2026-06-08'\nLIMIT 5",
+  "rows": [
+    {
+      "id": "90044",
+      "siteId": "60025",
+      "startDate": "2026-06-01 00:00:00",
+      "endDate": "2026-06-01 00:00:00",
+      "startDateFormatted": "2026-06-01",
+      "endDateFormatted": "2026-06-01"
+    },
+    {
+      "id": "90045",
+      "siteId": "60025",
+      "startDate": "2026-06-02 00:00:00",
+      "endDate": "2026-06-02 00:00:00",
+      "startDateFormatted": "2026-06-02",
+      "endDateFormatted": "2026-06-02"
+    },
+    {
+      "id": "90046",
+      "siteId": "60025",
+      "startDate": "2026-06-03 00:00:00",
+      "endDate": "2026-06-03 00:00:00",
+      "startDateFormatted": "2026-06-03",
+      "endDateFormatted": "2026-06-03"
+    },
+    {
+      "id": "90047",
+      "siteId": "60025",
+      "startDate": "2026-06-04 00:00:00",
+      "endDate": "2026-06-04 00:00:00",
+      "startDateFormatted": "2026-06-04",
+      "endDateFormatted": "2026-06-04"
+    },
+    {
+      "id": "90048",
+      "siteId": "60025",
+      "startDate": "2026-06-05 00:00:00",
+      "endDate": "2026-06-05 00:00:00",
+      "startDateFormatted": "2026-06-05",
+      "endDateFormatted": "2026-06-05"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsiteId\tstartDate\tendDate\tstartDateFormatted\tendDateFormatted\n90044\t60025\t2026-06-01 00:00:00\t2026-06-01 00:00:00\t2026-06-01\t2026-06-01\n90045\t60025\t2026-06-02 00:00:00\t2026-06-02 00:00:00\t2026-06-02\t2026-06-02\n90046\t60025\t2026-06-03 00:00:00\t2026-06-03 00:00:00\t2026-06-03\t2026-06-03\n90047\t60025\t2026-06-04 00:00:00\t2026-06-04 00:00:00\t2026-06-04\t2026-06-04\n90048\t60025\t2026-06-05 00:00:00\t2026-06-05 00:00:00\t2026-06-05\t2026-06-05\n",
+  "stderr": "",
+  "execution_time_ms": 1526
+}
