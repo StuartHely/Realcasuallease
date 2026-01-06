@@ -237,15 +237,23 @@ export default function Search() {
                               <th className="sticky left-0 bg-white z-10 px-3 py-2 text-left text-sm font-semibold border-b-2 border-r-2">
                                 Site
                               </th>
-                              {dateRange.map((date, idx) => (
+                              {dateRange.map((date, idx) => {
+                                const isSearchedDate = isSameDay(date, searchParams.date);
+                                return (
                                 <th 
                                   key={idx} 
-                                  className="px-2 py-2 text-center text-xs font-medium border-b-2 min-w-[80px]"
+                                  className={`px-2 py-2 text-center text-xs font-medium border-b-2 min-w-[80px] ${
+                                    isSearchedDate ? 'bg-blue-50 border-l-4 border-r-4 border-blue-500' : ''
+                                  }`}
                                 >
-                                  <div>{format(date, "dd/MM")}</div>
-                                  <div className="text-gray-500">{format(date, "EEE")}</div>
+                                  {isSearchedDate && (
+                                    <div className="text-blue-600 font-bold text-[10px] mb-1">SEARCHED</div>
+                                  )}
+                                  <div className={isSearchedDate ? 'font-bold text-blue-700' : ''}>{format(date, "dd/MM")}</div>
+                                  <div className={isSearchedDate ? 'text-blue-600' : 'text-gray-500'}>{format(date, "EEE")}</div>
                                 </th>
-                              ))}
+                                );
+                              })}
                             </tr>
                           </thead>
                           <tbody>
@@ -285,10 +293,13 @@ export default function Search() {
                                 </td>
                                 {dateRange.map((date, idx) => {
                                   const isBooked = isBookedOnDate(site.id, date);
+                                  const isSearchedDate = isSameDay(date, searchParams.date);
                                   return (
                                     <td 
                                       key={idx} 
-                                      className="border border-gray-200 p-0"
+                                      className={`border border-gray-200 p-0 ${
+                                        isSearchedDate ? 'border-l-4 border-r-4 border-blue-500' : ''
+                                      }`}
                                     >
                                       <div 
                                         className={`h-12 w-full ${

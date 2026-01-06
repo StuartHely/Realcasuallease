@@ -967,3 +967,8 @@
 - [x] Remove debug console.log from Search.tsx
 - [x] Update Campbelltown Mall floor plan labels - remove "Test" prefix
 - [x] Verify heatmap shows red for booked dates correctly
+
+## Highlight Searched Date in Heatmap (Jan 6, 2026)
+- [x] Add visual emphasis to searched date column in calendar heatmap
+- [x] Use border, background, or label to distinguish searched date
+- [x] Test that searched date stands out clearly from other dates
