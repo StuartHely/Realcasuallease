@@ -13,6 +13,7 @@ import { parseSearchQuery } from "@/../../shared/queryParser";
 export default function Search() {
   const [, setLocation] = useLocation();
   const [searchParams, setSearchParams] = useState<{ query: string; date: Date } | null>(null);
+  const [focusedCell, setFocusedCell] = useState<{ siteIndex: number; dateIndex: number } | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -57,14 +58,6 @@ export default function Search() {
     }
   }, [data]);
 
-  if (!searchParams) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading search parameters...</p>
-      </div>
-    );
-  }
-
   // Generate date range for heatmap (2 weeks)
   const generateDateRange = () => {
     if (!searchParams?.date) return [];
@@ -77,6 +70,67 @@ export default function Search() {
   };
 
   const dateRange = generateDateRange();
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!data?.sites || data.sites.length === 0) return;
+      
+      // Only handle arrow keys
+      if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+      
+      e.preventDefault();
+      
+      // Initialize focus if not set
+      if (!focusedCell) {
+        setFocusedCell({ siteIndex: 0, dateIndex: 0 });
+        return;
+      }
+      
+      const { siteIndex, dateIndex } = focusedCell;
+      let newSiteIndex = siteIndex;
+      let newDateIndex = dateIndex;
+      
+      switch (e.key) {
+        case 'ArrowUp':
+          newSiteIndex = Math.max(0, siteIndex - 1);
+          break;
+        case 'ArrowDown':
+          newSiteIndex = Math.min(data.sites.length - 1, siteIndex + 1);
+          break;
+        case 'ArrowLeft':
+          newDateIndex = Math.max(0, dateIndex - 1);
+          break;
+        case 'ArrowRight':
+          newDateIndex = Math.min(dateRange.length - 1, dateIndex + 1);
+          break;
+      }
+      
+      setFocusedCell({ siteIndex: newSiteIndex, dateIndex: newDateIndex });
+      
+      // Scroll to keep focused cell in view
+      setTimeout(() => {
+        const cellId = `cell-${newSiteIndex}-${newDateIndex}`;
+        const element = document.getElementById(cellId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        }
+      }, 0);
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [data, focusedCell, dateRange]);
+
+  if (!searchParams) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-600">Loading search parameters...</p>
+      </div>
+    );
+  }
+
+
 
   // Check if a site is booked on a specific date
   const isBookedOnDate = (siteId: number, date: Date) => {
@@ -279,7 +333,7 @@ export default function Search() {
                             </tr>
                           </thead>
                           <tbody>
-                            {centreSites.map((site) => {
+                            {centreSites.map((site, siteIdx) => {
                               const isMatched = isMatchedSite(site.id);
                               return (
                               <tr 
@@ -313,15 +367,20 @@ export default function Search() {
                                     </div>
                                   </div>
                                 </td>
-                                {dateRange.map((date, idx) => {
+                                {dateRange.map((date, dateIdx) => {
                                   const isBooked = isBookedOnDate(site.id, date);
                                   const isSearchedDate = isSameDay(date, searchParams.date);
+                                  const isFocused = focusedCell?.siteIndex === siteIdx && focusedCell?.dateIndex === dateIdx;
                                   return (
                                     <td 
-                                      key={idx} 
+                                      key={dateIdx}
+                                      id={`cell-${siteIdx}-${dateIdx}`}
                                       className={`border border-gray-200 p-0 ${
                                         isSearchedDate ? 'border-l-4 border-r-4 border-blue-500' : ''
+                                      } ${
+                                        isFocused ? 'ring-4 ring-purple-500 ring-inset' : ''
                                       }`}
+                                      onClick={() => setFocusedCell({ siteIndex: siteIdx, dateIndex: dateIdx })}
                                     >
                                       <div 
                                         className={`h-12 w-full ${

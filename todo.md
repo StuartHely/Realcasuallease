@@ -977,3 +977,11 @@
 - [x] Add horizontal scrollbar above the calendar heatmap
 - [x] Synchronize top and bottom scrollbars
 - [x] Test scrolling works from both positions
+
+## Keyboard Navigation for Calendar Heatmap (Jan 6, 2026)
+- [x] Add keyboard event listeners for arrow keys
+- [x] Implement left/right arrow navigation for dates
+- [x] Implement up/down arrow navigation for sites
+- [x] Add visual focus indicator for selected cell
+- [x] Auto-scroll to keep focused cell in view
+- [x] Test keyboard navigation works smoothly
