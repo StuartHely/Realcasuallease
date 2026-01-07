@@ -486,18 +486,35 @@ export const appRouter = router({
         let hasMatchingSites = false;
         const hasRequirements = parsedQuery.minSizeM2 !== undefined || parsedQuery.minTables !== undefined;
         
+        // OPTIMIZED: Batch fetch all data in minimal queries
+        const { getSearchDataOptimized } = await import("./dbOptimized");
+        const centreIds = centres.map(c => c.id);
+        
+        const {
+          sitesByCentre,
+          week1BookingsBySite,
+          week2BookingsBySite,
+          categoriesBySite,
+        } = await getSearchDataOptimized(
+          centreIds,
+          startOfWeek,
+          endOfWeek,
+          startOfNextWeek,
+          endOfNextWeek
+        );
+        
         // First pass: check if any sites match the requirements
         for (const centre of centres) {
-          const sites = await db.getSitesByCentreId(centre.id);
+          const sites = sitesByCentre.get(centre.id) || [];
           
           // Check which sites match the requirements
-          const sitesWithMatch = sites.map(site => ({
+          const sitesWithMatch = sites.map((site: any) => ({
             site,
             matchesRequirements: siteMatchesRequirements(site, parsedQuery)
           }));
           
           // Check if any sites match
-          if (sitesWithMatch.some(s => s.matchesRequirements)) {
+          if (sitesWithMatch.some((s: any) => s.matchesRequirements)) {
             hasMatchingSites = true;
             break; // Found at least one match, no need to continue
           }
@@ -507,10 +524,10 @@ export const appRouter = router({
         const siteCategories: Record<number, any[]> = {};
         
         for (const centre of centres) {
-          const sites = await db.getSitesByCentreId(centre.id);
+          const sites = sitesByCentre.get(centre.id) || [];
           
           // Check which sites match the requirements
-          const sitesWithMatch = sites.map(site => ({
+          const sitesWithMatch = sites.map((site: any) => ({
             site,
             matchesRequirements: siteMatchesRequirements(site, parsedQuery)
           }));
@@ -519,17 +536,17 @@ export const appRouter = router({
           // If requirements specified but no matches found, include all sites as fallback
           // If no requirements specified, include all sites
           const sitesToInclude = (hasRequirements && hasMatchingSites)
-            ? sitesWithMatch.filter(s => s.matchesRequirements)
+            ? sitesWithMatch.filter((s: any) => s.matchesRequirements)
             : sitesWithMatch;
           
-          allSites.push(...sitesToInclude.map(({ site }) => ({ ...site, centreName: centre.name })));
+          allSites.push(...sitesToInclude.map(({ site }: any) => ({ ...site, centreName: centre.name })));
           
-          for (const { site } of sitesToInclude) {
-            const week1Bookings = await db.getBookingsBySiteId(site.id, startOfWeek, endOfWeek);
-            const week2Bookings = await db.getBookingsBySiteId(site.id, startOfNextWeek, endOfNextWeek);
+          for (const { site } of sitesToInclude as any[]) {
+            // Use pre-fetched data instead of individual queries
+            const week1Bookings = week1BookingsBySite.get(site.id) || [];
+            const week2Bookings = week2BookingsBySite.get(site.id) || [];
+            const approvedCategories = categoriesBySite.get(site.id) || [];
             
-            // Get approved categories for this site
-            const approvedCategories = await getApprovedCategoriesForSite(site.id);
             siteCategories[site.id] = approvedCategories;
             
             availability.push({
