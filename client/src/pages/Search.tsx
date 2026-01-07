@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle } from "lucide-react";
 import { format, parse, addDays, isSameDay } from "date-fns";
 import InteractiveMap from "@/components/InteractiveMap";
@@ -14,6 +15,7 @@ export default function Search() {
   const [, setLocation] = useLocation();
   const [searchParams, setSearchParams] = useState<{ query: string; date: Date } | null>(null);
   const [focusedCell, setFocusedCell] = useState<{ siteIndex: number; dateIndex: number } | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -37,6 +39,9 @@ export default function Search() {
     },
     { enabled: !!searchParams }
   );
+
+  // Fetch all usage categories for filter dropdown
+  const { data: allCategories } = trpc.usageCategories.list.useQuery();
 
   // Determine if a site is matched by the search query
   const isMatchedSite = (siteId: number) => {
@@ -234,6 +239,40 @@ export default function Search() {
 
         {data && data.centres.length > 0 && (
           <div className="space-y-8">
+            {/* Category Filter */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Filter by Business Category</CardTitle>
+                <CardDescription>
+                  Show only sites that accept your business type
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-4 items-center">
+                  <Select
+                    value={selectedCategoryId?.toString() || "all"}
+                    onValueChange={(value) => setSelectedCategoryId(value === "all" ? null : parseInt(value))}
+                  >
+                    <SelectTrigger className="w-[300px]">
+                      <SelectValue placeholder="All categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All categories</SelectItem>
+                      {allCategories?.map((category) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          {category.name} {category.isFree && "(Free)"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedCategoryId && (
+                    <Button variant="outline" size="sm" onClick={() => setSelectedCategoryId(null)}>
+                      Clear Filter
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
             {/* Interactive Map - Show if centre has a map */}
             {data.centres[0]?.mapImageUrl && (
               <Card>
@@ -256,7 +295,21 @@ export default function Search() {
 
             {/* Calendar Heatmap */}
             {data.centres.map((centre) => {
-              const centreSites = data.sites.filter((s) => s.centreId === centre.id);
+              let centreSites = data.sites.filter((s) => s.centreId === centre.id);
+              
+              // Filter by selected category if one is chosen
+              if (selectedCategoryId && data.siteCategories) {
+                centreSites = centreSites.filter((site) => {
+                  const siteCategories = data.siteCategories[site.id];
+                  // If no categories configured (empty array), site accepts all categories
+                  if (!siteCategories || siteCategories.length === 0) return true;
+                  // Otherwise check if selected category is in the approved list
+                  return siteCategories.some((cat: any) => cat.id === selectedCategoryId);
+                });
+              }
+              
+              // Skip this centre if no sites match the filter
+              if (centreSites.length === 0) return null;
               
               return (
                 <Card key={centre.id}>
@@ -437,6 +490,38 @@ export default function Search() {
                                   <CardDescription className="mt-2">
                                     {site.description}
                                   </CardDescription>
+                                  {/* Approved Categories */}
+                                  {data.siteCategories && data.siteCategories[site.id] && (
+                                    <div className="mt-3">
+                                      <p className="text-xs font-semibold text-gray-700 mb-1">Accepts:</p>
+                                      <div className="flex flex-wrap gap-1">
+                                        {data.siteCategories[site.id].length === 0 ? (
+                                          <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                                            All Categories
+                                          </Badge>
+                                        ) : (
+                                          data.siteCategories[site.id].slice(0, 5).map((cat: any) => (
+                                            <Badge 
+                                              key={cat.id} 
+                                              variant="secondary" 
+                                              className={`text-xs ${
+                                                cat.isFree 
+                                                  ? 'bg-green-100 text-green-700' 
+                                                  : 'bg-blue-100 text-blue-700'
+                                              }`}
+                                            >
+                                              {cat.name}
+                                            </Badge>
+                                          ))
+                                        )}
+                                        {data.siteCategories[site.id].length > 5 && (
+                                          <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
+                                            +{data.siteCategories[site.id].length - 5} more
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                                 <Button
                                   onClick={() => setLocation(`/site/${site.id}`)}

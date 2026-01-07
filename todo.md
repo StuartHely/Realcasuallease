@@ -985,3 +985,21 @@
 - [x] Add visual focus indicator for selected cell
 - [x] Auto-scroll to keep focused cell in view
 - [x] Test keyboard navigation works smoothly
+
+## Category-Aware Search & Filter (Jan 6, 2026)
+- [ ] Add backend API to fetch approved categories per site
+- [ ] Extend search results to include approved categories data
+- [ ] Add category filter dropdown above search results
+- [ ] Display approved category badges/chips on site cards
+- [ ] Implement client-side filtering by selected category
+- [ ] Show "Auto-approval available" indicator for matching sites
+- [ ] Test category filtering works correctly
+
+## Category-Aware Search & Filter (Jan 6, 2026)
+- [x] Add backend API to return approved categories for each site in search results
+- [x] Add category filter dropdown to search page UI
+- [x] Display approved categories as badges on site cards
+- [x] Implement filtering logic to show only sites that accept selected category
+- [x] Show "All Categories" badge for sites with no restrictions
+- [x] Highlight free categories in green
+- [x] Test category filtering works correctly

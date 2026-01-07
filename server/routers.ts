@@ -504,6 +504,8 @@ export const appRouter = router({
         }
         
         // Second pass: collect sites based on whether matches were found
+        const siteCategories: Record<number, any[]> = {};
+        
         for (const centre of centres) {
           const sites = await db.getSitesByCentreId(centre.id);
           
@@ -526,6 +528,10 @@ export const appRouter = router({
             const week1Bookings = await db.getBookingsBySiteId(site.id, startOfWeek, endOfWeek);
             const week2Bookings = await db.getBookingsBySiteId(site.id, startOfNextWeek, endOfNextWeek);
             
+            // Get approved categories for this site
+            const approvedCategories = await getApprovedCategoriesForSite(site.id);
+            siteCategories[site.id] = approvedCategories;
+            
             availability.push({
               siteId: site.id,
               siteNumber: site.siteNumber,
@@ -541,7 +547,7 @@ export const appRouter = router({
         // Return flag indicating if size requirement was met
         const sizeNotAvailable = hasRequirements && !hasMatchingSites;
         
-        return { centres, sites: allSites, availability, matchedSiteIds, sizeNotAvailable };
+        return { centres, sites: allSites, availability, matchedSiteIds, sizeNotAvailable, siteCategories };
       }),
     byNameAndDate: publicProcedure
       .input(z.object({
