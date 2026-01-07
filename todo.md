@@ -1010,3 +1010,6 @@
 - [x] Test that warning is resolved
 - [x] Find second missing key prop (warning still occurs)
 - [x] Fix all remaining key prop issues - added keys to conditional Badge components
+- [x] Find third missing key prop (warning STILL occurs) - found in CardDescription
+- [x] Systematically check all conditional JSX for arrays without keys
+- [x] Add keys to majors and specialties span elements

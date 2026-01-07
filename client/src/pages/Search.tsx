@@ -316,9 +316,9 @@ export default function Search() {
                   <CardHeader>
                     <CardTitle className="text-2xl">{centre.name}</CardTitle>
                     <CardDescription>
-                      {centre.majors && <span className="block">Major Stores: {centre.majors}</span>}
+                      {centre.majors && <span key="majors" className="block">Major Stores: {centre.majors}</span>}
                       {centre.numberOfSpecialties && (
-                        <span className="block">Specialty Stores: {centre.numberOfSpecialties}</span>
+                        <span key="specialties" className="block">Specialty Stores: {centre.numberOfSpecialties}</span>
                       )}
                     </CardDescription>
                   </CardHeader>
