@@ -500,19 +500,21 @@ export default function Search() {
                                             All Categories
                                           </Badge>
                                         ) : (
-                                          data.siteCategories[site.id].slice(0, 5).map((cat: any) => (
-                                            <Badge 
-                                              key={cat.id} 
-                                              variant="secondary" 
-                                              className={`text-xs ${
-                                                cat.isFree 
-                                                  ? 'bg-green-100 text-green-700' 
-                                                  : 'bg-blue-100 text-blue-700'
-                                              }`}
-                                            >
-                                              {cat.name}
-                                            </Badge>
-                                          ))
+                                          <>
+                                            {data.siteCategories[site.id].slice(0, 5).map((cat: any) => (
+                                              <Badge 
+                                                key={cat.id} 
+                                                variant="secondary" 
+                                                className={`text-xs ${
+                                                  cat.isFree 
+                                                    ? 'bg-green-100 text-green-700' 
+                                                    : 'bg-blue-100 text-blue-700'
+                                                }`}
+                                              >
+                                                {cat.name}
+                                              </Badge>
+                                            ))}
+                                          </>
                                         )}
                                         {data.siteCategories[site.id].length > 5 && (
                                           <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">

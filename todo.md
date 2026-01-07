@@ -1003,3 +1003,8 @@
 - [x] Show "All Categories" badge for sites with no restrictions
 - [x] Highlight free categories in green
 - [x] Test category filtering works correctly
+
+## Bug Fix: React Key Prop Warning (Jan 7, 2026)
+- [x] Find missing key prop in Search.tsx causing React warning
+- [x] Add key prop to list items in category badges or heatmap
+- [x] Test that warning is resolved
