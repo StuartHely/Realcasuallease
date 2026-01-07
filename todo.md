@@ -1066,3 +1066,19 @@
 - [x] Implement optimized batch query functions (getSearchDataOptimized)
 - [x] Replace N+1 query loops in search endpoint
 - [x] Write and run tests for optimized functions (6 tests passing)
+
+## Performance Enhancements (Jan 7, 2026)
+- [x] Add database indexes on bookings(siteId, startDate, endDate)
+- [x] Add database index on sites(centreId) - already existed
+- [x] Add database index on shoppingCentres(name) for search
+- [ ] Implement search result caching with 5-minute TTL (skipped - causes TypeScript type inference issues, needs refactoring)
+- [ ] Add pagination to search results (initial load: 30 sites)
+- [ ] Add lazy loading for remaining sites on scroll
+
+## Booking System Enhancement (Jan 7, 2026)
+- [x] Add centreCode field to shoppingCentres table
+- [x] Populate centre codes for existing centres (e.g., "CampbelltownMall")
+- [x] Update booking number generation to include centre code
+- [x] Format: {CentreCode}-{YYYYMMDD}-{SequenceNumber} (e.g., "CampbelltownMall-20260601-001")
+- [x] Update booking creation logic to fetch and use centre code
+- [x] Test booking number generation with centre codes (6 tests passing)

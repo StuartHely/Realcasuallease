@@ -103,6 +103,7 @@ export const shoppingCentres = mysqlTable("shopping_centres", {
   id: int("id").autoincrement().primaryKey(),
   ownerId: int("ownerId").notNull().references(() => owners.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 255 }).notNull(),
+  centreCode: varchar("centreCode", { length: 50 }).unique(),
   address: text("address"),
   suburb: varchar("suburb", { length: 100 }),
   city: varchar("city", { length: 100 }),
@@ -238,6 +239,8 @@ export const bookings = mysqlTable("bookings", {
   customerIdIdx: index("customerId_idx").on(table.customerId),
   startDateIdx: index("startDate_idx").on(table.startDate),
   statusIdx: index("status_idx").on(table.status),
+  // Composite index for optimized date range queries in search
+  siteIdDateRangeIdx: index("siteId_date_range_idx").on(table.siteId, table.startDate, table.endDate),
 }));
 
 /**

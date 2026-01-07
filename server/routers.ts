@@ -153,8 +153,11 @@ export const appRouter = router({
         const platformFee = totalAmount * (Number(owner.commissionPercentage) / 100);
         const ownerAmount = totalAmount - platformFee;
 
-        // Generate booking number
-        const bookingNumber = `BK${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+        // Generate booking number with centre code: {CentreCode}-{YYYYMMDD}-{SequenceNumber}
+        const dateStr = new Date(input.startDate).toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD
+        const centreCode = centre.centreCode || `CENTRE${centre.id}`; // Fallback if no code
+        const randomSeq = Math.floor(Math.random() * 1000).toString().padStart(3, '0'); // 001-999
+        const bookingNumber = `${centreCode}-${dateStr}-${randomSeq}`;
 
         // Check equipment availability if requested
         let equipmentWarning: string | undefined;
