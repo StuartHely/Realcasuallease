@@ -1082,3 +1082,14 @@
 - [x] Format: {CentreCode}-{YYYYMMDD}-{SequenceNumber} (e.g., "CampbelltownMall-20260601-001")
 - [x] Update booking creation logic to fetch and use centre code
 - [x] Test booking number generation with centre codes (6 tests passing)
+
+## Booking Approval System Testing (Jan 7, 2026)
+- [x] Review all approval logic scenarios in booking creation
+- [x] Test automated approval for pre-approved categories
+- [x] Test manual approval for non-approved categories
+- [x] Test manual approval for additional category text
+- [x] Test manual approval for duplicate bookings (same customer + category + centre)
+- [x] Test instant booking flag behavior
+- [x] Create comprehensive unit tests for approval logic (10 tests passing)
+- [x] Verify approval status updates correctly in database
+- [x] Document approval system test results and findings
