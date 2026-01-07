@@ -72,6 +72,33 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.getNearbyCentres(input.centreId, input.radiusKm);
       }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        address: z.string().optional(),
+        suburb: z.string().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        postcode: z.string().optional(),
+        description: z.string().optional(),
+        contactPhone: z.string().optional(),
+        contactEmail: z.string().email().optional(),
+        operatingHours: z.string().optional(),
+        policies: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const centre = await db.getShoppingCentreById(input.id);
+        if (!centre) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+        }
+        
+        // Update centre
+        await db.updateShoppingCentre(input.id, input);
+        
+        return { success: true, message: "Centre updated successfully" };
+      }),
   }),
 
   // Sites

@@ -1154,3 +1154,17 @@
 - [x] Test alphabetical sorting functionality
 - [x] Verify centres sort correctly A-Z when button clicked
 - [x] Verify button shows active state ("Sorted A-Z") when enabled
+
+## Centre Editing Feature (Jan 7, 2026)
+- [x] Review current shoppingCentres schema fields
+- [x] Add missing fields: contactPhone, contactEmail, operatingHours, policies
+- [x] Push database schema changes
+- [x] Create updateCentre backend API endpoint
+- [x] Add input validation for centre updates (zod schema with email validation)
+- [x] Create EditCentreDialog component with form
+- [x] Add form fields for all editable properties (name, address, contact, hours, policies)
+- [x] Implement form validation (phone, email formats)
+- [x] Connect Edit button to open dialog
+- [x] Add Edit button with icon to centre cards
+- [x] Test centre editing end-to-end
+- [ ] Write unit tests for update endpoint

@@ -128,6 +128,10 @@ export const shoppingCentres = mysqlTable("shopping_centres", {
   mapImageUrl: text("mapImageUrl"),
   totalTablesAvailable: int("totalTablesAvailable").default(0),
   totalChairsAvailable: int("totalChairsAvailable").default(0),
+  contactPhone: varchar("contactPhone", { length: 20 }),
+  contactEmail: varchar("contactEmail", { length: 320 }),
+  operatingHours: text("operatingHours"),
+  policies: text("policies"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

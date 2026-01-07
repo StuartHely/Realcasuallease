@@ -5,13 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Building2, MapPin, Search, ArrowUpDown, ArrowUpAZ } from "lucide-react";
+import { Building2, MapPin, Search, ArrowUpDown, ArrowUpAZ, Edit } from "lucide-react";
 import { useLocation } from "wouter";
+import { EditCentreDialog } from "@/components/EditCentreDialog";
 
 function OwnerCentresContent() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortAlphabetically, setSortAlphabetically] = useState(false);
+  const [editingCentre, setEditingCentre] = useState<any>(null);
 
   // Fetch all shopping centres
   const { data: centres = [], isLoading } = trpc.centres.list.useQuery();
@@ -124,12 +126,21 @@ function OwnerCentresContent() {
                     <p className="text-muted-foreground">Active Bookings</p>
                     <p className="font-medium">{centre.activeBookings || 0}</p>
                   </div>
-                  <div className="flex items-end">
+                  <div className="flex items-end gap-2 md:col-span-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingCentre(centre)}
+                      className="flex-1"
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setLocation(`/centre/${centre.id}`)}
-                      className="w-full"
+                      className="flex-1"
                     >
                       View Details
                     </Button>
@@ -147,6 +158,15 @@ function OwnerCentresContent() {
           Showing {processedCentres.length} of {centres.length} shopping centre{centres.length !== 1 ? 's' : ''}
           {sortAlphabetically && " (sorted alphabetically)"}
         </div>
+      )}
+
+      {/* Edit Centre Dialog */}
+      {editingCentre && (
+        <EditCentreDialog
+          centre={editingCentre}
+          open={!!editingCentre}
+          onOpenChange={(open) => !open && setEditingCentre(null)}
+        />
       )}
     </div>
   );
