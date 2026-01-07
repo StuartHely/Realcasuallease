@@ -253,7 +253,7 @@ export default function Search() {
             {/* Category Filter */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Filter by Business Category</CardTitle>
+                <CardTitle className="text-lg">Filter by Accepted Business Category</CardTitle>
                 <CardDescription>
                   Show only sites that accept your business type
                 </CardDescription>

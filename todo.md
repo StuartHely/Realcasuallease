@@ -1050,3 +1050,6 @@
 
 ## Bug Fixes (Jan 7, 2026)
 - [x] Fix React key prop warning in Search component - list items missing unique keys
+
+## UI Text Updates (Jan 7, 2026)
+- [x] Update filter heading from "Filter by Business Category" to "Filter by Accepted Business Category"
