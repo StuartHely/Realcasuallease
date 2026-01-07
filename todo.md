@@ -1143,3 +1143,14 @@
 - [x] Verify template dropdown populates textarea correctly
 - [x] Verify alternative suggestions checkbox shows helper message
 - [x] Verify admin dashboard sidebar appears on all admin pages
+
+## Shopping Centres Admin Page (Jan 7, 2026)
+- [x] Create OwnerCentres admin page with DashboardLayout
+- [x] Add alphabetical sorting button for centres by name
+- [x] Implement sorting logic (A-Z toggle)
+- [x] Add search functionality for centres
+- [x] Add route to App.tsx (/owner/centres)
+- [x] Add Shopping Centres to DashboardLayout menu
+- [x] Test alphabetical sorting functionality
+- [x] Verify centres sort correctly A-Z when button clicked
+- [x] Verify button shows active state ("Sorted A-Z") when enabled

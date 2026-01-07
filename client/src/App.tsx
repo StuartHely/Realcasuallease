@@ -29,6 +29,7 @@ import AdminAudit from "./pages/admin/Audit";
 import AdminSettings from "./pages/admin/Settings";
 import UsageCategories from "./pages/admin/UsageCategories";
 import OwnerApprovals from "./pages/OwnerApprovals";
+import OwnerCentres from "./pages/OwnerCentres";
 
 function Router() {
   return (
@@ -48,7 +49,8 @@ function Router() {
       <Route path="/admin/seasonal-rates" component={SeasonalRates} />
       <Route path="/admin/usage-categories" component={UsageCategories} />
       <Route path="/admin/pending-approvals" component={PendingApprovals} />
-      <Route path="/owner/approvals" component={OwnerApprovals} />
+        <Route path="/owner/approvals" component={OwnerApprovals} />
+        <Route path="/owner/centres" component={OwnerCentres} />
       <Route path="/admin/bookings" component={AdminBookings} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/owners" component={AdminOwners} />
