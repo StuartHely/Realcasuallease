@@ -231,6 +231,7 @@ export default function MyBookings() {
                     confirmed: "bg-green-100 text-green-800 border-green-200",
                     cancelled: "bg-red-100 text-red-800 border-red-200",
                     completed: "bg-blue-100 text-blue-800 border-blue-200",
+                    rejected: "bg-red-100 text-red-800 border-red-200",
                   };
 
                   return (

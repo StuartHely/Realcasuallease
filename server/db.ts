@@ -843,14 +843,15 @@ export async function approveBooking(bookingId: number, approvedBy: number) {
     .where(eq(bookings.id, bookingId));
 }
 
-export async function rejectBooking(bookingId: number) {
+export async function rejectBooking(bookingId: number, reason?: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
   await db
     .update(bookings)
     .set({
-      status: "cancelled",
+      status: "rejected",
+      rejectionReason: reason || null,
     })
     .where(eq(bookings.id, bookingId));
 }

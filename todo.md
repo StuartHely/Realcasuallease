@@ -1093,3 +1093,30 @@
 - [x] Create comprehensive unit tests for approval logic (10 tests passing)
 - [x] Verify approval status updates correctly in database
 - [x] Document approval system test results and findings
+
+## Owner Approval Dashboard (Jan 7, 2026)
+- [x] Create OwnerApprovals page component
+- [x] Add route for /owner/approvals in App.tsx
+- [x] Display pending bookings in table/card format
+- [x] Show booking details (customer, site, dates, category, amount)
+- [x] Add approve/reject buttons with reason input
+- [x] Implement filtering by status (pending/confirmed/rejected/all)
+- [x] Create backend API endpoint for fetching pending bookings (getPendingApprovals)
+- [x] Create backend API endpoint for approving bookings (already existed)
+- [x] Create backend API endpoint for rejecting bookings (updated with reason)
+- [x] Add rejected status to bookings enum
+- [x] Add rejectionReason field to bookings table
+- [ ] Test approval workflow end-to-end
+
+## Email Notification System (Jan 7, 2026)
+- [x] Set up email service integration (using built-in notification API)
+- [x] Create email templates for booking confirmation
+- [x] Create email templates for booking rejection
+- [x] Create email templates for pending approval (to owners)
+- [x] Implement email sending on booking status change
+- [x] Send email to customer when booking is approved
+- [x] Send email to customer when booking is rejected
+- [x] Write comprehensive tests for email notifications (12 tests passing)
+- [ ] Send email to owner when new booking needs approval (integrate into booking creation)
+- [ ] Add email preferences to user profile
+- [ ] Test email notifications for all scenarios in browser

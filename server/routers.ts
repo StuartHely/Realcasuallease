@@ -10,6 +10,7 @@ import { getSeasonalRatesBySiteId, createSeasonalRate, updateSeasonalRate, delet
 import { getAllUsageCategories, getApprovedCategoriesForSite, setApprovedCategoriesForSite, getSitesWithCategoriesForCentre } from "./usageCategoriesDb";
 import { TRPCError } from "@trpc/server";
 import { notifyOwner } from "./_core/notification";
+import { sendBookingConfirmationEmail, sendBookingRejectionEmail, sendNewBookingNotificationToOwner } from "./_core/bookingNotifications";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -358,7 +359,23 @@ export const appRouter = router({
 
         await db.approveBooking(input.bookingId, ctx.user.id);
         
-        // TODO: Send confirmation email to customer
+        // Send confirmation email to customer
+        const site = await db.getSiteById(booking.siteId);
+        const centre = site ? await db.getShoppingCentreById(site.centreId) : null;
+        const customer = await db.getUserById(booking.customerId);
+        
+        if (customer && site && centre) {
+          await sendBookingConfirmationEmail({
+            bookingNumber: booking.bookingNumber,
+            customerName: customer.name || "Customer",
+            customerEmail: customer.email || "",
+            centreName: centre.name,
+            siteNumber: site.siteNumber,
+            startDate: booking.startDate,
+            endDate: booking.endDate,
+            totalAmount: booking.totalAmount,
+          });
+        }
         
         return { success: true };
       }),
@@ -376,11 +393,86 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending bookings can be rejected" });
         }
 
-        await db.rejectBooking(input.bookingId);
+        await db.rejectBooking(input.bookingId, input.reason);
         
-        // TODO: Send rejection email to customer with reason
+        // Send rejection email to customer with reason
+        const site = await db.getSiteById(booking.siteId);
+        const centre = site ? await db.getShoppingCentreById(site.centreId) : null;
+        const customer = await db.getUserById(booking.customerId);
+        
+        if (customer && site && centre) {
+          await sendBookingRejectionEmail(
+            {
+              bookingNumber: booking.bookingNumber,
+              customerName: customer.name || "Customer",
+              customerEmail: customer.email || "",
+              centreName: centre.name,
+              siteNumber: site.siteNumber,
+              startDate: booking.startDate,
+              endDate: booking.endDate,
+              totalAmount: booking.totalAmount,
+            },
+            input.reason || "No reason provided"
+          );
+        }
         
         return { success: true };
+      }),
+
+    getPendingApprovals: adminProcedure
+      .input(z.object({
+        status: z.enum(["pending", "confirmed", "rejected", "all"]).default("pending"),
+      }))
+      .query(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { bookings, sites, shoppingCentres, users, usageCategories } = await import("../drizzle/schema");
+        const { eq, and, inArray } = await import("drizzle-orm");
+        
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+
+        // Build where clause based on status filter
+        const whereClause = input.status === "all" 
+          ? undefined 
+          : eq(bookings.status, input.status);
+
+        // Fetch bookings with joined data
+        const bookingsList = await db
+          .select({
+            id: bookings.id,
+            bookingNumber: bookings.bookingNumber,
+            status: bookings.status,
+            startDate: bookings.startDate,
+            endDate: bookings.endDate,
+            totalAmount: bookings.totalAmount,
+            ownerAmount: bookings.ownerAmount,
+            requiresApproval: bookings.requiresApproval,
+            additionalCategoryText: bookings.additionalCategoryText,
+            rejectionReason: bookings.rejectionReason,
+            createdAt: bookings.createdAt,
+            // Customer info
+            customerId: users.id,
+            customerName: users.name,
+            customerEmail: users.email,
+            // Site info
+            siteId: sites.id,
+            siteNumber: sites.siteNumber,
+            // Centre info
+            centreId: shoppingCentres.id,
+            centreName: shoppingCentres.name,
+            // Category info
+            categoryId: usageCategories.id,
+            categoryName: usageCategories.name,
+          })
+          .from(bookings)
+          .innerJoin(users, eq(bookings.customerId, users.id))
+          .innerJoin(sites, eq(bookings.siteId, sites.id))
+          .innerJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
+          .leftJoin(usageCategories, eq(bookings.usageCategoryId, usageCategories.id))
+          .where(whereClause)
+          .orderBy(bookings.createdAt);
+
+        return bookingsList;
       }),
   }),
 
@@ -1052,9 +1144,9 @@ export const appRouter = router({
       }),
 
     rejectBooking: adminProcedure
-      .input(z.object({ bookingId: z.number() }))
+      .input(z.object({ bookingId: z.number(), reason: z.string().optional() }))
       .mutation(async ({ input }) => {
-        await db.rejectBooking(input.bookingId);
+        await db.rejectBooking(input.bookingId, input.reason);
         
         // Get booking details for notification
         const booking = await db.getBookingById(input.bookingId);
