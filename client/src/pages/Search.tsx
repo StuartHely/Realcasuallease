@@ -415,8 +415,8 @@ export default function Search() {
                                       </Button>
                                     </div>
                                     <div className="flex gap-2 text-xs text-gray-600">
-                                      {site.size && <span>{site.size}</span>}
-                                      {site.maxTables && <span>• {site.maxTables} tables</span>}
+                                      {site.size && <span key="size">{site.size}</span>}
+                                      {site.maxTables && <span key="tables">• {site.maxTables} tables</span>}
                                     </div>
                                   </div>
                                 </td>

@@ -1013,3 +1013,6 @@
 - [x] Find third missing key prop (warning STILL occurs) - found in CardDescription
 - [x] Systematically check all conditional JSX for arrays without keys
 - [x] Add keys to majors and specialties span elements
+- [x] Fourth key prop warning - need comprehensive scan of ALL conditionals
+- [x] Review every section with multiple conditional siblings
+- [x] Add keys to site.size and site.maxTables conditional spans
