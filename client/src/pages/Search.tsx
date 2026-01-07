@@ -379,9 +379,9 @@ export default function Search() {
                   <CardHeader>
                     <CardTitle className="text-2xl">{centre.name}</CardTitle>
                     <CardDescription>
-                      {centre.majors && <span key="majors" className="block">Major Stores: {centre.majors}</span>}
+                      {centre.majors && <span key={`${centre.id}-majors`} className="block">Major Stores: {centre.majors}</span>}
                       {centre.numberOfSpecialties && (
-                        <span key="specialties" className="block">Specialty Stores: {centre.numberOfSpecialties}</span>
+                        <span key={`${centre.id}-specialties`} className="block">Specialty Stores: {centre.numberOfSpecialties}</span>
                       )}
                     </CardDescription>
                   </CardHeader>
@@ -478,8 +478,8 @@ export default function Search() {
                                       </Button>
                                     </div>
                                     <div className="flex gap-2 text-xs text-gray-600">
-                                      {site.size && <span key="size">{site.size}</span>}
-                                      {site.maxTables && <span key="tables">• {site.maxTables} tables</span>}
+                                      {site.size && <span key={`${site.id}-size`}>{site.size}</span>}
+                                      {site.maxTables && <span key={`${site.id}-tables`}>• {site.maxTables} tables</span>}
                                     </div>
                                   </div>
                                 </td>
@@ -559,28 +559,26 @@ export default function Search() {
                                       <p className="text-xs font-semibold text-gray-700 mb-1">Accepts:</p>
                                       <div className="flex flex-wrap gap-1">
                                         {data.siteCategories[site.id].length === 0 ? (
-                                          <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                                          <Badge key={`${site.id}-all-categories`} variant="secondary" className="text-xs bg-green-100 text-green-700">
                                             All Categories
                                           </Badge>
                                         ) : (
-                                          <>
-                                            {data.siteCategories[site.id].slice(0, 5).map((cat: any) => (
-                                              <Badge 
-                                                key={cat.id} 
-                                                variant="secondary" 
-                                                className={`text-xs ${
-                                                  cat.isFree 
-                                                    ? 'bg-green-100 text-green-700' 
-                                                    : 'bg-blue-100 text-blue-700'
-                                                }`}
-                                              >
-                                                {cat.name}
-                                              </Badge>
-                                            ))}
-                                          </>
+                                          data.siteCategories[site.id].slice(0, 5).map((cat: any, idx: number) => (
+                                            <Badge 
+                                              key={`${site.id}-cat-${idx}-${cat.id || cat.name}`} 
+                                              variant="secondary" 
+                                              className={`text-xs ${
+                                                cat.isFree 
+                                                  ? 'bg-green-100 text-green-700' 
+                                                  : 'bg-blue-100 text-blue-700'
+                                              }`}
+                                            >
+                                              {cat.name}
+                                            </Badge>
+                                          ))
                                         )}
                                         {data.siteCategories[site.id].length > 5 && (
-                                          <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
+                                          <Badge key={`${site.id}-more-categories`} variant="secondary" className="text-xs bg-gray-100 text-gray-600">
                                             +{data.siteCategories[site.id].length - 5} more
                                           </Badge>
                                         )}
