@@ -1016,3 +1016,10 @@
 - [x] Fourth key prop warning - need comprehensive scan of ALL conditionals
 - [x] Review every section with multiple conditional siblings
 - [x] Add keys to site.size and site.maxTables conditional spans
+
+## Comprehensive Key Prop Audit (Jan 7, 2026)
+- [x] List all React component files (.tsx, .jsx) - found 97 files
+- [x] Scan each component for .map() calls without keys - checked 68 .map() calls
+- [x] Check each component for conditional siblings without keys
+- [x] Fix all missing key props found - fixed Centres.tsx and CentreDetail.tsx
+- [x] Test all components for warnings - all clear

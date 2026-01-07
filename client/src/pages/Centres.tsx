@@ -176,8 +176,8 @@ export default function Centres() {
                       <CardDescription className="flex items-start gap-2">
                         <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
                         <span>
-                          {centre.address && <div>{centre.address}</div>}
-                          <div>
+                          {centre.address && <div key="address">{centre.address}</div>}
+                          <div key="location">
                             {[centre.suburb, centre.city, centre.state, centre.postcode]
                               .filter(Boolean)
                               .filter((value, index, self) => self.indexOf(value) === index)
