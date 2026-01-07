@@ -1053,3 +1053,8 @@
 
 ## UI Text Updates (Jan 7, 2026)
 - [x] Update filter heading from "Filter by Business Category" to "Filter by Accepted Business Category"
+
+## UX Improvements (Jan 7, 2026)
+- [x] Add tooltip with info icon to "Filter by Accepted Business Category" heading
+- [x] Remove "Accepts:" category list from site detail cards
+- [x] Add green checkmark badge to site cards that accept the selected category

@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info } from "lucide-react";
 import { format, parse, addDays, isSameDay } from "date-fns";
 import InteractiveMap from "@/components/InteractiveMap";
 import { NearbyCentresMap } from "@/components/NearbyCentresMap";
@@ -253,7 +254,19 @@ export default function Search() {
             {/* Category Filter */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Filter by Accepted Business Category</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  Filter by Accepted Business Category
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Sites may accept all categories or only specific ones. Use this filter to find sites that welcome your business type for instant approval.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </CardTitle>
                 <CardDescription>
                   Show only sites that accept your business type
                 </CardDescription>
@@ -549,42 +562,26 @@ export default function Search() {
                                   )}
                                 </div>
                                 <div className="flex-1">
-                                  <CardTitle className="text-lg">Site {site.siteNumber}</CardTitle>
+                                  <div className="flex items-center gap-2">
+                                    <CardTitle className="text-lg">Site {site.siteNumber}</CardTitle>
+                                    {/* Show checkmark badge if site accepts selected category */}
+                                    {selectedCategoryId && data.siteCategories && data.siteCategories[site.id] && (() => {
+                                      const siteCategories = data.siteCategories[site.id];
+                                      // Empty array means all categories accepted
+                                      const acceptsCategory = siteCategories.length === 0 || 
+                                        siteCategories.some((cat: any) => cat.id === selectedCategoryId);
+                                      return acceptsCategory ? (
+                                        <Badge className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-1">
+                                          <CheckCircle className="h-3 w-3" />
+                                          Accepts Your Category
+                                        </Badge>
+                                      ) : null;
+                                    })()}
+                                  </div>
                                   <CardDescription className="mt-2">
                                     {site.description}
                                   </CardDescription>
-                                  {/* Approved Categories */}
-                                  {data.siteCategories && data.siteCategories[site.id] && (
-                                    <div className="mt-3">
-                                      <p className="text-xs font-semibold text-gray-700 mb-1">Accepts:</p>
-                                      <div className="flex flex-wrap gap-1">
-                                        {data.siteCategories[site.id].length === 0 ? (
-                                          <Badge key={`${site.id}-all-categories`} variant="secondary" className="text-xs bg-green-100 text-green-700">
-                                            All Categories
-                                          </Badge>
-                                        ) : (
-                                          data.siteCategories[site.id].slice(0, 5).map((cat: any, idx: number) => (
-                                            <Badge 
-                                              key={`${site.id}-cat-${idx}-${cat.id || cat.name}`} 
-                                              variant="secondary" 
-                                              className={`text-xs ${
-                                                cat.isFree 
-                                                  ? 'bg-green-100 text-green-700' 
-                                                  : 'bg-blue-100 text-blue-700'
-                                              }`}
-                                            >
-                                              {cat.name}
-                                            </Badge>
-                                          ))
-                                        )}
-                                        {data.siteCategories[site.id].length > 5 && (
-                                          <Badge key={`${site.id}-more-categories`} variant="secondary" className="text-xs bg-gray-100 text-gray-600">
-                                            +{data.siteCategories[site.id].length - 5} more
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
+
                                 </div>
                                 <Button
                                   onClick={() => setLocation(`/site/${site.id}`)}
