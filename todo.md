@@ -1120,3 +1120,26 @@
 - [ ] Send email to owner when new booking needs approval (integrate into booking creation)
 - [ ] Add email preferences to user profile
 - [ ] Test email notifications for all scenarios in browser
+
+## Custom Rejection Message Feature (Jan 7, 2026)
+- [x] Update OwnerApprovals UI to add custom message textarea for rejections (already implemented)
+- [x] Update rejection email template to include custom owner message (already implemented)
+- [x] Rejection reason is required and validated before submission
+- [x] Custom message stored in rejectionReason database field
+- [x] Custom message sent to customer in rejection email
+
+## Admin Dashboard Sidebar & Rejection Enhancements (Jan 7, 2026)
+- [x] Add DashboardLayout to all admin pages (OwnerApprovals, etc.)
+- [x] Update DashboardLayout menu items for admin navigation
+- [x] Create common rejection reason templates (6 templates)
+- [x] Add template dropdown to rejection dialog
+- [x] Allow owners to customize selected template
+- [x] Templates auto-populate textarea when selected
+- [x] Implement alternative site suggestions in rejection dialog
+- [x] Add checkbox to enable alternative suggestions
+- [x] Append alternative contact message to rejection reason
+- [x] Update rejection workflow to include alternative suggestions
+- [x] Test rejection templates and alternative suggestions
+- [x] Verify template dropdown populates textarea correctly
+- [x] Verify alternative suggestions checkbox shows helper message
+- [x] Verify admin dashboard sidebar appears on all admin pages

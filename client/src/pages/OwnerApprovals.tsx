@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,11 +11,23 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2, XCircle, Clock, Filter } from "lucide-react";
 import { toast } from "sonner";
 
-export default function OwnerApprovals() {
+const REJECTION_TEMPLATES = [
+  { value: "custom", label: "Custom reason...", template: "" },
+  { value: "unavailable", label: "Site unavailable", template: "Unfortunately, this site is not available for the requested dates due to prior commitments." },
+  { value: "category", label: "Category not permitted", template: "We're unable to accommodate this business category at this site due to centre policies and existing tenant mix." },
+  { value: "maintenance", label: "Maintenance scheduled", template: "The site will be undergoing scheduled maintenance during your requested period and will not be available." },
+  { value: "conflict", label: "Conflicting booking", template: "We have a conflicting booking for these dates that was confirmed prior to your request." },
+  { value: "requirements", label: "Requirements not met", template: "Your booking request doesn't meet our current site requirements. Please contact us to discuss alternative options." },
+];
+
+function OwnerApprovalsContent() {
   const [statusFilter, setStatusFilter] = useState<string>("pending");
   const [selectedBooking, setSelectedBooking] = useState<number | null>(null);
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState("custom");
+  const [suggestAlternatives, setSuggestAlternatives] = useState(false);
+  const [alternativeSiteIds, setAlternativeSiteIds] = useState<number[]>([]);
 
   // Fetch pending bookings
   const { data: bookings, isLoading, refetch } = trpc.bookings.getPendingApprovals.useQuery({
@@ -56,6 +69,18 @@ export default function OwnerApprovals() {
   const handleReject = (bookingId: number) => {
     setSelectedBooking(bookingId);
     setActionType("reject");
+    setSelectedTemplate("custom");
+    setRejectionReason("");
+    setSuggestAlternatives(false);
+    setAlternativeSiteIds([]);
+  };
+
+  const handleTemplateChange = (value: string) => {
+    setSelectedTemplate(value);
+    const template = REJECTION_TEMPLATES.find(t => t.value === value);
+    if (template) {
+      setRejectionReason(template.template);
+    }
   };
 
   const confirmApprove = () => {
@@ -66,9 +91,13 @@ export default function OwnerApprovals() {
 
   const confirmReject = () => {
     if (selectedBooking && rejectionReason.trim()) {
+      const finalReason = suggestAlternatives 
+        ? `${rejectionReason}\n\nWe'd be happy to discuss alternative sites or dates that might work better for your needs. Please contact us to explore other options.`
+        : rejectionReason;
+      
       rejectMutation.mutate({ 
         bookingId: selectedBooking, 
-        reason: rejectionReason 
+        reason: finalReason
       });
     } else {
       toast.error("Please provide a reason for rejection");
@@ -289,16 +318,60 @@ export default function OwnerApprovals() {
               Please provide a reason for rejecting this booking. The customer will receive this message.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="rejection-reason">Rejection Reason *</Label>
-            <Textarea
-              id="rejection-reason"
-              placeholder="e.g., Site not available for this category, conflicting booking, etc."
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              rows={4}
-              className="mt-2"
-            />
+          <div className="py-4 space-y-4">
+            <div>
+              <Label htmlFor="rejection-template">Select Template</Label>
+              <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
+                <SelectTrigger id="rejection-template" className="mt-2">
+                  <SelectValue placeholder="Choose a template" />
+                </SelectTrigger>
+                <SelectContent>
+                  {REJECTION_TEMPLATES.map((template) => (
+                    <SelectItem key={template.value} value={template.value}>
+                      {template.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="rejection-reason">Rejection Reason *</Label>
+              <Textarea
+                id="rejection-reason"
+                placeholder="Enter or customize your rejection reason..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                rows={5}
+                className="mt-2"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                This message will be sent to the customer via email.
+              </p>
+            </div>
+            <div className="border-t pt-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="suggest-alternatives"
+                  checked={suggestAlternatives}
+                  onChange={(e) => setSuggestAlternatives(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="suggest-alternatives" className="font-normal cursor-pointer">
+                  Suggest alternative sites or dates to the customer
+                </Label>
+              </div>
+              {suggestAlternatives && (
+                <div className="mt-3 p-3 bg-muted rounded-md">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    💡 When enabled, your rejection email will include a note encouraging the customer to contact you for alternative options.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    This helps maintain customer relationships and may lead to alternative bookings.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setActionType(null)}>
@@ -315,5 +388,13 @@ export default function OwnerApprovals() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function OwnerApprovals() {
+  return (
+    <DashboardLayout>
+      <OwnerApprovalsContent />
+    </DashboardLayout>
   );
 }
