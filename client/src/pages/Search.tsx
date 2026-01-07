@@ -196,7 +196,7 @@ export default function Search() {
             if (hasRequirements) {
               return (
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="text-sm text-gray-600">Filtering by:</span>
+                  <span key="label" className="text-sm text-gray-600">Filtering by:</span>
                   {parsed.minSizeM2 !== undefined && (
                     <Badge key="size" variant="secondary" className="bg-blue-100 text-blue-700">
                       Minimum {parsed.minSizeM2}m² site size

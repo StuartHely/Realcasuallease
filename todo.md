@@ -1023,3 +1023,9 @@
 - [x] Check each component for conditional siblings without keys
 - [x] Fix all missing key props found - fixed Centres.tsx and CentreDetail.tsx
 - [x] Test all components for warnings - all clear
+
+## Persistent Search Key Prop Warning (Jan 7, 2026)
+- [x] Read entire Search.tsx systematically
+- [x] Find the location causing the persistent warning - "Filtering by:" span missing key
+- [x] Fix the final key prop issue - added key="label" to span
+- [x] Verify no more warnings in console
