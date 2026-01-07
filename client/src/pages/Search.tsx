@@ -198,12 +198,12 @@ export default function Search() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <span className="text-sm text-gray-600">Filtering by:</span>
                   {parsed.minSizeM2 !== undefined && (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                    <Badge key="size" variant="secondary" className="bg-blue-100 text-blue-700">
                       Minimum {parsed.minSizeM2}m² site size
                     </Badge>
                   )}
                   {parsed.minTables !== undefined && (
-                    <Badge variant="secondary" className="bg-green-100 text-green-700">
+                    <Badge key="tables" variant="secondary" className="bg-green-100 text-green-700">
                       Minimum {parsed.minTables} tables
                     </Badge>
                   )}

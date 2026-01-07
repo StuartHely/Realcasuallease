@@ -1008,3 +1008,5 @@
 - [x] Find missing key prop in Search.tsx causing React warning
 - [x] Add key prop to list items in category badges or heatmap
 - [x] Test that warning is resolved
+- [x] Find second missing key prop (warning still occurs)
+- [x] Fix all remaining key prop issues - added keys to conditional Badge components
