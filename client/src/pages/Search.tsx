@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle } from "lucide-react";
 import { format, parse, addDays, isSameDay } from "date-fns";
 import InteractiveMap from "@/components/InteractiveMap";
 import { NearbyCentresMap } from "@/components/NearbyCentresMap";
+import { SearchSkeleton } from "@/components/SearchSkeleton";
 import { parseSearchQuery } from "@/../../shared/queryParser";
 
 export default function Search() {
@@ -16,11 +18,14 @@ export default function Search() {
   const [searchParams, setSearchParams] = useState<{ query: string; date: Date } | null>(null);
   const [focusedCell, setFocusedCell] = useState<{ siteIndex: number; dateIndex: number } | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [showOnlyAutoApproved, setShowOnlyAutoApproved] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const query = params.get("query") || params.get("centre"); // Support both for backwards compatibility
     const dateStr = params.get("date");
+    const categoryParam = params.get("category");
+    const autoApprovedParam = params.get("autoApproved");
 
     if (query && dateStr) {
       try {
@@ -29,6 +34,16 @@ export default function Search() {
       } catch (e) {
         console.error("Invalid date format", e);
       }
+    }
+
+    // Restore category filter from URL
+    if (categoryParam) {
+      setSelectedCategoryId(parseInt(categoryParam));
+    }
+
+    // Restore auto-approved filter from URL
+    if (autoApprovedParam === "true") {
+      setShowOnlyAutoApproved(true);
     }
   }, []);
 
@@ -222,11 +237,7 @@ export default function Search() {
           )}
         </div>
 
-        {isLoading && (
-          <div className="text-center py-12">
-            <p className="text-gray-600">Loading results...</p>
-          </div>
-        )}
+        {isLoading && <SearchSkeleton />}
 
         {data && data.centres.length === 0 && (
           <Card>
@@ -251,7 +262,19 @@ export default function Search() {
                 <div className="flex gap-4 items-center">
                   <Select
                     value={selectedCategoryId?.toString() || "all"}
-                    onValueChange={(value) => setSelectedCategoryId(value === "all" ? null : parseInt(value))}
+                    onValueChange={(value) => {
+                      const newCategoryId = value === "all" ? null : parseInt(value);
+                      setSelectedCategoryId(newCategoryId);
+                      
+                      // Update URL
+                      const params = new URLSearchParams(window.location.search);
+                      if (newCategoryId) {
+                        params.set("category", newCategoryId.toString());
+                      } else {
+                        params.delete("category");
+                      }
+                      window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+                    }}
                   >
                     <SelectTrigger className="w-[300px]">
                       <SelectValue placeholder="All categories" />
@@ -266,11 +289,40 @@ export default function Search() {
                     </SelectContent>
                   </Select>
                   {selectedCategoryId && (
-                    <Button variant="outline" size="sm" onClick={() => setSelectedCategoryId(null)}>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setSelectedCategoryId(null);
+                      const params = new URLSearchParams(window.location.search);
+                      params.delete("category");
+                      window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+                    }}>
                       Clear Filter
                     </Button>
                   )}
                 </div>
+                {selectedCategoryId && (
+                  <div className="flex items-center space-x-2 mt-4">
+                    <Checkbox
+                      id="autoApproved"
+                      checked={showOnlyAutoApproved}
+                      onCheckedChange={(checked) => {
+                        setShowOnlyAutoApproved(checked as boolean);
+                        const params = new URLSearchParams(window.location.search);
+                        if (checked) {
+                          params.set("autoApproved", "true");
+                        } else {
+                          params.delete("autoApproved");
+                        }
+                        window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+                      }}
+                    />
+                    <label
+                      htmlFor="autoApproved"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      Show only sites with instant approval for this category
+                    </label>
+                  </div>
+                )}
               </CardContent>
             </Card>
             {/* Interactive Map - Show if centre has a map */}
@@ -304,6 +356,17 @@ export default function Search() {
                   // If no categories configured (empty array), site accepts all categories
                   if (!siteCategories || siteCategories.length === 0) return true;
                   // Otherwise check if selected category is in the approved list
+                  return siteCategories.some((cat: any) => cat.id === selectedCategoryId);
+                });
+              }
+
+              // Further filter by auto-approved if checkbox is checked
+              if (showOnlyAutoApproved && selectedCategoryId && data.siteCategories) {
+                centreSites = centreSites.filter((site) => {
+                  const siteCategories = data.siteCategories[site.id];
+                  // Empty array means all categories approved (auto-approve all)
+                  if (!siteCategories || siteCategories.length === 0) return true;
+                  // Check if selected category is explicitly approved
                   return siteCategories.some((cat: any) => cat.id === selectedCategoryId);
                 });
               }

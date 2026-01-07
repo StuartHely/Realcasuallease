@@ -1029,3 +1029,21 @@
 - [x] Find the location causing the persistent warning - "Filtering by:" span missing key
 - [x] Fix the final key prop issue - added key="label" to span
 - [x] Verify no more warnings in console
+
+## UX Improvements (Jan 7, 2026)
+- [x] Add category filter to URL query parameters
+- [x] Read category from URL on page load
+- [x] Update URL when category filter changes
+- [x] Implement "Show only auto-approved" checkbox toggle
+- [x] Filter sites to show only those with selected category pre-approved
+- [x] Create loading skeleton component for search results
+- [x] Replace "Loading results..." with skeleton cards
+- [ ] Test all three features together
+
+## UX Enhancements (Jan 6, 2026)
+- [x] Add category filter dropdown to search results page
+- [x] Implement category URL persistence with query parameters
+- [x] Add auto-approved filter checkbox for instant booking sites
+- [x] Create loading skeleton component for search results
+- [x] Replace "Loading results..." with animated skeleton cards
+- [x] Test all three features together
