@@ -84,7 +84,7 @@ export async function getSitesWithCategoriesForCentre(centreId: number) {
       const approvals = await getApprovedCategoriesForSite(site.id);
       return {
         ...site,
-        approvedCategoryIds: approvals.map((a: any) => a.categoryId),
+        approvedCategoryIds: approvals.map((a: any) => a.id),
       };
     })
   );

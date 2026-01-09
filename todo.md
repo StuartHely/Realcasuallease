@@ -1297,3 +1297,16 @@
 - [x] Add visual styling (green badge with checkmark icon) to make the indicator prominent
 - [x] Test with centres that have matching category approvals across all sites (Eastgate Bondi Junction)
 - [x] Test with centres that have different category approvals per site (indicator correctly hidden)
+
+## CRITICAL: Fix Category Approvals Bug (Jan 9, 2025)
+- [x] Investigate why all category approvals were cleared (display bug, not data loss)
+- [x] Identify the code that caused the data loss (line 87 in usageCategoriesDb.ts: a.categoryId should be a.id)
+- [x] Restore category approvals from previous checkpoint or backup (no restoration needed - data was intact)
+- [x] Fix the bug to prevent future data loss (changed a.categoryId to a.id)
+- [x] Verify all sites have their category approvals restored (tested with Site 2 at Eastgate - all categories showing correctly)
+
+## Bulk Category Sync Button (Jan 9, 2025)
+- [x] Add "Sync All Sites" button to Usage Categories page ("Apply to All Sites in Centre" already exists)
+- [x] Create backend procedure to copy categories from one site to all others in centre (applyToAllSites mutation exists)
+- [x] Show success message with count of sites updated (toast shows "Applied to X sites in this centre")
+- [x] Test syncing categories across multiple sites (functionality verified)
