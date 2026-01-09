@@ -22,24 +22,31 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
-import { Edit, Image as ImageIcon, MapPin, Plus, Trash2, Upload } from "lucide-react";
-import { useState } from "react";
+import { Edit, Image as ImageIcon, MapPin, Plus, Trash2, Upload, Tag } from "lucide-react";
+import { useState, useEffect } from "react";
 import BulkImageImport from "@/components/BulkImageImport";
+import { ManageSiteCategoriesDialog } from "@/components/ManageSiteCategoriesDialog";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
 export default function AdminSites() {
   const [location] = useLocation();
-  const urlParams = new URLSearchParams(location.split('?')[1]);
-  const centreIdParam = urlParams.get('centreId');
+  const [selectedCentreId, setSelectedCentreId] = useState<number | null>(null);
   
-  const [selectedCentreId, setSelectedCentreId] = useState<number | null>(
-    centreIdParam ? parseInt(centreIdParam) : null
-  );
+  // Update selectedCentreId when URL changes
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.split('?')[1]);
+    const centreIdParam = urlParams.get('centreId');
+    if (centreIdParam) {
+      setSelectedCentreId(parseInt(centreIdParam));
+    }
+  }, [location]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<any>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const [categoriesSite, setCategoriesSite] = useState<any>(null);
 
   const { data: centres } = trpc.centres.list.useQuery();
   const { data: sites, refetch } = trpc.sites.getByCentreId.useQuery(
@@ -383,6 +390,17 @@ export default function AdminSites() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => {
+                          setCategoriesSite(site);
+                          setIsCategoriesOpen(true);
+                        }}
+                        title="Manage Categories"
+                      >
+                        <Tag className="h-4 w-4 text-blue-600" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleEdit(site)}
                       >
                         <Edit className="h-4 w-4" />
@@ -639,6 +657,17 @@ export default function AdminSites() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Manage Categories Dialog */}
+      {categoriesSite && (
+        <ManageSiteCategoriesDialog
+          open={isCategoriesOpen}
+          onOpenChange={setIsCategoriesOpen}
+          siteId={categoriesSite.id}
+          siteNumber={categoriesSite.siteNumber}
+          centreName={selectedCentre?.name || ""}
+        />
+      )}
     </AdminLayout>
   );
 }

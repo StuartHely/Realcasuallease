@@ -1225,3 +1225,21 @@
 - [x] Fix search.smart procedure to respect category filtering results
 - [x] Configure Highlands sites with correct category approvals for testing
 - [x] Test that Site 3 no longer appears when searching for books
+
+## Admin UI for Category Management Integration (Jan 9, 2026)
+- [ ] Review existing ManageSiteCategoriesDialog component implementation
+- [ ] Check if component is already integrated into admin UI
+- [ ] Add "Manage Categories" button to appropriate admin page if missing
+- [ ] Test category management workflow end-to-end
+- [ ] Verify changes sync with search filtering
+- [ ] Document the category management feature for users
+
+## Admin UI for Category Management (Jan 9, 2025)
+- [x] Add "Manage Categories" button to each site card in admin Sites page
+- [x] Create ManageSiteCategoriesDialog component with all 42 categories
+- [x] Implement search functionality to filter categories
+- [x] Add Select All / Deselect All buttons for bulk operations
+- [x] Integrate with existing backend procedures (sites.getApprovedCategories, sites.setApprovedCategories)
+- [x] Fix Sites page URL parameter handling with useEffect
+- [x] Test dialog functionality with Highlands Marketplace sites
+- [x] Verify all UI features work correctly (search, bulk actions, save/cancel)
