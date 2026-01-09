@@ -333,6 +333,7 @@ export async function searchSites(query: string) {
  * Search sites with optional product category filtering
  */
 export async function searchSitesWithCategory(query: string, categoryKeyword?: string) {
+  console.log('[searchSitesWithCategory] query:', query, 'categoryKeyword:', categoryKeyword);
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
@@ -374,16 +375,19 @@ export async function searchSitesWithCategory(query: string, categoryKeyword?: s
     const siteNumber = (site.siteNumber || "").toLowerCase();
     const description = (site.description || "").toLowerCase();
     const centreName = (centre?.name || "").toLowerCase();
-    const categoryNames = categories.map(c => c.name.toLowerCase()).join(" ");
-    const combined = `${centreName} ${siteNumber} ${description} ${categoryNames}`.toLowerCase();
-
-    // If category keyword is provided, filter by category first
+    
+    // CRITICAL: If category keyword is provided, ONLY match sites with that approved category
     if (categoryKeyword) {
       const categoryMatch = categories.some(cat => 
         cat.name.toLowerCase().includes(categoryKeyword.toLowerCase())
       );
-      if (!categoryMatch) return false;
+      console.log('[searchSitesWithCategory] Site', site.siteNumber, 'categories:', categories.map(c => c.name), 'keyword:', categoryKeyword, 'match:', categoryMatch);
+      if (!categoryMatch) return false; // Site doesn't have this category approved
     }
+    
+    // Only include approved category names in search (don't search against unapproved categories)
+    const categoryNames = categories.map(c => c.name.toLowerCase()).join(" ");
+    const combined = `${centreName} ${siteNumber} ${description} ${categoryNames}`.toLowerCase();
 
     // Check if query matches as a whole
     if (combined.includes(lowerQuery)) return true;

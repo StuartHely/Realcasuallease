@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, name FROM usage_categories WHERE name LIKE '%book%' OR name LIKE '%Book%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, name FROM usage_categories WHERE name LIKE '%book%' OR name LIKE '%Book%';",
+  "rows": [
+    {
+      "id": "60004",
+      "name": "Books"
+    },
+    {
+      "id": "4",
+      "name": "Books & Stationery"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n60004\tBooks\n4\tBooks & Stationery\n",
+  "stderr": "",
+  "execution_time_ms": 1519
+}

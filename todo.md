@@ -1199,3 +1199,29 @@
 - [x] Ensure category context flows through booking process
 - [x] Test search with various combinations (centre + size + category)
 - [x] Write tests for category search logic
+
+## Critical Bug Fix: Category Filtering
+
+- [ ] Investigate why search shows sites with unapproved categories
+- [ ] Fix searchSitesWithCategory to only return sites with approved categories
+- [ ] Test with Highlands Site 3 (books not approved but showing in search)
+- [ ] Add test cases for unapproved category filtering
+- [ ] Verify fix works across all search scenarios
+
+## Site Category Management UI (Critical Missing Feature - Jan 9, 2026)
+- [ ] Create ManageSiteCategoriesDialog component
+- [ ] Add "Manage Categories" button to OwnerSites page
+- [ ] Build checkbox grid UI for all 34 categories per site
+- [ ] Add backend tRPC procedures for getting/setting site categories
+- [ ] Implement bulk "Select All" / "Deselect All" functionality
+- [ ] Add search/filter for categories in the dialog
+- [ ] Configure Highlands Site 3 to exclude books, charities, government
+- [ ] Verify search filtering works with real approved category data
+- [ ] Test that sites with no approved categories don't appear in search
+
+## Critical Bug Fix: Category Filtering (Jan 9, 2026)
+- [x] Investigate why Site 3 appears in books search despite books not being approved
+- [x] Fix searchSitesWithCategory to properly enforce approved categories
+- [x] Fix search.smart procedure to respect category filtering results
+- [x] Configure Highlands sites with correct category approvals for testing
+- [x] Test that Site 3 no longer appears when searching for books

@@ -14,15 +14,18 @@ export async function getAllUsageCategories() {
 }
 
 /**
- * Get approved category IDs for a specific site
+ * Get approved categories for a specific site (returns full category objects)
  */
 export async function getApprovedCategoriesForSite(siteId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return await db.select({
-    categoryId: siteUsageCategories.categoryId,
+    id: usageCategories.id,
+    name: usageCategories.name,
+    isFree: usageCategories.isFree,
   })
   .from(siteUsageCategories)
+  .innerJoin(usageCategories, eq(siteUsageCategories.categoryId, usageCategories.id))
   .where(eq(siteUsageCategories.siteId, siteId));
 }
 

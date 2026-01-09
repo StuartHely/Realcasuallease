@@ -173,6 +173,30 @@ export const appRouter = router({
           })),
         };
       }),
+
+    getApprovedCategories: publicProcedure
+      .input(z.object({ siteId: z.number() }))
+      .query(async ({ input }) => {
+        const { getApprovedCategoriesForSite } = await import("./usageCategoriesDb");
+        return await getApprovedCategoriesForSite(input.siteId);
+      }),
+
+    setApprovedCategories: protectedProcedure
+      .input(z.object({
+        siteId: z.number(),
+        categoryIds: z.array(z.number()),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Only owners and mega admins can manage site categories
+        const allowedRoles = ['owner_super_admin', 'owner_state_admin', 'owner_regional_admin', 'owner_centre_manager', 'mega_admin', 'mega_state_admin'];
+        if (!allowedRoles.includes(ctx.user.role)) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Only owners and administrators can manage site categories' });
+        }
+
+        const { setApprovedCategoriesForSite } = await import("./usageCategoriesDb");
+        await setApprovedCategoriesForSite(input.siteId, input.categoryIds);
+        return { success: true };
+      }),
   }),
 
   // Bookings
@@ -599,10 +623,13 @@ export const appRouter = router({
         // Parse query to extract requirements
         const { parseSearchQuery, siteMatchesRequirements } = await import("../shared/queryParser");
         const parsedQuery = parseSearchQuery(input.query);
+        console.log('[search] input.query:', input.query, 'parsedQuery:', parsedQuery);
         
         // Try site-level search first using the extracted centre name and category
         const searchQuery = parsedQuery.centreName || input.query;
+        console.log('[search] searchQuery:', searchQuery, 'productCategory:', parsedQuery.productCategory);
         const siteResults = await db.searchSitesWithCategory(searchQuery, parsedQuery.productCategory);
+        console.log('[search] siteResults count:', siteResults.length);
         
         // If we found specific sites, use those
         if (siteResults.length > 0 && siteResults.length <= 10) {
@@ -645,7 +672,7 @@ export const appRouter = router({
         
         // Track if any sites match the size requirement
         let hasMatchingSites = false;
-        const hasRequirements = parsedQuery.minSizeM2 !== undefined || parsedQuery.minTables !== undefined;
+        const hasRequirements = parsedQuery.minSizeM2 !== undefined || parsedQuery.minTables !== undefined || parsedQuery.productCategory !== undefined;
         
         // OPTIMIZED: Batch fetch all data in minimal queries
         const { getSearchDataOptimized } = await import("./dbOptimized");
@@ -693,12 +720,15 @@ export const appRouter = router({
             matchesRequirements: siteMatchesRequirements(site, parsedQuery)
           }));
           
-          // If requirements specified and matches found, only include matching sites
-          // If requirements specified but no matches found, include all sites as fallback
-          // If no requirements specified, include all sites
-          const sitesToInclude = (hasRequirements && hasMatchingSites)
-            ? sitesWithMatch.filter((s: any) => s.matchesRequirements)
-            : sitesWithMatch;
+          // If category filtering is active, only include sites that passed category check
+          let sitesToInclude = sitesWithMatch;
+          if (parsedQuery.productCategory) {
+            sitesToInclude = sitesWithMatch.filter((s: any) => matchedSiteIds.includes(s.site.id));
+            hasMatchingSites = sitesToInclude.length > 0;
+          } else if (hasRequirements && hasMatchingSites) {
+            // If size/table requirements specified and matches found, only include matching sites
+            sitesToInclude = sitesWithMatch.filter((s: any) => s.matchesRequirements);
+          }
           
           allSites.push(...sitesToInclude.map(({ site }: any) => ({ ...site, centreName: centre.name })));
           

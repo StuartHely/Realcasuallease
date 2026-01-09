@@ -1,0 +1,366 @@
+{
+  "query": "SELECT id, name FROM usage_categories \nWHERE name NOT IN ('Books & Stationery', 'Charities & Non-Profits', 'Government & Public Services')\nORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, name FROM usage_categories \nWHERE name NOT IN ('Books & Stationery', 'Charities & Non-Profits', 'Government & Public Services')\nORDER BY name;",
+  "rows": [
+    {
+      "id": "30001",
+      "name": "Alcohol"
+    },
+    {
+      "id": "30030",
+      "name": "Another Test Category"
+    },
+    {
+      "id": "30002",
+      "name": "Art & Craft"
+    },
+    {
+      "id": "1",
+      "name": "Automotive"
+    },
+    {
+      "id": "30003",
+      "name": "Baby & Toddler"
+    },
+    {
+      "id": "2",
+      "name": "Beauty & Cosmetics"
+    },
+    {
+      "id": "60001",
+      "name": "Beauty and Cosmetics"
+    },
+    {
+      "id": "60002",
+      "name": "Bedding and Furniture"
+    },
+    {
+      "id": "3",
+      "name": "Boating & Marine"
+    },
+    {
+      "id": "60003",
+      "name": "Boating and Marine"
+    },
+    {
+      "id": "60004",
+      "name": "Books"
+    },
+    {
+      "id": "60005",
+      "name": "Calendars"
+    },
+    {
+      "id": "5",
+      "name": "Charities (Free)"
+    },
+    {
+      "id": "6",
+      "name": "Charities (Paid)"
+    },
+    {
+      "id": "30004",
+      "name": "Charities Free"
+    },
+    {
+      "id": "60006",
+      "name": "Clothing"
+    },
+    {
+      "id": "7",
+      "name": "Clothing & Fashion"
+    },
+    {
+      "id": "30005",
+      "name": "Community Groups"
+    },
+    {
+      "id": "60007",
+      "name": "Discount Variety"
+    },
+    {
+      "id": "60008",
+      "name": "Education / Recruitment / Training"
+    },
+    {
+      "id": "30006",
+      "name": "Electrical"
+    },
+    {
+      "id": "8",
+      "name": "Electronics & Technology"
+    },
+    {
+      "id": "30007",
+      "name": "Entertainment"
+    },
+    {
+      "id": "30008",
+      "name": "Finance"
+    },
+    {
+      "id": "9",
+      "name": "Financial Services"
+    },
+    {
+      "id": "60009",
+      "name": "Financial and Insurance Services"
+    },
+    {
+      "id": "30009",
+      "name": "Fitness & Health"
+    },
+    {
+      "id": "10",
+      "name": "Fitness & Wellness"
+    },
+    {
+      "id": "60010",
+      "name": "Fitness / Sporting Goods"
+    },
+    {
+      "id": "60011",
+      "name": "Florist"
+    },
+    {
+      "id": "30010",
+      "name": "Food"
+    },
+    {
+      "id": "11",
+      "name": "Food & Beverage"
+    },
+    {
+      "id": "60012",
+      "name": "Food and Beverage"
+    },
+    {
+      "id": "30011",
+      "name": "Furniture"
+    },
+    {
+      "id": "12",
+      "name": "Furniture & Homewares"
+    },
+    {
+      "id": "30012",
+      "name": "Gardening"
+    },
+    {
+      "id": "13",
+      "name": "Gardening & Outdoor"
+    },
+    {
+      "id": "14",
+      "name": "Government (Free)"
+    },
+    {
+      "id": "30013",
+      "name": "Government Free"
+    },
+    {
+      "id": "15",
+      "name": "Health & Medical"
+    },
+    {
+      "id": "60013",
+      "name": "Health and Well-Being"
+    },
+    {
+      "id": "16",
+      "name": "Hobbies & Crafts"
+    },
+    {
+      "id": "17",
+      "name": "Home Improvement"
+    },
+    {
+      "id": "60014",
+      "name": "Home Improvements"
+    },
+    {
+      "id": "30014",
+      "name": "Homewares"
+    },
+    {
+      "id": "60015",
+      "name": "Household Goods"
+    },
+    {
+      "id": "18",
+      "name": "Insurance"
+    },
+    {
+      "id": "60016",
+      "name": "Internal - Marketing and Centre Management"
+    },
+    {
+      "id": "30015",
+      "name": "Jewellery"
+    },
+    {
+      "id": "19",
+      "name": "Jewellery & Accessories"
+    },
+    {
+      "id": "60017",
+      "name": "Jewellery (Fashion) and Accessories"
+    },
+    {
+      "id": "60018",
+      "name": "Jewellery (Fine)"
+    },
+    {
+      "id": "20",
+      "name": "Kids & Toys"
+    },
+    {
+      "id": "30016",
+      "name": "Music"
+    },
+    {
+      "id": "60019",
+      "name": "News and Stationery"
+    },
+    {
+      "id": "34",
+      "name": "Other"
+    },
+    {
+      "id": "60020",
+      "name": "Pet Products"
+    },
+    {
+      "id": "30017",
+      "name": "Pets"
+    },
+    {
+      "id": "21",
+      "name": "Pets & Animals"
+    },
+    {
+      "id": "60021",
+      "name": "Pharmaceuticals"
+    },
+    {
+      "id": "30018",
+      "name": "Photography"
+    },
+    {
+      "id": "22",
+      "name": "Photography & Art"
+    },
+    {
+      "id": "30019",
+      "name": "Plants"
+    },
+    {
+      "id": "23",
+      "name": "Real Estate"
+    },
+    {
+      "id": "60022",
+      "name": "Real Estate / Property Developers"
+    },
+    {
+      "id": "24",
+      "name": "Renewable Energy"
+    },
+    {
+      "id": "25",
+      "name": "Security & Safety"
+    },
+    {
+      "id": "30020",
+      "name": "Shoes"
+    },
+    {
+      "id": "60023",
+      "name": "Shoes / Footwear"
+    },
+    {
+      "id": "30021",
+      "name": "Sporting Goods"
+    },
+    {
+      "id": "26",
+      "name": "Sports & Recreation"
+    },
+    {
+      "id": "30022",
+      "name": "Technology"
+    },
+    {
+      "id": "60024",
+      "name": "Technology and Telecommunications"
+    },
+    {
+      "id": "27",
+      "name": "Telecommunications"
+    },
+    {
+      "id": "30028",
+      "name": "Test Custom Category"
+    },
+    {
+      "id": "30029",
+      "name": "Test Free Category"
+    },
+    {
+      "id": "30023",
+      "name": "Tobacco"
+    },
+    {
+      "id": "30024",
+      "name": "Tools"
+    },
+    {
+      "id": "30025",
+      "name": "Tourism"
+    },
+    {
+      "id": "28",
+      "name": "Tourism & Travel"
+    },
+    {
+      "id": "30026",
+      "name": "Toys"
+    },
+    {
+      "id": "29",
+      "name": "Trade Services"
+    },
+    {
+      "id": "60025",
+      "name": "Travel"
+    },
+    {
+      "id": "60026",
+      "name": "Ugg Boots"
+    },
+    {
+      "id": "30",
+      "name": "Utilities"
+    },
+    {
+      "id": "31",
+      "name": "Vaping & Smoking"
+    },
+    {
+      "id": "32",
+      "name": "Vehicles & Machinery"
+    },
+    {
+      "id": "30027",
+      "name": "Wellness"
+    },
+    {
+      "id": "33",
+      "name": "Wine & Liquor"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n30001\tAlcohol\n30030\tAnother Test Category\n30002\tArt & Craft\n1\tAutomotive\n30003\tBaby & Toddler\n2\tBeauty & Cosmetics\n60001\tBeauty and Cosmetics\n60002\tBedding and Furniture\n3\tBoating & Marine\n60003\tBoating and Marine\n60004\tBooks\n60005\tCalendars\n5\tCharities (Free)\n6\tCharities (Paid)\n30004\tCharities Free\n60006\tClothing\n7\tClothing & Fashion\n30005\tCommunity Groups\n60007\tDiscount Variety\n60008\tEducation / Recruitment / Training\n30006\tElectrical\n8\tElectronics & Technology\n30007\tEntertainment\n30008\tFinance\n9\tFinancial Services\n60009\tFinancial and Insurance Services\n30009\tFitness & Health\n10\tFitness & Wellness\n60010\tFitness / Sporting Goods\n60011\tFlorist\n30010\tFood\n11\tFood & Beverage\n60012\tFood and Beverage\n30011\tFurniture\n12\tFurniture & Homewares\n30012\tGardening\n13\tGardening & Outdoor\n14\tGovernment (Free)\n30013\tGovernment Free\n15\tHealth & Medical\n60013\tHealth and Well-Being\n16\tHobbies & Crafts\n17\tHome Improvement\n60014\tHome Improvements\n30014\tHomewares\n60015\tHousehold Goods\n18\tInsurance\n60016\tInternal - Marketing and Centre Management\n30015\tJewellery\n19\tJewellery & Accessories\n60017\tJewellery (Fashion) and Accessories\n60018\tJewellery (Fine)\n20\tKids & Toys\n30016\tMusic\n60019\tNews and Stationery\n34\tOther\n60020\tPet Products\n30017\tPets\n21\tPets & Animals\n60021\tPharmaceuticals\n30018\tPhotography\n22\tPhotography & Art\n30019\tPlants\n23\tReal Estate\n60022\tReal Estate / Property Developers\n24\tRenewable Energy\n25\tSecurity & Safety\n30020\tShoes\n60023\tShoes / Footwear\n30021\tSporting Goods\n26\tSports & Recreation\n30022\tTechnology\n60024\tTechnology and Telecommunications\n27\tTelecommunications\n30028\tTest Custom Category\n30029\tTest Free Category\n30023\tTobacco\n30024\tTools\n30025\tTourism\n28\tTourism & Travel\n30026\tToys\n29\tTrade Services\n60025\tTravel\n60026\tUgg Boots\n30\tUtilities\n31\tVaping & Smoking\n32\tVehicles & Machinery\n30027\tWellness\n33\tWine & Liquor\n",
+  "stderr": "",
+  "execution_time_ms": 1629
+}
