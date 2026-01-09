@@ -1256,3 +1256,14 @@
 - [x] Remove redundant "Back to Dashboard" buttons from page headers (1 button removed from SiteAssignment.tsx)
 - [x] Add active page highlighting to AdminLayout sidebar navigation (already implemented)
 - [x] Test navigation and verify active states work correctly
+
+## Sidebar Section Grouping & GST Configuration (Jan 9, 2025)
+- [x] Design sidebar menu section structure (Content, Operations, Financial, System)
+- [x] Add system_settings table to database schema for GST percentage (using existing systemConfig table)
+- [x] Implement collapsible sidebar sections in AdminLayout component
+- [x] Create GST configuration UI in Settings page (SuperAdmin only)
+- [x] Add backend procedures for getting/setting GST percentage
+- [x] Update booking calculation logic to use configurable GST
+- [x] Update invoice generation to use configurable GST
+- [x] Test GST changes reflect in booking totals
+- [x] Test sidebar section collapse/expand functionality

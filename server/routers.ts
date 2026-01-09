@@ -4,7 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
-import { getSystemConfig as getSystemConfigDb, updateSystemConfig as updateSystemConfigDb } from "./systemConfigDb";
+import { getSystemConfig as getSystemConfigDb, updateSystemConfig as updateSystemConfigDb, getConfigValue, setConfigValue } from "./systemConfigDb";
 import { trackImageView, trackImageClick, getTopPerformingImages, getImageAnalyticsBySite } from "./imageAnalyticsDb";
 import { getSeasonalRatesBySiteId, createSeasonalRate, updateSeasonalRate, deleteSeasonalRate } from "./seasonalRatesDb";
 import { getAllUsageCategories, getApprovedCategoriesForSite, setApprovedCategoriesForSite, getSitesWithCategoriesForCentre } from "./usageCategoriesDb";
@@ -230,8 +230,8 @@ export const appRouter = router({
         );
 
         // Get GST rate
-        const gstConfig = await db.getSystemConfig("gst_percentage");
-        const gstRate = gstConfig ? Number(gstConfig.value) / 100 : 0.1;
+        const gstValue = await getConfigValue("gst_percentage");
+        const gstRate = gstValue ? Number(gstValue) / 100 : 0.1;
         const gstAmount = totalAmount * gstRate;
 
         // Get centre and owner info for commission
@@ -395,8 +395,8 @@ export const appRouter = router({
         );
 
         // Get GST rate
-        const gstConfig = await db.getSystemConfig("gst_percentage");
-        const gstRate = gstConfig ? Number(gstConfig.value) / 100 : 0.1;
+        const gstValue = await getConfigValue("gst_percentage");
+        const gstRate = gstValue ? Number(gstValue) / 100 : 0.1;
         const gstAmount = totalAmount * gstRate;
 
         return {
@@ -1352,6 +1352,25 @@ export const appRouter = router({
         const { applyApprovalsToAllSitesInCentre } = await import("./usageCategoriesDb");
         const sitesUpdated = await applyApprovalsToAllSitesInCentre(input.centreId, input.categoryIds);
         return { success: true, sitesUpdated };
+      }),
+  }),
+
+  // System Configuration
+  systemConfig: router({
+    getGstPercentage: publicProcedure.query(async () => {
+      const value = await getConfigValue("gst_percentage");
+      return { gstPercentage: value ? parseFloat(value) : 10.0 };
+    }),
+
+    setGstPercentage: adminProcedure
+      .input(z.object({ gstPercentage: z.number().min(0).max(100) }))
+      .mutation(async ({ input, ctx }) => {
+        // Only mega_admin and owner_super_admin can change GST
+        if (ctx.user.role !== "mega_admin" && ctx.user.role !== "owner_super_admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only SuperAdmin can change GST percentage" });
+        }
+        await setConfigValue("gst_percentage", input.gstPercentage.toString());
+        return { success: true, gstPercentage: input.gstPercentage };
       }),
   }),
 });

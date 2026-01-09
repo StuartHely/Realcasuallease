@@ -41,30 +41,56 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { trpc } from "@/lib/trpc";
 
-// Define menu items based on user roles
-const getMenuItems = (userRole: string) => {
-  const baseItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
-  ];
+// Define menu sections with grouped items
+type MenuSection = {
+  title: string;
+  items: Array<{ icon: any; label: string; path: string }>;
+};
 
+const getMenuSections = (userRole: string): MenuSection[] => {
   // Mega Admin and Owner Super Admin see everything
   if (userRole === "mega_admin" || userRole === "owner_super_admin") {
     return [
-      ...baseItems,
-      { icon: Building2, label: "Shopping Centres", path: "/admin/centres" },
-      { icon: MapPin, label: "Sites", path: "/admin/sites" },
-      { icon: Map, label: "Floor Plan Maps", path: "/admin/maps" },
-      { icon: MapPin, label: "Site Assignment", path: "/admin/site-assignment" },
-      { icon: Package, label: "Equipment", path: "/admin/equipment" },
-      { icon: TrendingUp, label: "Seasonal Pricing", path: "/admin/seasonal-rates" },
-      { icon: Tag, label: "Usage Categories", path: "/admin/usage-categories" },
-      { icon: CheckCircle, label: "Pending Approvals", path: "/admin/pending-approvals" },
-      { icon: Calendar, label: "Bookings", path: "/admin/bookings" },
-      { icon: Users, label: "Users", path: "/admin/users" },
-      { icon: Users, label: "Owners & Managers", path: "/admin/owners" },
-      { icon: DollarSign, label: "Financial Reports", path: "/admin/financials" },
-      { icon: FileText, label: "Audit Log", path: "/admin/audit" },
-      { icon: Settings, label: "Settings", path: "/admin/settings" },
+      {
+        title: "Overview",
+        items: [
+          { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
+        ],
+      },
+      {
+        title: "Content Management",
+        items: [
+          { icon: Building2, label: "Shopping Centres", path: "/admin/centres" },
+          { icon: MapPin, label: "Sites", path: "/admin/sites" },
+          { icon: Map, label: "Floor Plan Maps", path: "/admin/maps" },
+          { icon: MapPin, label: "Site Assignment", path: "/admin/site-assignment" },
+          { icon: Package, label: "Equipment", path: "/admin/equipment" },
+          { icon: Tag, label: "Usage Categories", path: "/admin/usage-categories" },
+        ],
+      },
+      {
+        title: "Operations",
+        items: [
+          { icon: CheckCircle, label: "Pending Approvals", path: "/admin/pending-approvals" },
+          { icon: Calendar, label: "Bookings", path: "/admin/bookings" },
+          { icon: TrendingUp, label: "Seasonal Pricing", path: "/admin/seasonal-rates" },
+        ],
+      },
+      {
+        title: "Financial",
+        items: [
+          { icon: DollarSign, label: "Financial Reports", path: "/admin/financials" },
+        ],
+      },
+      {
+        title: "System",
+        items: [
+          { icon: Users, label: "Users", path: "/admin/users" },
+          { icon: Users, label: "Owners & Managers", path: "/admin/owners" },
+          { icon: FileText, label: "Audit Log", path: "/admin/audit" },
+          { icon: Settings, label: "Settings", path: "/admin/settings" },
+        ],
+      },
     ];
   }
 
@@ -75,26 +101,53 @@ const getMenuItems = (userRole: string) => {
     userRole === "owner_centre_manager"
   ) {
     return [
-      ...baseItems,
-      { icon: Building2, label: "My Centres", path: "/admin/centres" },
-      { icon: MapPin, label: "Sites", path: "/admin/sites" },
-      { icon: Calendar, label: "Bookings", path: "/admin/bookings" },
-      { icon: DollarSign, label: "Reports", path: "/admin/financials" },
+      {
+        title: "Overview",
+        items: [
+          { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
+        ],
+      },
+      {
+        title: "Management",
+        items: [
+          { icon: Building2, label: "My Centres", path: "/admin/centres" },
+          { icon: MapPin, label: "Sites", path: "/admin/sites" },
+          { icon: Calendar, label: "Bookings", path: "/admin/bookings" },
+          { icon: DollarSign, label: "Reports", path: "/admin/financials" },
+        ],
+      },
     ];
   }
 
   // Marketing managers
   if (userRole === "owner_marketing_manager") {
     return [
-      ...baseItems,
-      { icon: Building2, label: "Centres", path: "/admin/centres" },
-      { icon: MapPin, label: "Sites", path: "/admin/sites" },
-      { icon: FileText, label: "Content", path: "/admin/content" },
+      {
+        title: "Overview",
+        items: [
+          { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
+        ],
+      },
+      {
+        title: "Content",
+        items: [
+          { icon: Building2, label: "Centres", path: "/admin/centres" },
+          { icon: MapPin, label: "Sites", path: "/admin/sites" },
+          { icon: FileText, label: "Content", path: "/admin/content" },
+        ],
+      },
     ];
   }
 
   // Default (shouldn't reach here for non-admin users)
-  return baseItems;
+  return [
+    {
+      title: "Overview",
+      items: [
+        { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
+      ],
+    },
+  ];
 };
 
 export default function AdminLayout({
@@ -135,7 +188,7 @@ export default function AdminLayout({
     return null;
   }
 
-  const menuItems = getMenuItems(user.role);
+  const menuSections = getMenuSections(user.role);
   const initials = user.name
     ? user.name
         .split(" ")
@@ -157,19 +210,28 @@ export default function AdminLayout({
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu>
-            {menuItems.map((item) => (
-              <SidebarMenuItem key={item.path}>
-                <SidebarMenuButton
-                  onClick={() => setLocation(item.path)}
-                  isActive={location === item.path}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
+          {menuSections.map((section) => (
+            <div key={section.title} className="py-2">
+              <div className="px-3 py-2">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {section.title}
+                </h3>
+              </div>
+              <SidebarMenu>
+                {section.items.map((item) => (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton
+                      onClick={() => setLocation(item.path)}
+                      isActive={location === item.path}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </div>
+          ))}
         </SidebarContent>
         <SidebarFooter className="border-t p-4">
           <DropdownMenu>
