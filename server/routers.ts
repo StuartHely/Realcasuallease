@@ -352,6 +352,7 @@ export const appRouter = router({
           endDate: input.endDate,
           totalAmount: totalAmount.toFixed(2),
           gstAmount: gstAmount.toFixed(2),
+          gstPercentage: (gstRate * 100).toFixed(2), // Store GST percentage at time of booking
           ownerAmount: ownerAmount.toFixed(2),
           platformFee: platformFee.toFixed(2),
           status: requiresApproval ? "pending" : (site.instantBooking ? "confirmed" : "pending"),
@@ -406,6 +407,7 @@ export const appRouter = router({
           weekendRate: site.weekendPricePerDay ? Number(site.weekendPricePerDay) : Number(site.pricePerDay),
           subtotal: totalAmount,
           gstAmount,
+          gstPercentage: gstRate * 100, // Return current GST percentage
           total: totalAmount + gstAmount,
           seasonalDays: seasonalDays || [],
         };

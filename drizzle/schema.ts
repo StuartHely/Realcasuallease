@@ -225,6 +225,7 @@ export const bookings = mysqlTable("bookings", {
   endDate: timestamp("endDate").notNull(),
   totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull(),
   gstAmount: decimal("gstAmount", { precision: 12, scale: 2 }).notNull(),
+  gstPercentage: decimal("gstPercentage", { precision: 5, scale: 2 }).notNull(), // Store GST rate at time of booking/transaction
   ownerAmount: decimal("ownerAmount", { precision: 12, scale: 2 }).notNull(),
   platformFee: decimal("platformFee", { precision: 12, scale: 2 }).notNull(),
   status: mysqlEnum("status", ["pending", "confirmed", "cancelled", "completed", "rejected"]).default("pending").notNull(),
@@ -260,6 +261,7 @@ export const transactions = mysqlTable("transactions", {
   type: mysqlEnum("type", ["booking", "cancellation", "monthly_fee"]).notNull(),
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   gstAmount: decimal("gstAmount", { precision: 12, scale: 2 }).notNull(),
+  gstPercentage: decimal("gstPercentage", { precision: 5, scale: 2 }).notNull(), // Store GST rate at time of booking/transaction
   ownerAmount: decimal("ownerAmount", { precision: 12, scale: 2 }).notNull(),
   platformFee: decimal("platformFee", { precision: 12, scale: 2 }).notNull(),
   remitted: boolean("remitted").default(false).notNull(),

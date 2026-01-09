@@ -1267,3 +1267,11 @@
 - [x] Update invoice generation to use configurable GST
 - [x] Test GST changes reflect in booking totals
 - [x] Test sidebar section collapse/expand functionality
+
+## GST Historical Rate Preservation (Jan 9, 2025)
+- [x] Add gstPercentage field to bookings table schema
+- [x] Add gstPercentage field to transactions table schema
+- [x] Update booking creation logic to store current GST rate
+- [x] Update invoice generation to use stored GST rate from booking (ready for when invoices are implemented)
+- [x] Database migration completed (0018_mean_the_order.sql)
+- [x] Test GST percentage storage and retrieval (4 tests passing)
