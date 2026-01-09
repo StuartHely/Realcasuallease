@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,6 +67,18 @@ export default function UsageCategories() {
   
   // Get sorted centres
   const sortedCentres = centres?.sort((a, b) => a.name.localeCompare(b.name)) || [];
+  
+  // Check if all sites in the selected centre have identical category approvals
+  const allSitesHaveSameApprovals = useMemo(() => {
+    if (!sitesWithCategories || sitesWithCategories.length === 0) return false;
+    
+    const firstSiteCategories = sitesWithCategories[0].approvedCategoryIds.sort((a: number, b: number) => a - b);
+    
+    return sitesWithCategories.every(site => {
+      const siteCategories = site.approvedCategoryIds.sort((a: number, b: number) => a - b);
+      return JSON.stringify(siteCategories) === JSON.stringify(firstSiteCategories);
+    });
+  }, [sitesWithCategories]);
   
   // Handle centre selection
   const handleCentreChange = (centreId: string) => {
@@ -261,6 +273,18 @@ export default function UsageCategories() {
                   ))}
                 </SelectContent>
               </Select>
+              
+              {/* Consistency Indicator */}
+              {allSitesHaveSameApprovals && sitesWithCategories.length > 1 && (
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800 font-medium flex items-center gap-2">
+                    <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    All sites in this centre have the same usage approvals
+                  </p>
+                </div>
+              )}
             </div>
           )}
           

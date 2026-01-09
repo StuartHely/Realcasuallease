@@ -1290,3 +1290,10 @@
 - [x] Verify category filter dropdown shows all categories alphabetically
 - [x] Test that searching for "candles" finds sites with Candles category approved
 - [x] Ensure category filter on search results page works correctly
+
+## Category Consistency Indicator (Jan 9, 2025)
+- [x] Add logic to check if all sites in a centre have identical category approvals
+- [x] Display "All sites in this centre have the same usage approvals" message when applicable
+- [x] Add visual styling (green badge with checkmark icon) to make the indicator prominent
+- [x] Test with centres that have matching category approvals across all sites (Eastgate Bondi Junction)
+- [x] Test with centres that have different category approvals per site (indicator correctly hidden)
