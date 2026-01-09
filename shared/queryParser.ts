@@ -6,6 +6,7 @@ export interface ParsedQuery {
   centreName: string;
   minSizeM2?: number;
   minTables?: number;
+  productCategory?: string;
   originalQuery: string;
 }
 
@@ -49,7 +50,38 @@ function parseTableRequirement(query: string): number | undefined {
 }
 
 /**
- * Remove size and table requirements from query to extract centre name
+ * Extract product category keywords from query
+ * Common categories: shoes, clothing, food, jewelry, electronics, etc.
+ */
+function extractProductCategory(query: string): string | undefined {
+  const lowerQuery = query.toLowerCase();
+  
+  // Common product category keywords (will be matched against database categories)
+  const categoryKeywords = [
+    'shoes', 'footwear', 'clothing', 'apparel', 'fashion', 'jewelry', 'jewellery',
+    'food', 'beverage', 'cafe', 'coffee', 'restaurant', 'bakery',
+    'electronics', 'tech', 'gadgets', 'phones', 'computers',
+    'books', 'stationery', 'art', 'craft', 'handmade',
+    'beauty', 'cosmetics', 'skincare', 'makeup', 'salon', 'barber',
+    'health', 'fitness', 'wellness', 'pharmacy', 'medical',
+    'toys', 'games', 'kids', 'children',
+    'home', 'furniture', 'decor', 'homewares',
+    'pets', 'animals',
+    'flowers', 'plants', 'garden',
+    'charity', 'government', 'community',
+  ];
+  
+  for (const keyword of categoryKeywords) {
+    if (lowerQuery.includes(keyword)) {
+      return keyword;
+    }
+  }
+  
+  return undefined;
+}
+
+/**
+ * Remove size, table, and category requirements from query to extract centre name
  */
 function extractCentreName(query: string): string {
   let centreName = query;
@@ -62,6 +94,26 @@ function extractCentreName(query: string): string {
   
   // Remove table patterns
   centreName = centreName.replace(/\d+\s*(?:trestle\s*)?tables?/gi, '');
+  
+  // Remove product category keywords
+  const categoryKeywords = [
+    'shoes', 'footwear', 'clothing', 'apparel', 'fashion', 'jewelry', 'jewellery',
+    'food', 'beverage', 'cafe', 'coffee', 'restaurant', 'bakery',
+    'electronics', 'tech', 'gadgets', 'phones', 'computers',
+    'books', 'stationery', 'art', 'craft', 'handmade',
+    'beauty', 'cosmetics', 'skincare', 'makeup', 'salon', 'barber',
+    'health', 'fitness', 'wellness', 'pharmacy', 'medical',
+    'toys', 'games', 'kids', 'children',
+    'home', 'furniture', 'decor', 'homewares',
+    'pets', 'animals',
+    'flowers', 'plants', 'garden',
+    'charity', 'government', 'community',
+  ];
+  
+  for (const keyword of categoryKeywords) {
+    const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+    centreName = centreName.replace(regex, '');
+  }
   
   // Clean up extra whitespace
   centreName = centreName.replace(/\s+/g, ' ').trim();
@@ -79,6 +131,7 @@ export function parseSearchQuery(query: string): ParsedQuery {
     centreName: extractCentreName(trimmedQuery),
     minSizeM2: parseSizeRequirement(trimmedQuery),
     minTables: parseTableRequirement(trimmedQuery),
+    productCategory: extractProductCategory(trimmedQuery),
     originalQuery: trimmedQuery,
   };
 }

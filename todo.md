@@ -1185,3 +1185,17 @@
 - [x] Handle centres with no bookings (send empty report or skip?)
 - [x] Add email delivery status tracking and error logging
 - [x] Write tests for report generation and scheduling logic
+
+## Enhanced Search with Product Category Support
+
+- [x] Analyze current search implementation (frontend and backend)
+- [x] Review sites table schema for product category fields
+- [x] Update search backend to parse and match product categories
+- [x] Add intelligent query parsing (extract centre, size, category from single input)
+- [x] Implement autocomplete for product categories
+- [x] Update frontend search UI to show category suggestions
+- [x] Enhance search results to highlight matched categories
+- [x] Update site details pages to prominently display categories
+- [x] Ensure category context flows through booking process
+- [x] Test search with various combinations (centre + size + category)
+- [x] Write tests for category search logic

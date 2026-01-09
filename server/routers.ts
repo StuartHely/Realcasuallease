@@ -600,9 +600,9 @@ export const appRouter = router({
         const { parseSearchQuery, siteMatchesRequirements } = await import("../shared/queryParser");
         const parsedQuery = parseSearchQuery(input.query);
         
-        // Try site-level search first using the extracted centre name
+        // Try site-level search first using the extracted centre name and category
         const searchQuery = parsedQuery.centreName || input.query;
-        const siteResults = await db.searchSites(searchQuery);
+        const siteResults = await db.searchSitesWithCategory(searchQuery, parsedQuery.productCategory);
         
         // If we found specific sites, use those
         if (siteResults.length > 0 && siteResults.length <= 10) {
