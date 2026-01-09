@@ -1250,3 +1250,9 @@
 - [x] Verify Site Assignment page purpose and necessity
 - [x] Ensure all admin pages have consistent navigation experience
 - [x] Test all admin pages after layout fixes
+
+## Admin Navigation UX Improvements (Jan 9, 2025)
+- [x] Find all "Back to Dashboard" buttons in admin pages
+- [x] Remove redundant "Back to Dashboard" buttons from page headers (1 button removed from SiteAssignment.tsx)
+- [x] Add active page highlighting to AdminLayout sidebar navigation (already implemented)
+- [x] Test navigation and verify active states work correctly

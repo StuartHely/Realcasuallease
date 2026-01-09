@@ -88,18 +88,12 @@ export default function AdminSiteAssignment() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Site Floor Assignment</h1>
-            <p className="text-muted-foreground mt-1">
-              Assign sites to floor levels for multi-level shopping centres
-            </p>
-          </div>
-          <Button variant="outline" onClick={() => setLocation("/admin")}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
-        </Button>
-      </div>
+        <div>
+          <h1 className="text-3xl font-bold">Site Floor Assignment</h1>
+          <p className="text-muted-foreground mt-1">
+            Assign sites to floor levels for multi-level shopping centres
+          </p>
+        </div>
 
       <Card>
         <CardHeader>
