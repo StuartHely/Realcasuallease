@@ -81,10 +81,10 @@ export function ManageSiteCategoriesDialog({
     });
   };
 
-  // Filter categories based on search query
-  const filteredCategories = allCategories?.filter(cat =>
+  // Filter categories based on search query and sort alphabetically
+  const filteredCategories = (allCategories?.filter(cat =>
     cat.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  ) || []).sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

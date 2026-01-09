@@ -58,17 +58,40 @@ function extractProductCategory(query: string): string | undefined {
   
   // Common product category keywords (will be matched against database categories)
   const categoryKeywords = [
-    'shoes', 'footwear', 'boots', 'ugg', 'sneakers', 'sandals', 'heels', 'clothing', 'apparel', 'fashion', 'jewelry', 'jewellery',
-    'food', 'beverage', 'cafe', 'coffee', 'restaurant', 'bakery',
-    'electronics', 'tech', 'gadgets', 'phones', 'computers',
-    'books', 'stationery', 'art', 'craft', 'handmade',
+    // Footwear
+    'shoes', 'footwear', 'boots', 'ugg', 'sneakers', 'sandals', 'heels',
+    // Clothing & Fashion
+    'clothing', 'apparel', 'fashion', 'accessories',
+    // Jewellery
+    'jewelry', 'jewellery', 'watches', 'rings', 'necklaces',
+    // Food & Beverage
+    'food', 'beverage', 'cafe', 'coffee', 'restaurant', 'bakery', 'wine', 'liquor', 'alcohol',
+    // Electronics & Technology
+    'electronics', 'tech', 'technology', 'gadgets', 'phones', 'computers', 'telecommunications',
+    // Books & Stationery
+    'books', 'stationery', 'calendars', 'news',
+    // Art & Craft
+    'art', 'craft', 'handmade', 'hobbies', 'photography',
+    // Beauty & Cosmetics
     'beauty', 'cosmetics', 'skincare', 'makeup', 'salon', 'barber',
-    'health', 'fitness', 'wellness', 'pharmacy', 'medical',
-    'toys', 'games', 'kids', 'children',
-    'home', 'furniture', 'decor', 'homewares',
+    // Health & Wellness
+    'health', 'fitness', 'wellness', 'pharmacy', 'medical', 'pharmaceuticals',
+    // Toys & Kids
+    'toys', 'games', 'kids', 'children', 'baby', 'toddler',
+    // Home & Furniture
+    'home', 'furniture', 'decor', 'homewares', 'bedding', 'household',
+    // Pets & Animals
     'pets', 'animals',
-    'flowers', 'plants', 'garden',
-    'charity', 'government', 'community',
+    // Gardening & Outdoor
+    'flowers', 'plants', 'garden', 'gardening', 'outdoor',
+    // Automotive & Marine
+    'automotive', 'vehicles', 'machinery', 'boating', 'marine',
+    // Services
+    'charity', 'charities', 'government', 'community', 'finance', 'financial', 'insurance', 'real estate', 'property',
+    'education', 'recruitment', 'training', 'tourism', 'travel',
+    // Other
+    'candles', 'entertainment', 'music', 'sporting', 'sports', 'recreation', 'tools', 'electrical',
+    'security', 'safety', 'renewable', 'energy', 'utilities', 'vaping', 'smoking', 'tobacco',
   ];
   
   for (const keyword of categoryKeywords) {
@@ -97,17 +120,40 @@ function extractCentreName(query: string): string {
   
   // Remove product category keywords
   const categoryKeywords = [
-    'shoes', 'footwear', 'boots', 'ugg', 'sneakers', 'sandals', 'heels', 'clothing', 'apparel', 'fashion', 'jewelry', 'jewellery',
-    'food', 'beverage', 'cafe', 'coffee', 'restaurant', 'bakery',
-    'electronics', 'tech', 'gadgets', 'phones', 'computers',
-    'books', 'stationery', 'art', 'craft', 'handmade',
+    // Footwear
+    'shoes', 'footwear', 'boots', 'ugg', 'sneakers', 'sandals', 'heels',
+    // Clothing & Fashion
+    'clothing', 'apparel', 'fashion', 'accessories',
+    // Jewellery
+    'jewelry', 'jewellery', 'watches', 'rings', 'necklaces',
+    // Food & Beverage
+    'food', 'beverage', 'cafe', 'coffee', 'restaurant', 'bakery', 'wine', 'liquor', 'alcohol',
+    // Electronics & Technology
+    'electronics', 'tech', 'technology', 'gadgets', 'phones', 'computers', 'telecommunications',
+    // Books & Stationery
+    'books', 'stationery', 'calendars', 'news',
+    // Art & Craft
+    'art', 'craft', 'handmade', 'hobbies', 'photography',
+    // Beauty & Cosmetics
     'beauty', 'cosmetics', 'skincare', 'makeup', 'salon', 'barber',
-    'health', 'fitness', 'wellness', 'pharmacy', 'medical',
-    'toys', 'games', 'kids', 'children',
-    'home', 'furniture', 'decor', 'homewares',
+    // Health & Wellness
+    'health', 'fitness', 'wellness', 'pharmacy', 'medical', 'pharmaceuticals',
+    // Toys & Kids
+    'toys', 'games', 'kids', 'children', 'baby', 'toddler',
+    // Home & Furniture
+    'home', 'furniture', 'decor', 'homewares', 'bedding', 'household',
+    // Pets & Animals
     'pets', 'animals',
-    'flowers', 'plants', 'garden',
-    'charity', 'government', 'community',
+    // Gardening & Outdoor
+    'flowers', 'plants', 'garden', 'gardening', 'outdoor',
+    // Automotive & Marine
+    'automotive', 'vehicles', 'machinery', 'boating', 'marine',
+    // Services
+    'charity', 'charities', 'government', 'community', 'finance', 'financial', 'insurance', 'real estate', 'property',
+    'education', 'recruitment', 'training', 'tourism', 'travel',
+    // Other
+    'candles', 'entertainment', 'music', 'sporting', 'sports', 'recreation', 'tools', 'electrical',
+    'security', 'safety', 'renewable', 'energy', 'utilities', 'vaping', 'smoking', 'tobacco',
   ];
   
   for (const keyword of categoryKeywords) {

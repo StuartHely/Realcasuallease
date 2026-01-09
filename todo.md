@@ -1283,3 +1283,10 @@
 - [x] Update backend search endpoint to handle multi-part queries (already working)
 - [x] Test search with "highlands 3x4 ugg boots" example - successfully found Highlands Marketplace with 5 matching sites
 - [x] Ensure search results show matching centres and sites
+
+## Category Sorting & Keyword Issues (Jan 9, 2025)
+- [x] Fix category list to display in alphabetical order when adding new categories
+- [x] Add "candles" and other missing category keywords to query parser (93 keywords total)
+- [x] Verify category filter dropdown shows all categories alphabetically
+- [x] Test that searching for "candles" finds sites with Candles category approved
+- [x] Ensure category filter on search results page works correctly

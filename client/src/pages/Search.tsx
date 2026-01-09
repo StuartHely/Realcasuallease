@@ -294,7 +294,7 @@ export default function Search() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All categories</SelectItem>
-                      {allCategories?.map((category) => (
+                      {allCategories?.sort((a, b) => a.name.localeCompare(b.name)).map((category) => (
                         <SelectItem key={category.id} value={category.id.toString()}>
                           {category.name} {category.isFree && "(Free)"}
                         </SelectItem>
