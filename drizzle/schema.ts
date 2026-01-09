@@ -124,6 +124,8 @@ export const shoppingCentres = mysqlTable("shopping_centres", {
   weeklyReportEmail8: varchar("weeklyReportEmail8", { length: 320 }),
   weeklyReportEmail9: varchar("weeklyReportEmail9", { length: 320 }),
   weeklyReportEmail10: varchar("weeklyReportEmail10", { length: 320 }),
+  weeklyReportTimezone: varchar("weeklyReportTimezone", { length: 50 }).default("Australia/Sydney"),
+  weeklyReportNextOverrideDay: mysqlEnum("weeklyReportNextOverrideDay", ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]),
   includeInMainSite: boolean("includeInMainSite").default(true).notNull(),
   mapImageUrl: text("mapImageUrl"),
   totalTablesAvailable: int("totalTablesAvailable").default(0),

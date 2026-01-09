@@ -60,6 +60,10 @@ async function startServer() {
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });
+
+  // Initialize weekly report scheduler
+  const { initializeReportScheduler } = await import('../reportScheduler');
+  initializeReportScheduler();
 }
 
 startServer().catch(console.error);

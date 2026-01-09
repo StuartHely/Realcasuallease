@@ -5,15 +5,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Building2, MapPin, Search, ArrowUpDown, ArrowUpAZ, Edit } from "lucide-react";
+import { Building2, MapPin, Search, ArrowUpDown, ArrowUpAZ, Edit, Mail } from "lucide-react";
 import { useLocation } from "wouter";
 import { EditCentreDialog } from "@/components/EditCentreDialog";
+import { WeeklyReportSettingsDialog } from "@/components/WeeklyReportSettingsDialog";
 
 function OwnerCentresContent() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortAlphabetically, setSortAlphabetically] = useState(false);
   const [editingCentre, setEditingCentre] = useState<any>(null);
+  const [reportSettingsCentre, setReportSettingsCentre] = useState<any>(null);
 
   // Fetch all shopping centres
   const { data: centres = [], isLoading } = trpc.centres.list.useQuery();
@@ -126,7 +128,7 @@ function OwnerCentresContent() {
                     <p className="text-muted-foreground">Active Bookings</p>
                     <p className="font-medium">{centre.activeBookings || 0}</p>
                   </div>
-                  <div className="flex items-end gap-2 md:col-span-2">
+                  <div className="flex items-end gap-2 md:col-span-4">
                     <Button
                       variant="outline"
                       size="sm"
@@ -135,6 +137,15 @@ function OwnerCentresContent() {
                     >
                       <Edit className="mr-2 h-4 w-4" />
                       Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setReportSettingsCentre(centre)}
+                      className="flex-1"
+                    >
+                      <Mail className="mr-2 h-4 w-4" />
+                      Weekly Reports
                     </Button>
                     <Button
                       variant="outline"
@@ -166,6 +177,15 @@ function OwnerCentresContent() {
           centre={editingCentre}
           open={!!editingCentre}
           onOpenChange={(open) => !open && setEditingCentre(null)}
+        />
+      )}
+
+      {/* Weekly Report Settings Dialog */}
+      {reportSettingsCentre && (
+        <WeeklyReportSettingsDialog
+          centre={reportSettingsCentre}
+          open={!!reportSettingsCentre}
+          onOpenChange={(open) => !open && setReportSettingsCentre(null)}
         />
       )}
     </div>

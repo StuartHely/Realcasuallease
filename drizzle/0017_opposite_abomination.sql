@@ -1,0 +1,2 @@
+ALTER TABLE `shopping_centres` ADD `weeklyReportTimezone` varchar(50) DEFAULT 'Australia/Sydney';--> statement-breakpoint
+ALTER TABLE `shopping_centres` ADD `weeklyReportNextOverrideDay` enum('monday','tuesday','wednesday','thursday','friday','saturday','sunday');

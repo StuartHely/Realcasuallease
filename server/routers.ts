@@ -99,6 +99,45 @@ export const appRouter = router({
         
         return { success: true, message: "Centre updated successfully" };
       }),
+    
+    updateWeeklyReportSettings: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        weeklyReportEmail1: z.string().email().nullable().optional(),
+        weeklyReportEmail2: z.string().email().nullable().optional(),
+        weeklyReportEmail3: z.string().email().nullable().optional(),
+        weeklyReportEmail4: z.string().email().nullable().optional(),
+        weeklyReportEmail5: z.string().email().nullable().optional(),
+        weeklyReportEmail6: z.string().email().nullable().optional(),
+        weeklyReportEmail7: z.string().email().nullable().optional(),
+        weeklyReportEmail8: z.string().email().nullable().optional(),
+        weeklyReportEmail9: z.string().email().nullable().optional(),
+        weeklyReportEmail10: z.string().email().nullable().optional(),
+        weeklyReportTimezone: z.string().optional(),
+        weeklyReportNextOverrideDay: z.enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]).nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const centre = await db.getShoppingCentreById(input.id);
+        if (!centre) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+        }
+        
+        await db.updateShoppingCentre(input.id, input);
+        return { success: true, message: "Weekly report settings updated successfully" };
+      }),
+    
+    sendTestWeeklyReport: protectedProcedure
+      .input(z.object({ centreId: z.number() }))
+      .mutation(async ({ input }) => {
+        const { triggerWeeklyReport } = await import("./reportScheduler");
+        const result = await triggerWeeklyReport(input.centreId);
+        
+        if (!result.success) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.message });
+        }
+        
+        return { success: true, message: "Test report sent successfully" };
+      }),
   }),
 
   // Sites

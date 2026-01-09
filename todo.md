@@ -1168,3 +1168,20 @@
 - [x] Add Edit button with icon to centre cards
 - [x] Test centre editing end-to-end
 - [ ] Write unit tests for update endpoint
+
+## Automated Weekly Booking Report (Jan 7, 2025)
+- [x] Add email configuration fields to shopping_centres table (reportEmails, reportTimezone, nextReportOverrideDay)
+- [x] Create weekly_report_config table for state-level public holiday overrides
+- [x] Build admin UI for configuring report email recipients (comma-separated, up to 10)
+- [x] Add timezone selector for each centre (default to local state timezone)
+- [x] Add public holiday override dropdown (select different day for next report only)
+- [x] Implement Excel report generation with exact format from CSV template
+- [x] Report structure: Centre name header, date range, 9-day grid (Sun-Mon-Tue-Wed-Thu-Fri-Sat-Sun-Mon)
+- [x] Each cell shows: Company Name (bold), Product Category (bold), Contact Name, Phone, Email, Booked dates, Tables/Chairs (bold)
+- [x] Report covers: Sunday before week + 7 days of week + Monday after = 9 consecutive days
+- [x] Email subject format: "[Centre Name] Casual Leasing Bookings Week Commencing [Date]"
+- [x] Create scheduled job to run every Friday at 3pm (local timezone per centre)
+- [x] Implement logic to check for override day and auto-reset after sending
+- [x] Handle centres with no bookings (send empty report or skip?)
+- [x] Add email delivery status tracking and error logging
+- [x] Write tests for report generation and scheduling logic
