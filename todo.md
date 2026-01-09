@@ -1275,3 +1275,11 @@
 - [x] Update invoice generation to use stored GST rate from booking (ready for when invoices are implemented)
 - [x] Database migration completed (0018_mean_the_order.sql)
 - [x] Test GST percentage storage and retrieval (4 tests passing)
+
+## Search Functionality Fix (Jan 9, 2025)
+- [x] Investigate current search implementation on home page
+- [x] Fix search to parse centre name, site size, and product category from query
+- [x] Add missing product category keywords (boots, ugg, sneakers, sandals, heels)
+- [x] Update backend search endpoint to handle multi-part queries (already working)
+- [x] Test search with "highlands 3x4 ugg boots" example - successfully found Highlands Marketplace with 5 matching sites
+- [x] Ensure search results show matching centres and sites

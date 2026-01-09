@@ -58,7 +58,7 @@ function extractProductCategory(query: string): string | undefined {
   
   // Common product category keywords (will be matched against database categories)
   const categoryKeywords = [
-    'shoes', 'footwear', 'clothing', 'apparel', 'fashion', 'jewelry', 'jewellery',
+    'shoes', 'footwear', 'boots', 'ugg', 'sneakers', 'sandals', 'heels', 'clothing', 'apparel', 'fashion', 'jewelry', 'jewellery',
     'food', 'beverage', 'cafe', 'coffee', 'restaurant', 'bakery',
     'electronics', 'tech', 'gadgets', 'phones', 'computers',
     'books', 'stationery', 'art', 'craft', 'handmade',
@@ -97,7 +97,7 @@ function extractCentreName(query: string): string {
   
   // Remove product category keywords
   const categoryKeywords = [
-    'shoes', 'footwear', 'clothing', 'apparel', 'fashion', 'jewelry', 'jewellery',
+    'shoes', 'footwear', 'boots', 'ugg', 'sneakers', 'sandals', 'heels', 'clothing', 'apparel', 'fashion', 'jewelry', 'jewellery',
     'food', 'beverage', 'cafe', 'coffee', 'restaurant', 'bakery',
     'electronics', 'tech', 'gadgets', 'phones', 'computers',
     'books', 'stationery', 'art', 'craft', 'handmade',
