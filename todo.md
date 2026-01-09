@@ -1243,3 +1243,10 @@
 - [x] Fix Sites page URL parameter handling with useEffect
 - [x] Test dialog functionality with Highlands Marketplace sites
 - [x] Verify all UI features work correctly (search, bulk actions, save/cancel)
+
+## Admin Layout Consistency Issues (Jan 9, 2025)
+- [x] Audit all admin pages to verify they use AdminLayout component
+- [x] Fix any admin pages missing the left sidebar menu (11 pages fixed)
+- [x] Verify Site Assignment page purpose and necessity
+- [x] Ensure all admin pages have consistent navigation experience
+- [x] Test all admin pages after layout fixes

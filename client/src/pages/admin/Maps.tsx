@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
+import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -337,26 +338,13 @@ export default function AdminMaps() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-blue-900">Admin - Map Management</h1>
-            <Button
-              onClick={() => setLocation("/admin")}
-              variant="outline"
-              className="border-blue-300 text-blue-700 hover:bg-blue-50"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Button>
-          </div>
+    <AdminLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Map Management</h1>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="space-y-6">
         {/* Centre Selection */}
         <Card className="mb-8 shadow-lg">
           <CardHeader>
@@ -593,6 +581,7 @@ export default function AdminMaps() {
           </>
         )}
       </div>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

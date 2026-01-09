@@ -1,9 +1,11 @@
+import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2 } from "lucide-react";
 
 export default function AdminOwners() {
   return (
-    <div className="container mx-auto py-8">
+    <AdminLayout>
+      <div className="space-y-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Owners & Managers</h1>
         <p className="text-muted-foreground mt-1">
@@ -39,6 +41,7 @@ export default function AdminOwners() {
           </ul>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

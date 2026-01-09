@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -57,13 +58,14 @@ export default function PendingApprovals() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Pending Approvals</h1>
-        <p className="text-gray-600 mt-2">
-          Review and approve or reject bookings that require manual approval
-        </p>
-      </div>
+    <AdminLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Pending Approvals</h1>
+          <p className="text-muted-foreground mt-2">
+            Review and approve or reject bookings that require manual approval
+          </p>
+        </div>
 
       {!pendingBookings || pendingBookings.length === 0 ? (
         <Card>
@@ -191,6 +193,7 @@ export default function PendingApprovals() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -85,16 +86,17 @@ export default function AdminSiteAssignment() {
   const hasChanges = Object.keys(assignments).length > 0;
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Site Floor Assignment</h1>
-          <p className="text-muted-foreground mt-1">
-            Assign sites to floor levels for multi-level shopping centres
-          </p>
-        </div>
-        <Button variant="outline" onClick={() => setLocation("/admin")}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
+    <AdminLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Site Floor Assignment</h1>
+            <p className="text-muted-foreground mt-1">
+              Assign sites to floor levels for multi-level shopping centres
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => setLocation("/admin")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Dashboard
         </Button>
       </div>
@@ -208,6 +210,7 @@ export default function AdminSiteAssignment() {
           )}
         </>
       )}
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

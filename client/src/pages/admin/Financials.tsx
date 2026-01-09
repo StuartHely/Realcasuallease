@@ -1,9 +1,11 @@
+import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign } from "lucide-react";
 
 export default function AdminFinancials() {
   return (
-    <div className="container mx-auto py-8">
+    <AdminLayout>
+      <div className="space-y-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Financial Reports</h1>
         <p className="text-muted-foreground mt-1">
@@ -39,6 +41,7 @@ export default function AdminFinancials() {
           </ul>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }
