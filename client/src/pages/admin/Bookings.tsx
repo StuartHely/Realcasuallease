@@ -27,10 +27,10 @@ import { CheckCircle, XCircle, Clock, Calendar, DollarSign, User, MapPin, Search
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-type BookingStatus = "pending" | "confirmed" | "cancelled" | "completed";
+type BookingStatus = "all" | "pending" | "confirmed" | "cancelled" | "completed";
 
 export default function AdminBookings() {
-  const [selectedStatus, setSelectedStatus] = useState<BookingStatus>("pending");
+  const [selectedStatus, setSelectedStatus] = useState<BookingStatus>("all");
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
@@ -38,7 +38,7 @@ export default function AdminBookings() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: bookings, isLoading, refetch } = trpc.bookings.list.useQuery({
-    status: selectedStatus,
+    status: selectedStatus === "all" ? undefined : selectedStatus,
   });
 
   // Filter bookings based on search query
@@ -108,8 +108,8 @@ export default function AdminBookings() {
     }
   };
 
-  const getStatusBadge = (status: BookingStatus) => {
-    const variants = {
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", icon: any, label: string }> = {
       pending: { variant: "secondary" as const, icon: Clock, label: "Pending" },
       confirmed: { variant: "default" as const, icon: CheckCircle, label: "Confirmed" },
       cancelled: { variant: "destructive" as const, icon: XCircle, label: "Cancelled" },
@@ -159,6 +159,9 @@ export default function AdminBookings() {
 
       <Tabs value={selectedStatus} onValueChange={(v) => setSelectedStatus(v as BookingStatus)}>
         <TabsList>
+          <TabsTrigger value="all">
+            All Bookings
+          </TabsTrigger>
           <TabsTrigger value="pending">
             <Clock className="h-4 w-4 mr-2" />
             Pending
@@ -180,7 +183,7 @@ export default function AdminBookings() {
         <TabsContent value={selectedStatus} className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>{selectedStatus.charAt(0).toUpperCase() + selectedStatus.slice(1)} Bookings</CardTitle>
+              <CardTitle>{selectedStatus === "all" ? "All" : selectedStatus.charAt(0).toUpperCase() + selectedStatus.slice(1)} Bookings</CardTitle>
               <CardDescription>
                 {isLoading ? "Loading bookings..." : (
                   searchQuery 

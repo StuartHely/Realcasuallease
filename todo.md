@@ -1521,3 +1521,11 @@
 - [x] Implement search filtering by customer email
 - [x] Add search icon and clear button
 - [x] Test search with various inputs - 11 tests passing
+
+## Booking Management - Add All Tab
+- [x] Add "All" tab button before "Pending" in Booking Management
+- [x] Update BookingStatus type to include "all"
+- [x] Update query to pass undefined status when "all" selected
+- [x] Backend already supports undefined status (returns all bookings)
+- [x] Set "all" as default tab on page load
+- [x] Test All tab shows all bookings regardless of status - 8 tests passing
