@@ -934,6 +934,13 @@ export async function approveBooking(bookingId: number, approvedBy: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
+  // Get booking to check payment method
+  const booking = await getBookingById(bookingId);
+  if (!booking) {
+    throw new Error("Booking not found");
+  }
+  
+  // Update booking status
   await db
     .update(bookings)
     .set({
@@ -942,6 +949,12 @@ export async function approveBooking(bookingId: number, approvedBy: number) {
       approvedAt: new Date(),
     })
     .where(eq(bookings.id, bookingId));
+  
+  // Send invoice email if this is an invoice booking
+  if (booking.paymentMethod === 'invoice') {
+    const { sendInvoiceEmail } = await import('./invoiceEmail');
+    await sendInvoiceEmail(bookingId);
+  }
 }
 
 export async function rejectBooking(bookingId: number, reason?: string) {
@@ -996,4 +1009,113 @@ export async function updateUserInvoiceFlag(userId: number, canPayByInvoice: boo
     .where(eq(users.id, userId));
   
   return true;
+}
+
+
+/**
+ * Search invoice bookings by booking number or company name
+ */
+export async function searchInvoiceBookings(query: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const lowerQuery = query.toLowerCase().trim();
+  
+  // Search by booking number or company name
+  const results = await db
+    .select({
+      id: bookings.id,
+      bookingNumber: bookings.bookingNumber,
+      siteId: bookings.siteId,
+      customerId: bookings.customerId,
+      startDate: bookings.startDate,
+      endDate: bookings.endDate,
+      totalAmount: bookings.totalAmount,
+      gstAmount: bookings.gstAmount,
+      ownerAmount: bookings.ownerAmount,
+      platformFee: bookings.platformFee,
+      status: bookings.status,
+      paymentMethod: bookings.paymentMethod,
+      paidAt: bookings.paidAt,
+      paymentRecordedBy: bookings.paymentRecordedBy,
+      createdAt: bookings.createdAt,
+      // Site and centre info
+      siteNumber: sites.siteNumber,
+      centreName: shoppingCentres.name,
+      // Customer info
+      customerName: users.name,
+      customerEmail: users.email,
+      companyName: customerProfiles.companyName,
+    })
+    .from(bookings)
+    .innerJoin(sites, eq(bookings.siteId, sites.id))
+    .innerJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
+    .innerJoin(users, eq(bookings.customerId, users.id))
+    .leftJoin(customerProfiles, eq(users.id, customerProfiles.userId))
+    .where(eq(bookings.paymentMethod, 'invoice'));
+  
+  // Filter results by query (booking number or company name)
+  return results.filter(booking => {
+    const bookingNumber = (booking.bookingNumber || '').toLowerCase();
+    const companyName = (booking.companyName || '').toLowerCase();
+    
+    return bookingNumber.includes(lowerQuery) || companyName.includes(lowerQuery);
+  });
+}
+
+/**
+ * Record payment for an invoice booking and trigger payment splits
+ */
+export async function recordPayment(bookingId: number, recordedBy: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Get booking details
+  const booking = await getBookingById(bookingId);
+  if (!booking) {
+    throw new Error("Booking not found");
+  }
+  
+  if (booking.paymentMethod !== 'invoice') {
+    throw new Error("This booking is not an invoice booking");
+  }
+  
+  if (booking.paidAt) {
+    throw new Error("Payment has already been recorded for this booking");
+  }
+  
+  // Update booking with payment details
+  await db.update(bookings)
+    .set({
+      paidAt: new Date(),
+      // paymentRecordedBy stores the admin's name as string for audit trail
+    })
+    .where(eq(bookings.id, bookingId));
+  
+  // Create transaction records for payment splits
+  const site = await getSiteById(booking.siteId);
+  if (!site) {
+    throw new Error("Site not found");
+  }
+  
+  const centre = await getShoppingCentreById(site.centreId);
+  if (!centre) {
+    throw new Error("Centre not found");
+  }
+  
+  // Create transaction record for this booking
+  await db.insert(transactions).values({
+    bookingId: booking.id,
+    ownerId: centre.ownerId,
+    type: 'booking',
+    amount: booking.totalAmount,
+    gstAmount: booking.gstAmount,
+    gstPercentage: booking.gstPercentage,
+    ownerAmount: booking.ownerAmount,
+    platformFee: booking.platformFee,
+    remitted: false,
+    createdAt: new Date(),
+  });
+  
+  return { success: true };
 }

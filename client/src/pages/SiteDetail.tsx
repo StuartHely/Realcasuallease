@@ -58,16 +58,29 @@ export default function SiteDetail() {
 
   const createBookingMutation = trpc.bookings.create.useMutation({
     onSuccess: (data) => {
-      const { costBreakdown, equipmentWarning } = data;
+      const { costBreakdown, equipmentWarning, paymentMethod } = data;
       const breakdownMessage = `\n\nCost Breakdown:\n${costBreakdown.weekdayCount} weekdays @ $${costBreakdown.weekdayRate}/day${costBreakdown.weekendCount > 0 ? `\n${costBreakdown.weekendCount} weekend days @ $${costBreakdown.weekendRate}/day` : ''}\nSubtotal: $${costBreakdown.subtotal.toFixed(2)}\nGST: $${costBreakdown.gstAmount.toFixed(2)}\nTotal: $${costBreakdown.total.toFixed(2)}`;
       
       const equipmentMessage = equipmentWarning ? `\n\n⚠️ ${equipmentWarning}` : '';
       
-      toast.success(
-        data.requiresApproval
+      // Different messages for invoice vs Stripe bookings
+      let successMessage: string;
+      
+      if (paymentMethod === 'invoice') {
+        // Invoice booking messages
+        if (data.requiresApproval) {
+          successMessage = "Booking request submitted! You should be advised if your request has been approved within 3 days." + breakdownMessage + equipmentMessage;
+        } else {
+          successMessage = "Booking confirmed! Booking number: " + data.bookingNumber + "\n\nAn invoice will be sent to your email shortly." + breakdownMessage + equipmentMessage;
+        }
+      } else {
+        // Stripe booking messages (existing logic)
+        successMessage = data.requiresApproval
           ? "Booking request submitted! Awaiting approval." + breakdownMessage + equipmentMessage
-          : "Booking confirmed! Booking number: " + data.bookingNumber + breakdownMessage + equipmentMessage
-      );
+          : "Booking confirmed! Booking number: " + data.bookingNumber + breakdownMessage + equipmentMessage;
+      }
+      
+      toast.success(successMessage);
       setLocation("/my-bookings");
     },
     onError: (error) => {

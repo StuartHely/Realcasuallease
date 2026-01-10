@@ -372,6 +372,7 @@ export const appRouter = router({
           totalAmount,
           requiresApproval,
           canPayByInvoice,
+          paymentMethod: canPayByInvoice ? "invoice" as const : "stripe" as const,
           equipmentWarning,
           costBreakdown: {
             weekdayCount,
@@ -1308,6 +1309,19 @@ export const appRouter = router({
         }
 
         return { created, totalSites: allSites.length };
+      }),
+
+    // Invoice Payment Management
+    searchInvoiceBookings: adminProcedure
+      .input(z.object({ query: z.string() }))
+      .query(async ({ input }) => {
+        return await db.searchInvoiceBookings(input.query);
+      }),
+
+    recordPayment: adminProcedure
+      .input(z.object({ bookingId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return await db.recordPayment(input.bookingId, ctx.user.name || 'Admin');
       }),
   }),
 

@@ -1321,10 +1321,14 @@
 - [x] Build Users admin page with search and invoice flag management
 - [x] Modify booking creation flow to check user's canPayByInvoice flag
 - [x] Skip Stripe payment for invoice-approved clients (paymentMethod set to 'invoice')
-- [ ] Update frontend booking flow to skip Stripe payment step for invoice clients
-- [ ] Generate invoice PDF for invoice bookings
-- [ ] Create SuperAdmin "Record Payment" interface
-- [ ] Add search by booking number functionality
+- [x] Update frontend booking flow to skip Stripe payment step for invoice clients
+- [x] Show "Booking confirmed" message for auto-approved invoice bookings
+- [x] Show "You should be advised if your request has been approved within 3 days" for manual approval
+- [x] Generate invoice PDF with NET-14 payment terms
+- [x] Send invoice PDF after booking approval (not at booking creation)
+- [x] Create SuperAdmin "Record Payment" interface at /admin/payments
+- [x] Add search by booking number functionality
+- [x] Add search by company name functionality
 - [ ] Implement payment confirmation that triggers status change
 - [ ] Create payment split logic (owner/manager/platform fees)
 - [ ] Add transaction records for payment splits
