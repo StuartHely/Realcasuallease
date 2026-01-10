@@ -1437,6 +1437,20 @@ export const appRouter = router({
           'mega_admin'
         ]).default('customer'),
         canPayByInvoice: z.boolean().default(false),
+        // Company details
+        companyName: z.string().optional(),
+        companyWebsite: z.string().optional(),
+        abn: z.string().optional(),
+        address: z.string().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        postcode: z.string().optional(),
+        productService: z.string().optional(),
+        // Insurance details
+        insuranceCompany: z.string().optional(),
+        insurancePolicyNo: z.string().optional(),
+        insuranceAmount: z.string().optional(),
+        insuranceExpiryDate: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         // Check if user already exists
@@ -1460,14 +1474,33 @@ export const appRouter = router({
         // Generate a unique openId for the user
         const openId = `manual_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-        await dbInstance.insert(users).values({
+        const [newUser] = await dbInstance.insert(users).values({
           openId,
           email: input.email,
           name: input.name,
           role: input.role,
           canPayByInvoice: input.canPayByInvoice,
-          // Store hashed password in a custom field (you may need to add this to schema)
         });
+
+        // Create customer profile if company or insurance details provided
+        if (input.companyName || input.insuranceCompany) {
+          const { customerProfiles } = await import('../drizzle/schema');
+          await dbInstance.insert(customerProfiles).values({
+            userId: newUser.insertId,
+            companyName: input.companyName || null,
+            website: input.companyWebsite || null,
+            abn: input.abn || null,
+            streetAddress: input.address || null,
+            city: input.city || null,
+            state: input.state || null,
+            postcode: input.postcode || null,
+            productCategory: input.productService || null,
+            insuranceCompany: input.insuranceCompany || null,
+            insurancePolicyNo: input.insurancePolicyNo || null,
+            insuranceAmount: input.insuranceAmount || null,
+            insuranceExpiry: input.insuranceExpiryDate ? new Date(input.insuranceExpiryDate) : null,
+          });
+        }
 
         return { success: true, message: 'User registered successfully' };
       }),

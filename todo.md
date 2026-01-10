@@ -1381,3 +1381,11 @@
 - [x] Add admin procedure to create new user accounts
 - [x] Set default password or send invitation email
 - [x] Test admin user registration flow
+
+
+## Enhanced User Registration with Company & Insurance
+
+- [x] Add company details fields to registration form (company name, website, ABN, address, city, state, postcode, product/service)
+- [x] Add insurance details fields to registration form (insurance company, policy no, amount, expiry date, document upload)
+- [x] Update registerUser procedure to create customer profile
+- [x] Test complete registration with all fields

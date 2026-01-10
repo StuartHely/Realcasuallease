@@ -21,7 +21,22 @@ export default function AdminUsers() {
     password: "",
     role: "customer" as "customer" | "owner_centre_manager" | "owner_marketing_manager" | "owner_regional_admin" | "owner_state_admin" | "owner_super_admin" | "mega_state_admin" | "mega_admin",
     canPayByInvoice: false,
+    // Company details
+    companyName: "",
+    companyWebsite: "",
+    abn: "",
+    address: "",
+    city: "",
+    state: "",
+    postcode: "",
+    productService: "",
+    // Insurance details
+    insuranceCompany: "",
+    insurancePolicyNo: "",
+    insuranceAmount: "",
+    insuranceExpiryDate: "",
   });
+  const [registrationTab, setRegistrationTab] = useState<"basic" | "company" | "insurance">("basic");
   
   const { data: users, isLoading, refetch } = trpc.users.list.useQuery();
   const updateInvoiceFlagMutation = trpc.users.updateInvoiceFlag.useMutation({
@@ -46,7 +61,20 @@ export default function AdminUsers() {
         password: "",
         role: "customer",
         canPayByInvoice: false,
+        companyName: "",
+        companyWebsite: "",
+        abn: "",
+        address: "",
+        city: "",
+        state: "",
+        postcode: "",
+        productService: "",
+        insuranceCompany: "",
+        insurancePolicyNo: "",
+        insuranceAmount: "",
+        insuranceExpiryDate: "",
       });
+      setRegistrationTab("basic");
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to register user");
@@ -239,14 +267,40 @@ export default function AdminUsers() {
 
         {/* Register New User Dialog */}
         <Dialog open={registerDialogOpen} onOpenChange={setRegisterDialogOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Register New User</DialogTitle>
               <DialogDescription>
                 Create a new user account. The user will be able to log in with the provided credentials.
               </DialogDescription>
             </DialogHeader>
+            
+            {/* Tab Navigation */}
+            <div className="flex border-b">
+              <button
+                onClick={() => setRegistrationTab("basic")}
+                className={`px-4 py-2 font-medium ${registrationTab === "basic" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-600"}`}
+              >
+                Basic Info
+              </button>
+              <button
+                onClick={() => setRegistrationTab("company")}
+                className={`px-4 py-2 font-medium ${registrationTab === "company" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-600"}`}
+              >
+                Company Details
+              </button>
+              <button
+                onClick={() => setRegistrationTab("insurance")}
+                className={`px-4 py-2 font-medium ${registrationTab === "insurance" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-600"}`}
+              >
+                Insurance
+              </button>
+            </div>
+
             <div className="space-y-4 py-4">
+              {/* Basic Info Tab */}
+              {registrationTab === "basic" && (
+              <>
               <div className="space-y-2">
                 <label htmlFor="email" className="text-sm font-medium">
                   Email *
@@ -322,6 +376,76 @@ export default function AdminUsers() {
                   </p>
                 </div>
               </div>
+              </>
+              )}
+
+              {/* Company Details Tab */}
+              {registrationTab === "company" && (
+              <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="companyName" className="text-sm font-medium">Company Name</label>
+                  <Input id="companyName" value={newUserData.companyName} onChange={(e) => setNewUserData({ ...newUserData, companyName: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="abn" className="text-sm font-medium">ABN</label>
+                  <Input id="abn" value={newUserData.abn} onChange={(e) => setNewUserData({ ...newUserData, abn: e.target.value })} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="companyWebsite" className="text-sm font-medium">Company Website</label>
+                <Input id="companyWebsite" placeholder="https://" value={newUserData.companyWebsite} onChange={(e) => setNewUserData({ ...newUserData, companyWebsite: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="productService" className="text-sm font-medium">Product/Service</label>
+                <Input id="productService" value={newUserData.productService} onChange={(e) => setNewUserData({ ...newUserData, productService: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="address" className="text-sm font-medium">Address</label>
+                <Input id="address" value={newUserData.address} onChange={(e) => setNewUserData({ ...newUserData, address: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="city" className="text-sm font-medium">City</label>
+                  <Input id="city" value={newUserData.city} onChange={(e) => setNewUserData({ ...newUserData, city: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="state" className="text-sm font-medium">State</label>
+                  <Input id="state" value={newUserData.state} onChange={(e) => setNewUserData({ ...newUserData, state: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="postcode" className="text-sm font-medium">Postcode</label>
+                  <Input id="postcode" value={newUserData.postcode} onChange={(e) => setNewUserData({ ...newUserData, postcode: e.target.value })} />
+                </div>
+              </div>
+              </>
+              )}
+
+              {/* Insurance Tab */}
+              {registrationTab === "insurance" && (
+              <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="insuranceCompany" className="text-sm font-medium">Insurance Company</label>
+                  <Input id="insuranceCompany" value={newUserData.insuranceCompany} onChange={(e) => setNewUserData({ ...newUserData, insuranceCompany: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="insurancePolicyNo" className="text-sm font-medium">Policy Number</label>
+                  <Input id="insurancePolicyNo" value={newUserData.insurancePolicyNo} onChange={(e) => setNewUserData({ ...newUserData, insurancePolicyNo: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="insuranceAmount" className="text-sm font-medium">Insured Amount ($M)</label>
+                  <Input id="insuranceAmount" type="number" placeholder="20" value={newUserData.insuranceAmount} onChange={(e) => setNewUserData({ ...newUserData, insuranceAmount: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="insuranceExpiryDate" className="text-sm font-medium">Expiry Date</label>
+                  <Input id="insuranceExpiryDate" type="date" value={newUserData.insuranceExpiryDate} onChange={(e) => setNewUserData({ ...newUserData, insuranceExpiryDate: e.target.value })} />
+                </div>
+              </div>
+              </>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setRegisterDialogOpen(false)}>
