@@ -18,6 +18,7 @@ export default function AdminUsers() {
   const [editTab, setEditTab] = useState<"basic" | "company" | "insurance">("basic");
   const [uploadingInsurance, setUploadingInsurance] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [skipScanning, setSkipScanning] = useState(false);
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [newUserData, setNewUserData] = useState({
     email: "",
@@ -679,22 +680,51 @@ export default function AdminUsers() {
                 <label className="text-sm font-medium">Insurance Document</label>
                 <div className="border-2 border-dashed rounded-lg p-4">
                   {editingFullUser.profile?.insuranceDocumentUrl ? (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-blue-600" />
-                        <span className="text-sm">Document uploaded</span>
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-3">
+                        {editingFullUser.profile.insuranceDocumentUrl.match(/\.(jpg|jpeg|png)$/i) ? (
+                          <img 
+                            src={editingFullUser.profile.insuranceDocumentUrl} 
+                            alt="Insurance document preview"
+                            className="w-32 h-32 object-cover rounded border"
+                          />
+                        ) : (
+                          <div className="w-32 h-32 bg-gray-100 rounded border flex items-center justify-center">
+                            <FileText className="h-12 w-12 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium mb-2">Document uploaded</p>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => window.open(editingFullUser.profile.insuranceDocumentUrl, '_blank')}
+                            className="w-full"
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            View Full Document
+                          </Button>
+                        </div>
                       </div>
-                      <Button variant="outline" size="sm" onClick={() => window.open(editingFullUser.profile.insuranceDocumentUrl, '_blank')}>
-                        View
-                      </Button>
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">No document uploaded</p>
                   )}
+                  <div className="flex items-center gap-2 mt-3 mb-2">
+                    <input
+                      type="checkbox"
+                      id="skipScanning"
+                      checked={skipScanning}
+                      onChange={(e) => setSkipScanning(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    <label htmlFor="skipScanning" className="text-sm text-muted-foreground cursor-pointer">
+                      Skip automatic scanning (enter details manually)
+                    </label>
+                  </div>
                   <Input
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png"
-                    className="mt-2"
                     disabled={uploadingInsurance}
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
@@ -728,9 +758,10 @@ export default function AdminUsers() {
                           },
                         });
                         
-                        // Try to scan document
-                        try {
-                          const scanRes = await scanInsuranceMutation.mutateAsync({ documentUrl: uploadResult.url });
+                        // Try to scan document (unless skipped)
+                        if (!skipScanning) {
+                          try {
+                            const scanRes = await scanInsuranceMutation.mutateAsync({ documentUrl: uploadResult.url });
                           
                           setEditingFullUser({
                             ...editingFullUser,
@@ -744,12 +775,16 @@ export default function AdminUsers() {
                             },
                           });
                           
+                            setScanError(null);
+                            toast.success('Insurance document uploaded and scanned successfully');
+                          } catch (scanError: any) {
+                            console.error('Scan error:', scanError);
+                            setScanError(`Failed to scan document: ${scanError.message || 'Unknown error'}. Please enter insurance details manually.`);
+                            toast.warning('Document uploaded but automatic scanning failed. Please enter details manually.');
+                          }
+                        } else {
                           setScanError(null);
-                          toast.success('Insurance document uploaded and scanned successfully');
-                        } catch (scanError: any) {
-                          console.error('Scan error:', scanError);
-                          setScanError(`Failed to scan document: ${scanError.message || 'Unknown error'}. Please enter insurance details manually.`);
-                          toast.warning('Document uploaded but automatic scanning failed. Please enter details manually.');
+                          toast.success('Insurance document uploaded. Please enter details manually.');
                         }
                       } catch (error: any) {
                         console.error('Upload error:', error);

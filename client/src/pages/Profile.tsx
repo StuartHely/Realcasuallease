@@ -146,6 +146,134 @@ export default function Profile() {
         {!isLoading && (
           <form onSubmit={handleSubmit}>
             <div className="space-y-6">
+              {/* Insurance Details - Upload First */}
+              <Card className="border-blue-200 bg-blue-50/50">
+                <CardHeader>
+                  <CardTitle className="text-blue-900">Step 1: Upload Insurance Certificate</CardTitle>
+                  <CardDescription className="text-blue-700">
+                    Start by uploading your Public Liability Insurance certificate (minimum $20M coverage required). 
+                    We'll automatically scan and fill in your insurance details.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="insuranceDocument" className="text-base font-semibold">Insurance Document *</Label>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Upload your certificate as PDF, JPG, or PNG
+                    </p>
+                    <Input
+                      id="insuranceDocument"
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        
+                        setInsuranceFile(file);
+                        setUploadingInsurance(true);
+                        
+                        try {
+                          // Convert file to base64
+                          const reader = new FileReader();
+                          const fileData = await new Promise<string>((resolve) => {
+                            reader.onload = () => {
+                              const base64 = reader.result as string;
+                              resolve(base64.split(',')[1]); // Remove data:image/...;base64, prefix
+                            };
+                            reader.readAsDataURL(file);
+                          });
+                          
+                          // Upload to S3
+                          const uploadMutation = trpc.profile.uploadInsurance.useMutation();
+                          const { url } = await uploadMutation.mutateAsync({
+                            fileData,
+                            fileName: file.name,
+                            mimeType: file.type,
+                          });
+                          
+                          // Scan document
+                          setScanningInsurance(true);
+                          const scanMutation = trpc.profile.scanInsurance.useMutation();
+                          const scanData = await scanMutation.mutateAsync({ documentUrl: url });
+                          
+                          // Auto-fill fields
+                          setFormData(prev => ({
+                            ...prev,
+                            insuranceDocumentUrl: url,
+                            insuranceCompany: scanData.insuranceCompany || prev.insuranceCompany,
+                            insurancePolicyNo: scanData.policyNumber || prev.insurancePolicyNo,
+                            insuranceAmount: scanData.insuredAmount ? String(scanData.insuredAmount) : prev.insuranceAmount,
+                            insuranceExpiry: scanData.expiryDate || prev.insuranceExpiry,
+                          }));
+                          
+                          toast.success('Insurance document scanned successfully! Fields have been auto-filled.');
+                        } catch (error) {
+                          toast.error('Failed to process insurance document. Please enter details manually.');
+                          console.error(error);
+                        } finally {
+                          setUploadingInsurance(false);
+                          setScanningInsurance(false);
+                        }
+                      }}
+                      disabled={uploadingInsurance || scanningInsurance}
+                    />
+                    {(uploadingInsurance || scanningInsurance) && (
+                      <p className="text-sm text-blue-600 mt-2 font-medium">
+                        {uploadingInsurance ? '⏳ Uploading...' : '🔍 Scanning document and extracting details...'}
+                      </p>
+                    )}
+                    {formData.insuranceDocumentUrl && (
+                      <p className="text-sm text-green-600 mt-2 font-medium">
+                        ✓ Document uploaded and scanned successfully
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                    <div>
+                      <Label htmlFor="insuranceCompany">Insurance Company</Label>
+                      <Input
+                        id="insuranceCompany"
+                        name="insuranceCompany"
+                        value={formData.insuranceCompany}
+                        onChange={handleChange}
+                        placeholder="Auto-filled from document"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="insurancePolicyNo">Policy No</Label>
+                      <Input
+                        id="insurancePolicyNo"
+                        name="insurancePolicyNo"
+                        value={formData.insurancePolicyNo}
+                        onChange={handleChange}
+                        placeholder="Auto-filled from document"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="insuranceAmount">Coverage Amount (in millions)</Label>
+                      <Input
+                        id="insuranceAmount"
+                        name="insuranceAmount"
+                        value={formData.insuranceAmount}
+                        onChange={handleChange}
+                        placeholder="e.g., 20 for $20M"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="insuranceExpiry">Expiry Date</Label>
+                      <Input
+                        id="insuranceExpiry"
+                        name="insuranceExpiry"
+                        type="date"
+                        value={formData.insuranceExpiry}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Contact Details */}
               <Card>
                 <CardHeader>
@@ -270,125 +398,6 @@ export default function Profile() {
                 </CardContent>
               </Card>
 
-              {/* Insurance Details */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Insurance Details</CardTitle>
-                  <CardDescription>Your insurance information (optional)</CardDescription>
-                </CardHeader>
-                <CardContent className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="insuranceCompany">Insurance Company</Label>
-                    <Input
-                      id="insuranceCompany"
-                      name="insuranceCompany"
-                      value={formData.insuranceCompany}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="insurancePolicyNo">Policy No</Label>
-                    <Input
-                      id="insurancePolicyNo"
-                      name="insurancePolicyNo"
-                      value={formData.insurancePolicyNo}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="insuranceAmount">Amount</Label>
-                    <Input
-                      id="insuranceAmount"
-                      name="insuranceAmount"
-                      value={formData.insuranceAmount}
-                      onChange={handleChange}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="insuranceExpiry">Expiry Date</Label>
-                    <Input
-                      id="insuranceExpiry"
-                      name="insuranceExpiry"
-                      type="date"
-                      value={formData.insuranceExpiry}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Label htmlFor="insuranceDocument">Insurance Document *</Label>
-                    <p className="text-sm text-gray-600 mb-2">
-                      Upload your Public Liability Insurance certificate (minimum $20M coverage required)
-                    </p>
-                    <Input
-                      id="insuranceDocument"
-                      type="file"
-                      accept="image/*,application/pdf"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        
-                        setInsuranceFile(file);
-                        setUploadingInsurance(true);
-                        
-                        try {
-                          // Convert file to base64
-                          const reader = new FileReader();
-                          const fileData = await new Promise<string>((resolve) => {
-                            reader.onload = () => {
-                              const base64 = reader.result as string;
-                              resolve(base64.split(',')[1]); // Remove data:image/...;base64, prefix
-                            };
-                            reader.readAsDataURL(file);
-                          });
-                          
-                          // Upload to S3
-                          const uploadMutation = trpc.profile.uploadInsurance.useMutation();
-                          const { url } = await uploadMutation.mutateAsync({
-                            fileData,
-                            fileName: file.name,
-                            mimeType: file.type,
-                          });
-                          
-                          // Scan document
-                          setScanningInsurance(true);
-                          const scanMutation = trpc.profile.scanInsurance.useMutation();
-                          const scanData = await scanMutation.mutateAsync({ documentUrl: url });
-                          
-                          // Auto-fill fields
-                          setFormData(prev => ({
-                            ...prev,
-                            insuranceDocumentUrl: url,
-                            insuranceCompany: scanData.insuranceCompany || prev.insuranceCompany,
-                            insurancePolicyNo: scanData.policyNumber || prev.insurancePolicyNo,
-                            insuranceAmount: scanData.insuredAmount ? String(scanData.insuredAmount) : prev.insuranceAmount,
-                            insuranceExpiry: scanData.expiryDate || prev.insuranceExpiry,
-                          }));
-                          
-                          toast.success('Insurance document scanned successfully!');
-                        } catch (error) {
-                          toast.error('Failed to process insurance document');
-                          console.error(error);
-                        } finally {
-                          setUploadingInsurance(false);
-                          setScanningInsurance(false);
-                        }
-                      }}
-                      disabled={uploadingInsurance || scanningInsurance}
-                    />
-                    {(uploadingInsurance || scanningInsurance) && (
-                      <p className="text-sm text-blue-600 mt-2">
-                        {uploadingInsurance ? 'Uploading...' : 'Scanning document...'}
-                      </p>
-                    )}
-                    {formData.insuranceDocumentUrl && (
-                      <p className="text-sm text-green-600 mt-2">
-                        ✓ Document uploaded and scanned
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
 
               <div className="flex justify-end gap-4">
                 <Button

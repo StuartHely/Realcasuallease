@@ -1428,3 +1428,13 @@
 - [x] Add persistent error message at bottom of Edit User dialog (red, stays until Save Changes)
 - [x] Add "View Document" link to Insurance tab showing uploaded PDF
 - [ ] Test complete upload → scan → auto-fill workflow
+
+
+## OCR Scanner Fix & Enhancements
+
+- [x] Fix OCR scanner API error (works for images, PDFs require manual entry)
+- [x] Add "Skip Scanning" checkbox for manual override
+- [x] Add document preview thumbnail showing first page of PDF (image preview for JPG/PNG, icon for PDF)
+- [x] Update registration flow to prompt insurance upload first
+- [x] Auto-fill insurance fields after successful scan during registration
+- [x] Test complete registration workflow with insurance upload

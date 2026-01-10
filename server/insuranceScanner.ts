@@ -39,10 +39,10 @@ If any field cannot be found, use null for that field.`,
               text: 'Please analyze this insurance certificate and extract the expiry date, insured amount (in millions), policy number, and insurance company name.',
             },
             {
-              type: 'file_url',
-              file_url: {
+              type: 'image_url',
+              image_url: {
                 url: documentUrl,
-                mime_type: 'application/pdf',
+                detail: 'high',
               },
             },
           ],
