@@ -244,6 +244,7 @@ export const bookings = mysqlTable("bookings", {
   confirmationEmailSent: boolean("confirmationEmailSent").default(false).notNull(),
   reminderEmailSent: boolean("reminderEmailSent").default(false).notNull(),
   completionEmailSent: boolean("completionEmailSent").default(false).notNull(),
+  lastReminderSent: timestamp("lastReminderSent"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

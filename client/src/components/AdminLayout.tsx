@@ -80,6 +80,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
         title: "Financial",
         items: [
           { icon: DollarSign, label: "Financial Reports", path: "/admin/financials" },
+          { icon: DollarSign, label: "Invoice Dashboard", path: "/admin/invoice-dashboard" },
           { icon: DollarSign, label: "Record Payments", path: "/admin/payments" },
         ],
       },

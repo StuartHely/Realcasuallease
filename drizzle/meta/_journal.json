@@ -141,6 +141,13 @@
       "when": 1768002886105,
       "tag": "0019_slow_miss_america",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1768007548742,
+      "tag": "0020_superb_tarot",
+      "breakpoints": true
     }
   ]
 }

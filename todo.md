@@ -1334,3 +1334,20 @@
 - [ ] Add transaction records for payment splits
 - [ ] Send payment confirmation emails to all parties
 - [ ] Test complete workflow from booking to payment recording
+
+
+## Email Integration & Payment Reminders Enhancement
+
+- [x] Set up direct customer email integration for invoice delivery
+- [x] Replace owner notifications with actual customer emails
+- [x] Test email delivery with PDF attachments
+- [x] Build automated payment reminder system
+- [x] Create scheduled job for checking overdue invoices
+- [x] Send reminder emails: 7 days before due, on due date, 7 days after
+- [x] Create invoice dashboard page at /admin/invoice-dashboard
+- [x] Show outstanding invoices with amounts and due dates
+- [x] Show overdue invoices highlighted in red
+- [x] Add filtering by status (all/outstanding/overdue/paid)
+- [x] Add export to CSV functionality
+- [x] Show total outstanding amount and overdue amount
+- [x] Add payment history table with search

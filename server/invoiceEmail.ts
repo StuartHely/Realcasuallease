@@ -1,3 +1,4 @@
+import { sendEmail } from './_core/email';
 import { notifyOwner } from './_core/notification';
 import { generateInvoicePDF } from './invoiceGenerator';
 import { getBookingById, getSiteById, getShoppingCentreById, getUserById } from './db';
@@ -118,9 +119,26 @@ export async function sendInvoiceEmail(bookingId: number): Promise<boolean> {
       </div>
     `;
 
-    // Notify owner about invoice generation (customer email will be implemented later)
-    // In production, this would send directly to customer email with PDF attachment
-    const notificationContent = `
+    // Send email with PDF attachment to customer
+    const sent = await sendEmail({
+      to: customer.email,
+      subject,
+      html,
+      attachments: [
+        {
+          filename: `Invoice-${booking.bookingNumber}.pdf`,
+          content: pdfBase64,
+          encoding: 'base64',
+        },
+      ],
+    });
+
+    if (sent) {
+      console.log('[Invoice Email] Successfully sent invoice to:', customer.email);
+    } else {
+      // Fallback: notify owner if email fails
+      console.warn('[Invoice Email] Email failed, notifying owner instead');
+      const notificationContent = `
 Invoice Generated for Booking ${booking.bookingNumber}
 
 Customer: ${customer.name} (${customer.email})
@@ -131,16 +149,16 @@ Due Date: ${dueDateStr}
 
 Payment Terms: NET-14 days
 
-Note: In production, this invoice would be automatically emailed to the customer with PDF attachment.
-    `.trim();
+Note: Email delivery failed. Please send invoice manually to customer.
+      `.trim();
 
-    await notifyOwner({
-      title: `Invoice Generated: ${booking.bookingNumber}`,
-      content: notificationContent,
-    });
+      await notifyOwner({
+        title: `Invoice Generated (Email Failed): ${booking.bookingNumber}`,
+        content: notificationContent,
+      });
+    }
 
-    console.log('[Invoice Email] Invoice notification sent for booking:', bookingId);
-    return true;
+    return sent;
   } catch (error) {
     console.error('[Invoice Email] Error sending invoice:', error);
     return false;

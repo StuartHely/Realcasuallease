@@ -1323,6 +1323,31 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         return await db.recordPayment(input.bookingId, ctx.user.name || 'Admin');
       }),
+
+    // Invoice Dashboard
+    getInvoiceStats: adminProcedure
+      .query(async () => {
+        const { getInvoiceStats } = await import('./invoiceDashboardDb');
+        return await getInvoiceStats();
+      }),
+
+    getInvoiceList: adminProcedure
+      .input(z.object({
+        filter: z.enum(['all', 'outstanding', 'overdue', 'paid']).default('all'),
+      }))
+      .query(async ({ input }) => {
+        const { getInvoiceList } = await import('./invoiceDashboardDb');
+        return await getInvoiceList(input.filter);
+      }),
+
+    getPaymentHistory: adminProcedure
+      .input(z.object({
+        searchTerm: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const { getPaymentHistory } = await import('./invoiceDashboardDb');
+        return await getPaymentHistory(input.searchTerm);
+      }),
   }),
 
   // Usage Categories
