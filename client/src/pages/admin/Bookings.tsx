@@ -30,7 +30,7 @@ import { toast } from "sonner";
 type BookingStatus = "all" | "pending" | "confirmed" | "cancelled" | "completed";
 
 export default function AdminBookings() {
-  const [selectedStatus, setSelectedStatus] = useState<BookingStatus>("all");
+  const [selectedStatus, setSelectedStatus] = useState<BookingStatus>("pending");
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
@@ -40,6 +40,24 @@ export default function AdminBookings() {
   const { data: bookings, isLoading, refetch } = trpc.bookings.list.useQuery({
     status: selectedStatus === "all" ? undefined : selectedStatus,
   });
+
+  // Fetch all bookings to calculate counts for each status
+  const { data: allBookings } = trpc.bookings.list.useQuery({
+    status: undefined, // Get all bookings for count calculation
+  });
+
+  // Calculate counts for each status
+  const statusCounts = useMemo(() => {
+    if (!allBookings) return { all: 0, pending: 0, confirmed: 0, cancelled: 0, completed: 0 };
+    
+    return {
+      all: allBookings.length,
+      pending: allBookings.filter(b => b.status === 'pending').length,
+      confirmed: allBookings.filter(b => b.status === 'confirmed').length,
+      cancelled: allBookings.filter(b => b.status === 'cancelled').length,
+      completed: allBookings.filter(b => b.status === 'completed').length,
+    };
+  }, [allBookings]);
 
   // Filter bookings based on search query
   const filteredBookings = useMemo(() => {
@@ -159,24 +177,29 @@ export default function AdminBookings() {
 
       <Tabs value={selectedStatus} onValueChange={(v) => setSelectedStatus(v as BookingStatus)}>
         <TabsList>
-          <TabsTrigger value="all">
-            All Bookings
-          </TabsTrigger>
           <TabsTrigger value="pending">
             <Clock className="h-4 w-4 mr-2" />
             Pending
+            <span className="ml-1.5 text-xs opacity-70">({statusCounts.pending})</span>
           </TabsTrigger>
           <TabsTrigger value="confirmed">
             <CheckCircle className="h-4 w-4 mr-2" />
             Confirmed
+            <span className="ml-1.5 text-xs opacity-70">({statusCounts.confirmed})</span>
           </TabsTrigger>
           <TabsTrigger value="cancelled">
             <XCircle className="h-4 w-4 mr-2" />
             Cancelled
+            <span className="ml-1.5 text-xs opacity-70">({statusCounts.cancelled})</span>
           </TabsTrigger>
           <TabsTrigger value="completed">
             <CheckCircle className="h-4 w-4 mr-2" />
             Completed
+            <span className="ml-1.5 text-xs opacity-70">({statusCounts.completed})</span>
+          </TabsTrigger>
+          <TabsTrigger value="all">
+            All Bookings
+            <span className="ml-1.5 text-xs opacity-70">({statusCounts.all})</span>
           </TabsTrigger>
         </TabsList>
 

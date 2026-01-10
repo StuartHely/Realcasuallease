@@ -1529,3 +1529,14 @@
 - [x] Backend already supports undefined status (returns all bookings)
 - [x] Set "all" as default tab on page load
 - [x] Test All tab shows all bookings regardless of status - 8 tests passing
+
+## Booking Management - Reposition All Tab
+- [x] Move "All" tab button to beside "Completed" (after, not before)
+- [x] Change default tab from "all" to "pending"
+- [ ] Update tests to reflect new default behavior
+
+## Booking Management - Count Badges
+- [x] Add count badges to each tab label showing number of bookings
+- [x] Display format: "Pending (3)", "All Bookings (15)", etc.
+- [x] Calculate counts from bookings data in real-time
+- [x] Test count badges update correctly when bookings change - 8 tests passing
