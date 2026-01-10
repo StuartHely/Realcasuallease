@@ -28,6 +28,7 @@ import AdminFinancials from "./pages/admin/Financials";
 import AdminAudit from "./pages/admin/Audit";
 import AdminSettings from "./pages/admin/Settings";
 import UsageCategories from "./pages/admin/UsageCategories";
+import CentreCodes from "./pages/admin/CentreCodes";
 import Payments from "./pages/admin/Payments";
 import InvoiceDashboard from "./pages/admin/InvoiceDashboard";
 import OwnerApprovals from "./pages/OwnerApprovals";
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/admin/equipment" component={Equipment} />
       <Route path="/admin/seasonal-rates" component={SeasonalRates} />
       <Route path="/admin/usage-categories" component={UsageCategories} />
+      <Route path="/admin/centre-codes" component={CentreCodes} />
       <Route path="/admin/pending-approvals" component={PendingApprovals} />
         <Route path="/owner/approvals" component={OwnerApprovals} />
         <Route path="/owner/centres" component={OwnerCentres} />

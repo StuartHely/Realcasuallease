@@ -34,7 +34,8 @@ import {
   TrendingUp,
   Package,
   CheckCircle,
-  Tag
+  Tag,
+  Hash
 } from "lucide-react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -66,6 +67,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
           { icon: MapPin, label: "Site Assignment", path: "/admin/site-assignment" },
           { icon: Package, label: "Equipment", path: "/admin/equipment" },
           { icon: Tag, label: "Usage Categories", path: "/admin/usage-categories" },
+          { icon: Hash, label: "Centre Codes", path: "/admin/centre-codes" },
         ],
       },
       {

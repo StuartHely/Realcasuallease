@@ -1491,3 +1491,13 @@
 - [x] Update booking number generation to use abbreviated codes
 - [x] Ensure uniqueness is maintained - code + date + sequence
 - [x] Test booking number generation with new format - 15 tests passing
+
+## Centre Code Management UI
+- [x] Add backend procedure to list all centres with their codes - listWithCodes query
+- [x] Add backend procedure to update centre code - updateCentreCode mutation
+- [x] Create Centre Codes admin page - /admin/centre-codes
+- [x] Show auto-generated code preview for each centre
+- [x] Allow editing and saving custom codes - inline editing with save/cancel
+- [x] Validate code uniqueness and format (4 chars, uppercase) - frontend + backend validation
+- [x] Test centre code updates - 8 tests passing
+- [x] Add navigation link in AdminLayout
