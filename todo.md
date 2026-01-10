@@ -1351,3 +1351,24 @@
 - [x] Add export to CSV functionality
 - [x] Show total outstanding amount and overdue amount
 - [x] Add payment history table with search
+
+
+## SMTP Configuration
+
+- [ ] Request SMTP secrets to appear in Settings → Secrets panel
+- [ ] Verify secrets are visible and configurable by user
+
+
+## Enhanced User Registration with Insurance Validation
+
+- [ ] Update registration form with all fields from UserIDSetup.csv
+- [ ] Add password and confirm password fields
+- [ ] Add company details section (name, website, ABN, address, city, state, postcode)
+- [ ] Add product/service dropdown with custom text field
+- [x] Add insurance details section (company, policy no, amount, expiry date)
+- [x] Add insurance document upload field
+- [x] Implement OCR scanning for insurance documents (extract expiry date and amount)
+- [x] Validate minimum insurance amount ($20m)
+- [x] Add booking validation: check insurance expiry vs booking dates
+- [x] Flag bookings for manual approval if insurance expires before booking end date
+- [x] Show "Insurance Expired" as manual approval reason in admin panel

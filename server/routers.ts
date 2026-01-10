@@ -343,6 +343,21 @@ export const appRouter = router({
         const currentUser = await db.getUserByOpenId(ctx.user.openId);
         const canPayByInvoice = currentUser?.canPayByInvoice || false;
 
+        // Check insurance expiry date
+        const customerProfile = await db.getCustomerProfileByUserId(ctx.user.id);
+        let insuranceExpired = false;
+        
+        if (customerProfile?.insuranceExpiry) {
+          const insuranceExpiryDate = new Date(customerProfile.insuranceExpiry);
+          const bookingEndDate = new Date(input.endDate);
+          
+          // If insurance expires before booking end date, flag for manual approval
+          if (insuranceExpiryDate < bookingEndDate) {
+            requiresApproval = true;
+            insuranceExpired = true;
+          }
+        }
+
         // Create booking
         const result = await db.createBooking({
           bookingNumber,
@@ -371,6 +386,7 @@ export const appRouter = router({
           bookingNumber,
           totalAmount,
           requiresApproval,
+          insuranceExpired,
           canPayByInvoice,
           paymentMethod: canPayByInvoice ? "invoice" as const : "stripe" as const,
           equipmentWarning,
@@ -613,6 +629,44 @@ export const appRouter = router({
         }
         
         return { success: true };
+      }),
+
+    uploadInsurance: protectedProcedure
+      .input(z.object({
+        fileData: z.string(), // base64 encoded file
+        fileName: z.string(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { storagePut } = await import('./storage');
+        
+        // Decode base64 and upload to S3
+        const buffer = Buffer.from(input.fileData, 'base64');
+        const fileKey = `insurance/${ctx.user.id}/${Date.now()}-${input.fileName}`;
+        
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        
+        return { url };
+      }),
+
+    scanInsurance: protectedProcedure
+      .input(z.object({
+        documentUrl: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { scanInsuranceDocument, validateInsurance } = await import('./insuranceScanner');
+        
+        const scanResult = await scanInsuranceDocument(input.documentUrl);
+        const validation = validateInsurance(scanResult);
+        
+        if (!validation.valid) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: validation.errors.join(', '),
+          });
+        }
+        
+        return scanResult;
       }),
   }),
 
@@ -1212,6 +1266,21 @@ export const appRouter = router({
               const customer = await db.getUserById(booking.customerId);
               const usageType = booking.usageTypeId ? await db.getUsageTypeById(booking.usageTypeId) : null;
               
+              // Check if insurance expired
+              const customerProfile = await db.getCustomerProfileByUserId(booking.customerId);
+              let approvalReason = 'Manual approval required';
+              let insuranceExpired = false;
+              
+              if (customerProfile?.insuranceExpiry) {
+                const insuranceExpiryDate = new Date(customerProfile.insuranceExpiry);
+                const bookingEndDate = new Date(booking.endDate);
+                
+                if (insuranceExpiryDate < bookingEndDate) {
+                  approvalReason = 'Insurance Expired';
+                  insuranceExpired = true;
+                }
+              }
+              
               return {
                 ...booking,
                 centreName: centre?.name || 'Unknown Centre',
@@ -1220,6 +1289,8 @@ export const appRouter = router({
                 customerName: customer?.name || 'Unknown Customer',
                 customerEmail: customer?.email,
                 usageTypeName: usageType?.name,
+                approvalReason,
+                insuranceExpired,
               };
             })
         );

@@ -149,6 +149,20 @@ export default function PendingApprovals() {
                         </p>
                       </div>
                     )}
+
+                    {booking.approvalReason && (
+                      <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <p className="font-semibold text-amber-900">Approval Reason</p>
+                        <p className="text-sm text-amber-700">
+                          {booking.approvalReason}
+                          {booking.insuranceExpired && (
+                            <span className="block mt-1 text-xs">
+                              Customer's insurance expires before booking end date
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Right Column: Financial & Actions */}
