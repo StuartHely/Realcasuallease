@@ -1464,3 +1464,9 @@
 - [x] Verify all Company Details fields save correctly - working
 - [x] Test with actual user edit - confirmed working
 - [x] Remove debug logging
+
+## Duplicate admin@test.com Entries
+- [x] Check database for duplicate users with same email - found 2 entries
+- [x] Identify if it's data issue or display issue - data issue (2 actual DB rows)
+- [x] Remove duplicate entries if they exist in DB - deleted second entry
+- [x] Verify Users list shows unique entries only - confirmed 1 entry remains
