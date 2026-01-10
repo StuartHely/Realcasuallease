@@ -1476,3 +1476,10 @@
 - [x] Push migration to database - migration 0022 applied
 - [x] Test that duplicate emails are rejected - 3 tests passing
 - [x] Verify existing functionality still works - constraint enforced
+
+## Email Validation on Registration
+- [x] Add backend procedure to check for duplicate emails - checkEmailAvailable query
+- [x] Add frontend email format validation - real-time with debounce
+- [x] Show user-friendly error messages for invalid/duplicate emails - red border + error text
+- [x] Test registration flow with various email scenarios - 4 tests passing
+- [x] Disable save/register buttons when email has errors

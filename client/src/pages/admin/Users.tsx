@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,8 +42,88 @@ export default function AdminUsers() {
     insuranceExpiryDate: "",
   });
   const [registrationTab, setRegistrationTab] = useState<"basic" | "company" | "insurance">("basic");
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [editEmailError, setEditEmailError] = useState<string | null>(null);
+  const [checkingEditEmail, setCheckingEditEmail] = useState(false);
   
   const { data: users, isLoading, refetch } = trpc.users.list.useQuery();
+  const utils = trpc.useUtils();
+  
+  // Email validation helper
+  const validateEmail = (email: string): string | null => {
+    if (!email) return "Email is required";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return "Invalid email format";
+    return null;
+  };
+  
+  // Debounced email check for new user
+  useEffect(() => {
+    const formatError = validateEmail(newUserData.email);
+    if (formatError) {
+      setEmailError(formatError);
+      return;
+    }
+    
+    setCheckingEmail(true);
+    const timer = setTimeout(async () => {
+      try {
+        const result = await utils.client.auth.checkEmailAvailable.query({ email: newUserData.email });
+        if (!result.available) {
+          setEmailError("Email already registered");
+        } else {
+          setEmailError(null);
+        }
+      } catch (error) {
+        console.error('Email check failed:', error);
+      } finally {
+        setCheckingEmail(false);
+      }
+    }, 500);
+    
+    return () => {
+      clearTimeout(timer);
+      setCheckingEmail(false);
+    };
+  }, [newUserData.email]);
+  
+  // Debounced email check for edit user
+  useEffect(() => {
+    if (!editingFullUser?.email) {
+      setEditEmailError(null);
+      return;
+    }
+    
+    const formatError = validateEmail(editingFullUser.email);
+    if (formatError) {
+      setEditEmailError(formatError);
+      return;
+    }
+    
+    setCheckingEditEmail(true);
+    const timer = setTimeout(async () => {
+      try {
+        const result = await utils.client.auth.checkEmailAvailable.query({ email: editingFullUser.email });
+        // Allow if email is unchanged or available
+        const originalUser = users?.find(u => u.id === editingFullUser.id);
+        if (!result.available && originalUser?.email !== editingFullUser.email) {
+          setEditEmailError("Email already registered");
+        } else {
+          setEditEmailError(null);
+        }
+      } catch (error) {
+        console.error('Email check failed:', error);
+      } finally {
+        setCheckingEditEmail(false);
+      }
+    }, 500);
+    
+    return () => {
+      clearTimeout(timer);
+      setCheckingEditEmail(false);
+    };
+  }, [editingFullUser?.email, editingFullUser?.id, users]);
   const updateInvoiceFlagMutation = trpc.users.updateInvoiceFlag.useMutation({
     onSuccess: () => {
       toast.success("Invoice payment setting updated successfully");
@@ -130,6 +210,10 @@ export default function AdminUsers() {
   const handleRegisterUser = () => {
     if (!newUserData.email || !newUserData.name || !newUserData.password) {
       toast.error("Please fill in all required fields");
+      return;
+    }
+    if (emailError) {
+      toast.error("Please fix email validation errors");
       return;
     }
     registerUserMutation.mutate(newUserData);
@@ -354,13 +438,24 @@ export default function AdminUsers() {
                 <label htmlFor="email" className="text-sm font-medium">
                   Email *
                 </label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="user@example.com"
-                  value={newUserData.email}
-                  onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
-                />
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="user@example.com"
+                    value={newUserData.email}
+                    onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                    className={emailError ? "border-red-500" : ""}
+                  />
+                  {checkingEmail && (
+                    <div className="absolute right-3 top-3">
+                      <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                    </div>
+                  )}
+                </div>
+                {emailError && (
+                  <p className="text-sm text-red-500">{emailError}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <label htmlFor="name" className="text-sm font-medium">
@@ -502,7 +597,7 @@ export default function AdminUsers() {
               </Button>
               <Button
                 onClick={handleRegisterUser}
-                disabled={registerUserMutation.isPending}
+                disabled={registerUserMutation.isPending || !!emailError || checkingEmail}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 {registerUserMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -550,7 +645,21 @@ export default function AdminUsers() {
               <>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email</label>
-                <Input value={editingFullUser.email || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, email: e.target.value })} />
+                <div className="relative">
+                  <Input 
+                    value={editingFullUser.email || ""} 
+                    onChange={(e) => setEditingFullUser({ ...editingFullUser, email: e.target.value })} 
+                    className={editEmailError ? "border-red-500" : ""}
+                  />
+                  {checkingEditEmail && (
+                    <div className="absolute right-3 top-3">
+                      <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                    </div>
+                  )}
+                </div>
+                {editEmailError && (
+                  <p className="text-sm text-red-500">{editEmailError}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Full Name</label>
@@ -834,7 +943,7 @@ export default function AdminUsers() {
               <Button variant="outline" onClick={() => setEditingFullUser(null)}>Cancel</Button>
               <Button 
                 onClick={handleUpdateUser}
-                disabled={updateUserMutation.isPending}
+                disabled={updateUserMutation.isPending || !!editEmailError || checkingEditEmail}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 {updateUserMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

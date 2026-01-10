@@ -30,6 +30,13 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    checkEmailAvailable: publicProcedure
+      .input(z.object({ email: z.string().email() }))
+      .query(async ({ input }) => {
+        const { getUserByEmail } = await import('./db');
+        const existingUser = await getUserByEmail(input.email);
+        return { available: !existingUser };
+      }),
   }),
 
   // Shopping Centres
