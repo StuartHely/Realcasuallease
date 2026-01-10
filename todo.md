@@ -1389,3 +1389,12 @@
 - [x] Add insurance details fields to registration form (insurance company, policy no, amount, expiry date, document upload)
 - [x] Update registerUser procedure to create customer profile
 - [x] Test complete registration with all fields
+
+
+## User Edit Actions
+
+- [x] Add Edit button to User Management table actions column
+- [x] Create edit dialog with tabbed interface (same as registration)
+- [x] Load existing user data including company and insurance details
+- [x] Create backend procedure to update all user fields
+- [x] Test complete user editing flow

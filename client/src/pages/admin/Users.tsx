@@ -14,6 +14,8 @@ import { toast } from "sonner";
 export default function AdminUsers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingUser, setEditingUser] = useState<{ id: number; name: string | null; canPayByInvoice: boolean } | null>(null);
+  const [editingFullUser, setEditingFullUser] = useState<any>(null);
+  const [editTab, setEditTab] = useState<"basic" | "company" | "insurance">("basic");
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [newUserData, setNewUserData] = useState({
     email: "",
@@ -80,6 +82,41 @@ export default function AdminUsers() {
       toast.error(error.message || "Failed to register user");
     },
   });
+
+  const updateUserMutation = trpc.admin.updateUser.useMutation({
+    onSuccess: () => {
+      toast.success("User updated successfully");
+      refetch();
+      setEditingFullUser(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to update user");
+    },
+  });
+
+  const handleUpdateUser = () => {
+    if (!editingFullUser) return;
+    
+    updateUserMutation.mutate({
+      userId: editingFullUser.id,
+      email: editingFullUser.email,
+      name: editingFullUser.name,
+      role: editingFullUser.role,
+      canPayByInvoice: editingFullUser.canPayByInvoice,
+      companyName: editingFullUser.profile?.companyName,
+      website: editingFullUser.profile?.website,
+      abn: editingFullUser.profile?.abn,
+      streetAddress: editingFullUser.profile?.streetAddress,
+      city: editingFullUser.profile?.city,
+      state: editingFullUser.profile?.state,
+      postcode: editingFullUser.profile?.postcode,
+      productCategory: editingFullUser.profile?.productCategory,
+      insuranceCompany: editingFullUser.profile?.insuranceCompany,
+      insurancePolicyNo: editingFullUser.profile?.insurancePolicyNo,
+      insuranceAmount: editingFullUser.profile?.insuranceAmount,
+      insuranceExpiry: editingFullUser.profile?.insuranceExpiry,
+    });
+  };
 
   const handleRegisterUser = () => {
     if (!newUserData.email || !newUserData.name || !newUserData.password) {
@@ -203,7 +240,10 @@ export default function AdminUsers() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setEditingUser({ id: user.id, name: user.name, canPayByInvoice: user.canPayByInvoice })}
+                          onClick={() => {
+                            setEditingFullUser(user);
+                            setEditTab("basic");
+                          }}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -458,6 +498,162 @@ export default function AdminUsers() {
               >
                 {registerUserMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Register User
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit User Dialog */}
+        <Dialog open={!!editingFullUser} onOpenChange={(open) => !open && setEditingFullUser(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+              <DialogDescription>
+                Update user information, company details, and insurance
+              </DialogDescription>
+            </DialogHeader>
+            
+            {/* Tab Navigation */}
+            <div className="flex border-b">
+              <button
+                onClick={() => setEditTab("basic")}
+                className={`px-4 py-2 font-medium ${editTab === "basic" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-600"}`}
+              >
+                Basic Info
+              </button>
+              <button
+                onClick={() => setEditTab("company")}
+                className={`px-4 py-2 font-medium ${editTab === "company" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-600"}`}
+              >
+                Company Details
+              </button>
+              <button
+                onClick={() => setEditTab("insurance")}
+                className={`px-4 py-2 font-medium ${editTab === "insurance" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-600"}`}
+              >
+                Insurance
+              </button>
+            </div>
+
+            <div className="space-y-4 py-4">
+              {/* Basic Info Tab */}
+              {editTab === "basic" && editingFullUser && (
+              <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <Input value={editingFullUser.email || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, email: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Full Name</label>
+                <Input value={editingFullUser.name || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, name: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Role</label>
+                <select
+                  value={editingFullUser.role}
+                  onChange={(e) => setEditingFullUser({ ...editingFullUser, role: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="customer">Customer</option>
+                  <option value="owner_centre_manager">Owner - Centre Manager</option>
+                  <option value="owner_marketing_manager">Owner - Marketing Manager</option>
+                  <option value="owner_regional_admin">Owner - Regional Admin</option>
+                  <option value="owner_state_admin">Owner - State Admin</option>
+                  <option value="owner_super_admin">Owner - Super Admin</option>
+                  <option value="mega_state_admin">Mega - State Admin</option>
+                  <option value="mega_admin">Mega - Admin</option>
+                </select>
+              </div>
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  checked={editingFullUser.canPayByInvoice}
+                  onCheckedChange={(checked) => setEditingFullUser({ ...editingFullUser, canPayByInvoice: checked === true })}
+                />
+                <div className="space-y-1">
+                  <label className="text-sm font-medium leading-none cursor-pointer">Allow payment by invoice</label>
+                  <p className="text-sm text-muted-foreground">User can make bookings without immediate payment</p>
+                </div>
+              </div>
+              </>
+              )}
+
+              {/* Company Details Tab */}
+              {editTab === "company" && editingFullUser && (
+              <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Company Name</label>
+                  <Input value={editingFullUser.profile?.companyName || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, companyName: e.target.value } })} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">ABN</label>
+                  <Input value={editingFullUser.profile?.abn || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, abn: e.target.value } })} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Company Website</label>
+                <Input placeholder="https://" value={editingFullUser.profile?.website || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, website: e.target.value } })} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Product/Service</label>
+                <Input value={editingFullUser.profile?.productCategory || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, productCategory: e.target.value } })} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Address</label>
+                <Input value={editingFullUser.profile?.streetAddress || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, streetAddress: e.target.value } })} />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">City</label>
+                  <Input value={editingFullUser.profile?.city || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, city: e.target.value } })} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">State</label>
+                  <Input value={editingFullUser.profile?.state || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, state: e.target.value } })} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Postcode</label>
+                  <Input value={editingFullUser.profile?.postcode || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, postcode: e.target.value } })} />
+                </div>
+              </div>
+              </>
+              )}
+
+              {/* Insurance Tab */}
+              {editTab === "insurance" && editingFullUser && (
+              <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Insurance Company</label>
+                  <Input value={editingFullUser.profile?.insuranceCompany || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, insuranceCompany: e.target.value } })} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Policy Number</label>
+                  <Input value={editingFullUser.profile?.insurancePolicyNo || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, insurancePolicyNo: e.target.value } })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Insured Amount ($M)</label>
+                  <Input type="number" placeholder="20" value={editingFullUser.profile?.insuranceAmount || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, insuranceAmount: e.target.value } })} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Expiry Date</label>
+                  <Input type="date" value={editingFullUser.profile?.insuranceExpiry ? new Date(editingFullUser.profile.insuranceExpiry).toISOString().split('T')[0] : ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, insuranceExpiry: e.target.value } })} />
+                </div>
+              </div>
+              </>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingFullUser(null)}>Cancel</Button>
+              <Button 
+                onClick={handleUpdateUser}
+                disabled={updateUserMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {updateUserMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
               </Button>
             </DialogFooter>
           </DialogContent>

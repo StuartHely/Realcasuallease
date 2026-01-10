@@ -1504,6 +1504,93 @@ export const appRouter = router({
 
         return { success: true, message: 'User registered successfully' };
       }),
+
+    // Update User
+    updateUser: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        email: z.string().email().optional(),
+        name: z.string().optional(),
+        role: z.enum([
+          'customer',
+          'owner_centre_manager',
+          'owner_marketing_manager',
+          'owner_regional_admin',
+          'owner_state_admin',
+          'owner_super_admin',
+          'mega_state_admin',
+          'mega_admin'
+        ]).optional(),
+        canPayByInvoice: z.boolean().optional(),
+        // Company details
+        companyName: z.string().optional(),
+        website: z.string().optional(),
+        abn: z.string().optional(),
+        streetAddress: z.string().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        postcode: z.string().optional(),
+        productCategory: z.string().optional(),
+        // Insurance details
+        insuranceCompany: z.string().optional(),
+        insurancePolicyNo: z.string().optional(),
+        insuranceAmount: z.string().optional(),
+        insuranceExpiry: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import('./db');
+        const { users, customerProfiles } = await import('../drizzle/schema');
+        const { eq } = await import('drizzle-orm');
+        const dbInstance = await getDb();
+        
+        if (!dbInstance) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database connection failed' });
+        }
+
+        // Update user basic info
+        const userUpdates: any = {};
+        if (input.email) userUpdates.email = input.email;
+        if (input.name) userUpdates.name = input.name;
+        if (input.role) userUpdates.role = input.role;
+        if (input.canPayByInvoice !== undefined) userUpdates.canPayByInvoice = input.canPayByInvoice;
+
+        if (Object.keys(userUpdates).length > 0) {
+          await dbInstance.update(users).set(userUpdates).where(eq(users.id, input.userId));
+        }
+
+        // Update or create customer profile
+        const profileUpdates: any = {};
+        if (input.companyName !== undefined) profileUpdates.companyName = input.companyName || null;
+        if (input.website !== undefined) profileUpdates.website = input.website || null;
+        if (input.abn !== undefined) profileUpdates.abn = input.abn || null;
+        if (input.streetAddress !== undefined) profileUpdates.streetAddress = input.streetAddress || null;
+        if (input.city !== undefined) profileUpdates.city = input.city || null;
+        if (input.state !== undefined) profileUpdates.state = input.state || null;
+        if (input.postcode !== undefined) profileUpdates.postcode = input.postcode || null;
+        if (input.productCategory !== undefined) profileUpdates.productCategory = input.productCategory || null;
+        if (input.insuranceCompany !== undefined) profileUpdates.insuranceCompany = input.insuranceCompany || null;
+        if (input.insurancePolicyNo !== undefined) profileUpdates.insurancePolicyNo = input.insurancePolicyNo || null;
+        if (input.insuranceAmount !== undefined) profileUpdates.insuranceAmount = input.insuranceAmount || null;
+        if (input.insuranceExpiry !== undefined) profileUpdates.insuranceExpiry = input.insuranceExpiry ? new Date(input.insuranceExpiry) : null;
+
+        if (Object.keys(profileUpdates).length > 0) {
+          // Check if profile exists
+          const existingProfile = await dbInstance.select().from(customerProfiles).where(eq(customerProfiles.userId, input.userId)).limit(1);
+          
+          if (existingProfile.length > 0) {
+            // Update existing profile
+            await dbInstance.update(customerProfiles).set(profileUpdates).where(eq(customerProfiles.userId, input.userId));
+          } else {
+            // Create new profile
+            await dbInstance.insert(customerProfiles).values({
+              userId: input.userId,
+              ...profileUpdates,
+            });
+          }
+        }
+
+        return { success: true, message: 'User updated successfully' };
+      }),
   }),
 
   // Usage Categories
