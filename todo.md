@@ -1470,3 +1470,9 @@
 - [x] Identify if it's data issue or display issue - data issue (2 actual DB rows)
 - [x] Remove duplicate entries if they exist in DB - deleted second entry
 - [x] Verify Users list shows unique entries only - confirmed 1 entry remains
+
+## Email Uniqueness Constraint
+- [x] Add unique constraint to email field in users table schema
+- [x] Push migration to database - migration 0022 applied
+- [x] Test that duplicate emails are rejected - 3 tests passing
+- [x] Verify existing functionality still works - constraint enforced
