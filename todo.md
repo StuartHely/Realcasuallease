@@ -1372,3 +1372,12 @@
 - [x] Add booking validation: check insurance expiry vs booking dates
 - [x] Flag bookings for manual approval if insurance expires before booking end date
 - [x] Show "Insurance Expired" as manual approval reason in admin panel
+
+
+## Admin User Registration
+
+- [x] Add "Register New User" button to User Management page
+- [x] Create registration dialog/form with user fields
+- [x] Add admin procedure to create new user accounts
+- [x] Set default password or send invitation email
+- [x] Test admin user registration flow

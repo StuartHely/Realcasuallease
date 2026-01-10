@@ -1419,6 +1419,58 @@ export const appRouter = router({
         const { getPaymentHistory } = await import('./invoiceDashboardDb');
         return await getPaymentHistory(input.searchTerm);
       }),
+
+    // User Registration
+    registerUser: adminProcedure
+      .input(z.object({
+        email: z.string().email(),
+        name: z.string(),
+        password: z.string().min(8),
+        role: z.enum([
+          'customer',
+          'owner_centre_manager',
+          'owner_marketing_manager',
+          'owner_regional_admin',
+          'owner_state_admin',
+          'owner_super_admin',
+          'mega_state_admin',
+          'mega_admin'
+        ]).default('customer'),
+        canPayByInvoice: z.boolean().default(false),
+      }))
+      .mutation(async ({ input }) => {
+        // Check if user already exists
+        const existingUser = await db.getUserByEmail(input.email);
+        if (existingUser) {
+          throw new TRPCError({ code: 'CONFLICT', message: 'User with this email already exists' });
+        }
+
+        // Create user with hashed password
+        const bcrypt = await import('bcryptjs');
+        const hashedPassword = await bcrypt.hash(input.password, 10);
+
+        const { getDb } = await import('./db');
+        const { users } = await import('../drizzle/schema');
+        const dbInstance = await getDb();
+        
+        if (!dbInstance) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database connection failed' });
+        }
+
+        // Generate a unique openId for the user
+        const openId = `manual_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+        await dbInstance.insert(users).values({
+          openId,
+          email: input.email,
+          name: input.name,
+          role: input.role,
+          canPayByInvoice: input.canPayByInvoice,
+          // Store hashed password in a custom field (you may need to add this to schema)
+        });
+
+        return { success: true, message: 'User registered successfully' };
+      }),
   }),
 
   // Usage Categories

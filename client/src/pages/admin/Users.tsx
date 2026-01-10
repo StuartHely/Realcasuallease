@@ -8,12 +8,20 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
-import { Users as UsersIcon, Search, Edit, Loader2, FileText } from "lucide-react";
+import { Users as UsersIcon, Search, Edit, Loader2, FileText, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminUsers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingUser, setEditingUser] = useState<{ id: number; name: string | null; canPayByInvoice: boolean } | null>(null);
+  const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    email: "",
+    name: "",
+    password: "",
+    role: "customer" as "customer" | "owner_centre_manager" | "owner_marketing_manager" | "owner_regional_admin" | "owner_state_admin" | "owner_super_admin" | "mega_state_admin" | "mega_admin",
+    canPayByInvoice: false,
+  });
   
   const { data: users, isLoading, refetch } = trpc.users.list.useQuery();
   const updateInvoiceFlagMutation = trpc.users.updateInvoiceFlag.useMutation({
@@ -26,6 +34,32 @@ export default function AdminUsers() {
       toast.error(error.message || "Failed to update setting");
     },
   });
+
+  const registerUserMutation = trpc.admin.registerUser.useMutation({
+    onSuccess: () => {
+      toast.success("User registered successfully");
+      refetch();
+      setRegisterDialogOpen(false);
+      setNewUserData({
+        email: "",
+        name: "",
+        password: "",
+        role: "customer",
+        canPayByInvoice: false,
+      });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to register user");
+    },
+  });
+
+  const handleRegisterUser = () => {
+    if (!newUserData.email || !newUserData.name || !newUserData.password) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    registerUserMutation.mutate(newUserData);
+  };
 
   const filteredUsers = users?.filter(user => {
     if (!searchQuery) return true;
@@ -73,6 +107,13 @@ export default function AdminUsers() {
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setRegisterDialogOpen(true)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Register New User
+                </Button>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -191,6 +232,108 @@ export default function AdminUsers() {
               >
                 {updateInvoiceFlagMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Register New User Dialog */}
+        <Dialog open={registerDialogOpen} onOpenChange={setRegisterDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Register New User</DialogTitle>
+              <DialogDescription>
+                Create a new user account. The user will be able to log in with the provided credentials.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium">
+                  Email *
+                </label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="user@example.com"
+                  value={newUserData.email}
+                  onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-sm font-medium">
+                  Full Name *
+                </label>
+                <Input
+                  id="name"
+                  placeholder="John Doe"
+                  value={newUserData.name}
+                  onChange={(e) => setNewUserData({ ...newUserData, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium">
+                  Password *
+                </label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Minimum 8 characters"
+                  value={newUserData.password}
+                  onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="role" className="text-sm font-medium">
+                  Role
+                </label>
+                <select
+                  id="role"
+                  value={newUserData.role}
+                  onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value as any })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="customer">Customer</option>
+                  <option value="owner_centre_manager">Owner - Centre Manager</option>
+                  <option value="owner_marketing_manager">Owner - Marketing Manager</option>
+                  <option value="owner_regional_admin">Owner - Regional Admin</option>
+                  <option value="owner_state_admin">Owner - State Admin</option>
+                  <option value="owner_super_admin">Owner - Super Admin</option>
+                  <option value="mega_state_admin">Mega - State Admin</option>
+                  <option value="mega_admin">Mega - Admin</option>
+                </select>
+              </div>
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="canPayByInvoice-new"
+                  checked={newUserData.canPayByInvoice}
+                  onCheckedChange={(checked) => {
+                    setNewUserData({ ...newUserData, canPayByInvoice: checked === true });
+                  }}
+                />
+                <div className="space-y-1">
+                  <label
+                    htmlFor="canPayByInvoice-new"
+                    className="text-sm font-medium leading-none cursor-pointer"
+                  >
+                    Allow payment by invoice
+                  </label>
+                  <p className="text-sm text-muted-foreground">
+                    User can make bookings without immediate payment
+                  </p>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRegisterDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleRegisterUser}
+                disabled={registerUserMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {registerUserMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Register User
               </Button>
             </DialogFooter>
           </DialogContent>
