@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Clock, Calendar, DollarSign, User, MapPin } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Calendar, DollarSign, User, MapPin, Search, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -35,10 +35,28 @@ export default function AdminBookings() {
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: bookings, isLoading, refetch } = trpc.bookings.list.useQuery({
     status: selectedStatus,
   });
+
+  // Filter bookings based on search query
+  const filteredBookings = useMemo(() => {
+    if (!bookings) return [];
+    if (!searchQuery.trim()) return bookings;
+
+    const query = searchQuery.toLowerCase().trim();
+    return bookings.filter((booking) => {
+      const bookingNumber = booking.bookingNumber?.toLowerCase() || "";
+      const customerName = booking.customerName?.toLowerCase() || "";
+      const customerEmail = booking.customerEmail?.toLowerCase() || "";
+      
+      return bookingNumber.includes(query) || 
+             customerName.includes(query) ||
+             customerEmail.includes(query);
+    });
+  }, [bookings, searchQuery]);
 
   const approveMutation = trpc.bookings.approve.useMutation({
     onSuccess: () => {
@@ -112,11 +130,31 @@ export default function AdminBookings() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Booking Management</h1>
-        <p className="text-muted-foreground mt-2">
-          Review and manage booking requests from customers
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Booking Management</h1>
+          <p className="text-muted-foreground mt-2">
+            Review and manage booking requests from customers
+          </p>
+        </div>
+        <div className="relative w-80">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search by booking number or customer name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-10 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       <Tabs value={selectedStatus} onValueChange={(v) => setSelectedStatus(v as BookingStatus)}>
@@ -144,15 +182,21 @@ export default function AdminBookings() {
             <CardHeader>
               <CardTitle>{selectedStatus.charAt(0).toUpperCase() + selectedStatus.slice(1)} Bookings</CardTitle>
               <CardDescription>
-                {isLoading ? "Loading bookings..." : `${bookings?.length || 0} booking(s) found`}
+                {isLoading ? "Loading bookings..." : (
+                  searchQuery 
+                    ? `${filteredBookings.length} of ${bookings?.length || 0} booking(s) match "${searchQuery}"`
+                    : `${bookings?.length || 0} booking(s) found`
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="text-center py-8 text-muted-foreground">Loading...</div>
-              ) : !bookings || bookings.length === 0 ? (
+              ) : filteredBookings.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  No {selectedStatus} bookings found
+                  {searchQuery 
+                    ? `No bookings match "${searchQuery}"`
+                    : `No ${selectedStatus} bookings found`}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -170,7 +214,7 @@ export default function AdminBookings() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {bookings.map((booking) => (
+                      {filteredBookings.map((booking) => (
                         <TableRow key={booking.id}>
                           <TableCell className="font-medium">{booking.bookingNumber}</TableCell>
                           <TableCell>
