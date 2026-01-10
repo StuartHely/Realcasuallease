@@ -952,6 +952,8 @@ export async function getBookingsByStatus(status?: "pending" | "confirmed" | "ca
       approvedBy: bookings.approvedBy,
       approvedAt: bookings.approvedAt,
       usageTypeId: bookings.usageTypeId,
+      usageCategoryId: bookings.usageCategoryId,
+      additionalCategoryText: bookings.additionalCategoryText,
       customUsage: bookings.customUsage,
       tablesRequested: bookings.tablesRequested,
       chairsRequested: bookings.chairsRequested,

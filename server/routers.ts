@@ -1317,19 +1317,90 @@ export const appRouter = router({
               const customer = await db.getUserById(booking.customerId);
               const usageType = booking.usageTypeId ? await db.getUsageTypeById(booking.usageTypeId) : null;
               
-              // Check if insurance expired
+              // Determine specific approval reason
               const customerProfile = await db.getCustomerProfileByUserId(booking.customerId);
               let approvalReason = 'Manual approval required';
               let insuranceExpired = false;
+              const reasons: string[] = [];
               
+              // Check insurance expiry
               if (customerProfile?.insuranceExpiry) {
                 const insuranceExpiryDate = new Date(customerProfile.insuranceExpiry);
                 const bookingEndDate = new Date(booking.endDate);
                 
                 if (insuranceExpiryDate < bookingEndDate) {
-                  approvalReason = 'Insurance Expired';
+                  reasons.push('Insurance expired before booking end date');
                   insuranceExpired = true;
                 }
+              }
+              
+              // Check insurance coverage amount
+              if (customerProfile?.insuranceAmount) {
+                const coverageAmount = parseFloat(customerProfile.insuranceAmount);
+                const requiredAmount = 20000000; // $20M minimum
+                
+                if (coverageAmount < requiredAmount) {
+                  reasons.push(`Insufficient insurance coverage ($${(coverageAmount / 1000000).toFixed(1)}M, requires $20M)`);
+                }
+              }
+              
+              // Check if custom category text was provided
+              if (booking.additionalCategoryText && booking.additionalCategoryText.trim().length > 0) {
+                reasons.push('Custom usage category details provided');
+              }
+              
+              // Check if usage category is not approved for site
+              if (booking.usageCategoryId) {
+                const { isCategoryApprovedForSite, getApprovedCategoriesForSite } = await import('./usageCategoriesDb');
+                const approvedCategories = await getApprovedCategoriesForSite(booking.siteId);
+                
+                if (approvedCategories.length > 0) {
+                  const isApproved = await isCategoryApprovedForSite(booking.siteId, booking.usageCategoryId);
+                  
+                  if (!isApproved) {
+                    const { getAllUsageCategories } = await import('./usageCategoriesDb');
+                    const allCategories = await getAllUsageCategories();
+                    const category = allCategories.find(c => c.id === booking.usageCategoryId);
+                    reasons.push(`Usage category "${category?.name || 'Unknown'}" not approved for this site`);
+                  } else {
+                    // Check for duplicate bookings
+                    const { getDb } = await import('./db');
+                    const { bookings: bookingsTable, sites: sitesTable } = await import('../drizzle/schema');
+                    const { eq, and, ne } = await import('drizzle-orm');
+                    const dbInstance = await getDb();
+                    
+                    if (dbInstance && site) {
+                      const duplicates = await dbInstance.select()
+                        .from(bookingsTable)
+                        .innerJoin(sitesTable, eq(bookingsTable.siteId, sitesTable.id))
+                        .where(and(
+                          eq(bookingsTable.customerId, booking.customerId),
+                          eq(bookingsTable.usageCategoryId, booking.usageCategoryId),
+                          eq(sitesTable.centreId, site.centreId),
+                          ne(bookingsTable.id, booking.id)
+                        ));
+                      
+                      if (duplicates.length > 0) {
+                        reasons.push('Duplicate booking: customer already has booking with same category at this centre');
+                      }
+                    }
+                  }
+                }
+              }
+              
+              // Check if site requires manual approval (no instant booking)
+              if (!site?.instantBooking) {
+                reasons.push('Site requires manual approval for all bookings');
+              }
+              
+              // Check legacy custom usage
+              if (booking.customUsage) {
+                reasons.push('Custom usage type specified');
+              }
+              
+              // Combine all reasons or use default
+              if (reasons.length > 0) {
+                approvalReason = reasons.join('; ');
               }
               
               return {

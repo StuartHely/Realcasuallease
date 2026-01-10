@@ -1501,3 +1501,10 @@
 - [x] Validate code uniqueness and format (4 chars, uppercase) - frontend + backend validation
 - [x] Test centre code updates - 8 tests passing
 - [x] Add navigation link in AdminLayout
+
+## Pending Approvals - Show Approval Reason
+- [x] Check where approval reasons are stored/generated - getPendingApprovals procedure
+- [x] Find the "Manual approval required" text in Pending Approvals page - already displayed via approvalReason field
+- [x] Update backend to detect all approval reasons (insurance expired, insufficient coverage, category not approved, duplicate booking, site requires approval, custom text)
+- [x] Update getBookingsByStatus to include usageCategoryId and additionalCategoryText fields
+- [x] Test approval reason logic - 10 tests passing
