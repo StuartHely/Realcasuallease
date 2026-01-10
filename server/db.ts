@@ -632,7 +632,8 @@ export async function getAllUsers() {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.select({
+  // First get all users
+  const usersData = await db.select({
     id: users.id,
     name: users.name,
     email: users.email,
@@ -641,6 +642,33 @@ export async function getAllUsers() {
     createdAt: users.createdAt,
     lastSignedIn: users.lastSignedIn,
   }).from(users).orderBy(desc(users.createdAt));
+  
+  // Then get all profiles
+  const profiles = await db.select().from(customerProfiles);
+  
+  // Map profiles to users
+  const result = usersData.map(user => {
+    const profile = profiles.find(p => p.userId === user.id);
+    return {
+      ...user,
+      profile: profile ? {
+        companyName: profile.companyName,
+        website: profile.website,
+        abn: profile.abn,
+        streetAddress: profile.streetAddress,
+        city: profile.city,
+        state: profile.state,
+        postcode: profile.postcode,
+        productCategory: profile.productCategory,
+        productDetails: profile.productDetails,
+        insuranceCompany: profile.insuranceCompany,
+        insurancePolicyNo: profile.insurancePolicyNo,
+        insuranceAmount: profile.insuranceAmount,
+        insuranceExpiry: profile.insuranceExpiry,
+        insuranceDocumentUrl: profile.insuranceDocumentUrl,
+      } : null,
+    };
+  });
   
   return result;
 }

@@ -1453,3 +1453,14 @@
 - [x] Add red warning UI in Profile page when expiry date is in the past
 - [x] Allow saving expired insurance data for admin records
 - [x] Test with expired policy PDF - 5 tests passing
+
+## Edit User Save Bug - Company Details
+- [x] Investigate why Category (productCategory) field not saving - data IS saving to DB
+- [x] Investigate why Details (productDetails) field not saving - data IS saving to DB
+- [x] Check updateUser mutation schema in routers.ts - correct
+- [x] Check field mapping in Users.tsx handleUpdateUser - correct
+- [x] Fix getAllUsers to join with customer_profiles - separate queries + map
+- [x] Fix profile data structure issue (nested vs flat) - eliminated duplicates
+- [x] Verify all Company Details fields save correctly - working
+- [x] Test with actual user edit - confirmed working
+- [x] Remove debug logging

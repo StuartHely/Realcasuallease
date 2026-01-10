@@ -1,0 +1,34 @@
+{
+  "query": "SELECT id, userId, productCategory, productDetails FROM customer_profiles LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, userId, productCategory, productDetails FROM customer_profiles LIMIT 5;",
+  "rows": [
+    {
+      "id": "2",
+      "userId": "1",
+      "productCategory": "NULL",
+      "productDetails": "NULL"
+    },
+    {
+      "id": "30001",
+      "userId": "2130046",
+      "productCategory": "Food & Beverage",
+      "productDetails": "Dogs Food"
+    },
+    {
+      "id": "60001",
+      "userId": "1710040",
+      "productCategory": "Health & Beauty",
+      "productDetails": "Feet"
+    },
+    {
+      "id": "60002",
+      "userId": "1710041",
+      "productCategory": "Home & Living",
+      "productDetails": "Beds"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tproductCategory\tproductDetails\n2\t1\tNULL\tNULL\n30001\t2130046\tFood & Beverage\tDogs Food\n60001\t1710040\tHealth & Beauty\tFeet\n60002\t1710041\tHome & Living\tBeds\n",
+  "stderr": "",
+  "execution_time_ms": 1827
+}
