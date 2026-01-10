@@ -1419,3 +1419,12 @@
 - [ ] Test upload with PDF files
 - [ ] Test upload with image files (JPG, PNG)
 - [ ] Verify OCR scanning works after upload
+
+
+## OCR Scanning Fix & View Document
+
+- [x] Debug why OCR scanning is failing after upload (API error with file_url)
+- [ ] Fix insurance scanner to properly extract amount and expiry date
+- [x] Add persistent error message at bottom of Edit User dialog (red, stays until Save Changes)
+- [x] Add "View Document" link to Insurance tab showing uploaded PDF
+- [ ] Test complete upload → scan → auto-fill workflow

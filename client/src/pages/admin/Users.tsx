@@ -17,6 +17,7 @@ export default function AdminUsers() {
   const [editingFullUser, setEditingFullUser] = useState<any>(null);
   const [editTab, setEditTab] = useState<"basic" | "company" | "insurance">("basic");
   const [uploadingInsurance, setUploadingInsurance] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [newUserData, setNewUserData] = useState({
     email: "",
@@ -100,6 +101,7 @@ export default function AdminUsers() {
 
   const handleUpdateUser = () => {
     if (!editingFullUser) return;
+    setScanError(null); // Clear error on save
     
     updateUserMutation.mutate({
       userId: editingFullUser.id,
@@ -717,25 +719,42 @@ export default function AdminUsers() {
                           mimeType: file.type,
                         });
                         
-                        // Scan document
-                        const scanRes = await scanInsuranceMutation.mutateAsync({ documentUrl: uploadResult.url });
-                        
+                        // Save document URL first
                         setEditingFullUser({
                           ...editingFullUser,
                           profile: {
                             ...editingFullUser.profile,
                             insuranceDocumentUrl: uploadResult.url,
-                            insuranceCompany: scanRes.insuranceCompany || editingFullUser.profile?.insuranceCompany,
-                            insurancePolicyNo: scanRes.policyNumber || editingFullUser.profile?.insurancePolicyNo,
-                            insuranceAmount: scanRes.insuredAmount || editingFullUser.profile?.insuranceAmount,
-                            insuranceExpiry: scanRes.expiryDate || editingFullUser.profile?.insuranceExpiry,
                           },
                         });
                         
-                        toast.success('Insurance document uploaded and scanned successfully');
+                        // Try to scan document
+                        try {
+                          const scanRes = await scanInsuranceMutation.mutateAsync({ documentUrl: uploadResult.url });
+                          
+                          setEditingFullUser({
+                            ...editingFullUser,
+                            profile: {
+                              ...editingFullUser.profile,
+                              insuranceDocumentUrl: uploadResult.url,
+                              insuranceCompany: scanRes.insuranceCompany || editingFullUser.profile?.insuranceCompany,
+                              insurancePolicyNo: scanRes.policyNumber || editingFullUser.profile?.insurancePolicyNo,
+                              insuranceAmount: scanRes.insuredAmount || editingFullUser.profile?.insuranceAmount,
+                              insuranceExpiry: scanRes.expiryDate || editingFullUser.profile?.insuranceExpiry,
+                            },
+                          });
+                          
+                          setScanError(null);
+                          toast.success('Insurance document uploaded and scanned successfully');
+                        } catch (scanError: any) {
+                          console.error('Scan error:', scanError);
+                          setScanError(`Failed to scan document: ${scanError.message || 'Unknown error'}. Please enter insurance details manually.`);
+                          toast.warning('Document uploaded but automatic scanning failed. Please enter details manually.');
+                        }
                       } catch (error: any) {
                         console.error('Upload error:', error);
                         toast.error(error.message || 'Failed to upload insurance document');
+                        setScanError(null);
                       } finally {
                         setUploadingInsurance(false);
                       }
@@ -747,11 +766,29 @@ export default function AdminUsers() {
                       <span className="text-sm text-muted-foreground">Uploading and scanning...</span>
                     </div>
                   )}
+                  {editingFullUser?.profile?.insuranceDocumentUrl && (
+                    <div className="mt-2">
+                      <a 
+                        href={editingFullUser.profile.insuranceDocumentUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
+                      >
+                        <FileText className="h-4 w-4" />
+                        View Uploaded Document
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
               </>
               )}
             </div>
+            {scanError && (
+              <div className="px-6 py-3 bg-red-50 border-t border-red-200">
+                <p className="text-sm text-red-600">{scanError}</p>
+              </div>
+            )}
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditingFullUser(null)}>Cancel</Button>
               <Button 

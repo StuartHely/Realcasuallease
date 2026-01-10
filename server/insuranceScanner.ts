@@ -39,50 +39,35 @@ If any field cannot be found, use null for that field.`,
               text: 'Please analyze this insurance certificate and extract the expiry date, insured amount (in millions), policy number, and insurance company name.',
             },
             {
-              type: 'image_url',
-              image_url: {
+              type: 'file_url',
+              file_url: {
                 url: documentUrl,
-                detail: 'high',
+                mime_type: 'application/pdf',
               },
             },
           ],
         },
       ],
       response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'insurance_data',
-          strict: true,
-          schema: {
-            type: 'object',
-            properties: {
-              expiryDate: {
-                type: ['string', 'null'],
-                description: 'Expiry date in ISO format YYYY-MM-DD, or null if not found',
-              },
-              insuredAmount: {
-                type: ['number', 'null'],
-                description: 'Insured amount in millions (e.g., 20 for $20 million), or null if not found',
-              },
-              policyNumber: {
-                type: ['string', 'null'],
-                description: 'Policy number, or null if not found',
-              },
-              insuranceCompany: {
-                type: ['string', 'null'],
-                description: 'Insurance company name, or null if not found',
-              },
-            },
-            required: ['expiryDate', 'insuredAmount', 'policyNumber', 'insuranceCompany'],
-            additionalProperties: false,
-          },
-        },
+        type: 'json_object',
       },
     });
 
+    console.log('[Insurance Scanner] Full response:', JSON.stringify(response, null, 2));
+    
+    // Check if API returned an error
+    if ('error' in response) {
+      const error = (response as any).error;
+      throw new Error(`API Error: ${error.type || 'unknown'} - ${error.message || 'No message'}`);
+    }
+    
+    if (!response.choices || response.choices.length === 0) {
+      throw new Error('No choices in AI response');
+    }
+    
     const content = response.choices[0]?.message?.content;
     if (!content) {
-      throw new Error('No response from AI');
+      throw new Error('No content in AI response');
     }
 
     const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
