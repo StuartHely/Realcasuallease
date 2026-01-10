@@ -1,0 +1,60 @@
+{
+  "query": "SELECT id, bookingNumber, createdAt FROM bookings ORDER BY createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, bookingNumber, createdAt FROM bookings ORDER BY createdAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "150001",
+      "bookingNumber": "BK1767761920116V0ERH",
+      "createdAt": "2026-01-07 04:59:05"
+    },
+    {
+      "id": "120028",
+      "bookingNumber": "BK1767680347797HUMNE",
+      "createdAt": "2026-01-06 06:19:08"
+    },
+    {
+      "id": "120027",
+      "bookingNumber": "BK17676803452044BK8V",
+      "createdAt": "2026-01-06 06:19:06"
+    },
+    {
+      "id": "120026",
+      "bookingNumber": "BK1767680342385WWQF7",
+      "createdAt": "2026-01-06 06:19:02"
+    },
+    {
+      "id": "120025",
+      "bookingNumber": "BK1767680339796NV6WB",
+      "createdAt": "2026-01-06 06:19:00"
+    },
+    {
+      "id": "120024",
+      "bookingNumber": "BK17676803372074KUIE",
+      "createdAt": "2026-01-06 06:18:57"
+    },
+    {
+      "id": "120023",
+      "bookingNumber": "BK1767680333971MLSF8",
+      "createdAt": "2026-01-06 06:18:54"
+    },
+    {
+      "id": "120022",
+      "bookingNumber": "BK17676803036625QH9L",
+      "createdAt": "2026-01-06 06:18:24"
+    },
+    {
+      "id": "120021",
+      "bookingNumber": "BK1767680301044TUWHT",
+      "createdAt": "2026-01-06 06:18:22"
+    },
+    {
+      "id": "120020",
+      "bookingNumber": "BK1767680298187B8QPQ",
+      "createdAt": "2026-01-06 06:18:18"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbookingNumber\tcreatedAt\n150001\tBK1767761920116V0ERH\t2026-01-07 04:59:05\n120028\tBK1767680347797HUMNE\t2026-01-06 06:19:08\n120027\tBK17676803452044BK8V\t2026-01-06 06:19:06\n120026\tBK1767680342385WWQF7\t2026-01-06 06:19:02\n120025\tBK1767680339796NV6WB\t2026-01-06 06:19:00\n120024\tBK17676803372074KUIE\t2026-01-06 06:18:57\n120023\tBK1767680333971MLSF8\t2026-01-06 06:18:54\n120022\tBK17676803036625QH9L\t2026-01-06 06:18:24\n120021\tBK1767680301044TUWHT\t2026-01-06 06:18:22\n120020\tBK1767680298187B8QPQ\t2026-01-06 06:18:18\n",
+  "stderr": "",
+  "execution_time_ms": 1590
+}

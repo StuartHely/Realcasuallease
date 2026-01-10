@@ -1483,3 +1483,11 @@
 - [x] Show user-friendly error messages for invalid/duplicate emails - red border + error text
 - [x] Test registration flow with various email scenarios - 4 tests passing
 - [x] Disable save/register buttons when email has errors
+
+## Booking Number Format Review
+- [x] Check if booking numbers include centre name (e.g., CampbelltownMall) - YES, uses centreCode
+- [x] Review current booking number length - ~28-35 chars, can be optimized
+- [x] Implement abbreviated centre codes (4 letters instead of full name)
+- [x] Update booking number generation to use abbreviated codes
+- [x] Ensure uniqueness is maintained - code + date + sequence
+- [x] Test booking number generation with new format - 15 tests passing

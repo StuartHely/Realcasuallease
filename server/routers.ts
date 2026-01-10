@@ -251,9 +251,11 @@ export const appRouter = router({
         const platformFee = totalAmount * (Number(owner.commissionPercentage) / 100);
         const ownerAmount = totalAmount - platformFee;
 
-        // Generate booking number with centre code: {CentreCode}-{YYYYMMDD}-{SequenceNumber}
+        // Generate booking number with abbreviated centre code: {CODE}-{YYYYMMDD}-{SEQ}
+        // Example: CAMP-20260601-001 (Campbelltown Mall)
+        const { getCentreCodeForBooking } = await import('./centreCodeHelper');
+        const centreCode = getCentreCodeForBooking(centre);
         const dateStr = new Date(input.startDate).toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD
-        const centreCode = centre.centreCode || `CENTRE${centre.id}`; // Fallback if no code
         const randomSeq = Math.floor(Math.random() * 1000).toString().padStart(3, '0'); // 001-999
         const bookingNumber = `${centreCode}-${dateStr}-${randomSeq}`;
 
