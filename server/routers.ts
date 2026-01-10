@@ -640,8 +640,13 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const { storagePut } = await import('./storage');
         
+        // Extract base64 data from data URL (remove "data:image/png;base64," prefix)
+        const base64Data = input.fileData.includes(',') 
+          ? input.fileData.split(',')[1] 
+          : input.fileData;
+        
         // Decode base64 and upload to S3
-        const buffer = Buffer.from(input.fileData, 'base64');
+        const buffer = Buffer.from(base64Data, 'base64');
         const fileKey = `insurance/${ctx.user.id}/${Date.now()}-${input.fileName}`;
         
         const { url } = await storagePut(fileKey, buffer, input.mimeType);

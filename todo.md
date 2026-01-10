@@ -1408,3 +1408,14 @@
 - [x] Wire up insurance upload to OCR scanning
 - [x] Update Save Changes to save all three tabs at once (already implemented)
 - [x] Test complete edit flow with all enhancements
+
+
+## Insurance Upload Fix
+
+- [x] Fix insurance document upload to use proper file handling (convert to base64 or use S3 directly)
+- [x] Convert file to base64 data URL in frontend
+- [x] Extract base64 data and upload to S3 in backend
+- [x] Fix React hooks error by moving mutations to component level
+- [ ] Test upload with PDF files
+- [ ] Test upload with image files (JPG, PNG)
+- [ ] Verify OCR scanning works after upload

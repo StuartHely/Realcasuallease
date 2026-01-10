@@ -84,6 +84,9 @@ export default function AdminUsers() {
     },
   });
 
+  const uploadInsuranceMutation = trpc.profile.uploadInsurance.useMutation();
+  const scanInsuranceMutation = trpc.profile.scanInsurance.useMutation();
+
   const updateUserMutation = trpc.admin.updateUser.useMutation({
     onSuccess: () => {
       toast.success("User updated successfully");
@@ -697,26 +700,31 @@ export default function AdminUsers() {
                       
                       setUploadingInsurance(true);
                       try {
-                        const formData = new FormData();
-                        formData.append('file', file);
-                        formData.append('userId', editingFullUser.id.toString());
-                        
-                        const uploadRes = await fetch('/api/trpc/profile.uploadInsurance', {
-                          method: 'POST',
-                          body: formData,
+                        // Convert file to base64
+                        const reader = new FileReader();
+                        const base64Promise = new Promise<string>((resolve, reject) => {
+                          reader.onload = () => resolve(reader.result as string);
+                          reader.onerror = reject;
+                          reader.readAsDataURL(file);
                         });
                         
-                        if (!uploadRes.ok) throw new Error('Upload failed');
+                        const base64 = await base64Promise;
                         
-                        const result = await uploadRes.json();
-                        const scanMutation = trpc.profile.scanInsurance.useMutation();
-                        const scanRes = await scanMutation.mutateAsync({ documentUrl: result.url });
+                        // Upload via tRPC
+                        const uploadResult = await uploadInsuranceMutation.mutateAsync({
+                          fileData: base64,
+                          fileName: file.name,
+                          mimeType: file.type,
+                        });
+                        
+                        // Scan document
+                        const scanRes = await scanInsuranceMutation.mutateAsync({ documentUrl: uploadResult.url });
                         
                         setEditingFullUser({
                           ...editingFullUser,
                           profile: {
                             ...editingFullUser.profile,
-                            insuranceDocumentUrl: result.url,
+                            insuranceDocumentUrl: uploadResult.url,
                             insuranceCompany: scanRes.insuranceCompany || editingFullUser.profile?.insuranceCompany,
                             insurancePolicyNo: scanRes.policyNumber || editingFullUser.profile?.insurancePolicyNo,
                             insuranceAmount: scanRes.insuredAmount || editingFullUser.profile?.insuranceAmount,
@@ -725,8 +733,9 @@ export default function AdminUsers() {
                         });
                         
                         toast.success('Insurance document uploaded and scanned successfully');
-                      } catch (error) {
-                        toast.error('Failed to upload insurance document');
+                      } catch (error: any) {
+                        console.error('Upload error:', error);
+                        toast.error(error.message || 'Failed to upload insurance document');
                       } finally {
                         setUploadingInsurance(false);
                       }
