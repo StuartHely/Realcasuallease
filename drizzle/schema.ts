@@ -43,6 +43,7 @@ export const customerProfiles = mysqlTable("customer_profiles", {
   state: varchar("state", { length: 50 }),
   postcode: varchar("postcode", { length: 10 }),
   productCategory: varchar("productCategory", { length: 255 }),
+  productDetails: text("productDetails"),
   insuranceCompany: varchar("insuranceCompany", { length: 255 }),
   insurancePolicyNo: varchar("insurancePolicyNo", { length: 100 }),
   insuranceAmount: decimal("insuranceAmount", { precision: 12, scale: 2 }),

@@ -1531,11 +1531,13 @@ export const appRouter = router({
         state: z.string().optional(),
         postcode: z.string().optional(),
         productCategory: z.string().optional(),
+        productDetails: z.string().optional(),
         // Insurance details
         insuranceCompany: z.string().optional(),
         insurancePolicyNo: z.string().optional(),
         insuranceAmount: z.string().optional(),
         insuranceExpiry: z.string().optional(),
+        insuranceDocumentUrl: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         const { getDb } = await import('./db');
@@ -1568,10 +1570,12 @@ export const appRouter = router({
         if (input.state !== undefined) profileUpdates.state = input.state || null;
         if (input.postcode !== undefined) profileUpdates.postcode = input.postcode || null;
         if (input.productCategory !== undefined) profileUpdates.productCategory = input.productCategory || null;
+        if (input.productDetails !== undefined) profileUpdates.productDetails = input.productDetails || null;
         if (input.insuranceCompany !== undefined) profileUpdates.insuranceCompany = input.insuranceCompany || null;
         if (input.insurancePolicyNo !== undefined) profileUpdates.insurancePolicyNo = input.insurancePolicyNo || null;
         if (input.insuranceAmount !== undefined) profileUpdates.insuranceAmount = input.insuranceAmount || null;
         if (input.insuranceExpiry !== undefined) profileUpdates.insuranceExpiry = input.insuranceExpiry ? new Date(input.insuranceExpiry) : null;
+        if (input.insuranceDocumentUrl !== undefined) profileUpdates.insuranceDocumentUrl = input.insuranceDocumentUrl || null;
 
         if (Object.keys(profileUpdates).length > 0) {
           // Check if profile exists

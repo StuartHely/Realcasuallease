@@ -1398,3 +1398,13 @@
 - [x] Load existing user data including company and insurance details
 - [x] Create backend procedure to update all user fields
 - [x] Test complete user editing flow
+
+
+## Edit User Enhancements
+
+- [x] Replace Product/Service text field with Usage Category dropdown
+- [x] Add product/service details text field
+- [x] Add insurance document upload field to Insurance tab
+- [x] Wire up insurance upload to OCR scanning
+- [x] Update Save Changes to save all three tabs at once (already implemented)
+- [x] Test complete edit flow with all enhancements

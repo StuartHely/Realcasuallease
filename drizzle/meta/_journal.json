@@ -148,6 +148,13 @@
       "when": 1768007548742,
       "tag": "0020_superb_tarot",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1768019015738,
+      "tag": "0021_solid_jean_grey",
+      "breakpoints": true
     }
   ]
 }

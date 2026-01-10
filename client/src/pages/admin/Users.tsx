@@ -16,6 +16,7 @@ export default function AdminUsers() {
   const [editingUser, setEditingUser] = useState<{ id: number; name: string | null; canPayByInvoice: boolean } | null>(null);
   const [editingFullUser, setEditingFullUser] = useState<any>(null);
   const [editTab, setEditTab] = useState<"basic" | "company" | "insurance">("basic");
+  const [uploadingInsurance, setUploadingInsurance] = useState(false);
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [newUserData, setNewUserData] = useState({
     email: "",
@@ -111,10 +112,12 @@ export default function AdminUsers() {
       state: editingFullUser.profile?.state,
       postcode: editingFullUser.profile?.postcode,
       productCategory: editingFullUser.profile?.productCategory,
+      productDetails: editingFullUser.profile?.productDetails,
       insuranceCompany: editingFullUser.profile?.insuranceCompany,
       insurancePolicyNo: editingFullUser.profile?.insurancePolicyNo,
       insuranceAmount: editingFullUser.profile?.insuranceAmount,
       insuranceExpiry: editingFullUser.profile?.insuranceExpiry,
+      insuranceDocumentUrl: editingFullUser.profile?.insuranceDocumentUrl,
     });
   };
 
@@ -595,8 +598,33 @@ export default function AdminUsers() {
                 <Input placeholder="https://" value={editingFullUser.profile?.website || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, website: e.target.value } })} />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Product/Service</label>
-                <Input value={editingFullUser.profile?.productCategory || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, productCategory: e.target.value } })} />
+                <label className="text-sm font-medium">Product/Service Category</label>
+                <select
+                  value={editingFullUser.profile?.productCategory || ""}
+                  onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, productCategory: e.target.value } })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">Select a category</option>
+                  <option value="Fashion & Apparel">Fashion & Apparel</option>
+                  <option value="Food & Beverage">Food & Beverage</option>
+                  <option value="Health & Beauty">Health & Beauty</option>
+                  <option value="Electronics & Technology">Electronics & Technology</option>
+                  <option value="Home & Living">Home & Living</option>
+                  <option value="Sports & Fitness">Sports & Fitness</option>
+                  <option value="Books & Stationery">Books & Stationery</option>
+                  <option value="Toys & Games">Toys & Games</option>
+                  <option value="Automotive">Automotive</option>
+                  <option value="Services">Services</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Product/Service Details</label>
+                <Input 
+                  placeholder="e.g., Women's activewear, Organic coffee, Mobile phone accessories" 
+                  value={editingFullUser.profile?.productDetails || ""} 
+                  onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, productDetails: e.target.value } })} 
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Address</label>
@@ -640,6 +668,76 @@ export default function AdminUsers() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Expiry Date</label>
                   <Input type="date" value={editingFullUser.profile?.insuranceExpiry ? new Date(editingFullUser.profile.insuranceExpiry).toISOString().split('T')[0] : ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, insuranceExpiry: e.target.value } })} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Insurance Document</label>
+                <div className="border-2 border-dashed rounded-lg p-4">
+                  {editingFullUser.profile?.insuranceDocumentUrl ? (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-blue-600" />
+                        <span className="text-sm">Document uploaded</span>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => window.open(editingFullUser.profile.insuranceDocumentUrl, '_blank')}>
+                        View
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No document uploaded</p>
+                  )}
+                  <Input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="mt-2"
+                    disabled={uploadingInsurance}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      
+                      setUploadingInsurance(true);
+                      try {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('userId', editingFullUser.id.toString());
+                        
+                        const uploadRes = await fetch('/api/trpc/profile.uploadInsurance', {
+                          method: 'POST',
+                          body: formData,
+                        });
+                        
+                        if (!uploadRes.ok) throw new Error('Upload failed');
+                        
+                        const result = await uploadRes.json();
+                        const scanMutation = trpc.profile.scanInsurance.useMutation();
+                        const scanRes = await scanMutation.mutateAsync({ documentUrl: result.url });
+                        
+                        setEditingFullUser({
+                          ...editingFullUser,
+                          profile: {
+                            ...editingFullUser.profile,
+                            insuranceDocumentUrl: result.url,
+                            insuranceCompany: scanRes.insuranceCompany || editingFullUser.profile?.insuranceCompany,
+                            insurancePolicyNo: scanRes.policyNumber || editingFullUser.profile?.insurancePolicyNo,
+                            insuranceAmount: scanRes.insuredAmount || editingFullUser.profile?.insuranceAmount,
+                            insuranceExpiry: scanRes.expiryDate || editingFullUser.profile?.insuranceExpiry,
+                          },
+                        });
+                        
+                        toast.success('Insurance document uploaded and scanned successfully');
+                      } catch (error) {
+                        toast.error('Failed to upload insurance document');
+                      } finally {
+                        setUploadingInsurance(false);
+                      }
+                    }}
+                  />
+                  {uploadingInsurance && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm text-muted-foreground">Uploading and scanning...</span>
+                    </div>
+                  )}
                 </div>
               </div>
               </>
