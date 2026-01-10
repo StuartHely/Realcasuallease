@@ -20,6 +20,7 @@ export const users = mysqlTable("users", {
     "mega_state_admin",
     "mega_admin"
   ]).default("customer").notNull(),
+  canPayByInvoice: boolean("canPayByInvoice").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -236,6 +237,9 @@ export const bookings = mysqlTable("bookings", {
   tablesRequested: int("tablesRequested").default(0),
   chairsRequested: int("chairsRequested").default(0),
   stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
+  paymentMethod: mysqlEnum("paymentMethod", ["stripe", "invoice"]).default("stripe").notNull(),
+  paidAt: timestamp("paidAt"),
+  paymentRecordedBy: int("paymentRecordedBy").references(() => users.id),
   customerEmail: varchar("customerEmail", { length: 320 }),
   confirmationEmailSent: boolean("confirmationEmailSent").default(false).notNull(),
   reminderEmailSent: boolean("reminderEmailSent").default(false).notNull(),

@@ -339,6 +339,10 @@ export const appRouter = router({
           }
         }
 
+        // Check if user can pay by invoice
+        const currentUser = await db.getUserByOpenId(ctx.user.openId);
+        const canPayByInvoice = currentUser?.canPayByInvoice || false;
+
         // Create booking
         const result = await db.createBooking({
           bookingNumber,
@@ -355,6 +359,7 @@ export const appRouter = router({
           gstPercentage: (gstRate * 100).toFixed(2), // Store GST percentage at time of booking
           ownerAmount: ownerAmount.toFixed(2),
           platformFee: platformFee.toFixed(2),
+          paymentMethod: canPayByInvoice ? "invoice" : "stripe",
           status: requiresApproval ? "pending" : (site.instantBooking ? "confirmed" : "pending"),
           requiresApproval,
           tablesRequested: input.tablesRequested || 0,
@@ -366,6 +371,7 @@ export const appRouter = router({
           bookingNumber,
           totalAmount,
           requiresApproval,
+          canPayByInvoice,
           equipmentWarning,
           costBreakdown: {
             weekdayCount,
@@ -1358,6 +1364,26 @@ export const appRouter = router({
   }),
 
   // System Configuration
+  users: router({
+    list: adminProcedure.query(async () => {
+      return await db.getAllUsers();
+    }),
+
+    updateInvoiceFlag: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        canPayByInvoice: z.boolean(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Only mega_admin and owner_super_admin can modify invoice payment flag
+        if (ctx.user.role !== "mega_admin" && ctx.user.role !== "owner_super_admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only SuperAdmin can modify invoice payment settings" });
+        }
+        await db.updateUserInvoiceFlag(input.userId, input.canPayByInvoice);
+        return { success: true };
+      }),
+  }),
+
   systemConfig: router({
     getGstPercentage: publicProcedure.query(async () => {
       const value = await getConfigValue("gst_percentage");

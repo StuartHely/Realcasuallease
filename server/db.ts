@@ -619,7 +619,18 @@ export async function getAllBookings() {
 export async function getAllUsers() {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return await db.select().from(users);
+  
+  const result = await db.select({
+    id: users.id,
+    name: users.name,
+    email: users.email,
+    role: users.role,
+    canPayByInvoice: users.canPayByInvoice,
+    createdAt: users.createdAt,
+    lastSignedIn: users.lastSignedIn,
+  }).from(users).orderBy(desc(users.createdAt));
+  
+  return result;
 }
 
 
@@ -971,4 +982,18 @@ export async function getUsageTypeById(id: number) {
     .limit(1);
   
   return result[0] || null;
+}
+
+/**
+ * Update user's canPayByInvoice flag
+ */
+export async function updateUserInvoiceFlag(userId: number, canPayByInvoice: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(users)
+    .set({ canPayByInvoice })
+    .where(eq(users.id, userId));
+  
+  return true;
 }

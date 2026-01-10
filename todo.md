@@ -1310,3 +1310,23 @@
 - [x] Create backend procedure to copy categories from one site to all others in centre (applyToAllSites mutation exists)
 - [x] Show success message with count of sites updated (toast shows "Applied to X sites in this centre")
 - [x] Test syncing categories across multiple sites (functionality verified)
+
+## Invoice Payment Workflow (Jan 9, 2025)
+- [x] Add `canPayByInvoice` boolean field to users table schema
+- [x] Add `paymentMethod` field to bookings table (stripe/invoice)
+- [x] Add `paidAt` timestamp field to bookings table
+- [x] Add `paymentRecordedBy` field to bookings table (admin who confirmed payment)
+- [x] Create checkbox in Users admin page to enable "Pay by Invoice" for clients
+- [x] Create users router with list and updateInvoiceFlag procedures
+- [x] Build Users admin page with search and invoice flag management
+- [x] Modify booking creation flow to check user's canPayByInvoice flag
+- [x] Skip Stripe payment for invoice-approved clients (paymentMethod set to 'invoice')
+- [ ] Update frontend booking flow to skip Stripe payment step for invoice clients
+- [ ] Generate invoice PDF for invoice bookings
+- [ ] Create SuperAdmin "Record Payment" interface
+- [ ] Add search by booking number functionality
+- [ ] Implement payment confirmation that triggers status change
+- [ ] Create payment split logic (owner/manager/platform fees)
+- [ ] Add transaction records for payment splits
+- [ ] Send payment confirmation emails to all parties
+- [ ] Test complete workflow from booking to payment recording
