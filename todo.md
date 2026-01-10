@@ -1508,3 +1508,8 @@
 - [x] Update backend to detect all approval reasons (insurance expired, insufficient coverage, category not approved, duplicate booking, site requires approval, custom text)
 - [x] Update getBookingsByStatus to include usageCategoryId and additionalCategoryText fields
 - [x] Test approval reason logic - 10 tests passing
+
+## Remove # Prefix from Booking Numbers
+- [x] Find # prefix in Pending Approvals page
+- [x] Remove # prefix from booking number display
+- [x] Check other pages for consistency - removed from MyBookings, OwnerApprovals, Payments

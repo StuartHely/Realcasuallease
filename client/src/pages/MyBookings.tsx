@@ -240,7 +240,7 @@ export default function MyBookings() {
                         <div className="flex items-start justify-between">
                           <div>
                             <CardTitle className="flex items-center gap-2">
-                              Booking #{booking.bookingNumber}
+                              Booking {booking.bookingNumber}
                               <Badge variant="outline" className={statusColors[booking.status]}>
                                 {booking.status.toUpperCase()}
                               </Badge>

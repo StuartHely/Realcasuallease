@@ -82,7 +82,7 @@ export default function PendingApprovals() {
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="text-xl">
-                      Booking #{booking.bookingNumber}
+                      Booking {booking.bookingNumber}
                     </CardTitle>
                     <CardDescription className="mt-1">
                       Submitted on {formatDate(booking.createdAt)}

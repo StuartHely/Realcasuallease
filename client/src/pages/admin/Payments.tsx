@@ -111,7 +111,7 @@ export default function Payments() {
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <CardTitle className="text-lg">
-                        Booking #{booking.bookingNumber}
+                        Booking {booking.bookingNumber}
                       </CardTitle>
                       <CardDescription>
                         {booking.centreName} - Site {booking.siteNumber}

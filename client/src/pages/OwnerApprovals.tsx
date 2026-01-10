@@ -186,7 +186,7 @@ function OwnerApprovalsContent() {
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      Booking #{booking.bookingNumber}
+                      Booking {booking.bookingNumber}
                       {getStatusBadge(booking.status)}
                     </CardTitle>
                     <CardDescription>
