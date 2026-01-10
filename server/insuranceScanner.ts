@@ -38,13 +38,22 @@ If any field cannot be found, use null for that field.`,
               type: 'text',
               text: 'Please analyze this insurance certificate and extract the expiry date, insured amount (in millions), policy number, and insurance company name.',
             },
-            {
-              type: 'image_url',
-              image_url: {
-                url: documentUrl,
-                detail: 'high',
-              },
-            },
+            // Check if URL is a PDF and use file_url type instead of image_url
+            documentUrl.toLowerCase().endsWith('.pdf')
+              ? {
+                  type: 'file_url',
+                  file_url: {
+                    url: documentUrl,
+                    mime_type: 'application/pdf',
+                  },
+                }
+              : {
+                  type: 'image_url',
+                  image_url: {
+                    url: documentUrl,
+                    detail: 'high',
+                  },
+                },
           ],
         },
       ],

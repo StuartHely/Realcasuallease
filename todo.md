@@ -1438,3 +1438,10 @@
 - [x] Update registration flow to prompt insurance upload first
 - [x] Auto-fill insurance fields after successful scan during registration
 - [x] Test complete registration workflow with insurance upload
+
+## OCR "Could not extract" Error Debug
+- [x] Investigate "Could not extract" error message
+- [x] Check insuranceScanner.ts LLM prompt and response parsing
+- [x] Verify LLM API call format and error handling
+- [x] Fix extraction logic - changed image_url to file_url for PDFs
+- [x] Test with actual insurance document upload - 5 tests passing
