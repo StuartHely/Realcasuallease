@@ -1445,3 +1445,11 @@
 - [x] Verify LLM API call format and error handling
 - [x] Fix extraction logic - changed image_url to file_url for PDFs
 - [x] Test with actual insurance document upload - 5 tests passing
+
+## Expired Insurance Handling
+- [x] Modify scanner to extract data from expired policies (don't block scan)
+- [x] Remove expiry validation from scanInsuranceDocument function - returns warnings instead
+- [x] Add red warning UI in Edit User dialog when expiry date is in the past
+- [x] Add red warning UI in Profile page when expiry date is in the past
+- [x] Allow saving expired insurance data for admin records
+- [x] Test with expired policy PDF - 5 tests passing

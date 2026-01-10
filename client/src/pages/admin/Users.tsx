@@ -775,8 +775,14 @@ export default function AdminUsers() {
                             },
                           });
                           
-                            setScanError(null);
-                            toast.success('Insurance document uploaded and scanned successfully');
+                            // Show warnings if any (e.g., expired policy)
+                            if (scanRes.warnings && scanRes.warnings.length > 0) {
+                              setScanError(scanRes.warnings.join(', '));
+                              toast.warning('Document scanned with warnings. Please review the details.');
+                            } else {
+                              setScanError(null);
+                              toast.success('Insurance document uploaded and scanned successfully');
+                            }
                           } catch (scanError: any) {
                             console.error('Scan error:', scanError);
                             setScanError(`Failed to scan document: ${scanError.message || 'Unknown error'}. Please enter insurance details manually.`);

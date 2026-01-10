@@ -206,7 +206,12 @@ export default function Profile() {
                             insuranceExpiry: scanData.expiryDate || prev.insuranceExpiry,
                           }));
                           
-                          toast.success('Insurance document scanned successfully! Fields have been auto-filled.');
+                          // Show warnings if any (e.g., expired policy)
+                          if (scanData.warnings && scanData.warnings.length > 0) {
+                            toast.warning(`Document scanned with warnings: ${scanData.warnings.join(', ')}`);
+                          } else {
+                            toast.success('Insurance document scanned successfully! Fields have been auto-filled.');
+                          }
                         } catch (error) {
                           toast.error('Failed to process insurance document. Please enter details manually.');
                           console.error(error);

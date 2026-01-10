@@ -664,14 +664,11 @@ export const appRouter = router({
         const scanResult = await scanInsuranceDocument(input.documentUrl);
         const validation = validateInsurance(scanResult);
         
-        if (!validation.valid) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: validation.errors.join(', '),
-          });
-        }
-        
-        return scanResult;
+        // Return scan result with validation warnings, but don't block
+        return {
+          ...scanResult,
+          warnings: validation.valid ? [] : validation.errors,
+        };
       }),
   }),
 
