@@ -241,6 +241,7 @@ export default function AdminBookings() {
                         <TableHead>Dates</TableHead>
                         <TableHead>Amount</TableHead>
                         <TableHead>Status</TableHead>
+                        {selectedStatus === "unpaid" && <TableHead>Due Date</TableHead>}
                         <TableHead>Created</TableHead>
                         {selectedStatus === "pending" && <TableHead>Actions</TableHead>}
                       </TableRow>
@@ -295,6 +296,33 @@ export default function AdminBookings() {
                               )}
                             </div>
                           </TableCell>
+                          {selectedStatus === "unpaid" && (
+                            <TableCell>
+                              {booking.paymentDueDate ? (
+                                <div className="text-sm">
+                                  {(() => {
+                                    const dueDate = new Date(booking.paymentDueDate);
+                                    const today = new Date();
+                                    const isOverdue = dueDate < today;
+                                    const daysOverdue = isOverdue ? Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                                    
+                                    return (
+                                      <div className={isOverdue ? "text-red-600 font-semibold" : "text-muted-foreground"}>
+                                        <div>{format(dueDate, "MMM d, yyyy")}</div>
+                                        {isOverdue && (
+                                          <div className="text-xs mt-0.5">
+                                            {daysOverdue} day{daysOverdue !== 1 ? 's' : ''} overdue
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                          )}
                           <TableCell className="text-sm text-muted-foreground">
                             {format(new Date(booking.createdAt), "MMM d, yyyy")}
                           </TableCell>

@@ -162,6 +162,13 @@
       "when": 1768040443788,
       "tag": "0022_complete_queen_noir",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1768128347129,
+      "tag": "0023_illegal_mandarin",
+      "breakpoints": true
     }
   ]
 }

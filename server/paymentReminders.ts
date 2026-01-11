@@ -6,9 +6,9 @@ import { eq, and, lt, gte, isNull } from 'drizzle-orm';
 /**
  * Check for invoices that need payment reminders and send emails
  * Reminder schedule:
- * - 7 days before due date
- * - On due date
- * - 7 days after due date (overdue)
+ * - 7 days after due date (1st reminder)
+ * - 14 days after due date (2nd reminder)
+ * - 30 days after due date (3rd reminder)
  */
 export async function sendPaymentReminders(): Promise<{
   sent: number;
@@ -21,17 +21,11 @@ export async function sendPaymentReminders(): Promise<{
   }
 
   const now = new Date();
-  const sevenDaysFromNow = new Date(now);
-  sevenDaysFromNow.setDate(now.getDate() + 7);
-  
-  const sevenDaysAgo = new Date(now);
-  sevenDaysAgo.setDate(now.getDate() - 7);
-
   let sentCount = 0;
   let failedCount = 0;
 
   try {
-    // Get all unpaid invoice bookings with approved status
+    // Get all unpaid invoice bookings with due dates
     const unpaidBookings = await db
       .select({
         bookingId: bookings.id,
@@ -40,7 +34,8 @@ export async function sendPaymentReminders(): Promise<{
         endDate: bookings.endDate,
         totalAmount: bookings.totalAmount,
         gstAmount: bookings.gstAmount,
-        approvedAt: bookings.approvedAt,
+        paymentDueDate: bookings.paymentDueDate,
+        remindersSent: bookings.remindersSent,
         lastReminderSent: bookings.lastReminderSent,
         // Customer info
         customerId: users.id,
@@ -58,26 +53,45 @@ export async function sendPaymentReminders(): Promise<{
       .where(
         and(
           eq(bookings.paymentMethod, 'invoice'),
-          eq(bookings.status, 'confirmed'),
           isNull(bookings.paidAt)
         )
       );
 
     for (const booking of unpaidBookings) {
-      if (!booking.approvedAt || !booking.customerEmail) {
+      if (!booking.paymentDueDate || !booking.customerEmail) {
         continue;
       }
 
-      // Calculate due date (14 days from approval)
-      const dueDate = new Date(booking.approvedAt);
-      dueDate.setDate(dueDate.getDate() + 14);
+      const dueDate = new Date(booking.paymentDueDate);
 
-      // Calculate days until/since due date
-      const daysUntilDue = Math.floor((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      // Calculate days overdue (negative means not due yet)
+      const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      // Skip if not overdue yet
+      if (daysOverdue < 0) {
+        continue;
+      }
+
+      // Reminder intervals: 7, 14, 30 days after due date
+      const REMINDER_INTERVALS = [7, 14, 30];
+      const remindersSent = booking.remindersSent || 0;
 
       // Determine if we should send a reminder
       let shouldSend = false;
-      let reminderType: 'upcoming' | 'due' | 'overdue' | null = null;
+      let reminderNumber = 0;
+
+      // Check if days overdue matches any interval and we haven't sent that reminder yet
+      for (let i = 0; i < REMINDER_INTERVALS.length; i++) {
+        if (daysOverdue >= REMINDER_INTERVALS[i] && remindersSent <= i) {
+          shouldSend = true;
+          reminderNumber = i + 1;
+          break;
+        }
+      }
+
+      if (!shouldSend) {
+        continue;
+      }
 
       // Check if we already sent a reminder recently (within 24 hours)
       const lastReminder = booking.lastReminderSent ? new Date(booking.lastReminderSent) : null;
@@ -90,38 +104,21 @@ export async function sendPaymentReminders(): Promise<{
         continue;
       }
 
-      // 7 days before due date
-      if (daysUntilDue === 7) {
-        shouldSend = true;
-        reminderType = 'upcoming';
-      }
-      // On due date (within 1 day)
-      else if (daysUntilDue >= 0 && daysUntilDue <= 1) {
-        shouldSend = true;
-        reminderType = 'due';
-      }
-      // 7 days overdue
-      else if (daysUntilDue === -7) {
-        shouldSend = true;
-        reminderType = 'overdue';
-      }
-
-      if (!shouldSend || !reminderType) {
-        continue;
-      }
-
       // Send reminder email
-      const sent = await sendReminderEmail(booking, reminderType, dueDate);
+      const sent = await sendReminderEmail(booking, reminderNumber, daysOverdue, dueDate);
 
       if (sent) {
-        // Update lastReminderSent timestamp
+        // Update reminder count and last sent timestamp
         await db
           .update(bookings)
-          .set({ lastReminderSent: now })
+          .set({ 
+            remindersSent: reminderNumber,
+            lastReminderSent: now 
+          })
           .where(eq(bookings.id, booking.bookingId));
         
         sentCount++;
-        console.log(`[Payment Reminders] Sent ${reminderType} reminder for booking ${booking.bookingNumber}`);
+        console.log(`[Payment Reminders] Sent reminder #${reminderNumber} for booking ${booking.bookingNumber} (${daysOverdue} days overdue)`);
       } else {
         failedCount++;
         console.error(`[Payment Reminders] Failed to send reminder for booking ${booking.bookingNumber}`);
@@ -141,7 +138,8 @@ export async function sendPaymentReminders(): Promise<{
  */
 async function sendReminderEmail(
   booking: any,
-  reminderType: 'upcoming' | 'due' | 'overdue',
+  reminderNumber: number,
+  daysOverdue: number,
   dueDate: Date
 ): Promise<boolean> {
   const dueDateStr = dueDate.toLocaleDateString('en-AU', {
@@ -166,28 +164,10 @@ async function sendReminderEmail(
     year: 'numeric',
   });
 
-  // Customize message based on reminder type
-  let subject: string;
-  let urgencyMessage: string;
-  let urgencyColor: string;
-
-  switch (reminderType) {
-    case 'upcoming':
-      subject = `Payment Reminder: Invoice ${booking.bookingNumber} Due in 7 Days`;
-      urgencyMessage = 'Your payment is due in <strong>7 days</strong>.';
-      urgencyColor = '#ffc107'; // Warning yellow
-      break;
-    case 'due':
-      subject = `Payment Due Today: Invoice ${booking.bookingNumber}`;
-      urgencyMessage = 'Your payment is <strong>due today</strong>.';
-      urgencyColor = '#ff9800'; // Orange
-      break;
-    case 'overdue':
-      subject = `Overdue Payment: Invoice ${booking.bookingNumber}`;
-      urgencyMessage = 'Your payment is now <strong>7 days overdue</strong>. Please pay immediately to avoid late fees.';
-      urgencyColor = '#f44336'; // Red
-      break;
-  }
+  // Customize message based on reminder number and days overdue
+  const subject = `Payment Reminder #${reminderNumber}: Invoice ${booking.bookingNumber} - ${daysOverdue} Days Overdue`;
+  const urgencyMessage = `Your payment is now <strong>${daysOverdue} day${daysOverdue !== 1 ? 's' : ''} overdue</strong>. Please pay immediately to avoid late fees.`;
+  const urgencyColor = reminderNumber === 1 ? '#ff9800' : reminderNumber === 2 ? '#f44336' : '#b71c1c'; // Orange -> Red -> Dark Red
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

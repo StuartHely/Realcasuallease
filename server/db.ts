@@ -380,6 +380,9 @@ export async function getBookingsByStatus(status?: "pending" | "confirmed" | "ca
       chairsRequested: bookings.chairsRequested,
       paymentMethod: bookings.paymentMethod,
       paidAt: bookings.paidAt,
+      paymentDueDate: bookings.paymentDueDate,
+      remindersSent: bookings.remindersSent,
+      lastReminderSent: bookings.lastReminderSent,
       createdAt: bookings.createdAt,
     })
     .from(bookings)
@@ -426,6 +429,9 @@ export async function getUnpaidInvoiceBookings() {
       chairsRequested: bookings.chairsRequested,
       paymentMethod: bookings.paymentMethod,
       paidAt: bookings.paidAt,
+      paymentDueDate: bookings.paymentDueDate,
+      remindersSent: bookings.remindersSent,
+      lastReminderSent: bookings.lastReminderSent,
       createdAt: bookings.createdAt,
     })
     .from(bookings)

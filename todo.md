@@ -1548,3 +1548,25 @@
 - [x] Add visual badge/icon to unpaid invoice bookings in all tabs
 - [x] Update count calculation to include unpaid count
 - [x] Test Unpaid tab shows only unpaid invoice bookings regardless of status (pending or confirmed) - 9 tests passing
+
+## Fix Duplicate Booking Logic - Category Exclusivity
+- [x] Fix duplicate booking check to look for DIFFERENT customers (not same customer)
+- [x] Add date overlap check (startDate/endDate conflict detection)
+- [x] Update approval reason to show when another customer has overlapping booking in same category
+- [x] Test category exclusivity logic with overlapping and non-overlapping dates - 4 tests passing
+
+## Payment Due Date Tracking
+- [x] Add paymentDueDate field to bookings table schema
+- [x] Run database migration to add new column
+- [x] Calculate due date automatically (7 days after booking creation for invoice bookings)
+- [x] Display due date in Unpaid tab
+- [x] Highlight overdue invoices in red when past due date
+- [x] Add "Days Overdue" indicator for overdue invoices - 4 tests passing
+
+## Automated Unpaid Reminder Emails
+- [x] Create email template for payment reminders
+- [x] Implement reminder scheduling logic (7, 14, 30 days after due date)
+- [x] Track last reminder sent date to avoid duplicate emails
+- [x] Add remindersSent field to bookings table
+- [x] Create tRPC procedure to manually trigger reminders
+- [x] Test reminder email sending at configured intervals - 6 tests passing

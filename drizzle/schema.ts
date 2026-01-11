@@ -241,6 +241,8 @@ export const bookings = mysqlTable("bookings", {
   paymentMethod: mysqlEnum("paymentMethod", ["stripe", "invoice"]).default("stripe").notNull(),
   paidAt: timestamp("paidAt"),
   paymentRecordedBy: int("paymentRecordedBy").references(() => users.id),
+  paymentDueDate: timestamp("paymentDueDate"), // For invoice bookings - when payment is due
+  remindersSent: int("remindersSent").default(0).notNull(), // Count of payment reminders sent
   customerEmail: varchar("customerEmail", { length: 320 }),
   confirmationEmailSent: boolean("confirmationEmailSent").default(false).notNull(),
   reminderEmailSent: boolean("reminderEmailSent").default(false).notNull(),

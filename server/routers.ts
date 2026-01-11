@@ -339,11 +339,11 @@ export const appRouter = router({
               if (!isApproved) {
                 requiresApproval = true;
               } else {
-                // Category is explicitly approved - check for duplicates
-                // Check for duplicate bookings: same customer + category + centre (any site)
+                // Category is explicitly approved - check for overlapping bookings from OTHER customers
+                // This ensures category exclusivity: only one vendor per category at a time
               const { getDb } = await import("./db");
               const { bookings, sites: sitesTable } = await import("../drizzle/schema");
-              const { eq, and } = await import("drizzle-orm");
+              const { eq, and, ne, or, lte, gte } = await import("drizzle-orm");
               const dbInstance = await getDb();
               if (dbInstance) {
                 // Get the centre ID for the current site
@@ -354,21 +354,30 @@ export const appRouter = router({
                 if (currentSite.length > 0) {
                   const centreId = currentSite[0].centreId;
                   
-                  // Find all bookings by this customer with same category at same centre
-                  const duplicates = await dbInstance.select({
+                  // Find overlapping bookings from DIFFERENT customers with same category at same centre
+                  // Date overlap logic: (newStart <= existingEnd) AND (newEnd >= existingStart)
+                  const overlappingBookings = await dbInstance.select({
                     bookingId: bookings.id,
-                    siteId: bookings.siteId,
-                    centreId: sitesTable.centreId,
+                    customerId: bookings.customerId,
+                    startDate: bookings.startDate,
+                    endDate: bookings.endDate,
                   })
                     .from(bookings)
                     .innerJoin(sitesTable, eq(bookings.siteId, sitesTable.id))
                     .where(and(
-                      eq(bookings.customerId, ctx.user.id),
-                      eq(bookings.usageCategoryId, input.usageCategoryId),
-                      eq(sitesTable.centreId, centreId)
+                      ne(bookings.customerId, ctx.user.id), // DIFFERENT customer
+                      eq(bookings.usageCategoryId, input.usageCategoryId), // SAME category
+                      eq(sitesTable.centreId, centreId), // SAME centre
+                      or(
+                        eq(bookings.status, 'pending'),
+                        eq(bookings.status, 'confirmed')
+                      ), // Only active bookings
+                      // Date overlap check
+                      lte(bookings.startDate, input.endDate),
+                      gte(bookings.endDate, input.startDate)
                     ));
                   
-                  if (duplicates.length > 0) {
+                  if (overlappingBookings.length > 0) {
                     requiresApproval = true;
                   }
                 }
@@ -407,6 +416,9 @@ export const appRouter = router({
           }
         }
 
+        // Calculate payment due date for invoice bookings (7 days from booking creation)
+        const paymentDueDate = canPayByInvoice ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null;
+
         // Create booking
         const result = await db.createBooking({
           bookingNumber,
@@ -424,6 +436,7 @@ export const appRouter = router({
           ownerAmount: ownerAmount.toFixed(2),
           platformFee: platformFee.toFixed(2),
           paymentMethod: canPayByInvoice ? "invoice" : "stripe",
+          paymentDueDate: paymentDueDate,
           status: requiresApproval ? "pending" : (site.instantBooking ? "confirmed" : "pending"),
           requiresApproval,
           tablesRequested: input.tablesRequested || 0,
@@ -1367,25 +1380,32 @@ export const appRouter = router({
                     const category = allCategories.find(c => c.id === booking.usageCategoryId);
                     reasons.push(`Usage category "${category?.name || 'Unknown'}" not approved for this site`);
                   } else {
-                    // Check for duplicate bookings
+                    // Check for overlapping bookings from OTHER customers (category exclusivity)
                     const { getDb } = await import('./db');
                     const { bookings: bookingsTable, sites: sitesTable } = await import('../drizzle/schema');
-                    const { eq, and, ne } = await import('drizzle-orm');
+                    const { eq, and, ne, or, lte, gte } = await import('drizzle-orm');
                     const dbInstance = await getDb();
                     
                     if (dbInstance && site) {
-                      const duplicates = await dbInstance.select()
+                      const overlappingBookings = await dbInstance.select()
                         .from(bookingsTable)
                         .innerJoin(sitesTable, eq(bookingsTable.siteId, sitesTable.id))
                         .where(and(
-                          eq(bookingsTable.customerId, booking.customerId),
-                          eq(bookingsTable.usageCategoryId, booking.usageCategoryId),
-                          eq(sitesTable.centreId, site.centreId),
-                          ne(bookingsTable.id, booking.id)
+                          ne(bookingsTable.customerId, booking.customerId), // DIFFERENT customer
+                          eq(bookingsTable.usageCategoryId, booking.usageCategoryId), // SAME category
+                          eq(sitesTable.centreId, site.centreId), // SAME centre
+                          ne(bookingsTable.id, booking.id), // DIFFERENT booking
+                          or(
+                            eq(bookingsTable.status, 'pending'),
+                            eq(bookingsTable.status, 'confirmed')
+                          ), // Only active bookings
+                          // Date overlap check
+                          lte(bookingsTable.startDate, booking.endDate),
+                          gte(bookingsTable.endDate, booking.startDate)
                         ));
                       
-                      if (duplicates.length > 0) {
-                        reasons.push('Duplicate booking: customer already has booking with same category at this centre');
+                      if (overlappingBookings.length > 0) {
+                        reasons.push('Category conflict: another customer has overlapping booking with same category at this centre');
                       }
                     }
                   }
@@ -1519,6 +1539,12 @@ export const appRouter = router({
       .input(z.object({ bookingId: z.number() }))
       .mutation(async ({ input, ctx }) => {
         return await db.recordPayment(input.bookingId, ctx.user.name || 'Admin');
+      }),
+
+    triggerPaymentReminders: adminProcedure
+      .mutation(async () => {
+        const { sendPaymentReminders } = await import('./paymentReminders');
+        return await sendPaymentReminders();
       }),
 
     // Invoice Dashboard
