@@ -226,6 +226,69 @@ export async function getShoppingCentreById(id: number) {
   };
 }
 
+export async function searchShoppingCentres(query: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Parse query for site-specific patterns (e.g., "Pacific Square Site 2")
+  const sitePattern = /site\s+(\d+|[a-z0-9]+)/i;
+  const siteMatch = query.match(sitePattern);
+  
+  // Remove site number from query for centre matching
+  const centreQuery = siteMatch ? query.replace(sitePattern, "").trim() : query;
+  
+  // Get all centres
+  const allCentres = await db.select().from(shoppingCentres);
+  
+  // Simple fuzzy matching helper
+  const fuzzyMatch = (query: string, target: string, threshold: number) => {
+    const q = query.toLowerCase();
+    const t = target.toLowerCase();
+    return t.includes(q) || q.includes(t);
+  };
+  
+  // Filter using fuzzy matching
+  const matchedCentres = allCentres.filter(centre => {
+    return (
+      fuzzyMatch(centreQuery, centre.name || '', 2) ||
+      fuzzyMatch(centreQuery, centre.suburb || '', 2) ||
+      fuzzyMatch(centreQuery, centre.city || '', 2)
+    );
+  });
+  
+  return matchedCentres;
+}
+
+export async function uploadCentreMap(centreId: number, imageData: string, fileName: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Import storage helper
+  const { storagePut } = await import("./storage");
+  
+  // Extract base64 data (remove data:image/xxx;base64, prefix if present)
+  const base64Data = imageData.includes(',') ? imageData.split(',')[1] : imageData;
+  const buffer = Buffer.from(base64Data, 'base64');
+  
+  // Determine content type from fileName
+  const ext = fileName.toLowerCase().split('.').pop();
+  const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
+  
+  // Generate unique file key
+  const timestamp = Date.now();
+  const fileKey = `centres/maps/${centreId}-${timestamp}.${ext}`;
+  
+  // Upload to S3
+  const { url } = await storagePut(fileKey, buffer, contentType);
+  
+  // Update centre with map URL
+  await db.update(shoppingCentres)
+    .set({ mapImageUrl: url })
+    .where(eq(shoppingCentres.id, centreId));
+  
+  return { url, success: true };
+}
+
 export async function createShoppingCentre(centre: InsertShoppingCentre) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -563,6 +626,72 @@ export async function deleteFloorLevel(id: number) {
   if (!db) throw new Error("Database not available");
 
   return await db.delete(floorLevels).where(eq(floorLevels.id, id));
+}
+
+export async function getFloorLevelsByCentre(centreId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select()
+    .from(floorLevels)
+    .where(eq(floorLevels.centreId, centreId))
+    .orderBy(floorLevels.displayOrder);
+}
+
+export async function uploadFloorLevelMap(floorLevelId: number, imageData: string, fileName: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Import storage helper
+  const { storagePut } = await import("./storage");
+  
+  // Extract base64 data
+  const base64Data = imageData.includes(',') ? imageData.split(',')[1] : imageData;
+  const buffer = Buffer.from(base64Data, 'base64');
+  
+  // Determine content type
+  const ext = fileName.toLowerCase().split('.').pop();
+  const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
+  
+  // Generate unique file key
+  const timestamp = Date.now();
+  const fileKey = `centres/floor-maps/${floorLevelId}-${timestamp}.${ext}`;
+  
+  // Upload to S3
+  const { url } = await storagePut(fileKey, buffer, contentType);
+  
+  // Update floor level with new map URL
+  await db.update(floorLevels)
+    .set({ mapImageUrl: url })
+    .where(eq(floorLevels.id, floorLevelId));
+  
+  return { url, success: true };
+}
+
+export async function getSitesByFloorLevel(floorLevelId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select()
+    .from(sites)
+    .where(eq(sites.floorLevelId, floorLevelId));
+}
+
+export async function saveSiteMarkers(markers: Array<{ siteId: number; x: number; y: number }>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Update each site with marker coordinates
+  for (const marker of markers) {
+    await db.update(sites)
+      .set({
+        mapMarkerX: marker.x,
+        mapMarkerY: marker.y,
+      })
+      .where(eq(sites.id, marker.siteId));
+  }
+  
+  return { success: true, count: markers.length };
 }
 
 export async function resetSiteMarker(siteId: number) {

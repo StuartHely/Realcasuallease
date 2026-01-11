@@ -1582,3 +1582,20 @@
 - [x] Found missing getAllSites() and getAllBookings() functions in db.ts
 - [x] Added missing functions to fix dashboard stats query
 - [x] Verify dashboard now displays correct counts - 52 centres, 81 sites, 577 bookings
+
+## Fix TypeScript Errors - Floor Plan Functions
+- [x] Add saveSiteMarkers() function to db.ts
+- [x] Add getFloorLevelsByCentre() function to db.ts
+- [x] Add uploadFloorLevelMap() function to db.ts
+- [x] Add getSitesByFloorLevel() function to db.ts
+- [x] Add searchShoppingCentres() function to db.ts
+- [x] Add uploadCentreMap() function to db.ts
+- [x] Reduced TypeScript errors from 35 to 19 (remaining are type annotations and function signature mismatches)
+
+## Test Unpaid Tab Functionality
+- [x] Navigate to /admin/bookings and verify Unpaid tab exists
+- [x] Check that unpaid invoice bookings display correctly - shows "No unpaid bookings found"
+- [x] Verify due date column shows correct dates - N/A (no unpaid bookings)
+- [x] Test overdue indicator appears for past-due invoices - N/A (no unpaid bookings)
+- [x] Verify count badge shows correct number of unpaid invoices - shows "Unpaid (0)"
+- [x] Database check confirms: 0 invoice bookings exist (all 577 bookings are Stripe payments)
