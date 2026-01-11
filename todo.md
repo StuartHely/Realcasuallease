@@ -1540,3 +1540,11 @@
 - [x] Display format: "Pending (3)", "All Bookings (15)", etc.
 - [x] Calculate counts from bookings data in real-time
 - [x] Test count badges update correctly when bookings change - 8 tests passing
+
+## Booking Management - Unpaid Tab
+- [x] Add "Unpaid" tab after "Completed" tab
+- [x] Update BookingStatus type to include "unpaid"
+- [x] Create backend query to filter unpaid invoice bookings (paymentMethod=invoice AND paidAt IS NULL)
+- [x] Add visual badge/icon to unpaid invoice bookings in all tabs
+- [x] Update count calculation to include unpaid count
+- [x] Test Unpaid tab shows only unpaid invoice bookings regardless of status (pending or confirmed) - 9 tests passing

@@ -27,7 +27,7 @@ import { CheckCircle, XCircle, Clock, Calendar, DollarSign, User, MapPin, Search
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-type BookingStatus = "all" | "pending" | "confirmed" | "cancelled" | "completed";
+type BookingStatus = "all" | "pending" | "confirmed" | "cancelled" | "completed" | "unpaid";
 
 export default function AdminBookings() {
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus>("pending");
@@ -48,7 +48,7 @@ export default function AdminBookings() {
 
   // Calculate counts for each status
   const statusCounts = useMemo(() => {
-    if (!allBookings) return { all: 0, pending: 0, confirmed: 0, cancelled: 0, completed: 0 };
+    if (!allBookings) return { all: 0, pending: 0, confirmed: 0, cancelled: 0, completed: 0, unpaid: 0 };
     
     return {
       all: allBookings.length,
@@ -56,6 +56,7 @@ export default function AdminBookings() {
       confirmed: allBookings.filter(b => b.status === 'confirmed').length,
       cancelled: allBookings.filter(b => b.status === 'cancelled').length,
       completed: allBookings.filter(b => b.status === 'completed').length,
+      unpaid: allBookings.filter(b => b.paymentMethod === 'invoice' && !b.paidAt).length,
     };
   }, [allBookings]);
 
@@ -197,6 +198,11 @@ export default function AdminBookings() {
             Completed
             <span className="ml-1.5 text-xs opacity-70">({statusCounts.completed})</span>
           </TabsTrigger>
+          <TabsTrigger value="unpaid">
+            <DollarSign className="h-4 w-4 mr-2" />
+            Unpaid
+            <span className="ml-1.5 text-xs opacity-70">({statusCounts.unpaid})</span>
+          </TabsTrigger>
           <TabsTrigger value="all">
             All Bookings
             <span className="ml-1.5 text-xs opacity-70">({statusCounts.all})</span>
@@ -278,7 +284,17 @@ export default function AdminBookings() {
                               <div className="font-medium">${booking.totalAmount}</div>
                             </div>
                           </TableCell>
-                          <TableCell>{getStatusBadge(booking.status as BookingStatus)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              {getStatusBadge(booking.status as BookingStatus)}
+                              {booking.paymentMethod === 'invoice' && !booking.paidAt && (
+                                <Badge variant="outline" className="text-orange-600 border-orange-600 w-fit">
+                                  <DollarSign className="h-3 w-3 mr-1" />
+                                  Unpaid Invoice
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {format(new Date(booking.createdAt), "MMM d, yyyy")}
                           </TableCell>

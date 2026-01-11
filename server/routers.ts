@@ -505,9 +505,13 @@ export const appRouter = router({
 
     list: adminProcedure
       .input(z.object({
-        status: z.enum(["pending", "confirmed", "cancelled", "completed"]).optional(),
+        status: z.enum(["pending", "confirmed", "cancelled", "completed", "unpaid"]).optional(),
       }))
       .query(async ({ input }) => {
+        // Handle "unpaid" status specially - it's not a database status
+        if (input.status === "unpaid") {
+          return await db.getUnpaidInvoiceBookings();
+        }
         return await db.getBookingsByStatus(input.status);
       }),
 
@@ -1444,7 +1448,7 @@ export const appRouter = router({
     rejectBooking: adminProcedure
       .input(z.object({ bookingId: z.number(), reason: z.string().optional() }))
       .mutation(async ({ input }) => {
-        await db.rejectBooking(input.bookingId, input.reason);
+        await db.rejectBooking(input.bookingId, input.reason || "No reason provided");
         
         // Get booking details for notification
         const booking = await db.getBookingById(input.bookingId);

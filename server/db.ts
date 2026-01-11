@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, sql, or, like, desc } from "drizzle-orm";
+import { eq, desc, and, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -49,78 +49,116 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     };
     const updateSet: Record<string, unknown> = {};
 
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
+    if (user.email !== undefined) {
+      values.email = user.email;
+      updateSet.email = user.email;
+    }
+    if (user.name !== undefined) {
+      values.name = user.name;
+      updateSet.name = user.name;
     }
     if (user.role !== undefined) {
       values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'mega_admin';
-      updateSet.role = 'mega_admin';
     }
 
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
+    await db
+      .insert(users)
+      .values(values)
+      .onDuplicateKeyUpdate({ set: updateSet });
   } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
+    console.error("[Database] Error upserting user:", error);
     throw error;
   }
 }
 
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
+  if (!db) return null;
 
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  const [user] = await db.select().from(users).where(eq(users.openId, openId));
+  return user || null;
+}
 
-  return result.length > 0 ? result[0] : undefined;
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [user] = await db.select().from(users).where(eq(users.id, id));
+  return user || null;
 }
 
 export async function getUserByEmail(email: string) {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
+  if (!db) return null;
 
-  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-
-  return result.length > 0 ? result[0] : undefined;
+  const [user] = await db.select().from(users).where(eq(users.email, email));
+  return user || null;
 }
 
-// Owner operations
+export async function getAllUsers() {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Fetch all users
+  const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+  
+  // Fetch all customer profiles
+  const allProfiles = await db.select().from(customerProfiles);
+  
+  // Create a map of userId to profile
+  const profileMap = new Map(allProfiles.map(p => [p.userId, p]));
+  
+  // Map users with their profiles
+  return allUsers.map(user => {
+    const profile = profileMap.get(user.id);
+    return {
+      ...user,
+      companyName: profile?.companyName || null,
+      website: profile?.website || null,
+      abn: profile?.abn || null,
+      streetAddress: profile?.streetAddress || null,
+      city: profile?.city || null,
+      state: profile?.state || null,
+      postcode: profile?.postcode || null,
+      productCategory: profile?.productCategory || null,
+      productDetails: profile?.productDetails || null,
+      insuranceCompany: profile?.insuranceCompany || null,
+      insurancePolicyNumber: profile?.insurancePolicyNumber || null,
+      insuranceAmount: profile?.insuranceAmount || null,
+      insuranceExpiry: profile?.insuranceExpiry || null,
+      insuranceDocumentUrl: profile?.insuranceDocumentUrl || null,
+    };
+  });
+}
+
+export async function getCustomerProfileByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [profile] = await db.select().from(customerProfiles).where(eq(customerProfiles.userId, userId));
+  return profile || null;
+}
+
+export async function createCustomerProfile(profile: InsertCustomerProfile) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.insert(customerProfiles).values(profile);
+}
+
+export async function updateCustomerProfile(userId: number, updates: Partial<InsertCustomerProfile>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.update(customerProfiles).set(updates).where(eq(customerProfiles.userId, userId));
+}
+
 export async function createOwner(owner: InsertOwner) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(owners).values(owner);
-  return result;
+
+  return await db.insert(owners).values(owner);
 }
 
 export async function getOwners() {
@@ -131,801 +169,184 @@ export async function getOwners() {
 
 export async function getOwnerById(id: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(owners).where(eq(owners.id, id)).limit(1);
-  return result[0];
-}
+  if (!db) return null;
 
-export async function updateOwner(id: number, data: Partial<InsertOwner>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return await db.update(owners).set(data).where(eq(owners.id, id));
-}
-
-// Shopping Centre operations
-export async function createShoppingCentre(centre: InsertShoppingCentre) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(shoppingCentres).values(centre);
-  const insertId = Number(result[0].insertId);
-  const created = await db.select().from(shoppingCentres).where(eq(shoppingCentres.id, insertId)).limit(1);
-  return created[0];
+  const [owner] = await db.select().from(owners).where(eq(owners.id, id));
+  return owner || null;
 }
 
 export async function getShoppingCentres() {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return await db.select().from(shoppingCentres);
+  if (!db) return [];
+
+  return await db.select().from(shoppingCentres).orderBy(shoppingCentres.name);
 }
 
 export async function getShoppingCentreById(id: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) return null;
+
+  const [centre] = await db.select().from(shoppingCentres).where(eq(shoppingCentres.id, id));
   
-  // Get centre with first available floor level's map
-  const centreResult = await db.select().from(shoppingCentres).where(eq(shoppingCentres.id, id)).limit(1);
-  const centre = centreResult[0];
+  if (!centre) return null;
   
-  if (!centre) return undefined;
-  
-  // Get first floor level with a map image
-  const floorResult = await db.select()
+  // Get the first floor level's map image URL if it exists
+  const [firstFloor] = await db
+    .select({ mapImageUrl: floorLevels.mapImageUrl })
     .from(floorLevels)
     .where(eq(floorLevels.centreId, id))
-    .orderBy(floorLevels.levelNumber)
+    .orderBy(floorLevels.displayOrder)
     .limit(1);
   
-  const firstFloor = floorResult[0];
-  
-  // Add mapImageUrl from first floor level if available
   return {
     ...centre,
-    mapImageUrl: firstFloor?.mapImageUrl || null
+    mapImageUrl: firstFloor?.mapImageUrl || centre.mapImageUrl,
   };
 }
 
-export async function getShoppingCentresByState(state: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return await db.select().from(shoppingCentres).where(eq(shoppingCentres.state, state));
-}
-
-// Levenshtein distance for fuzzy matching
-function levenshteinDistance(a: string, b: string): number {
-  const matrix: number[][] = [];
-  
-  for (let i = 0; i <= b.length; i++) {
-    matrix[i] = [i];
-  }
-  
-  for (let j = 0; j <= a.length; j++) {
-    matrix[0][j] = j;
-  }
-  
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1
-        );
-      }
-    }
-  }
-  
-  return matrix[b.length][a.length];
-}
-
-// Check if query fuzzy matches target with tolerance
-function fuzzyMatch(query: string, target: string, tolerance: number = 2): boolean {
-  const lowerQuery = query.toLowerCase();
-  const lowerTarget = target.toLowerCase();
-  
-  // Exact substring match (fastest)
-  if (lowerTarget.includes(lowerQuery)) {
-    return true;
-  }
-  
-  // For very short queries (< 4 chars), only allow exact matches to avoid false positives
-  if (lowerQuery.length < 4) {
-    return false;
-  }
-  
-  // Split target into words and check each
-  const words = lowerTarget.split(/\s+/);
-  for (const word of words) {
-    // Check if word starts with query (common case)
-    if (word.startsWith(lowerQuery)) {
-      return true;
-    }
-    
-    // Fuzzy match with Levenshtein distance
-    // Adjust tolerance based on query length (longer queries = more tolerance)
-    const adjustedTolerance = lowerQuery.length <= 6 ? 1 : tolerance;
-    const distance = levenshteinDistance(lowerQuery, word);
-    if (distance <= adjustedTolerance) {
-      return true;
-    }
-    
-    // Also check if query is close to substring of word
-    if (word.length > lowerQuery.length) {
-      for (let i = 0; i <= word.length - lowerQuery.length; i++) {
-        const substring = word.substring(i, i + lowerQuery.length);
-        const substringDistance = levenshteinDistance(lowerQuery, substring);
-        if (substringDistance <= adjustedTolerance) {
-          return true;
-        }
-      }
-    }
-  }
-  
-  return false;
-}
-
-export async function searchShoppingCentres(query: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // Parse query for site-specific patterns (e.g., "Pacific Square Site 2")
-  const sitePattern = /site\s+(\d+|[a-z0-9]+)/i;
-  const siteMatch = query.match(sitePattern);
-  
-  // Remove site number from query for centre matching
-  const centreQuery = siteMatch ? query.replace(sitePattern, "").trim() : query;
-  
-  // Get all centres
-  const allCentres = await db.select().from(shoppingCentres);
-  
-  // Filter using fuzzy matching
-  const matchedCentres = allCentres.filter(centre => {
-    return (
-      fuzzyMatch(centreQuery, centre.name || '', 2) ||
-      fuzzyMatch(centreQuery, centre.suburb || '', 2) ||
-      fuzzyMatch(centreQuery, centre.city || '', 2)
-    );
-  });
-  
-  return matchedCentres;
-}
-
-export async function searchSites(query: string) {
+export async function createShoppingCentre(centre: InsertShoppingCentre) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  // Get all sites with their centre information
-  const allSites = await db
-    .select({
-      site: sites,
-      centre: shoppingCentres,
-    })
-    .from(sites)
-    .leftJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id));
-
-  const lowerQuery = query.toLowerCase();
-  
-  // Split query into words for better matching
-  const queryWords = lowerQuery.split(/\s+/).filter(w => w.length > 0);
-
-  // Search across site number, description, and centre name
-  const matches = allSites.filter(({ site, centre }) => {
-    const siteNumber = (site.siteNumber || "").toLowerCase();
-    const description = (site.description || "").toLowerCase();
-    const centreName = (centre?.name || "").toLowerCase();
-    const combined = `${centreName} ${siteNumber} ${description}`.toLowerCase();
-
-    // Check if query matches as a whole
-    if (combined.includes(lowerQuery)) return true;
-    
-    // Check if all words in query appear somewhere in the combined text
-    const allWordsMatch = queryWords.every(word => combined.includes(word));
-    if (allWordsMatch) return true;
-    
-    // Check for substring matches in individual fields
-    if (siteNumber.includes(lowerQuery) || 
-        description.includes(lowerQuery) || 
-        centreName.includes(lowerQuery)) {
-      return true;
-    }
-    
-    // Check fuzzy matches
-    return (
-      fuzzyMatch(query, siteNumber, 1) ||
-      fuzzyMatch(query, description, 2) ||
-      fuzzyMatch(query, centreName, 2)
-    );
-  });
-
-  return matches;
+  return await db.insert(shoppingCentres).values(centre);
 }
 
-/**
- * Search sites with optional product category filtering
- */
-export async function searchSitesWithCategory(query: string, categoryKeyword?: string) {
-  console.log('[searchSitesWithCategory] query:', query, 'categoryKeyword:', categoryKeyword);
+export async function updateShoppingCentre(id: number, updates: Partial<InsertShoppingCentre>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  // Get all sites with their centre information and approved categories
-  const allSites = await db
-    .select({
-      site: sites,
-      centre: shoppingCentres,
-      categoryId: siteUsageCategories.categoryId,
-      category: usageCategories,
-    })
-    .from(sites)
-    .leftJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
-    .leftJoin(siteUsageCategories, eq(sites.id, siteUsageCategories.siteId))
-    .leftJoin(usageCategories, eq(siteUsageCategories.categoryId, usageCategories.id));
-
-  const lowerQuery = query.toLowerCase();
-  const queryWords = lowerQuery.split(/\s+/).filter(w => w.length > 0);
-
-  // Group sites by site ID to consolidate multiple category matches
-  const siteMap = new Map<number, { site: typeof sites.$inferSelect; centre: typeof shoppingCentres.$inferSelect | null; categories: Array<typeof usageCategories.$inferSelect> }>();
-  
-  for (const row of allSites) {
-    const siteId = row.site.id;
-    if (!siteMap.has(siteId)) {
-      siteMap.set(siteId, {
-        site: row.site,
-        centre: row.centre,
-        categories: [],
-      });
-    }
-    if (row.category) {
-      siteMap.get(siteId)!.categories.push(row.category);
-    }
-  }
-
-  // Filter sites based on query and category
-  const matches = Array.from(siteMap.values()).filter(({ site, centre, categories }) => {
-    const siteNumber = (site.siteNumber || "").toLowerCase();
-    const description = (site.description || "").toLowerCase();
-    const centreName = (centre?.name || "").toLowerCase();
-    
-    // CRITICAL: If category keyword is provided, ONLY match sites with that approved category
-    if (categoryKeyword) {
-      const categoryMatch = categories.some(cat => 
-        cat.name.toLowerCase().includes(categoryKeyword.toLowerCase())
-      );
-      console.log('[searchSitesWithCategory] Site', site.siteNumber, 'categories:', categories.map(c => c.name), 'keyword:', categoryKeyword, 'match:', categoryMatch);
-      if (!categoryMatch) return false; // Site doesn't have this category approved
-    }
-    
-    // Only include approved category names in search (don't search against unapproved categories)
-    const categoryNames = categories.map(c => c.name.toLowerCase()).join(" ");
-    const combined = `${centreName} ${siteNumber} ${description} ${categoryNames}`.toLowerCase();
-
-    // Check if query matches as a whole
-    if (combined.includes(lowerQuery)) return true;
-    
-    // Check if all words in query appear somewhere in the combined text
-    const allWordsMatch = queryWords.every(word => combined.includes(word));
-    if (allWordsMatch) return true;
-    
-    // Check for substring matches in individual fields
-    if (siteNumber.includes(lowerQuery) || 
-        description.includes(lowerQuery) || 
-        centreName.includes(lowerQuery) ||
-        categoryNames.includes(lowerQuery)) {
-      return true;
-    }
-    
-    // Check fuzzy matches
-    return (
-      fuzzyMatch(query, siteNumber, 1) ||
-      fuzzyMatch(query, description, 2) ||
-      fuzzyMatch(query, centreName, 2) ||
-      fuzzyMatch(query, categoryNames, 2)
-    );
-  });
-
-  // Return in the same format as searchSites
-  return matches.map(({ site, centre }) => ({ site, centre }));
+  return await db.update(shoppingCentres).set(updates).where(eq(shoppingCentres.id, id));
 }
 
-export async function updateShoppingCentre(id: number, data: Partial<InsertShoppingCentre>) {
+export async function deleteShoppingCentre(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return await db.update(shoppingCentres).set(data).where(eq(shoppingCentres.id, id));
+
+  return await db.delete(shoppingCentres).where(eq(shoppingCentres.id, id));
 }
 
-// Site operations
-export async function createSite(site: InsertSite) {
+export async function getSites() {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(sites).values(site);
-  const insertId = Number(result[0].insertId);
-  const created = await db.select().from(sites).where(eq(sites.id, insertId)).limit(1);
-  return created[0];
-}
+  if (!db) return [];
 
-export async function getSitesByCentreId(centreId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return await db.select().from(sites).where(eq(sites.centreId, centreId));
+  return await db.select().from(sites);
 }
 
 export async function getSiteById(id: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(sites).where(eq(sites.id, id)).limit(1);
-  return result[0];
+  if (!db) return null;
+
+  const [site] = await db.select().from(sites).where(eq(sites.id, id));
+  return site || null;
 }
 
-export async function updateSite(id: number, data: Partial<InsertSite>) {
+export async function getSitesByCentreId(centreId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(sites).where(eq(sites.centreId, centreId));
+}
+
+export async function createSite(site: InsertSite) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return await db.update(sites).set(data).where(eq(sites.id, id));
+
+  return await db.insert(sites).values(site);
 }
 
-// Booking operations
+export async function updateSite(id: number, updates: Partial<InsertSite>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.update(sites).set(updates).where(eq(sites.id, id));
+}
+
+export async function deleteSite(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.delete(sites).where(eq(sites.id, id));
+}
+
+export async function getUsageTypes() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(usageTypes);
+}
+
+export async function getUsageTypeById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [usageType] = await db.select().from(usageTypes).where(eq(usageTypes.id, id));
+  return usageType || null;
+}
+
+export async function createUsageType(usageType: InsertUsageType) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.insert(usageTypes).values(usageType);
+}
+
 export async function createBooking(booking: InsertBooking) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(bookings).values(booking);
-  return result;
-}
 
-export async function getBookingsBySiteId(siteId: number, startDate: Date, endDate: Date) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return await db.select().from(bookings).where(
-    and(
-      eq(bookings.siteId, siteId),
-      or(
-        and(gte(bookings.startDate, startDate), lte(bookings.startDate, endDate)),
-        and(gte(bookings.endDate, startDate), lte(bookings.endDate, endDate)),
-        and(lte(bookings.startDate, startDate), gte(bookings.endDate, endDate))
-      )
-    )
-  );
+  return await db.insert(bookings).values(booking);
 }
 
 export async function getBookingById(id: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
-  return result[0];
+  if (!db) return null;
+
+  const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
+  return booking || null;
 }
 
-export async function updateBooking(id: number, data: Partial<InsertBooking>) {
+export async function getBookingsBySiteId(siteId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return await db.update(bookings).set(data).where(eq(bookings.id, id));
+  if (!db) return [];
+
+  return await db.select().from(bookings).where(eq(bookings.siteId, siteId));
 }
 
 export async function getBookingsByCustomerId(customerId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  return await db
+  if (!db) return [];
+
+  const bookingsList = await db
     .select({
       id: bookings.id,
       bookingNumber: bookings.bookingNumber,
       siteId: bookings.siteId,
-      customerId: bookings.customerId,
-      usageTypeId: bookings.usageTypeId,
-      customUsage: bookings.customUsage,
+      siteName: sites.description,
+      siteNumber: sites.siteNumber,
+      centreName: shoppingCentres.name,
+      centreId: shoppingCentres.id,
       startDate: bookings.startDate,
       endDate: bookings.endDate,
       totalAmount: bookings.totalAmount,
       gstAmount: bookings.gstAmount,
-      ownerAmount: bookings.ownerAmount,
-      platformFee: bookings.platformFee,
       status: bookings.status,
       requiresApproval: bookings.requiresApproval,
-      approvedBy: bookings.approvedBy,
       approvedAt: bookings.approvedAt,
+      createdAt: bookings.createdAt,
+      usageTypeId: bookings.usageTypeId,
+      usageCategoryId: bookings.usageCategoryId,
+      additionalCategoryText: bookings.additionalCategoryText,
+      customUsage: bookings.customUsage,
       tablesRequested: bookings.tablesRequested,
       chairsRequested: bookings.chairsRequested,
-      stripePaymentIntentId: bookings.stripePaymentIntentId,
-      createdAt: bookings.createdAt,
-      updatedAt: bookings.updatedAt,
-      siteName: sites.description,
-      centreName: shoppingCentres.name,
     })
     .from(bookings)
     .innerJoin(sites, eq(bookings.siteId, sites.id))
     .innerJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
     .where(eq(bookings.customerId, customerId))
     .orderBy(desc(bookings.createdAt));
-}
 
-// Customer Profile operations
-export async function createCustomerProfile(profile: InsertCustomerProfile) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(customerProfiles).values(profile);
-  return result;
-}
-
-export async function getCustomerProfileByUserId(userId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(customerProfiles).where(eq(customerProfiles.userId, userId)).limit(1);
-  return result[0];
-}
-
-export async function updateCustomerProfile(userId: number, data: Partial<InsertCustomerProfile>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return await db.update(customerProfiles).set(data).where(eq(customerProfiles.userId, userId));
-}
-
-// Usage Type operations
-export async function createUsageType(usageType: InsertUsageType) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(usageTypes).values(usageType);
-  return result;
-}
-
-export async function getUsageTypes() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return await db.select().from(usageTypes).where(eq(usageTypes.isActive, true));
-}
-
-// Transaction operations
-export async function createTransaction(transaction: InsertTransaction) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(transactions).values(transaction);
-  return result;
-}
-
-export async function getTransactionsByOwnerId(ownerId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return await db.select().from(transactions).where(eq(transactions.ownerId, ownerId));
-}
-
-// System Config operations
-export async function getSystemConfig(key: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.select().from(systemConfig).where(eq(systemConfig.key, key)).limit(1);
-  return result[0];
-}
-
-export async function setSystemConfig(key: string, value: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.insert(systemConfig).values({ key, value }).onDuplicateKeyUpdate({ set: { value } });
-}
-
-// Audit Log operations
-export async function createAuditLog(log: InsertAuditLog) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(auditLog).values(log);
-  return result;
-}
-
-export async function getAuditLogs(limit: number = 100) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return await db.select().from(auditLog).orderBy(desc(auditLog.createdAt)).limit(limit);
-}
-
-
-// Admin helper functions
-export async function getAllSites() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return await db.select().from(sites);
-}
-
-export async function getAllBookings() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return await db.select().from(bookings);
-}
-
-export async function getAllUsers() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // First get all users
-  const usersData = await db.select({
-    id: users.id,
-    name: users.name,
-    email: users.email,
-    role: users.role,
-    canPayByInvoice: users.canPayByInvoice,
-    createdAt: users.createdAt,
-    lastSignedIn: users.lastSignedIn,
-  }).from(users).orderBy(desc(users.createdAt));
-  
-  // Then get all profiles
-  const profiles = await db.select().from(customerProfiles);
-  
-  // Map profiles to users
-  const result = usersData.map(user => {
-    const profile = profiles.find(p => p.userId === user.id);
-    return {
-      ...user,
-      profile: profile ? {
-        companyName: profile.companyName,
-        website: profile.website,
-        abn: profile.abn,
-        streetAddress: profile.streetAddress,
-        city: profile.city,
-        state: profile.state,
-        postcode: profile.postcode,
-        productCategory: profile.productCategory,
-        productDetails: profile.productDetails,
-        insuranceCompany: profile.insuranceCompany,
-        insurancePolicyNo: profile.insurancePolicyNo,
-        insuranceAmount: profile.insuranceAmount,
-        insuranceExpiry: profile.insuranceExpiry,
-        insuranceDocumentUrl: profile.insuranceDocumentUrl,
-      } : null,
-    };
-  });
-  
-  return result;
-}
-
-
-export async function deleteShoppingCentre(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  // First delete all sites in this centre
-  await db.delete(sites).where(eq(sites.centreId, id));
-  // Then delete the centre
-  return await db.delete(shoppingCentres).where(eq(shoppingCentres.id, id));
-}
-
-export async function deleteSite(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return await db.delete(sites).where(eq(sites.id, id));
-}
-
-
-// Map Management
-export async function uploadCentreMap(centreId: number, imageData: string, fileName: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // Import storage helper
-  const { storagePut } = await import("./storage");
-  
-  // Extract base64 data (remove data:image/xxx;base64, prefix if present)
-  const base64Data = imageData.includes(',') ? imageData.split(',')[1] : imageData;
-  const buffer = Buffer.from(base64Data, 'base64');
-  
-  // Determine content type from fileName
-  const ext = fileName.toLowerCase().split('.').pop();
-  const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
-  
-  // Generate unique file key
-  const timestamp = Date.now();
-  const fileKey = `centres/maps/${centreId}-${timestamp}.${ext}`;
-  
-  // Upload to S3
-  const { url } = await storagePut(fileKey, buffer, contentType);
-  
-  // Update centre with map URL
-  await db.update(shoppingCentres)
-    .set({ mapImageUrl: url })
-    .where(eq(shoppingCentres.id, centreId));
-  
-  return { mapUrl: url };
-}
-
-export async function saveSiteMarkers(markers: Array<{ siteId: number; x: number; y: number }>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // Update each site with marker coordinates
-  for (const marker of markers) {
-    await db.update(sites)
-      .set({
-        mapMarkerX: marker.x,
-        mapMarkerY: marker.y,
-      })
-      .where(eq(sites.id, marker.siteId));
-  }
-  
-  return { success: true, count: markers.length };
-}
-
-export async function resetSiteMarker(siteId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db.update(sites)
-    .set({
-      mapMarkerX: null,
-      mapMarkerY: null,
-    })
-    .where(eq(sites.id, siteId));
-  
-  return { success: true };
-}
-
-// Floor Level Management
-export async function getFloorLevelsByCentre(centreId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  return await db.select()
-    .from(floorLevels)
-    .where(eq(floorLevels.centreId, centreId))
-    .orderBy(floorLevels.displayOrder);
-}
-
-export async function createFloorLevel(data: InsertFloorLevel) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const [result] = await db.insert(floorLevels).values(data);
-  return result;
-}
-
-export async function deleteFloorLevel(floorLevelId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // Check if floor has any sites assigned
-  const sitesOnFloor = await db
-    .select()
-    .from(sites)
-    .where(eq(sites.floorLevelId, floorLevelId));
-  
-  if (sitesOnFloor.length > 0) {
-    throw new Error(`Cannot delete floor level with ${sitesOnFloor.length} sites assigned. Please reassign or delete sites first.`);
-  }
-  
-  // Delete the floor level
-  await db.delete(floorLevels).where(eq(floorLevels.id, floorLevelId));
-  return { success: true };
-}
-
-export async function uploadFloorLevelMap(floorLevelId: number, imageData: string, fileName: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // Import storage helper
-  const { storagePut } = await import("./storage");
-  
-  // Extract base64 data
-  const base64Data = imageData.includes(',') ? imageData.split(',')[1] : imageData;
-  const buffer = Buffer.from(base64Data, 'base64');
-  
-  // Determine content type
-  const ext = fileName.toLowerCase().split('.').pop();
-  const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
-  
-  // Generate unique file key
-  const timestamp = Date.now();
-  const fileKey = `centres/floor-maps/${floorLevelId}-${timestamp}.${ext}`;
-  
-  // Upload to S3
-  const { url } = await storagePut(fileKey, buffer, contentType);
-  
-  // Update floor level with map URL
-  await db.update(floorLevels)
-    .set({ mapImageUrl: url })
-    .where(eq(floorLevels.id, floorLevelId));
-  
-  return { mapUrl: url };
-}
-
-export async function getSitesByFloorLevel(floorLevelId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  return await db.select()
-    .from(sites)
-    .where(eq(sites.floorLevelId, floorLevelId));
-}
-
-export async function updateSiteFloorAssignments(assignments: Array<{ siteId: number; floorLevelId: number | null }>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // Update each site's floorLevelId
-  for (const assignment of assignments) {
-    await db.update(sites)
-      .set({ floorLevelId: assignment.floorLevelId })
-      .where(eq(sites.id, assignment.siteId));
-  }
-  
-  return { success: true, updated: assignments.length };
-}
-
-export async function getCentreByName(name: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const results = await db.select()
-    .from(shoppingCentres)
-    .where(eq(shoppingCentres.name, name))
-    .limit(1);
-  
-  return results[0] || null;
-}
-
-export async function updateCentreCoordinates(
-  centreId: number,
-  latitude: string,
-  longitude: string,
-  address?: string | null
-) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const updateData: any = {
-    latitude,
-    longitude,
-  };
-  
-  if (address) {
-    updateData.address = address;
-  }
-  
-  await db.update(shoppingCentres)
-    .set(updateData)
-    .where(eq(shoppingCentres.id, centreId));
-  
-  return { success: true };
-}
-
-export async function createCentre(data: {
-  ownerId: number;
-  name: string;
-  address?: string | null;
-  state?: string | null;
-  latitude?: string | null;
-  longitude?: string | null;
-  includeInMainSite?: boolean;
-}) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const result = await db.insert(shoppingCentres).values({
-    ownerId: data.ownerId,
-    name: data.name,
-    address: data.address || null,
-    state: data.state || null,
-    latitude: data.latitude || null,
-    longitude: data.longitude || null,
-    includeInMainSite: data.includeInMainSite ?? true,
-  });
-  
-  return { success: true };
-}
-
-export async function getNearbyCentres(centreId: number, radiusKm: number = 10) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // Import geo utils
-  const { findNearbyCentres } = await import("./geoUtils");
-  
-  // Get all centres with coordinates
-  const allCentres = await db.select({
-    id: shoppingCentres.id,
-    name: shoppingCentres.name,
-    latitude: shoppingCentres.latitude,
-    longitude: shoppingCentres.longitude,
-    address: shoppingCentres.address,
-    state: shoppingCentres.state,
-  }).from(shoppingCentres);
-  
-  // Find nearby centres
-  const nearby = findNearbyCentres(allCentres, centreId, radiusKm);
-  
-  return nearby;
+  return bookingsList;
 }
 
 // Booking management
@@ -957,6 +378,8 @@ export async function getBookingsByStatus(status?: "pending" | "confirmed" | "ca
       customUsage: bookings.customUsage,
       tablesRequested: bookings.tablesRequested,
       chairsRequested: bookings.chairsRequested,
+      paymentMethod: bookings.paymentMethod,
+      paidAt: bookings.paidAt,
       createdAt: bookings.createdAt,
     })
     .from(bookings)
@@ -972,6 +395,52 @@ export async function getBookingsByStatus(status?: "pending" | "confirmed" | "ca
   return await query;
 }
 
+// Get unpaid invoice bookings (regardless of status)
+export async function getUnpaidInvoiceBookings() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db
+    .select({
+      id: bookings.id,
+      bookingNumber: bookings.bookingNumber,
+      siteId: bookings.siteId,
+      customerId: bookings.customerId,
+      customerName: users.name,
+      customerEmail: users.email,
+      siteName: sites.description,
+      centreName: shoppingCentres.name,
+      startDate: bookings.startDate,
+      endDate: bookings.endDate,
+      totalAmount: bookings.totalAmount,
+      gstAmount: bookings.gstAmount,
+      status: bookings.status,
+      requiresApproval: bookings.requiresApproval,
+      approvedBy: bookings.approvedBy,
+      approvedAt: bookings.approvedAt,
+      usageTypeId: bookings.usageTypeId,
+      usageCategoryId: bookings.usageCategoryId,
+      additionalCategoryText: bookings.additionalCategoryText,
+      customUsage: bookings.customUsage,
+      tablesRequested: bookings.tablesRequested,
+      chairsRequested: bookings.chairsRequested,
+      paymentMethod: bookings.paymentMethod,
+      paidAt: bookings.paidAt,
+      createdAt: bookings.createdAt,
+    })
+    .from(bookings)
+    .innerJoin(users, eq(bookings.customerId, users.id))
+    .innerJoin(sites, eq(bookings.siteId, sites.id))
+    .innerJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
+    .where(
+      and(
+        eq(bookings.paymentMethod, "invoice"),
+        isNull(bookings.paidAt)
+      )
+    )
+    .orderBy(desc(bookings.createdAt));
+}
+
 export async function approveBooking(bookingId: number, approvedBy: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -981,82 +450,103 @@ export async function approveBooking(bookingId: number, approvedBy: number) {
   if (!booking) {
     throw new Error("Booking not found");
   }
-  
-  // Update booking status
-  await db
-    .update(bookings)
-    .set({
-      status: "confirmed",
-      approvedBy,
-      approvedAt: new Date(),
-    })
-    .where(eq(bookings.id, bookingId));
-  
-  // Send invoice email if this is an invoice booking
-  if (booking.paymentMethod === 'invoice') {
-    const { sendInvoiceEmail } = await import('./invoiceEmail');
-    await sendInvoiceEmail(bookingId);
-  }
+
+  return await db.update(bookings).set({
+    status: "confirmed",
+    approvedBy,
+    approvedAt: new Date(),
+  }).where(eq(bookings.id, bookingId));
 }
 
-export async function rejectBooking(bookingId: number, reason?: string) {
+export async function rejectBooking(bookingId: number, reason: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  await db
-    .update(bookings)
-    .set({
-      status: "rejected",
-      rejectionReason: reason || null,
-    })
-    .where(eq(bookings.id, bookingId));
+
+  return await db.update(bookings).set({
+    status: "rejected",
+    rejectionReason: reason,
+  }).where(eq(bookings.id, bookingId));
 }
 
-
-export async function getUserById(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const result = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, id))
-    .limit(1);
-  
-  return result[0] || null;
-}
-
-export async function getUsageTypeById(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const result = await db
-    .select()
-    .from(usageTypes)
-    .where(eq(usageTypes.id, id))
-    .limit(1);
-  
-  return result[0] || null;
-}
-
-/**
- * Update user's canPayByInvoice flag
- */
 export async function updateUserInvoiceFlag(userId: number, canPayByInvoice: boolean) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  await db.update(users)
-    .set({ canPayByInvoice })
-    .where(eq(users.id, userId));
-  
-  return true;
+
+  return await db.update(users).set({ canPayByInvoice }).where(eq(users.id, userId));
 }
 
+export async function createTransaction(transaction: InsertTransaction) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
 
-/**
- * Search invoice bookings by booking number or company name
- */
+  return await db.insert(transactions).values(transaction);
+}
+
+export async function createAuditLog(log: InsertAuditLog) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.insert(auditLog).values(log);
+}
+
+export async function getAuditLogs() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(auditLog).orderBy(desc(auditLog.timestamp));
+}
+
+// Floor Levels
+export async function getFloorLevelsByCentreId(centreId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(floorLevels)
+    .where(eq(floorLevels.centreId, centreId))
+    .orderBy(floorLevels.displayOrder);
+}
+
+export async function getFloorLevelById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [level] = await db.select().from(floorLevels).where(eq(floorLevels.id, id));
+  return level || null;
+}
+
+export async function createFloorLevel(level: InsertFloorLevel) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.insert(floorLevels).values(level);
+}
+
+export async function updateFloorLevel(id: number, updates: Partial<InsertFloorLevel>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.update(floorLevels).set(updates).where(eq(floorLevels.id, id));
+}
+
+export async function deleteFloorLevel(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.delete(floorLevels).where(eq(floorLevels.id, id));
+}
+
+export async function resetSiteMarker(siteId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.update(sites).set({
+    mapMarkerX: null,
+    mapMarkerY: null,
+  }).where(eq(sites.id, siteId));
+}
+
 export async function searchInvoiceBookings(query: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -1079,7 +569,6 @@ export async function searchInvoiceBookings(query: string) {
       status: bookings.status,
       paymentMethod: bookings.paymentMethod,
       paidAt: bookings.paidAt,
-      paymentRecordedBy: bookings.paymentRecordedBy,
       createdAt: bookings.createdAt,
       // Site and centre info
       siteNumber: sites.siteNumber,
@@ -1160,4 +649,18 @@ export async function recordPayment(bookingId: number, recordedBy: string) {
   });
   
   return { success: true };
+}
+
+export async function updateSiteFloorAssignments(assignments: Array<{ siteId: number; floorLevelId: number | null }>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Update each site's floorLevelId
+  for (const assignment of assignments) {
+    await db.update(sites)
+      .set({ floorLevelId: assignment.floorLevelId })
+      .where(eq(sites.id, assignment.siteId));
+  }
+  
+  return { success: true, updated: assignments.length };
 }
