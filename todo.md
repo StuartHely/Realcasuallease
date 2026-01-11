@@ -1570,3 +1570,15 @@
 - [x] Add remindersSent field to bookings table
 - [x] Create tRPC procedure to manually trigger reminders
 - [x] Test reminder email sending at configured intervals - 6 tests passing
+
+## Fix OAuth Login Issue
+- [x] Investigate "Database Error upserting user: Error: No values to set" error
+- [x] Fix user upsert logic in OAuth callback handler - added lastSignedIn and loginMethod support
+- [x] Test login flow to ensure session is saved correctly
+- [x] Verify admin access after login
+
+## Fix Dashboard Showing Zeros
+- [x] Investigate why dashboard shows 0 centres/sites despite data existing
+- [x] Found missing getAllSites() and getAllBookings() functions in db.ts
+- [x] Added missing functions to fix dashboard stats query
+- [x] Verify dashboard now displays correct counts - 52 centres, 81 sites, 577 bookings

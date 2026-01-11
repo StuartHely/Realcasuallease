@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE users SET role = 'mega_admin' WHERE openId = '4LrLCadwe9gZ3M6tbYeewq';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute UPDATE users SET role = 'mega_admin' WHERE openId = '4LrLCadwe9gZ3M6tbYeewq';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1505
+}

@@ -1,0 +1,15 @@
+{
+  "query": "SELECT \n  (SELECT COUNT(*) FROM shopping_centres) as centres,\n  (SELECT COUNT(*) FROM sites) as sites,\n  (SELECT COUNT(*) FROM bookings) as bookings;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT \n  (SELECT COUNT(*) FROM shopping_centres) as centres,\n  (SELECT COUNT(*) FROM sites) as sites,\n  (SELECT COUNT(*) FROM bookings) as bookings;",
+  "rows": [
+    {
+      "centres": "52",
+      "sites": "81",
+      "bookings": "577"
+    }
+  ],
+  "messages": [],
+  "stdout": "centres\tsites\tbookings\n52\t81\t577\n",
+  "stderr": "",
+  "execution_time_ms": 1559
+}

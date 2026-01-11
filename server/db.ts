@@ -61,6 +61,14 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values.role = user.role;
       updateSet.role = user.role;
     }
+    if (user.loginMethod !== undefined) {
+      values.loginMethod = user.loginMethod;
+      updateSet.loginMethod = user.loginMethod;
+    }
+    if (user.lastSignedIn !== undefined) {
+      values.lastSignedIn = user.lastSignedIn;
+      updateSet.lastSignedIn = user.lastSignedIn;
+    }
 
     await db
       .insert(users)
@@ -130,6 +138,20 @@ export async function getAllUsers() {
       insuranceDocumentUrl: profile?.insuranceDocumentUrl || null,
     };
   });
+}
+
+export async function getAllSites() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(sites).orderBy(desc(sites.createdAt));
+}
+
+export async function getAllBookings() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(bookings).orderBy(desc(bookings.createdAt));
 }
 
 export async function getCustomerProfileByUserId(userId: number) {
