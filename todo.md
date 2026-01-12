@@ -1686,3 +1686,8 @@
 - [x] Should find Highlands Marketplace and filter by 4m² minimum size - Working now
 - [x] Need to verify centre exists and why search is failing - Root cause: missing singular keywords
 - [x] Check if query parsing is extracting centre name correctly - Fixed by adding singular forms
+
+## New Features - Search Improvements
+- [x] Fuzzy category matching - match "pet" with "Pet Supplies", "Pets & Animals" using string similarity
+- [x] Search suggestions on no results - show "Did you mean?" with similar centre names
+- [x] Show nearby alternatives when no exact match found

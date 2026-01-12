@@ -784,7 +784,16 @@ export const appRouter = router({
         const centres = await db.searchShoppingCentres(searchQuery);
         
         if (centres.length === 0) {
-          return { centres: [], sites: [], availability: [], matchedSiteIds: [] };
+          // Get search suggestions when no results found
+          const { getSearchSuggestions } = await import("./searchSuggestions");
+          const suggestions = await getSearchSuggestions(searchQuery, 5);
+          return { 
+            centres: [], 
+            sites: [], 
+            availability: [], 
+            matchedSiteIds: [],
+            suggestions // Add suggestions to response
+          };
         }
 
         const startOfWeek = new Date(input.date);

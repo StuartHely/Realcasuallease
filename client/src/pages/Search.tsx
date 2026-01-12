@@ -252,9 +252,41 @@ export default function Search() {
 
         {data && data.centres.length === 0 && (
           <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-gray-600 mb-4">No shopping centres found matching your search.</p>
-              <Button onClick={() => setLocation("/")}>Try Another Search</Button>
+            <CardContent className="py-12">
+              <div className="text-center mb-6">
+                <p className="text-gray-600 mb-4">No shopping centres found matching your search.</p>
+              </div>
+              
+              {/* Search Suggestions */}
+              {data.suggestions && data.suggestions.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3 text-center">Did you mean?</h3>
+                  <div className="space-y-2 max-w-md mx-auto">
+                    {data.suggestions.map((suggestion: any, index: number) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        className="w-full justify-start text-left"
+                        onClick={() => {
+                          const params = new URLSearchParams(window.location.search);
+                          params.set('query', suggestion.centreName);
+                          // Force full page reload to trigger new search
+                          window.location.href = `/search?${params.toString()}`;
+                        }}
+                      >
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">{suggestion.centreName}</span>
+                          <span className="text-sm text-muted-foreground">{suggestion.reason}</span>
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="text-center">
+                <Button onClick={() => setLocation("/")}>Try Another Search</Button>
+              </div>
             </CardContent>
           </Card>
         )}

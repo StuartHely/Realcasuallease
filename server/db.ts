@@ -354,6 +354,9 @@ export async function searchSitesWithCategory(query: string, categoryKeyword?: s
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
+  // Import fuzzy matching utility
+  const { fuzzyMatchCategory } = await import("../shared/stringSimilarity.js");
+  
   // Simple substring matching helper
   const fuzzyMatch = (query: string, target: string, threshold: number) => {
     const q = query.toLowerCase();
@@ -405,10 +408,10 @@ export async function searchSitesWithCategory(query: string, categoryKeyword?: s
     const categoryNames = categories.map(c => c.name.toLowerCase()).join(" ");
     const combined = `${centreName} ${siteNumber} ${description} ${categoryNames}`.toLowerCase();
     
-    // If category keyword is provided, filter by category first
+    // If category keyword is provided, filter by category first using fuzzy matching
     if (categoryKeyword) {
       const categoryMatch = categories.some(cat => 
-        cat.name.toLowerCase().includes(categoryKeyword.toLowerCase())
+        fuzzyMatchCategory(categoryKeyword, cat.name, 0.6)
       );
       if (!categoryMatch) return false;
     }
