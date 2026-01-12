@@ -1605,3 +1605,10 @@
 - [x] Add missing function to db.ts
 - [x] Test search page with query "eastgate 3x4 ugg"
 - [x] Verify search results display correctly - 5 sites found at Eastgate Bondi Junction (Sites 2, 10, 11, L2-33, L2-99)
+
+## Fix Search Size Availability Message
+- [x] Investigate why "requested size not available" shows when matching sites exist
+- [x] Check size filtering logic in search.smart procedure
+- [x] Fix size matching to correctly identify available sites - removed line 858 that was overwriting hasMatchingSites
+- [x] Test with "highlands food 2x3" query on 06/06/2026
+- [x] Verify message only shows when truly no matching sizes exist - message is now gone, shows 5 sites including exact matches

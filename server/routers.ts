@@ -855,7 +855,8 @@ export const appRouter = router({
           let sitesToInclude = sitesWithMatch;
           if (parsedQuery.productCategory) {
             sitesToInclude = sitesWithMatch.filter((s: any) => matchedSiteIds.includes(s.site.id));
-            hasMatchingSites = sitesToInclude.length > 0;
+            // Don't overwrite hasMatchingSites - it was already determined in first pass based on size/table requirements
+            // Category filtering just narrows down which sites to show, doesn't affect size availability message
           } else if (hasRequirements && hasMatchingSites) {
             // If size/table requirements specified and matches found, only include matching sites
             sitesToInclude = sitesWithMatch.filter((s: any) => s.matchesRequirements);
