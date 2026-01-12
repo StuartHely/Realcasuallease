@@ -1612,3 +1612,28 @@
 - [x] Fix size matching to correctly identify available sites - removed line 858 that was overwriting hasMatchingSites
 - [x] Test with "highlands food 2x3" query on 06/06/2026
 - [x] Verify message only shows when truly no matching sizes exist - message is now gone, shows 5 sites including exact matches
+
+## Add Size Match Indicators
+- [x] Calculate size match type in backend (perfect/larger/smaller)
+- [x] Add sizeMatch field to search results
+- [x] Add "Perfect Match" green badge for sites matching exact requested size
+- [x] Add "Larger Available" blue badge for sites larger than requested
+- [x] Display badges in search results site list
+- [x] Test with "highlands food 2x3" query - working correctly, shows 4 sites with proper filtering
+
+## Smart Size Suggestions
+- [x] Calculate closest available size when no exact matches exist - tracks closestMatch in backend
+- [x] Add closestMatch to search results return value
+- [x] Show "Closest match: X.Xm × X.Xm (XXm²)" message with percentage difference in frontend
+- [x] Only show when size requirement specified but no exact matches
+- [x] Replace generic "not available" with helpful suggestion
+- [x] Test with query that has no exact matches - working correctly, user confirmed
+
+## Fix TypeScript Errors
+- [x] Fix function signature mismatch at line 212 (Expected 1 arguments, but got 3) - added startDate/endDate params to getBookingsBySiteId
+- [x] Fix function signature mismatch at line 265 (Expected 1 arguments, but got 3) - same fix
+- [x] Fix function signature mismatch at line 927 (Expected 1 arguments, but got 3) - same fix
+- [x] Fix function signature mismatch at line 928 (Expected 1 arguments, but got 3) - same fix
+- [x] Added missing getShoppingCentresByState and getNearbyCentres functions
+- [x] Added missing imports (gte, lte, or) to db.ts
+- [x] Reduced TypeScript errors from 14 to 4 (remaining are unrelated payment page issues)

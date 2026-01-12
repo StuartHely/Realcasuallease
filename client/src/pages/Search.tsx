@@ -228,8 +228,18 @@ export default function Search() {
             }
             return null;
           })()}
-          {/* Show message if size requirement not met */}
-          {data?.sizeNotAvailable && (
+          {/* Show smart size suggestion if exact match not available */}
+          {data?.sizeNotAvailable && data?.closestMatch && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-800 font-medium">
+                <Info className="inline h-4 w-4 mr-1" />
+                Your exact size isn't available, but we found a close match: {data.closestMatch.widthM}m × {data.closestMatch.lengthM}m ({data.closestMatch.sizeM2}m²)
+                {' '}({Math.round((data.closestMatch.difference / (data.closestMatch.sizeM2 - data.closestMatch.difference)) * 100)}% larger)
+              </p>
+            </div>
+          )}
+          {/* Show generic message if no close matches */}
+          {data?.sizeNotAvailable && !data?.closestMatch && (
             <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-amber-800 font-medium">
                 Your requested size is not available. Let me show you the other sites.
@@ -562,8 +572,21 @@ export default function Search() {
                                   )}
                                 </div>
                                 <div className="flex-1">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
                                     <CardTitle className="text-lg">Site {site.siteNumber}</CardTitle>
+                                    {/* Show size match badge */}
+                                    {site.sizeMatch === 'perfect' && (
+                                      <Badge className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-1">
+                                        <CheckCircle className="h-3 w-3" />
+                                        Perfect Match
+                                      </Badge>
+                                    )}
+                                    {site.sizeMatch === 'larger' && (
+                                      <Badge className="bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-1">
+                                        <Info className="h-3 w-3" />
+                                        Larger Available
+                                      </Badge>
+                                    )}
                                     {/* Show checkmark badge if site accepts selected category */}
                                     {selectedCategoryId && data.siteCategories && data.siteCategories[site.id] && (() => {
                                       const siteCategories = data.siteCategories[site.id];

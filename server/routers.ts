@@ -809,7 +809,7 @@ export const appRouter = router({
         const { getSearchDataOptimized } = await import("./dbOptimized");
         const centreIds = centres.map(c => c.id);
         
-        const {
+        let {
           sitesByCentre,
           week1BookingsBySite,
           week2BookingsBySite,
@@ -822,20 +822,53 @@ export const appRouter = router({
           endOfNextWeek
         );
         
-        // First pass: check if any sites match the requirements
+        // Override sitesByCentre if we have category-filtered sites from searchSitesWithCategory
+        if (parsedQuery.productCategory && siteResults.length > 0) {
+          const tempSitesByCentre = new Map();
+          for (const result of siteResults) {
+            const centreId = result.site.centreId;
+            if (!tempSitesByCentre.has(centreId)) {
+              tempSitesByCentre.set(centreId, []);
+            }
+            tempSitesByCentre.get(centreId)!.push(result.site);
+          }
+          sitesByCentre = tempSitesByCentre;
+        }
+        
+        // First pass: check if any sites match the requirements and find closest match
+        let closestMatch: { sizeM2: number; widthM: number; lengthM: number; difference: number } | null = null;
+        const requestedSizeM2 = parsedQuery.minSizeM2;
+        
         for (const centre of centres) {
           const sites = sitesByCentre.get(centre.id) || [];
           
           // Check which sites match the requirements
           const sitesWithMatch = sites.map((site: any) => ({
             site,
-            matchesRequirements: siteMatchesRequirements(site, parsedQuery)
+            matchesRequirements: siteMatchesRequirements(site, parsedQuery),
+            sizeMatch: requestedSizeM2 ? (site.sizeM2 === requestedSizeM2 ? 'perfect' : site.sizeM2 > requestedSizeM2 ? 'larger' : 'smaller') : null
           }));
           
           // Check if any sites match
           if (sitesWithMatch.some((s: any) => s.matchesRequirements)) {
             hasMatchingSites = true;
-            break; // Found at least one match, no need to continue
+          }
+          
+          // Track closest match for size suggestions
+          if (requestedSizeM2 && !hasMatchingSites) {
+            for (const { site } of sitesWithMatch) {
+              if (site.sizeM2 && site.sizeM2 >= requestedSizeM2) {
+                const diff = Math.abs(site.sizeM2 - requestedSizeM2);
+                if (!closestMatch || diff < closestMatch.difference) {
+                  closestMatch = {
+                    sizeM2: site.sizeM2,
+                    widthM: site.widthM,
+                    lengthM: site.lengthM,
+                    difference: diff
+                  };
+                }
+              }
+            }
           }
         }
         
@@ -848,21 +881,19 @@ export const appRouter = router({
           // Check which sites match the requirements
           const sitesWithMatch = sites.map((site: any) => ({
             site,
-            matchesRequirements: siteMatchesRequirements(site, parsedQuery)
+            matchesRequirements: siteMatchesRequirements(site, parsedQuery),
+            sizeMatch: requestedSizeM2 ? (site.sizeM2 === requestedSizeM2 ? 'perfect' : site.sizeM2 > requestedSizeM2 ? 'larger' : 'smaller') : null
           }));
           
-          // If category filtering is active, only include sites that passed category check
+          // Determine which sites to include based on requirements
           let sitesToInclude = sitesWithMatch;
-          if (parsedQuery.productCategory) {
-            sitesToInclude = sitesWithMatch.filter((s: any) => matchedSiteIds.includes(s.site.id));
-            // Don't overwrite hasMatchingSites - it was already determined in first pass based on size/table requirements
-            // Category filtering just narrows down which sites to show, doesn't affect size availability message
-          } else if (hasRequirements && hasMatchingSites) {
+          if (hasRequirements && hasMatchingSites) {
             // If size/table requirements specified and matches found, only include matching sites
             sitesToInclude = sitesWithMatch.filter((s: any) => s.matchesRequirements);
           }
           
-          allSites.push(...sitesToInclude.map(({ site }: any) => ({ ...site, centreName: centre.name })));
+          const sitesWithData = sitesToInclude.map(({ site, sizeMatch }: any) => ({ ...site, centreName: centre.name, sizeMatch }));
+          allSites.push(...sitesWithData);
           
           for (const { site } of sitesToInclude as any[]) {
             // Use pre-fetched data instead of individual queries
@@ -887,7 +918,7 @@ export const appRouter = router({
         // Return flag indicating if size requirement was met
         const sizeNotAvailable = hasRequirements && !hasMatchingSites;
         
-        return { centres, sites: allSites, availability, matchedSiteIds, sizeNotAvailable, siteCategories };
+        return { centres, sites: allSites, availability, matchedSiteIds, sizeNotAvailable, closestMatch, siteCategories };
       }),
     byNameAndDate: publicProcedure
       .input(z.object({

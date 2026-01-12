@@ -1,4 +1,4 @@
-import { eq, desc, and, isNull } from "drizzle-orm";
+import { eq, desc, and, or, isNull, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -224,6 +224,35 @@ export async function getShoppingCentreById(id: number) {
     ...centre,
     mapImageUrl: firstFloor?.mapImageUrl || centre.mapImageUrl,
   };
+}
+
+export async function getShoppingCentresByState(state: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(shoppingCentres).where(eq(shoppingCentres.state, state));
+}
+
+export async function getNearbyCentres(centreId: number, radiusKm: number = 10) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Import geo utils
+  const { findNearbyCentres } = await import("./geoUtils");
+  
+  // Get all centres with coordinates
+  const allCentres = await db.select({
+    id: shoppingCentres.id,
+    name: shoppingCentres.name,
+    latitude: shoppingCentres.latitude,
+    longitude: shoppingCentres.longitude,
+    address: shoppingCentres.address,
+    state: shoppingCentres.state,
+  }).from(shoppingCentres);
+  
+  // Find nearby centres
+  const nearby = findNearbyCentres(allCentres, centreId, radiusKm);
+  
+  return nearby;
 }
 
 export async function searchShoppingCentres(query: string) {
@@ -478,11 +507,25 @@ export async function getBookingById(id: number) {
   return booking || null;
 }
 
-export async function getBookingsBySiteId(siteId: number) {
+export async function getBookingsBySiteId(siteId: number, startDate?: Date, endDate?: Date) {
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(bookings).where(eq(bookings.siteId, siteId));
+  let conditions = [eq(bookings.siteId, siteId)];
+  
+  if (startDate && endDate) {
+    // Find bookings that overlap with the requested date range
+    conditions.push(
+      or(
+        and(
+          lte(bookings.startDate, endDate),
+          gte(bookings.endDate, startDate)
+        )
+      )!
+    );
+  }
+
+  return await db.select().from(bookings).where(and(...conditions));
 }
 
 export async function getBookingsByCustomerId(customerId: number) {
