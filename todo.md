@@ -1599,3 +1599,9 @@
 - [x] Test overdue indicator appears for past-due invoices - N/A (no unpaid bookings)
 - [x] Verify count badge shows correct number of unpaid invoices - shows "Unpaid (0)"
 - [x] Database check confirms: 0 invoice bookings exist (all 577 bookings are Stripe payments)
+
+## Fix Search Page Error - Missing searchSitesWithCategory
+- [x] Find searchSitesWithCategory function in git history
+- [x] Add missing function to db.ts
+- [x] Test search page with query "eastgate 3x4 ugg"
+- [x] Verify search results display correctly - 5 sites found at Eastgate Bondi Junction (Sites 2, 10, 11, L2-33, L2-99)

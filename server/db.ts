@@ -317,6 +317,94 @@ export async function getSites() {
   return await db.select().from(sites);
 }
 
+export async function searchSitesWithCategory(query: string, categoryKeyword?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Simple fuzzy matching helper
+  const fuzzyMatch = (query: string, target: string, threshold: number) => {
+    const q = query.toLowerCase();
+    const t = target.toLowerCase();
+    return t.includes(q) || q.includes(t);
+  };
+  
+  // Get all sites with their centre information and approved categories
+  const allSites = await db
+    .select({
+      site: sites,
+      centre: shoppingCentres,
+      categoryId: siteUsageCategories.categoryId,
+      category: usageCategories,
+    })
+    .from(sites)
+    .leftJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
+    .leftJoin(siteUsageCategories, eq(sites.id, siteUsageCategories.siteId))
+    .leftJoin(usageCategories, eq(siteUsageCategories.categoryId, usageCategories.id));
+  
+  const lowerQuery = query.toLowerCase();
+  const queryWords = lowerQuery.split(/\s+/).filter(w => w.length > 0);
+  
+  // Group sites by site ID to consolidate multiple category matches
+  const siteMap = new Map<number, { site: typeof sites.$inferSelect; centre: typeof shoppingCentres.$inferSelect | null; categories: Array<typeof usageCategories.$inferSelect> }>();
+  
+  for (const row of allSites) {
+    const siteId = row.site.id;
+    if (!siteMap.has(siteId)) {
+      siteMap.set(siteId, {
+        site: row.site,
+        centre: row.centre,
+        categories: [],
+      });
+    }
+    if (row.category) {
+      siteMap.get(siteId)!.categories.push(row.category);
+    }
+  }
+  
+  // Filter sites based on query and category
+  const matches = Array.from(siteMap.values()).filter(({ site, centre, categories }) => {
+    const siteNumber = (site.siteNumber || "").toLowerCase();
+    const description = (site.description || "").toLowerCase();
+    const centreName = (centre?.name || "").toLowerCase();
+    const categoryNames = categories.map(c => c.name.toLowerCase()).join(" ");
+    const combined = `${centreName} ${siteNumber} ${description} ${categoryNames}`.toLowerCase();
+    
+    // If category keyword is provided, filter by category first
+    if (categoryKeyword) {
+      const categoryMatch = categories.some(cat => 
+        cat.name.toLowerCase().includes(categoryKeyword.toLowerCase())
+      );
+      if (!categoryMatch) return false;
+    }
+    
+    // Check if query matches as a whole
+    if (combined.includes(lowerQuery)) return true;
+    
+    // Check if all words in query appear somewhere in the combined text
+    const allWordsMatch = queryWords.every(word => combined.includes(word));
+    if (allWordsMatch) return true;
+    
+    // Check for substring matches in individual fields
+    if (siteNumber.includes(lowerQuery) || 
+        description.includes(lowerQuery) || 
+        centreName.includes(lowerQuery) ||
+        categoryNames.includes(lowerQuery)) {
+      return true;
+    }
+    
+    // Check fuzzy matches
+    return (
+      fuzzyMatch(query, siteNumber, 1) ||
+      fuzzyMatch(query, description, 2) ||
+      fuzzyMatch(query, centreName, 2) ||
+      fuzzyMatch(query, categoryNames, 2)
+    );
+  });
+  
+  // Return in the same format as searchSites
+  return matches.map(({ site, centre }) => ({ site, centre }));
+}
+
 export async function getSiteById(id: number) {
   const db = await getDb();
   if (!db) return null;
