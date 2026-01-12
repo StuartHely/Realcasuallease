@@ -457,11 +457,25 @@ export default function Search() {
                     </div>
                     
                     {/* Filter explanation notice */}
-                    {(parsedQuery.minSizeM2 !== undefined || parsedQuery.productCategory) && (
-                      <div className="mb-4 text-base text-red-600 italic">
-                        These results shows sites that meet or exceed the stated size requirement AND are permitted to sell in the requested category.
-                      </div>
-                    )}
+                    {(parsedQuery.minSizeM2 !== undefined || parsedQuery.productCategory) && (() => {
+                      const hasSizeFilter = parsedQuery.minSizeM2 !== undefined;
+                      const hasCategoryFilter = parsedQuery.productCategory;
+                      
+                      let noticeText = '';
+                      if (hasSizeFilter && hasCategoryFilter) {
+                        noticeText = 'These results show sites that meet or exceed the stated size requirement AND are permitted to sell in the requested category.';
+                      } else if (hasSizeFilter) {
+                        noticeText = 'These results show sites that meet or exceed the stated size requirement.';
+                      } else if (hasCategoryFilter) {
+                        noticeText = 'These results show sites that are permitted to sell in the requested category.';
+                      }
+                      
+                      return (
+                        <div className="mb-4 text-base text-red-600 italic">
+                          {noticeText}
+                        </div>
+                      );
+                    })()}
 
                     {/* Calendar Heatmap */}
                     {/* Top scrollbar */}

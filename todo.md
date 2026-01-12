@@ -1700,3 +1700,7 @@
 - [x] Update notice text to "These results shows sites that meet or exceed the stated size requirement AND are permitted to sell in the requested category."
 - [x] Increase notice font size to double (text-base instead of text-xs)
 - [x] Further reduce spacing between centre name and Available/Booked legend
+
+## Conditional Notice Wording
+- [x] Display different notice text based on active filters (size only, category only, or both)
+- [x] Fix grammar: "shows" → "show"
