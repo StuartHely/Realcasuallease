@@ -35,7 +35,9 @@ import {
   Package,
   CheckCircle,
   Tag,
-  Hash
+  Hash,
+  Search,
+  Image
 } from "lucide-react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -91,6 +93,8 @@ const getMenuSections = (userRole: string): MenuSection[] => {
         items: [
           { icon: Users, label: "Users", path: "/admin/users" },
           { icon: Users, label: "Owners & Managers", path: "/admin/owners" },
+          { icon: Search, label: "Search Analytics", path: "/admin/search-analytics" },
+          { icon: Image, label: "Image Analytics", path: "/admin/image-analytics" },
           { icon: FileText, label: "Audit Log", path: "/admin/audit" },
           { icon: Settings, label: "Settings", path: "/admin/settings" },
         ],

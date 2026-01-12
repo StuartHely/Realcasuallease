@@ -1133,10 +1133,10 @@ export const appRouter = router({
         weeklyRate: z.string().optional(),
         weekendRate: z.string().optional(),
         instantBooking: z.boolean().optional(),
-        imageUrl1: z.string().optional(),
-        imageUrl2: z.string().optional(),
-        imageUrl3: z.string().optional(),
-        imageUrl4: z.string().optional(),
+        imageUrl1: z.string().nullish(),
+        imageUrl2: z.string().nullish(),
+        imageUrl3: z.string().nullish(),
+        imageUrl4: z.string().nullish(),
       }))
       .mutation(async ({ input }) => {
         const { id, dailyRate, weeklyRate, weekendRate, ...rest } = input;

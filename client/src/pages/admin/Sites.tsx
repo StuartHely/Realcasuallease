@@ -605,15 +605,21 @@ export default function AdminSites() {
                               variant="destructive"
                               size="sm"
                               className="absolute top-1 right-1"
+                              disabled={updateMutation.isPending}
                               onClick={async () => {
-                                await updateMutation.mutateAsync({
-                                  id: selectedSite.id,
-                                  [`imageUrl${slot}`]: null,
-                                } as any);
-                                refetch();
+                                try {
+                                  await updateMutation.mutateAsync({
+                                    id: selectedSite.id,
+                                    [`imageUrl${slot}`]: null,
+                                  });
+                                  toast.success(`Image ${slot} removed successfully`);
+                                  refetch();
+                                } catch (error) {
+                                  toast.error(`Failed to remove image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                                }
                               }}
                             >
-                              Remove
+                              {updateMutation.isPending ? 'Removing...' : 'Remove'}
                             </Button>
                           </div>
                         ) : (

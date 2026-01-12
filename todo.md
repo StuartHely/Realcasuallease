@@ -1720,3 +1720,7 @@
 - [x] Display failed searches with suggestions
 - [x] Display suggestion click-through rates
 - [x] Add date range filter for analytics
+
+## Navigation and Bug Fixes
+- [ ] Add Search Analytics link to admin dashboard navigation
+- [ ] Fix image removal button in Admin Sites page (Site 2 image not removing)
