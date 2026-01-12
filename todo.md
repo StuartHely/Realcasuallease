@@ -1691,3 +1691,7 @@
 - [x] Fuzzy category matching - match "pet" with "Pet Supplies", "Pets & Animals" using string similarity
 - [x] Search suggestions on no results - show "Did you mean?" with similar centre names
 - [x] Show nearby alternatives when no exact match found
+
+## UI Improvements - Search Results
+- [x] Reduce spacing between centre name and Available/Booked legend
+- [x] Add red notice explaining filter behavior (size and category matching)

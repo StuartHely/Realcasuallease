@@ -91,6 +91,9 @@ export default function Search() {
   };
 
   const dateRange = generateDateRange();
+  
+  // Parse query to check if filters are applied
+  const parsedQuery = searchParams?.query ? parseSearchQuery(searchParams.query) : { minSizeM2: undefined, productCategory: undefined };
 
   // Keyboard navigation
   useEffect(() => {
@@ -431,8 +434,8 @@ export default function Search() {
               
               return (
                 <Card key={centre.id}>
-                  <CardHeader>
-                    <CardTitle className="text-2xl">{centre.name}</CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-2xl mb-2">{centre.name}</CardTitle>
                     <CardDescription>
                       {centre.majors && <span key={`${centre.id}-majors`} className="block">Major Stores: {centre.majors}</span>}
                       {centre.numberOfSpecialties && (
@@ -440,9 +443,9 @@ export default function Search() {
                       )}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-2">
                     {/* Legend */}
-                    <div className="flex items-center gap-6 mb-4 pb-4 border-b">
+                    <div className="flex items-center gap-6 mb-2">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 bg-green-500 rounded"></div>
                         <span className="text-sm font-medium">Available</span>
@@ -452,6 +455,13 @@ export default function Search() {
                         <span className="text-sm font-medium">Booked</span>
                       </div>
                     </div>
+                    
+                    {/* Filter explanation notice */}
+                    {(parsedQuery.minSizeM2 !== undefined || parsedQuery.productCategory) && (
+                      <div className="mb-4 text-xs text-red-600 italic">
+                        These results show sites that match or are larger than any size you requested and are permitted to sell any category that you may have mentioned.
+                      </div>
+                    )}
 
                     {/* Calendar Heatmap */}
                     {/* Top scrollbar */}
