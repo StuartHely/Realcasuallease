@@ -1664,3 +1664,8 @@
 - [x] Make search more precise to match intended centre only
 - [x] Fix autocomplete dropdown showing all centres instead of filtered matches
 - [x] Ensure autocomplete only displays centres matching the typed text
+
+## CRITICAL BUG - Database Update Error
+- [x] Eastgate is now hidden (includeInMainSite = 0) - FIXED
+- [x] Test centres are showing (includeInMainSite = 1) - FIXED
+- [x] Need to reverse the values - show real centres, hide test centres - FIXED
