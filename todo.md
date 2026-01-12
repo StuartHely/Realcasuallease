@@ -1708,3 +1708,15 @@
 ## Query Parser - Size Format Bug
 - [x] Fix parser to recognize "3 by 4" as size dimension (3x4)
 - [x] Support variations: "3 by 4", "3by4", "3 x 4", "3x4"
+
+## Search Analytics Dashboard
+- [x] Create database schema for search_analytics table
+- [x] Add search logging to smart search router
+- [x] Track: query, results count, timestamp, user (if logged in)
+- [x] Track failed searches (zero results)
+- [x] Track suggestion clicks
+- [x] Create admin dashboard page for analytics
+- [x] Display popular searches (top 10)
+- [x] Display failed searches with suggestions
+- [x] Display suggestion click-through rates
+- [x] Add date range filter for analytics

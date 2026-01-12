@@ -325,6 +325,33 @@ export type InsertImageAnalytics = typeof imageAnalytics.$inferInsert;
 export type SelectImageAnalytics = typeof imageAnalytics.$inferSelect;
 
 /**
+ * Search analytics for tracking user searches and suggestions
+ */
+export const searchAnalytics = mysqlTable("search_analytics", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").references(() => users.id, { onDelete: "set null" }),
+  query: text("query").notNull(),
+  centreName: varchar("centreName", { length: 255 }),
+  minSizeM2: decimal("minSizeM2", { precision: 10, scale: 2 }),
+  productCategory: varchar("productCategory", { length: 255 }),
+  resultsCount: int("resultsCount").notNull(),
+  hadResults: boolean("hadResults").notNull(),
+  suggestionsShown: int("suggestionsShown").default(0),
+  suggestionClicked: boolean("suggestionClicked").default(false),
+  clickedSuggestion: varchar("clickedSuggestion", { length: 255 }),
+  searchDate: timestamp("searchDate").notNull(),
+  ipAddress: varchar("ipAddress", { length: 45 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  searchDateIdx: index("searchDate_idx").on(table.searchDate),
+  hadResultsIdx: index("hadResults_idx").on(table.hadResults),
+  createdAtIdx: index("createdAt_idx").on(table.createdAt),
+}));
+
+export type SearchAnalytics = typeof searchAnalytics.$inferSelect;
+export type InsertSearchAnalytics = typeof searchAnalytics.$inferInsert;
+
+/**
  * Audit log for admin changes
  */
 export const auditLog = mysqlTable("audit_log", {

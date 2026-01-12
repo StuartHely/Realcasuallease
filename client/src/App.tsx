@@ -31,6 +31,7 @@ import UsageCategories from "./pages/admin/UsageCategories";
 import CentreCodes from "./pages/admin/CentreCodes";
 import Payments from "./pages/admin/Payments";
 import InvoiceDashboard from "./pages/admin/InvoiceDashboard";
+import SearchAnalytics from "./pages/admin/SearchAnalytics";
 import OwnerApprovals from "./pages/OwnerApprovals";
 import OwnerCentres from "./pages/OwnerCentres";
 
@@ -47,6 +48,7 @@ function Router() {
            <Route path="/admin/maps" component={Maps} />
           <Route path="/admin/system-config" component={SystemConfig} />
           <Route path="/admin/image-analytics" component={ImageAnalytics} />
+      <Route path="/admin/search-analytics" component={SearchAnalytics} />
       <Route path="/admin/site-assignment" component={AdminSiteAssignment} />
       <Route path="/admin/equipment" component={Equipment} />
       <Route path="/admin/seasonal-rates" component={SeasonalRates} />

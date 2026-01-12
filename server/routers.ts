@@ -750,7 +750,7 @@ export const appRouter = router({
     // Smart search with site-level support
     smart: publicProcedure
       .input(z.object({ query: z.string(), date: z.date() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         // Parse query to extract requirements
         const { parseSearchQuery, siteMatchesRequirements } = await import("../shared/queryParser");
         const parsedQuery = parseSearchQuery(input.query);
@@ -787,6 +787,20 @@ export const appRouter = router({
           // Get search suggestions when no results found
           const { getSearchSuggestions } = await import("./searchSuggestions");
           const suggestions = await getSearchSuggestions(searchQuery, 5);
+          
+          // Log failed search
+          const { logSearch } = await import("./searchAnalyticsDb");
+          await logSearch({
+            userId: ctx.user?.id,
+            query: input.query,
+            centreName: parsedQuery.centreName,
+            minSizeM2: parsedQuery.minSizeM2,
+            productCategory: parsedQuery.productCategory,
+            resultsCount: 0,
+            suggestionsShown: suggestions.length,
+            searchDate: input.date,
+          });
+          
           return { 
             centres: [], 
             sites: [], 
@@ -926,6 +940,19 @@ export const appRouter = router({
         
         // Return flag indicating if size requirement was met
         const sizeNotAvailable = hasRequirements && !hasMatchingSites;
+        
+        // Log successful search
+        const { logSearch } = await import("./searchAnalyticsDb");
+        await logSearch({
+          userId: ctx.user?.id,
+          query: input.query,
+          centreName: parsedQuery.centreName,
+          minSizeM2: parsedQuery.minSizeM2,
+          productCategory: parsedQuery.productCategory,
+          resultsCount: allSites.length,
+          suggestionsShown: 0,
+          searchDate: input.date,
+        });
         
         return { centres, sites: allSites, availability, matchedSiteIds, sizeNotAvailable, closestMatch, siteCategories };
       }),
@@ -1860,6 +1887,50 @@ export const appRouter = router({
         }
         await db.updateUserInvoiceFlag(input.userId, input.canPayByInvoice);
         return { success: true };
+      }),
+  }),
+
+  searchAnalytics: router({
+    getSummary: adminProcedure
+      .input(z.object({
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      }))
+      .query(async ({ input }) => {
+        const { getSearchAnalyticsSummary } = await import("./searchAnalyticsDb");
+        return await getSearchAnalyticsSummary(input);
+      }),
+
+    getPopularSearches: adminProcedure
+      .input(z.object({
+        limit: z.number().optional().default(10),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      }))
+      .query(async ({ input }) => {
+        const { getPopularSearches } = await import("./searchAnalyticsDb");
+        return await getPopularSearches(input);
+      }),
+
+    getFailedSearches: adminProcedure
+      .input(z.object({
+        limit: z.number().optional().default(10),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      }))
+      .query(async ({ input }) => {
+        const { getFailedSearches } = await import("./searchAnalyticsDb");
+        return await getFailedSearches(input);
+      }),
+
+    getSuggestionClickThroughRate: adminProcedure
+      .input(z.object({
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      }))
+      .query(async ({ input }) => {
+        const { getSuggestionClickThroughRate } = await import("./searchAnalyticsDb");
+        return await getSuggestionClickThroughRate(input);
       }),
   }),
 
