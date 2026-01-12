@@ -1,0 +1,270 @@
+{
+  "query": "SELECT id, name, includeInMainSite FROM shopping_centres ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, name, includeInMainSite FROM shopping_centres ORDER BY name;",
+  "rows": [
+    {
+      "id": "120001",
+      "name": "Albany Plaza",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120002",
+      "name": "Arana Hills Plaza",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120003",
+      "name": "Atherton Square",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "60009",
+      "name": "Bass Hill Plaza",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120004",
+      "name": "Bateau Bay Square",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120005",
+      "name": "Bribie Island Central",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120006",
+      "name": "Butler Central",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120007",
+      "name": "Campbellfield Plaza",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "60004",
+      "name": "Campbelltown Mall",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "60005",
+      "name": "Carnes Hill Marketplace",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "60010",
+      "name": "Corio Village",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120008",
+      "name": "Currimundi Markets",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120009",
+      "name": "Dubbo Square",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120010",
+      "name": "Eastgate Bondi Junction",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120011",
+      "name": "Esperance Boulevard",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120012",
+      "name": "Gatton Square",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120013",
+      "name": "Gordon Centre",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120014",
+      "name": "Goulburn Square",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120015",
+      "name": "Highfields Village",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "60003",
+      "name": "Highlands Marketplace",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120016",
+      "name": "Jerrabomberra Village",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120017",
+      "name": "Kalgoorlie Central",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120018",
+      "name": "Kings Langley Central",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120019",
+      "name": "Lansell Square",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120020",
+      "name": "Manuka Terrace",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120021",
+      "name": "Morisset Square",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120022",
+      "name": "Mudgee Metroplaza",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120023",
+      "name": "Orange Central Square",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "60006",
+      "name": "Pacific Square",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120024",
+      "name": "Parkes Plaza",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "60008",
+      "name": "Rockdale Plaza",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120025",
+      "name": "Salamander Bay Square",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120026",
+      "name": "Secret Harbour Square",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120027",
+      "name": "Singleton Square",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120028",
+      "name": "South Hedland Square",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120029",
+      "name": "Sunnyside Mall",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120030",
+      "name": "Swan View Central",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "120031",
+      "name": "Tamworth Square",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "90001",
+      "name": "Test Centre",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "180004",
+      "name": "Test Centre for Categories",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "150002",
+      "name": "Test Centre for Categories",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "180001",
+      "name": "Test Centre for Categories",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "180002",
+      "name": "Test Centre for Categories",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "180003",
+      "name": "Test Centre for Categories",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "150001",
+      "name": "Test Centre for Categories",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "180005",
+      "name": "Test Centre for Categories",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "210001",
+      "name": "Test Centre for Categories",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "210002",
+      "name": "Test Centre for Categories",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "240001",
+      "name": "Test Centre for GST",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "180008",
+      "name": "Test Centre for New Features",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "90002",
+      "name": "Test Centre for Site",
+      "includeInMainSite": "1"
+    },
+    {
+      "id": "60007",
+      "name": "Wanneroo Central",
+      "includeInMainSite": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tincludeInMainSite\n120001\tAlbany Plaza\t1\n120002\tArana Hills Plaza\t1\n120003\tAtherton Square\t1\n60009\tBass Hill Plaza\t1\n120004\tBateau Bay Square\t1\n120005\tBribie Island Central\t1\n120006\tButler Central\t1\n120007\tCampbellfield Plaza\t1\n60004\tCampbelltown Mall\t1\n60005\tCarnes Hill Marketplace\t1\n60010\tCorio Village\t1\n120008\tCurrimundi Markets\t1\n120009\tDubbo Square\t1\n120010\tEastgate Bondi Junction\t1\n120011\tEsperance Boulevard\t1\n120012\tGatton Square\t1\n120013\tGordon Centre\t1\n120014\tGoulburn Square\t1\n120015\tHighfields Village\t1\n60003\tHighlands Marketplace\t1\n120016\tJerrabomberra Village\t1\n120017\tKalgoorlie Central\t1\n120018\tKings Langley Central\t1\n120019\tLansell Square\t1\n120020\tManuka Terrace\t1\n120021\tMorisset Square\t1\n120022\tMudgee Metroplaza\t1\n120023\tOrange Central Square\t1\n60006\tPacific Square\t1\n120024\tParkes Plaza\t1\n60008\tRockdale Plaza\t1\n120025\tSalamander Bay Square\t1\n120026\tSecret Harbour Square\t1\n120027\tSingleton Square\t1\n120028\tSouth Hedland Square\t1\n120029\tSunnyside Mall\t1\n120030\tSwan View Central\t1\n120031\tTamworth Square\t1\n90001\tTest Centre\t1\n180004\tTest Centre for Categories\t1\n150002\tTest Centre for Categories\t1\n180001\tTest Centre for Categories\t1\n180002\tTest Centre for Categories\t1\n180003\tTest Centre for Categories\t1\n150001\tTest Centre for Categories\t1\n180005\tTest Centre for Categories\t1\n210001\tTest Centre for Categories\t1\n210002\tTest Centre for Categories\t1\n240001\tTest Centre for GST\t1\n180008\tTest Centre for New Features\t1\n90002\tTest Centre for Site\t1\n60007\tWanneroo Central\t1\n",
+  "stderr": "",
+  "execution_time_ms": 1998
+}

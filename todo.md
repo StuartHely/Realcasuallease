@@ -1658,3 +1658,9 @@
 - [x] Changed link text from "Show me all sized sites" to "Show me all sized sites in this centre"
 - [x] Makes it clear the link shows all sites within the same shopping centre only
 - [x] Verified updated text displays correctly in browser
+
+## Bug Fixes - Search Precision & Autocomplete
+- [x] Fix search showing too many results (e.g., "Eastgate" shows test centres)
+- [x] Make search more precise to match intended centre only
+- [x] Fix autocomplete dropdown showing all centres instead of filtered matches
+- [x] Ensure autocomplete only displays centres matching the typed text

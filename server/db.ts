@@ -276,8 +276,11 @@ export async function searchShoppingCentres(query: string) {
     return t.includes(q) || q.includes(t);
   };
   
-  // Filter using fuzzy matching
+  // Filter using fuzzy matching and exclude test centres
   const matchedCentres = allCentres.filter(centre => {
+    // Only include centres marked for main site
+    if (!centre.includeInMainSite) return false;
+    
     return (
       fuzzyMatch(centreQuery, centre.name || '', 2) ||
       fuzzyMatch(centreQuery, centre.suburb || '', 2) ||
