@@ -434,8 +434,8 @@ export default function Search() {
               
               return (
                 <Card key={centre.id}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-2xl mb-2">{centre.name}</CardTitle>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-2xl mb-1">{centre.name}</CardTitle>
                     <CardDescription>
                       {centre.majors && <span key={`${centre.id}-majors`} className="block">Major Stores: {centre.majors}</span>}
                       {centre.numberOfSpecialties && (
@@ -443,7 +443,7 @@ export default function Search() {
                       )}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="pt-2">
+                  <CardContent className="pt-1">
                     {/* Legend */}
                     <div className="flex items-center gap-6 mb-2">
                       <div className="flex items-center gap-2">
@@ -458,8 +458,8 @@ export default function Search() {
                     
                     {/* Filter explanation notice */}
                     {(parsedQuery.minSizeM2 !== undefined || parsedQuery.productCategory) && (
-                      <div className="mb-4 text-xs text-red-600 italic">
-                        These results show sites that match or are larger than any size you requested and are permitted to sell any category that you may have mentioned.
+                      <div className="mb-4 text-base text-red-600 italic">
+                        These results shows sites that meet or exceed the stated size requirement AND are permitted to sell in the requested category.
                       </div>
                     )}
 

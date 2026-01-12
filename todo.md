@@ -1695,3 +1695,8 @@
 ## UI Improvements - Search Results
 - [x] Reduce spacing between centre name and Available/Booked legend
 - [x] Add red notice explaining filter behavior (size and category matching)
+
+## UI Refinements - Search Results Notice
+- [x] Update notice text to "These results shows sites that meet or exceed the stated size requirement AND are permitted to sell in the requested category."
+- [x] Increase notice font size to double (text-base instead of text-xs)
+- [x] Further reduce spacing between centre name and Available/Booked legend
