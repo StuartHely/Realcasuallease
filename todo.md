@@ -1704,3 +1704,7 @@
 ## Conditional Notice Wording
 - [x] Display different notice text based on active filters (size only, category only, or both)
 - [x] Fix grammar: "shows" → "show"
+
+## Query Parser - Size Format Bug
+- [x] Fix parser to recognize "3 by 4" as size dimension (3x4)
+- [x] Support variations: "3 by 4", "3by4", "3 x 4", "3x4"
