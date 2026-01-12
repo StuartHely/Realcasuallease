@@ -1637,3 +1637,19 @@
 - [x] Added missing getShoppingCentresByState and getNearbyCentres functions
 - [x] Added missing imports (gte, lte, or) to db.ts
 - [x] Reduced TypeScript errors from 14 to 4 (remaining are unrelated payment page issues)
+
+## Add "Show All Sized Sites" Link
+- [x] Add link at bottom of search results list stating "Show me all sized sites"
+- [x] Link removes size filter from current search query
+- [x] Preserves centre name, date, and category filters
+- [x] Re-runs search to display all sites regardless of size
+- [x] Test with "highlands food 2x3" query showing filtered results
+- [x] Verify clicking link shows all 5 sites instead of filtered 4
+
+## Test Results - "Show All Sized Sites" Link
+- [x] Link appears at bottom of search results when size filter is active
+- [x] Link removes size filter from query while preserving centre name and date
+- [x] Clicking link successfully shows all sites (tested: 4 filtered → 16 total sites)
+- [x] URL correctly updates from "highlands food 2x3" to "highlands"
+- [x] Category filter preserved when present
+- [x] "Filtering by" message removed after clicking link

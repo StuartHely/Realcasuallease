@@ -644,6 +644,40 @@ export default function Search() {
                           </Card>
                         );
                       })}
+                      
+                      {/* Show "Show me all sized sites" link if size filter is active and results are filtered */}
+                      {(() => {
+                        const parsed = parseSearchQuery(searchParams.query);
+                        const hasSizeFilter = parsed.minSizeM2 !== undefined;
+                        if (hasSizeFilter && centreSites.length > 0) {
+                          return (
+                            <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  // Remove size requirements from query
+                                  const newQuery = parsed.centreName || searchParams.query.split(/\d/)[0].trim();
+                                  const params = new URLSearchParams();
+                                  params.set('query', newQuery);
+                                  params.set('date', format(searchParams.date, 'yyyy-MM-dd'));
+                                  if (selectedCategoryId) {
+                                    params.set('category', selectedCategoryId.toString());
+                                  }
+                                  if (showOnlyAutoApproved) {
+                                    params.set('autoApproved', 'true');
+                                  }
+                                  setLocation(`/search?${params.toString()}`);
+                                  window.location.href = `/search?${params.toString()}`;
+                                }}
+                                className="text-blue-600 hover:text-blue-700"
+                              >
+                                Show me all sized sites
+                              </Button>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </CardContent>
                 </Card>
