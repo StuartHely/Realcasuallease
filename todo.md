@@ -1680,3 +1680,9 @@
 - [x] "Campbelltown" search returns Campbelltown Mall first, then all other centres - FIXED
 - [x] The includeInMainSite filter is not the issue - the search matching logic is broken - Root cause: q.includes(t)
 - [x] Need to properly investigate why fuzzy matching is returning everything - Fixed by removing q.includes(t)
+
+## Search Issue - Highlands Marketplace Not Found
+- [x] Search for "Highlands Marketplace 2x2 pet" returns "No shopping centres found" - FIXED
+- [x] Should find Highlands Marketplace and filter by 4m² minimum size - Working now
+- [x] Need to verify centre exists and why search is failing - Root cause: missing singular keywords
+- [x] Check if query parsing is extracting centre name correctly - Fixed by adding singular forms

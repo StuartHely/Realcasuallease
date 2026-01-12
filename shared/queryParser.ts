@@ -59,29 +59,29 @@ function extractProductCategory(query: string): string | undefined {
   // Common product category keywords (will be matched against database categories)
   const categoryKeywords = [
     // Footwear
-    'shoes', 'footwear', 'boots', 'ugg', 'sneakers', 'sandals', 'heels',
+    'shoes', 'shoe', 'footwear', 'boots', 'boot', 'ugg', 'sneakers', 'sneaker', 'sandals', 'sandal', 'heels', 'heel',
     // Clothing & Fashion
-    'clothing', 'apparel', 'fashion', 'accessories',
+    'clothing', 'apparel', 'fashion', 'accessories', 'accessory',
     // Jewellery
-    'jewelry', 'jewellery', 'watches', 'rings', 'necklaces',
+    'jewelry', 'jewellery', 'watches', 'watch', 'rings', 'ring', 'necklaces', 'necklace',
     // Food & Beverage
     'food', 'beverage', 'cafe', 'coffee', 'restaurant', 'bakery', 'wine', 'liquor', 'alcohol',
     // Electronics & Technology
-    'electronics', 'tech', 'technology', 'gadgets', 'phones', 'computers', 'telecommunications',
+    'electronics', 'electronic', 'tech', 'technology', 'gadgets', 'gadget', 'phones', 'phone', 'computers', 'computer', 'telecommunications',
     // Books & Stationery
-    'books', 'stationery', 'calendars', 'news',
+    'books', 'book', 'stationery', 'calendars', 'calendar', 'news',
     // Art & Craft
-    'art', 'craft', 'handmade', 'hobbies', 'photography',
+    'art', 'craft', 'handmade', 'hobbies', 'hobby', 'photography',
     // Beauty & Cosmetics
-    'beauty', 'cosmetics', 'skincare', 'makeup', 'salon', 'barber',
+    'beauty', 'cosmetics', 'cosmetic', 'skincare', 'makeup', 'salon', 'barber',
     // Health & Wellness
-    'health', 'fitness', 'wellness', 'pharmacy', 'medical', 'pharmaceuticals',
+    'health', 'fitness', 'wellness', 'pharmacy', 'medical', 'pharmaceuticals', 'pharmaceutical',
     // Toys & Kids
-    'toys', 'games', 'kids', 'children', 'baby', 'toddler',
+    'toys', 'toy', 'games', 'game', 'kids', 'kid', 'children', 'child', 'baby', 'toddler',
     // Home & Furniture
     'home', 'furniture', 'decor', 'homewares', 'bedding', 'household',
     // Pets & Animals
-    'pets', 'animals',
+    'pets', 'pet', 'animals', 'animal',
     // Gardening & Outdoor
     'flowers', 'plants', 'garden', 'gardening', 'outdoor',
     // Automotive & Marine
@@ -121,29 +121,29 @@ function extractCentreName(query: string): string {
   // Remove product category keywords
   const categoryKeywords = [
     // Footwear
-    'shoes', 'footwear', 'boots', 'ugg', 'sneakers', 'sandals', 'heels',
+    'shoes', 'shoe', 'footwear', 'boots', 'boot', 'ugg', 'sneakers', 'sneaker', 'sandals', 'sandal', 'heels', 'heel',
     // Clothing & Fashion
-    'clothing', 'apparel', 'fashion', 'accessories',
+    'clothing', 'apparel', 'fashion', 'accessories', 'accessory',
     // Jewellery
-    'jewelry', 'jewellery', 'watches', 'rings', 'necklaces',
+    'jewelry', 'jewellery', 'watches', 'watch', 'rings', 'ring', 'necklaces', 'necklace',
     // Food & Beverage
     'food', 'beverage', 'cafe', 'coffee', 'restaurant', 'bakery', 'wine', 'liquor', 'alcohol',
     // Electronics & Technology
-    'electronics', 'tech', 'technology', 'gadgets', 'phones', 'computers', 'telecommunications',
+    'electronics', 'electronic', 'tech', 'technology', 'gadgets', 'gadget', 'phones', 'phone', 'computers', 'computer', 'telecommunications',
     // Books & Stationery
-    'books', 'stationery', 'calendars', 'news',
+    'books', 'book', 'stationery', 'calendars', 'calendar', 'news',
     // Art & Craft
-    'art', 'craft', 'handmade', 'hobbies', 'photography',
+    'art', 'craft', 'handmade', 'hobbies', 'hobby', 'photography',
     // Beauty & Cosmetics
-    'beauty', 'cosmetics', 'skincare', 'makeup', 'salon', 'barber',
+    'beauty', 'cosmetics', 'cosmetic', 'skincare', 'makeup', 'salon', 'barber',
     // Health & Wellness
-    'health', 'fitness', 'wellness', 'pharmacy', 'medical', 'pharmaceuticals',
+    'health', 'fitness', 'wellness', 'pharmacy', 'medical', 'pharmaceuticals', 'pharmaceutical',
     // Toys & Kids
-    'toys', 'games', 'kids', 'children', 'baby', 'toddler',
+    'toys', 'toy', 'games', 'game', 'kids', 'kid', 'children', 'child', 'baby', 'toddler',
     // Home & Furniture
     'home', 'furniture', 'decor', 'homewares', 'bedding', 'household',
     // Pets & Animals
-    'pets', 'animals',
+    'pets', 'pet', 'animals', 'animal',
     // Gardening & Outdoor
     'flowers', 'plants', 'garden', 'gardening', 'outdoor',
     // Automotive & Marine
