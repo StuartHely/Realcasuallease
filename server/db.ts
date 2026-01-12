@@ -269,11 +269,12 @@ export async function searchShoppingCentres(query: string) {
   // Get all centres
   const allCentres = await db.select().from(shoppingCentres);
   
-  // Simple fuzzy matching helper
+  // Simple substring matching helper
   const fuzzyMatch = (query: string, target: string, threshold: number) => {
     const q = query.toLowerCase();
     const t = target.toLowerCase();
-    return t.includes(q) || q.includes(t);
+    // Only check if target contains query (not the reverse)
+    return t.includes(q);
   };
   
   // Filter using fuzzy matching and exclude test centres
@@ -353,11 +354,12 @@ export async function searchSitesWithCategory(query: string, categoryKeyword?: s
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Simple fuzzy matching helper
+  // Simple substring matching helper
   const fuzzyMatch = (query: string, target: string, threshold: number) => {
     const q = query.toLowerCase();
     const t = target.toLowerCase();
-    return t.includes(q) || q.includes(t);
+    // Only check if target contains query (not the reverse)
+    return t.includes(q);
   };
   
   // Get all sites with their centre information and approved categories

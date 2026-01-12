@@ -1674,3 +1674,9 @@
 - [x] Database updates were applied but search still not working - Root cause found
 - [x] Need to debug why includeInMainSite filter is not being applied - Fixed in searchSitesWithCategory
 - [x] Check if there's caching or other issues - Was missing filter in second search path
+
+## CRITICAL - Search Still Broken
+- [x] "Eastgate" search returns ALL centres alphabetically (not just Eastgate) - FIXED
+- [x] "Campbelltown" search returns Campbelltown Mall first, then all other centres - FIXED
+- [x] The includeInMainSite filter is not the issue - the search matching logic is broken - Root cause: q.includes(t)
+- [x] Need to properly investigate why fuzzy matching is returning everything - Fixed by removing q.includes(t)
