@@ -361,6 +361,7 @@ export async function searchSitesWithCategory(query: string, categoryKeyword?: s
   };
   
   // Get all sites with their centre information and approved categories
+  // Filter out sites from test centres (where includeInMainSite = 0)
   const allSites = await db
     .select({
       site: sites,
@@ -371,7 +372,8 @@ export async function searchSitesWithCategory(query: string, categoryKeyword?: s
     .from(sites)
     .leftJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
     .leftJoin(siteUsageCategories, eq(sites.id, siteUsageCategories.siteId))
-    .leftJoin(usageCategories, eq(siteUsageCategories.categoryId, usageCategories.id));
+    .leftJoin(usageCategories, eq(siteUsageCategories.categoryId, usageCategories.id))
+    .where(eq(shoppingCentres.includeInMainSite, true));
   
   const lowerQuery = query.toLowerCase();
   const queryWords = lowerQuery.split(/\s+/).filter(w => w.length > 0);

@@ -1669,3 +1669,8 @@
 - [x] Eastgate is now hidden (includeInMainSite = 0) - FIXED
 - [x] Test centres are showing (includeInMainSite = 1) - FIXED
 - [x] Need to reverse the values - show real centres, hide test centres - FIXED
+
+## INVESTIGATION - Fix Not Working
+- [x] Database updates were applied but search still not working - Root cause found
+- [x] Need to debug why includeInMainSite filter is not being applied - Fixed in searchSitesWithCategory
+- [x] Check if there's caching or other issues - Was missing filter in second search path
