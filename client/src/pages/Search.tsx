@@ -671,7 +671,7 @@ export default function Search() {
                                 }}
                                 className="text-blue-600 hover:text-blue-700"
                               >
-                                Show me all sized sites
+                                Show me all sized sites in this centre
                               </Button>
                             </div>
                           );

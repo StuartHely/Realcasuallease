@@ -1653,3 +1653,8 @@
 - [x] URL correctly updates from "highlands food 2x3" to "highlands"
 - [x] Category filter preserved when present
 - [x] "Filtering by" message removed after clicking link
+
+## Update Link Text for Clarity
+- [x] Changed link text from "Show me all sized sites" to "Show me all sized sites in this centre"
+- [x] Makes it clear the link shows all sites within the same shopping centre only
+- [x] Verified updated text displays correctly in browser
