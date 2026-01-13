@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight } from "lucide-react";
+import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { format, parse, addDays, isSameDay, subDays } from "date-fns";
 import InteractiveMap from "@/components/InteractiveMap";
 import { NearbyCentresMap } from "@/components/NearbyCentresMap";
@@ -20,6 +20,7 @@ export default function Search() {
   const [focusedCell, setFocusedCell] = useState<{ siteIndex: number; dateIndex: number } | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [showOnlyAutoApproved, setShowOnlyAutoApproved] = useState(false);
+  const [calendarDays, setCalendarDays] = useState<number>(14); // 14 or 30 days
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -79,12 +80,12 @@ export default function Search() {
     }
   }, [data]);
 
-  // Generate date range for heatmap (2 weeks)
+  // Generate date range for heatmap (14 or 30 days)
   const generateDateRange = () => {
     if (!searchParams?.date) return [];
     const dates = [];
     const startDate = searchParams.date;
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < calendarDays; i++) {
       dates.push(addDays(startDate, i));
     }
     return dates;
@@ -478,8 +479,26 @@ export default function Search() {
                     })()}
 
                     {/* Calendar Heatmap */}
-                    {/* Week Navigation */}
-                    <div className="flex items-center justify-end gap-2 mb-3">
+                    {/* Calendar Navigation */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">View:</span>
+                        <Button
+                          variant={calendarDays === 14 ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCalendarDays(14)}
+                        >
+                          2 Weeks
+                        </Button>
+                        <Button
+                          variant={calendarDays === 30 ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCalendarDays(30)}
+                        >
+                          Month
+                        </Button>
+                      </div>
+                      <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -510,6 +529,21 @@ export default function Search() {
                         Next Week
                         <ChevronRight className="h-4 w-4" />
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (!searchParams) return;
+                          const params = new URLSearchParams(window.location.search);
+                          params.set('date', format(new Date(), 'yyyy-MM-dd'));
+                          window.location.search = params.toString();
+                        }}
+                        className="flex items-center gap-1"
+                      >
+                        <CalendarDays className="h-4 w-4" />
+                        Today
+                      </Button>
+                      </div>
                     </div>
                     {/* Top scrollbar */}
                     <div 

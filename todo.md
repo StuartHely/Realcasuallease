@@ -1739,3 +1739,7 @@
 
 ## New Feature Request (Jan 13, 2026)
 - [x] Add "Previous Week" and "Next Week" navigation links to search results calendar
+
+## New Calendar Enhancements (Jan 13, 2026)
+- [x] Add "Today" quick-jump button to calendar navigation
+- [x] Add month view toggle (14-day vs 30-day calendar view)
