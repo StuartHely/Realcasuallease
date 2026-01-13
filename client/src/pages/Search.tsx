@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info } from "lucide-react";
-import { format, parse, addDays, isSameDay } from "date-fns";
+import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight } from "lucide-react";
+import { format, parse, addDays, isSameDay, subDays } from "date-fns";
 import InteractiveMap from "@/components/InteractiveMap";
 import { NearbyCentresMap } from "@/components/NearbyCentresMap";
 import { SearchSkeleton } from "@/components/SearchSkeleton";
@@ -478,6 +478,39 @@ export default function Search() {
                     })()}
 
                     {/* Calendar Heatmap */}
+                    {/* Week Navigation */}
+                    <div className="flex items-center justify-end gap-2 mb-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (!searchParams) return;
+                          const newDate = subDays(searchParams.date, 7);
+                          const params = new URLSearchParams(window.location.search);
+                          params.set('date', format(newDate, 'yyyy-MM-dd'));
+                          window.location.search = params.toString();
+                        }}
+                        className="flex items-center gap-1"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous Week
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (!searchParams) return;
+                          const newDate = addDays(searchParams.date, 7);
+                          const params = new URLSearchParams(window.location.search);
+                          params.set('date', format(newDate, 'yyyy-MM-dd'));
+                          window.location.search = params.toString();
+                        }}
+                        className="flex items-center gap-1"
+                      >
+                        Next Week
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
                     {/* Top scrollbar */}
                     <div 
                       className="overflow-x-auto mb-2" 
