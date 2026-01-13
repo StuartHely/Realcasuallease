@@ -172,26 +172,25 @@ export default function AdminSites() {
     }
     
     setUploadingImage(true);
+    
     try {
-      // Convert file to base64
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = async () => {
-        const base64 = reader.result as string;
-        
-        // Upload via tRPC
-        await uploadImageMutation.mutateAsync({
-          siteId,
-          imageSlot,
-          base64Image: base64,
-        });
-        
-        toast.success("Image uploaded and resized successfully");
-        refetch();
-      };
-      reader.onerror = () => {
-        throw new Error("Failed to read file");
-      };
+      // Convert file to base64 using Promise
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("Failed to read file"));
+      });
+      
+      // Upload via tRPC
+      await uploadImageMutation.mutateAsync({
+        siteId,
+        imageSlot,
+        base64Image: base64,
+      });
+      
+      toast.success("Image uploaded and resized successfully");
+      refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to upload image");
     } finally {

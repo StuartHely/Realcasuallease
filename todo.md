@@ -1743,3 +1743,6 @@
 ## New Calendar Enhancements (Jan 13, 2026)
 - [x] Add "Today" quick-jump button to calendar navigation
 - [x] Add month view toggle (14-day vs 30-day calendar view)
+
+## Bug Fix (Jan 13, 2026)
+- [x] Fix image upload showing "failed" message even when upload succeeds in Admin Sites
