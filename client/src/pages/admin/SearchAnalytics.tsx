@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, TrendingUp, TrendingDown, Search, AlertCircle } from "lucide-react";
+import { CalendarIcon, TrendingUp, TrendingDown, Search, AlertCircle, Download } from "lucide-react";
 import { format } from "date-fns";
+import * as XLSX from "xlsx";
 
 export default function SearchAnalytics() {
   const [startDate, setStartDate] = useState<Date>();
@@ -35,13 +36,144 @@ export default function SearchAnalytics() {
 
   const isLoading = summaryLoading || popularLoading || failedLoading || ctrLoading;
 
+  const exportToCSV = () => {
+    if (!summary || !popularSearches || !failedSearches || !suggestionCTR) return;
+
+    // Create CSV content
+    let csvContent = "Search Analytics Report\n";
+    csvContent += `Generated: ${format(new Date(), "PPP")}\n`;
+    if (startDate || endDate) {
+      csvContent += `Date Range: ${startDate ? format(startDate, "PPP") : "All"} - ${endDate ? format(endDate, "PPP") : "All"}\n`;
+    }
+    csvContent += "\n";
+
+    // Summary
+    csvContent += "Summary\n";
+    csvContent += "Metric,Value\n";
+    csvContent += `Total Searches,${summary.totalSearches}\n`;
+    csvContent += `Successful Searches,${summary.successfulSearches}\n`;
+    csvContent += `Failed Searches,${summary.failedSearches}\n`;
+    csvContent += `Success Rate,${summary.successRate.toFixed(1)}%\n`;
+    csvContent += `Average Results Per Search,${summary.avgResultsPerSearch}\n`;
+    csvContent += "\n";
+
+    // Popular Searches
+    csvContent += "Popular Searches\n";
+    csvContent += "Query,Search Count,Avg Results\n";
+    popularSearches.forEach(search => {
+      csvContent += `"${search.query}",${search.count},${search.avgResultsCount}\n`;
+    });
+    csvContent += "\n";
+
+    // Failed Searches
+    csvContent += "Failed Searches\n";
+    csvContent += "Query,Attempt Count,Last Searched\n";
+    failedSearches.forEach(search => {
+      csvContent += `"${search.query}",${search.count},${format(new Date(search.lastSearched), "MMM d, yyyy")}\n`;
+    });
+    csvContent += "\n";
+
+    // Suggestion CTR
+    csvContent += "Suggestion Click-Through Rate\n";
+    csvContent += "Metric,Value\n";
+    csvContent += `Searches with Suggestions,${suggestionCTR.totalSearchesWithSuggestions}\n`;
+    csvContent += `Suggestion Clicks,${suggestionCTR.totalClicks}\n`;
+    csvContent += `Click-Through Rate,${suggestionCTR.clickThroughRate.toFixed(1)}%\n`;
+
+    // Download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `search-analytics-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.click();
+  };
+
+  const exportToExcel = () => {
+    if (!summary || !popularSearches || !failedSearches || !suggestionCTR) return;
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+
+    // Summary sheet
+    const summaryData = [
+      ["Search Analytics Report"],
+      [`Generated: ${format(new Date(), "PPP")}`],
+      startDate || endDate ? [`Date Range: ${startDate ? format(startDate, "PPP") : "All"} - ${endDate ? format(endDate, "PPP") : "All"}`] : [],
+      [],
+      ["Summary"],
+      ["Metric", "Value"],
+      ["Total Searches", summary.totalSearches],
+      ["Successful Searches", summary.successfulSearches],
+      ["Failed Searches", summary.failedSearches],
+      ["Success Rate", `${summary.successRate.toFixed(1)}%`],
+      ["Average Results Per Search", summary.avgResultsPerSearch],
+    ];
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
+
+    // Popular Searches sheet
+    const popularData = [
+      ["Popular Searches"],
+      [],
+      ["Query", "Search Count", "Avg Results"],
+      ...popularSearches.map(s => [s.query, s.count, s.avgResultsCount])
+    ];
+    const popularSheet = XLSX.utils.aoa_to_sheet(popularData);
+    XLSX.utils.book_append_sheet(wb, popularSheet, "Popular Searches");
+
+    // Failed Searches sheet
+    const failedData = [
+      ["Failed Searches"],
+      [],
+      ["Query", "Attempt Count", "Last Searched"],
+      ...failedSearches.map(s => [s.query, s.count, format(new Date(s.lastSearched), "MMM d, yyyy")])
+    ];
+    const failedSheet = XLSX.utils.aoa_to_sheet(failedData);
+    XLSX.utils.book_append_sheet(wb, failedSheet, "Failed Searches");
+
+    // Suggestion CTR sheet
+    const ctrData = [
+      ["Suggestion Click-Through Rate"],
+      [],
+      ["Metric", "Value"],
+      ["Searches with Suggestions", suggestionCTR.totalSearchesWithSuggestions],
+      ["Suggestion Clicks", suggestionCTR.totalClicks],
+      ["Click-Through Rate", `${suggestionCTR.clickThroughRate.toFixed(1)}%`],
+    ];
+    const ctrSheet = XLSX.utils.aoa_to_sheet(ctrData);
+    XLSX.utils.book_append_sheet(wb, ctrSheet, "Suggestion CTR");
+
+    // Download
+    XLSX.writeFile(wb, `search-analytics-${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+  };
+
   return (
     <div className="container py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Search Analytics</h1>
-        <p className="text-muted-foreground">
-          Track user search behavior, popular queries, and failed searches
-        </p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Search Analytics</h1>
+          <p className="text-muted-foreground">
+            Track user search behavior, popular queries, and failed searches
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => exportToCSV()}
+            disabled={isLoading}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel()}
+            disabled={isLoading}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export Excel
+          </Button>
+        </div>
       </div>
 
       {/* Date Range Filter */}

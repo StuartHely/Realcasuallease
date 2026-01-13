@@ -212,7 +212,7 @@ export default function AdminLayout({
           <div className="flex items-center gap-2">
             <Building2 className="h-6 w-6 text-blue-600" />
             <div>
-              <h2 className="font-bold text-lg">Casual Lease</h2>
+              <h2 className="font-bold text-lg">Real Casual Leasing</h2>
               <p className="text-xs text-muted-foreground">Admin Dashboard</p>
             </div>
           </div>

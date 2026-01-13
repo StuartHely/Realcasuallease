@@ -607,14 +607,20 @@ export default function AdminSites() {
                               className="absolute top-1 right-1"
                               disabled={updateMutation.isPending}
                               onClick={async () => {
+                                console.log(`Attempting to remove image ${slot} for site ${selectedSite.id}`);
                                 try {
-                                  await updateMutation.mutateAsync({
+                                  const payload = {
                                     id: selectedSite.id,
                                     [`imageUrl${slot}`]: null,
-                                  });
+                                  };
+                                  console.log('Mutation payload:', payload);
+                                  const result = await updateMutation.mutateAsync(payload);
+                                  console.log('Mutation result:', result);
                                   toast.success(`Image ${slot} removed successfully`);
-                                  refetch();
+                                  await refetch();
+                                  console.log('Refetch completed');
                                 } catch (error) {
+                                  console.error('Image removal error:', error);
                                   toast.error(`Failed to remove image: ${error instanceof Error ? error.message : 'Unknown error'}`);
                                 }
                               }}

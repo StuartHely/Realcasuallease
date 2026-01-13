@@ -113,7 +113,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MapPin className="h-6 w-6 text-blue-600" />
-            <h1 className="text-2xl font-bold text-blue-900">Casual Lease</h1>
+            <h1 className="text-2xl font-bold text-blue-900">Real Casual Leasing</h1>
           </div>
           <nav className="flex items-center gap-4">
             <Button variant="ghost" onClick={() => setLocation("/")}>Home</Button>
@@ -308,7 +308,7 @@ export default function Home() {
         <section className="py-16 px-4">
           <div className="container mx-auto max-w-6xl">
             <h3 className="text-3xl font-bold text-center text-blue-900 mb-12">
-              Why Choose Casual Lease?
+              Why Choose Real Casual Leasing?
             </h3>
             <div className="grid md:grid-cols-2 gap-6">
               <Card>
@@ -362,7 +362,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-blue-900 text-white py-8 px-4">
         <div className="container mx-auto text-center">
-          <p>&copy; 2024 Casual Lease. All rights reserved.</p>
+          <p>&copy; 2024 Real Casual Leasing. All rights reserved.</p>
         </div>
       </footer>
     </div>

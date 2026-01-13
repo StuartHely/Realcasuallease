@@ -63,7 +63,7 @@ export default function AdminDashboard() {
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome to the Casual Lease admin dashboard
+            Welcome to the Real Casual Leasing admin dashboard
           </p>
         </div>
 

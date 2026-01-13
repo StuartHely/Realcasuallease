@@ -1724,3 +1724,15 @@
 ## Navigation and Bug Fixes
 - [ ] Add Search Analytics link to admin dashboard navigation
 - [ ] Fix image removal button in Admin Sites page (Site 2 image not removing)
+
+## New Tasks (Jan 12, 2025)
+- [x] Test and fix image removal functionality in Sites admin page
+- [x] Implement CSV/Excel export for Search Analytics dashboard
+- [x] Update app name to "Real Casual Leasing"
+- [ ] Configure domain for realcasualleasing.com
+
+## Completed Tasks (Jan 13, 2026)
+- [x] Test and fix image removal functionality in Sites admin page - WORKING CORRECTLY
+- [x] Implement CSV/Excel export for Search Analytics dashboard - COMPLETED
+- [x] Update app name to "Real Casual Leasing" - COMPLETED
+- [ ] Configure domain for realcasualleasing.com - User needs to configure via Management UI Settings → Domains

@@ -93,7 +93,7 @@ export default function MyBookings() {
             </Button>
             <div className="flex items-center gap-2">
               <MapPin className="h-6 w-6 text-blue-600" />
-              <h1 className="text-2xl font-bold text-blue-900">Casual Lease</h1>
+              <h1 className="text-2xl font-bold text-blue-900">Real Casual Leasing</h1>
             </div>
           </div>
           <nav className="flex items-center gap-4">
