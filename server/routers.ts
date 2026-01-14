@@ -2065,6 +2065,31 @@ export const appRouter = router({
           filterState
         );
       }),
+
+    getCentreBreakdown: adminProcedure
+      .input(z.object({
+        financialYear: z.number(),
+        breakdownType: z.enum(['annual', 'ytd']),
+        state: z.string().optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        const { getCentreBreakdown } = await import('./fyBudgetDb');
+        
+        // Determine which state to filter by
+        let filterState: string | undefined = input.state;
+        if (ctx.user.role === 'mega_state_admin' || ctx.user.role === 'owner_state_admin') {
+          // State admins can only see their assigned state
+          filterState = ctx.user.assignedState || undefined;
+        }
+        
+        return await getCentreBreakdown(
+          ctx.user.role,
+          ctx.user.assignedState || null,
+          input.financialYear,
+          input.breakdownType,
+          filterState
+        );
+      }),
   }),
 
   // Budget Management

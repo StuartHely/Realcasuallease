@@ -1888,3 +1888,9 @@
 - [x] Remove route from App.tsx
 - [x] Remove navigation link from AdminLayout
 - [x] Keep only FY Budget Management (/admin/fy-budgets)
+
+## Bug Fix - Portfolio Dashboard Budget Breakdown (Jan 14, 2026)
+- [x] Fix breakdown to show all entered FY centre budgets (not just Highlands)
+- [x] Change breakdown from SITE level to CENTRE level aggregation
+- [x] Update backend query to use centre_budgets table instead of old budgets table
+- [x] Update frontend modal to display centre names instead of site names

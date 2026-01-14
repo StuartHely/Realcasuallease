@@ -1,6 +1,6 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, gte, lte, inArray, sql } from "drizzle-orm";
 import { getDb } from "./db";
-import { fyPercentages, centreBudgets, shoppingCentres } from "../drizzle/schema";
+import { fyPercentages, centreBudgets, shoppingCentres, sites, bookings } from "../drizzle/schema";
 
 // FY Percentages CRUD
 
@@ -305,4 +305,156 @@ export function getCurrentFinancialYear(): number {
   const year = now.getFullYear();
   // If July or later, we're in FY ending next year
   return month >= 6 ? year + 1 : year;
+}
+
+
+/**
+ * Get per-centre budget vs actual breakdown for drill-down modal
+ * Uses FY centre budgets instead of site-level budgets
+ */
+export async function getCentreBreakdown(
+  userRole: string,
+  assignedState: string | null,
+  financialYear: number,
+  breakdownType: 'annual' | 'ytd',
+  state?: string
+): Promise<Array<{
+  centreId: number;
+  centreName: string;
+  centreState: string;
+  budget: number;
+  actual: number;
+  variance: number;
+  percentAchieved: number;
+}>> {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Get permitted centre IDs
+  const permittedCentreIds = await getPermittedCentreIds(userRole, assignedState);
+  if (permittedCentreIds.length === 0) return [];
+
+  // Get FY percentages for the year
+  const percentages = await getFyPercentages(financialYear);
+  
+  // Determine state filter
+  let stateFilter: string | null = null;
+  if (state && state !== 'all') {
+    stateFilter = state;
+  } else if ((userRole === 'mega_state_admin' || userRole === 'owner_state_admin') && assignedState) {
+    stateFilter = assignedState;
+  }
+
+  // Get centre budgets for the year with state filter
+  const allBudgets = await getCentreBudgetsForYear(financialYear);
+  const filteredBudgets = allBudgets.filter((b: any) => {
+    const isPermitted = permittedCentreIds.includes(b.centreId);
+    const matchesState = !stateFilter || b.centreState === stateFilter;
+    return isPermitted && matchesState;
+  });
+
+  // Calculate YTD percentage based on current date and FY
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1; // 1-12
+  const currentYear = now.getFullYear();
+  const fyStartYear = financialYear - 1;
+
+  // Calculate YTD percentage of annual budget
+  let ytdPercentage = 0;
+  if (percentages) {
+    // July to December of FY start year
+    if (currentYear > fyStartYear || (currentYear === fyStartYear && currentMonth >= 7)) {
+      if (currentYear > fyStartYear) {
+        // All of Jul-Dec are complete
+        ytdPercentage += parseFloat(percentages.july) + parseFloat(percentages.august) + 
+                         parseFloat(percentages.september) + parseFloat(percentages.october) + 
+                         parseFloat(percentages.november) + parseFloat(percentages.december);
+      } else {
+        // Only months up to current month
+        const fyMonths = ['july', 'august', 'september', 'october', 'november', 'december'] as const;
+        const monthsToInclude = currentMonth - 6;
+        for (let i = 0; i < monthsToInclude && i < fyMonths.length; i++) {
+          ytdPercentage += parseFloat(percentages[fyMonths[i]]);
+        }
+      }
+    }
+
+    // January to June of FY end year
+    if (currentYear === financialYear && currentMonth >= 1 && currentMonth <= 6) {
+      const fyMonths = ['january', 'february', 'march', 'april', 'may', 'june'] as const;
+      for (let i = 0; i < currentMonth; i++) {
+        ytdPercentage += parseFloat(percentages[fyMonths[i]]);
+      }
+    }
+  }
+
+  // Calculate FY date range for actual revenue
+  const fyStartDate = new Date(`${fyStartYear}-07-01`);
+  const fyEndDate = new Date(`${financialYear}-06-30`);
+  const ytdEndDate = now < fyEndDate ? now : fyEndDate;
+
+  // For each centre, calculate budget and actual
+  const breakdown = await Promise.all(
+    filteredBudgets.map(async (centreBudget: any) => {
+      const annualBudget = parseFloat(centreBudget.annualBudget);
+      
+      // Calculate budget based on breakdown type
+      const budget = breakdownType === 'annual' 
+        ? annualBudget 
+        : (annualBudget * ytdPercentage) / 100;
+
+      // Get actual revenue for the centre (sum of all sites in this centre)
+      // First get all site IDs for this centre
+      const centresSites = await db
+        .select({ siteId: sites.id })
+        .from(sites)
+        .where(eq(sites.centreId, centreBudget.centreId));
+      
+      const siteIds = centresSites.map((s: any) => s.siteId);
+      
+      let actual = 0;
+      if (siteIds.length > 0) {
+        const dateFilter = breakdownType === 'annual'
+          ? and(
+              gte(bookings.startDate, fyStartDate),
+              lte(bookings.startDate, fyEndDate)
+            )
+          : and(
+              gte(bookings.startDate, fyStartDate),
+              lte(bookings.startDate, ytdEndDate)
+            );
+
+        const actualResult = await db
+          .select({
+            total: sql<string>`COALESCE(SUM(${bookings.ownerAmount}), 0)`,
+          })
+          .from(bookings)
+          .where(
+            and(
+              inArray(bookings.siteId, siteIds),
+              eq(bookings.status, 'confirmed'),
+              dateFilter
+            )
+          );
+        
+        actual = parseFloat(actualResult[0]?.total || '0');
+      }
+
+      const variance = actual - budget;
+      const percentAchieved = budget > 0 ? (actual / budget) * 100 : 0;
+
+      return {
+        centreId: centreBudget.centreId,
+        centreName: centreBudget.centreName,
+        centreState: centreBudget.centreState || '',
+        budget,
+        actual,
+        variance,
+        percentAchieved,
+      };
+    })
+  );
+
+  // Sort by variance (worst performers first)
+  return breakdown.sort((a, b) => a.variance - b.variance);
 }

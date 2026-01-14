@@ -42,9 +42,9 @@ export default function PortfolioDashboard() {
     state: selectedState,
   });
   
-  const { data: siteBreakdown, isLoading: isLoadingBreakdown } = trpc.dashboard.getSiteBreakdown.useQuery(
+  const { data: centreBreakdown, isLoading: isLoadingBreakdown } = trpc.dashboard.getCentreBreakdown.useQuery(
     {
-      year: selectedYear,
+      financialYear: selectedFY,
       breakdownType,
       state: selectedState,
     },
@@ -613,8 +613,8 @@ export default function PortfolioDashboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Site</TableHead>
                     <TableHead>Centre</TableHead>
+                    <TableHead>State</TableHead>
                     <TableHead className="text-right">Budget</TableHead>
                     <TableHead className="text-right">Actual</TableHead>
                     <TableHead className="text-right">Variance</TableHead>
@@ -628,28 +628,28 @@ export default function PortfolioDashboard() {
                         <RefreshCw className="h-6 w-6 animate-spin mx-auto" />
                       </TableCell>
                     </TableRow>
-                  ) : !siteBreakdown || siteBreakdown.length === 0 ? (
+                  ) : !centreBreakdown || centreBreakdown.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center text-gray-500 py-8">
-                        No budget data available for this period
+                        No budget data available for this period. Add centre budgets in Budget Management.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    siteBreakdown.map((site) => {
-                      const varianceColor = site.variance >= 0 ? 'text-green-600' : 'text-red-600';
-                      const percentColor = site.percentAchieved >= 100 ? 'text-green-600' : site.percentAchieved >= 80 ? 'text-yellow-600' : 'text-red-600';
+                    centreBreakdown.map((centre: any) => {
+                      const varianceColor = centre.variance >= 0 ? 'text-green-600' : 'text-red-600';
+                      const percentColor = centre.percentAchieved >= 100 ? 'text-green-600' : centre.percentAchieved >= 80 ? 'text-yellow-600' : 'text-red-600';
                       
                       return (
-                        <TableRow key={site.siteId}>
-                          <TableCell className="font-medium">{site.siteName}</TableCell>
-                          <TableCell>{site.centreName}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(site.budget)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(site.actual)}</TableCell>
+                        <TableRow key={centre.centreId}>
+                          <TableCell className="font-medium">{centre.centreName}</TableCell>
+                          <TableCell>{centre.centreState}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(centre.budget)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(centre.actual)}</TableCell>
                           <TableCell className={`text-right font-semibold ${varianceColor}`}>
-                            {site.variance >= 0 ? '+' : ''}{formatCurrency(site.variance)}
+                            {centre.variance >= 0 ? '+' : ''}{formatCurrency(centre.variance)}
                           </TableCell>
                           <TableCell className={`text-right font-semibold ${percentColor}`}>
-                            {Math.round(site.percentAchieved)}%
+                            {Math.round(centre.percentAchieved)}%
                           </TableCell>
                         </TableRow>
                       );
