@@ -28,7 +28,7 @@ export async function calculateBookingCost(
   site: Site,
   startDate: Date,
   endDate: Date
-): Promise<{ totalAmount: number; weekdayCount: number; weekendCount: number; seasonalDays?: { date: string; rate: number; name: string }[] }> {
+): Promise<{ totalAmount: number; weekdayCount: number; weekendCount: number; seasonalDays?: { date: string; rate: number; name: string; isSeasonalRate: boolean }[] }> {
   const basePricePerDay = Number(site.pricePerDay);
   const pricePerWeek = Number(site.pricePerWeek);
   const baseWeekendPricePerDay = site.weekendPricePerDay ? Number(site.weekendPricePerDay) : basePricePerDay;
@@ -188,7 +188,7 @@ export async function calculateBookingCost(
   // Calculate cost with seasonal rate priority
   // Priority: Seasonal rates > Weekend rates > Base rates
   let totalAmount = 0;
-  const seasonalDaysInfo: { date: string; rate: number; name: string }[] = [];
+  const allDaysInfo: { date: string; rate: number; name: string; isSeasonalRate: boolean }[] = [];
 
   // Reset current date for calculation
   currentDate.setTime(startDate.getTime());
@@ -220,14 +220,21 @@ export async function calculateBookingCost(
         dayRate = isWeekend ? baseWeekendPricePerDay : basePricePerDay;
       }
       
-      seasonalDaysInfo.push({
+      allDaysInfo.push({
         date: dateStr,
         rate: dayRate,
         name: seasonalRate.name,
+        isSeasonalRate: true,
       });
     } else {
       // Priority 2 & 3: Weekend rate or base rate
       dayRate = isWeekend ? baseWeekendPricePerDay : basePricePerDay;
+      allDaysInfo.push({
+        date: dateStr,
+        rate: dayRate,
+        name: isWeekend ? 'Weekend' : 'Weekday',
+        isSeasonalRate: false,
+      });
     }
     
     totalAmount += dayRate;
@@ -238,6 +245,6 @@ export async function calculateBookingCost(
     totalAmount,
     weekdayCount,
     weekendCount,
-    seasonalDays: seasonalDaysInfo.length > 0 ? seasonalDaysInfo : undefined,
+    seasonalDays: allDaysInfo,
   };
 }

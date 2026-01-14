@@ -1765,3 +1765,12 @@
 - [ ] Investigate seasonal pricing calculation logic
 - [ ] Verify seasonal_pricing table data integrity
 - [ ] Fix rate calculation to properly apply seasonal adjustments
+
+## Seasonal Pricing Enhancements (Jan 14, 2026)
+- [ ] Add seasonal rate calendar view in admin for visual management
+- [ ] Implement booking cost preview with seasonal breakdown showing transparent pricing
+
+## Completed Features (Jan 13, 2026 - Evening)
+- [x] Add seasonal rate calendar view in admin (SeasonalRateCalendar component created)
+- [x] Implement booking cost preview with seasonal breakdown (PriceCalculator enhanced with day-by-day breakdown)
+- [x] Update calculateBookingCost to return all days with seasonal flag for transparent pricing

@@ -8,15 +8,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Calendar } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { BulkIncreaseForm } from "@/components/BulkIncreaseForm";
+import { SeasonalRateCalendar } from "@/components/SeasonalRateCalendar";
 
 export default function SeasonalRates() {
   const [selectedCentreId, setSelectedCentreId] = useState<string>("");
   const [selectedSiteId, setSelectedSiteId] = useState<string>("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingRate, setEditingRate] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const { data: centres } = trpc.centres.list.useQuery();
   const { data: sites } = trpc.sites.getByCentreId.useQuery(
@@ -150,66 +153,97 @@ export default function SeasonalRates() {
             <>
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">Seasonal Rates</h3>
-                <Button onClick={() => setIsCreateOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Seasonal Rate
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                  >
+                    List View
+                  </Button>
+                  <Button
+                    variant={viewMode === 'calendar' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setViewMode('calendar')}
+                  >
+                    <CalendarDays className="h-4 w-4 mr-2" />
+                    Calendar View
+                  </Button>
+                  <Button onClick={() => setIsCreateOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Seasonal Rate
+                  </Button>
+                </div>
               </div>
 
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Start Date</TableHead>
-                    <TableHead>End Date</TableHead>
-                    <TableHead>Weekday Rate</TableHead>
-                    <TableHead>Weekend Rate</TableHead>
-                    <TableHead>Weekly Rate</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {seasonalRates?.length === 0 && (
+              {viewMode === 'list' ? (
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-gray-500">
-                        No seasonal rates configured
-                      </TableCell>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Start Date</TableHead>
+                      <TableHead>End Date</TableHead>
+                      <TableHead>Weekday Rate</TableHead>
+                      <TableHead>Weekend Rate</TableHead>
+                      <TableHead>Weekly Rate</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  )}
-                  {seasonalRates?.map((rate) => (
-                    <TableRow key={rate.id}>
-                      <TableCell className="font-medium">{rate.name}</TableCell>
-                      <TableCell>{rate.startDate}</TableCell>
-                      <TableCell>{rate.endDate}</TableCell>
-                      <TableCell>${rate.weekdayRate || "-"}</TableCell>
-                      <TableCell>${rate.weekendRate || "-"}</TableCell>
-                      <TableCell>${rate.weeklyRate || "-"}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingRate(rate)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              if (confirm("Delete this seasonal rate?")) {
-                                deleteMutation.mutate({ id: rate.id });
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {seasonalRates?.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-gray-500">
+                          No seasonal rates configured
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {seasonalRates?.map((rate) => (
+                      <TableRow key={rate.id}>
+                        <TableCell className="font-medium">{rate.name}</TableCell>
+                        <TableCell>{rate.startDate}</TableCell>
+                        <TableCell>{rate.endDate}</TableCell>
+                        <TableCell>${rate.weekdayRate || "-"}</TableCell>
+                        <TableCell>${rate.weekendRate || "-"}</TableCell>
+                        <TableCell>${rate.weeklyRate || "-"}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditingRate(rate)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm("Delete this seasonal rate?")) {
+                                  deleteMutation.mutate({ id: rate.id });
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <SeasonalRateCalendar
+                  seasonalRates={seasonalRates || []}
+                  month={calendarMonth}
+                  onMonthChange={setCalendarMonth}
+                  onEditRate={setEditingRate}
+                  onDeleteRate={(id: number) => {
+                    if (confirm("Delete this seasonal rate?")) {
+                      deleteMutation.mutate({ id });
+                    }
+                  }}
+                />
+              )}
             </>
           )}
         </CardContent>
