@@ -472,18 +472,21 @@ export default function Search() {
                       }
                       
                       const handleShowAllSites = () => {
-                        // Remove size and category filters from the query (same logic as existing button)
-                        const newQuery = parsedQuery.centreName || searchParams.query.split(/\d/)[0].trim();
+                        // Extract just the centre name from the query
+                        // For "Chullora Marketplace uggs", we want "Chullora Marketplace"
+                        let centreName = parsedQuery.centreName;
+                        if (!centreName) {
+                          // Fallback: remove size patterns and product categories from query
+                          centreName = searchParams.query
+                            .replace(/\d+\s*x\s*\d+m?/gi, '') // Remove size patterns like "3x4m"
+                            .replace(/\b(shoes?|footwear|clothing|food|electronics|ugg|uggs|ugg boots)\b/gi, '') // Remove common categories
+                            .trim();
+                        }
+                        
                         const params = new URLSearchParams();
-                        params.set('query', newQuery);
+                        params.set('query', centreName);
                         params.set('date', format(searchParams.date, 'yyyy-MM-dd'));
-                        if (selectedCategoryId) {
-                          params.set('category', selectedCategoryId.toString());
-                        }
-                        if (showOnlyAutoApproved) {
-                          params.set('autoApproved', 'true');
-                        }
-                        setLocation(`/search?${params.toString()}`);
+                        // Don't preserve category or auto-approved filters - show ALL sites
                         window.location.href = `/search?${params.toString()}`;
                       };
                       

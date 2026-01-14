@@ -1784,3 +1784,6 @@
 
 ## Button Update (Jan 13, 2026)
 - [x] Update "Show me all sized sites" button to match existing "Show me all sized sites in this centre" button wording and functionality
+
+## Button Navigation Debug (Jan 13, 2026)
+- [ ] Debug and fix "Show me all sized sites in this centre" button navigation to properly remove category filters
