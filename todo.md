@@ -1777,3 +1777,7 @@
 
 ## Bug Fixes (Jan 13, 2026 - Late Evening)
 - [x] Fix search to recognize product category variations (e.g., "uggs" should match "ugg" and "ugg boots")
+
+## New Tasks (Jan 14, 2026)
+- [x] Update search results message to clarify SIZE and USAGE requirements
+- [x] Add "Show me all sized sites" button to display all sites regardless of filters (button displayed, navigation needs debugging)

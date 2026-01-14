@@ -464,16 +464,40 @@ export default function Search() {
                       
                       let noticeText = '';
                       if (hasSizeFilter && hasCategoryFilter) {
-                        noticeText = 'These results show sites that meet or exceed the stated size requirement AND are permitted to sell in the requested category.';
+                        noticeText = 'Sites below meet your stated SIZE requirement and USAGE.';
                       } else if (hasSizeFilter) {
-                        noticeText = 'These results show sites that meet or exceed the stated size requirement.';
+                        noticeText = 'Sites below meet your stated SIZE requirement.';
                       } else if (hasCategoryFilter) {
-                        noticeText = 'These results show sites that are permitted to sell in the requested category.';
+                        noticeText = 'Sites below meet your stated USAGE requirement.';
                       }
                       
+                      const handleShowAllSites = () => {
+                        // Remove size and category filters from the query
+                        const params = new URLSearchParams(window.location.search);
+                        const currentDate = params.get('date') || '';
+                        
+                        // Use the parsed centre name if available, otherwise use the first result's centre name
+                        const centreName = parsedQuery.centreName || (data?.centres && data.centres.length > 0 ? data.centres[0].name : '');
+                        
+                        if (centreName) {
+                          // Navigate to search with just the centre name
+                          setLocation(`/search?query=${encodeURIComponent(centreName)}&date=${currentDate}`);
+                        }
+                      };
+                      
                       return (
-                        <div className="mb-4 text-base text-red-600 italic">
-                          {noticeText}
+                        <div className="mb-4 space-y-2">
+                          <div className="text-base text-red-600 italic">
+                            {noticeText}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleShowAllSites}
+                            className="text-sm"
+                          >
+                            Show me all sized sites
+                          </Button>
                         </div>
                       );
                     })()}
