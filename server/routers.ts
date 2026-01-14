@@ -1952,6 +1952,70 @@ export const appRouter = router({
         return { success: true, gstPercentage: input.gstPercentage };
       }),
   }),
+
+  // Portfolio Dashboard
+  dashboard: router({
+    getMetrics: adminProcedure
+      .input(z.object({
+        month: z.number().min(1).max(12),
+        year: z.number(),
+        state: z.string().optional(), // For National Admin filtering by state
+      }))
+      .query(async ({ input, ctx }) => {
+        const { getPermittedSiteIds, getYTDMetrics, getMonthlyMetrics, getBudgetMetrics, getPendingApprovalsCount } = await import('./dashboardDb');
+        
+        // Determine which state to filter by
+        let filterState: string | null = null;
+        if (ctx.user.role === 'mega_state_admin' || ctx.user.role === 'owner_state_admin') {
+          // State admins can only see their assigned state
+          filterState = ctx.user.assignedState || null;
+        } else if (input.state && input.state !== 'all') {
+          // National admins can filter by any state
+          filterState = input.state;
+        }
+        
+        // Get permitted site IDs based on role and state filter
+        const siteIds = await getPermittedSiteIds(ctx.user.role, filterState);
+        
+        if (siteIds.length === 0) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'No dashboard access for your role' });
+        }
+        
+        // Get current year metrics
+        const ytdMetrics = await getYTDMetrics(siteIds, input.year);
+        const monthMetrics = await getMonthlyMetrics(siteIds, input.month, input.year);
+        
+        // Get last year metrics for comparison
+        const lastYear = input.year - 1;
+        const ytdMetricsLastYear = await getYTDMetrics(siteIds, lastYear);
+        const monthMetricsLastYear = await getMonthlyMetrics(siteIds, input.month, lastYear);
+        
+        // Get budget data
+        const budgetMetrics = await getBudgetMetrics(siteIds, input.month, input.year);
+        
+        // Get pending approvals count
+        const pendingApprovalsCount = await getPendingApprovalsCount(siteIds);
+        
+        return {
+          thisYear: {
+            ytd: ytdMetrics,
+            month: monthMetrics,
+          },
+          lastYear: {
+            ytd: ytdMetricsLastYear,
+            month: monthMetricsLastYear,
+          },
+          budget: budgetMetrics,
+          pendingApprovalsCount,
+          lastUpdated: new Date(),
+        };
+      }),
+    
+    getAvailableStates: adminProcedure.query(async () => {
+      const { getAvailableStates } = await import('./dashboardDb');
+      return await getAvailableStates();
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

@@ -20,6 +20,7 @@ export const users = mysqlTable("users", {
     "mega_state_admin",
     "mega_admin"
   ]).default("customer").notNull(),
+  assignedState: varchar("assignedState", { length: 3 }), // For state_admin roles: NSW, VIC, QLD, etc.
   canPayByInvoice: boolean("canPayByInvoice").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -309,6 +310,24 @@ export const seasonalRates = mysqlTable("seasonalRates", {
   createdAt: timestamp("createdAt").defaultNow(),
 });
 
+/**
+ * Site budgets for portfolio performance tracking
+ * Budgets are set per site per month for revenue targets
+ */
+export const budgets = mysqlTable("budgets", {
+  id: int("id").autoincrement().primaryKey(),
+  siteId: int("siteId").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  month: int("month").notNull(), // 1-12
+  year: int("year").notNull(), // e.g., 2026
+  budgetAmount: decimal("budgetAmount", { precision: 12, scale: 2 }).notNull(), // Target revenue for this site/month
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  siteIdIdx: index("siteId_idx").on(table.siteId),
+  monthYearIdx: index("month_year_idx").on(table.month, table.year),
+  uniqueSiteMonthYear: index("unique_site_month_year").on(table.siteId, table.month, table.year),
+}));
+
 export const imageAnalytics = mysqlTable("imageAnalytics", {
   id: int("id").autoincrement().primaryKey(),
   siteId: int("site_id").notNull().references(() => sites.id, { onDelete: 'cascade' }),
@@ -391,3 +410,5 @@ export type SystemConfig = typeof systemConfig.$inferSelect;
 export type InsertSystemConfig = typeof systemConfig.$inferInsert;
 export type AuditLog = typeof auditLog.$inferSelect;
 export type InsertAuditLog = typeof auditLog.$inferInsert;
+export type Budget = typeof budgets.$inferSelect;
+export type InsertBudget = typeof budgets.$inferInsert;

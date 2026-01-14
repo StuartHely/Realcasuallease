@@ -32,6 +32,7 @@ import CentreCodes from "./pages/admin/CentreCodes";
 import Payments from "./pages/admin/Payments";
 import InvoiceDashboard from "./pages/admin/InvoiceDashboard";
 import SearchAnalytics from "./pages/admin/SearchAnalytics";
+import PortfolioDashboard from "./pages/admin/PortfolioDashboard";
 import OwnerApprovals from "./pages/OwnerApprovals";
 import OwnerCentres from "./pages/OwnerCentres";
 
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/centres" component={Centres} />
       <Route path="/centre/:id" component={CentreDetail} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/portfolio" component={PortfolioDashboard} />
       <Route path="/admin/centres" component={AdminCentres} />
       <Route path="/admin/sites" component={AdminSites} />
            <Route path="/admin/maps" component={Maps} />

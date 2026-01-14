@@ -1790,3 +1790,33 @@
 
 ## Button Navigation Fix (Jan 14, 2026)
 - [ ] Fix "Show me all sized sites in this centre" button click handler to properly navigate
+
+## Admin Portfolio Dashboard (Jan 2026)
+- [ ] Add assignedState field to users table for State Admin role
+- [ ] Create budgets table (siteId, month, year, budgetAmount)
+- [ ] Add national_admin and state_admin roles to user role enum
+- [ ] Create dashboard.getPortfolioMetrics tRPC procedure with RBAC filtering
+- [ ] Implement YTD metrics calculation (revenue, booked days, top site)
+- [ ] Implement monthly metrics calculation (revenue, booked days, top site)
+- [ ] Implement last year comparison metrics (same calendar periods)
+- [ ] Calculate pending approvals count
+- [ ] Build dashboard UI with metric cards grid
+- [ ] Add month/year/state filter dropdowns
+- [ ] Create budget pie charts (Annual and YTD)
+- [ ] Add "Update" button for on-demand refresh
+- [ ] Add "Pending Approvals" badge button linking to bookings page
+- [ ] Test RBAC: National Admin sees all centres
+- [ ] Test RBAC: State Admin sees only their assigned state's centres
+- [ ] Add "Last updated" timestamp display
+
+## Admin Portfolio Dashboard (Jan 14, 2026)
+- [x] Add assignedState field to users table for State Admin RBAC
+- [x] Create budgets table (by site, by month)
+- [x] Build backend dashboard metrics procedures with RBAC filtering
+- [x] Create dashboard UI with data visualizations
+- [x] Add on-demand refresh button
+- [x] Show pending approvals badge with navigation to Bookings page
+- [x] Add state filter dropdown for National Admins
+- [x] Display YTD and monthly metrics with last year comparison
+- [x] Show budget pie charts (annual and YTD)
+- [x] Display top performing sites by revenue and booked days
