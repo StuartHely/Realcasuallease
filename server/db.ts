@@ -1,4 +1,5 @@
 import { eq, desc, and, or, isNull, lte, gte } from "drizzle-orm";
+import { expandCategoryKeyword } from "../shared/categorySynonyms.js";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -414,6 +415,17 @@ export async function searchSitesWithCategory(query: string, categoryKeyword?: s
         fuzzyMatchCategory(categoryKeyword, cat.name, 0.6)
       );
       if (!categoryMatch) return false;
+      // Category matched - now check if the centre name matches the remaining query
+      // Extract non-category words from query
+      const queryWithoutCategory = lowerQuery.split(/\s+/).filter(word => 
+        word !== categoryKeyword.toLowerCase() && 
+        !expandCategoryKeyword(categoryKeyword).includes(word)
+      ).join(' ');
+      
+      // If no other query words, or if centre name matches, return true
+      if (!queryWithoutCategory || centreName.includes(queryWithoutCategory)) {
+        return true;
+      }
     }
     
     // Check if query matches as a whole

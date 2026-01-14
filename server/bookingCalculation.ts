@@ -85,7 +85,7 @@ export async function calculateBookingCost(
           totalAmount,
           weekdayCount,
           weekendCount,
-          seasonalDays: [{ date: startDateStr, rate: weeklyRate, name: `${rate.name} (Weekly Rate)` }],
+          seasonalDays: [{ date: startDateStr, rate: weeklyRate, name: `${rate.name} (Weekly Rate)`, isSeasonalRate: true }],
         };
       }
     }

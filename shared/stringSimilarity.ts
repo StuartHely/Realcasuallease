@@ -2,6 +2,8 @@
  * String similarity utilities for fuzzy matching
  */
 
+import { expandCategoryKeyword } from './categorySynonyms.js';
+
 /**
  * Calculate Levenshtein distance between two strings
  * Returns the minimum number of single-character edits needed to change one string into another
@@ -61,19 +63,25 @@ export function fuzzyMatchCategory(keyword: string, categoryName: string, thresh
   const kw = keyword.toLowerCase();
   const cat = categoryName.toLowerCase();
   
-  // Exact substring match (fast path)
-  if (cat.includes(kw)) return true;
+  // Expand keyword to include synonyms (e.g., "uggs" → ["uggs", "ugg", "ugg boots", "shoes", "footwear"])
+  const expandedKeywords = expandCategoryKeyword(kw);
   
-  // Split category name into words and check each word
-  const categoryWords = cat.split(/[\s&,\-]+/).filter(w => w.length > 2);
-  
-  for (const word of categoryWords) {
-    // Check substring match for each word
-    if (word.includes(kw)) return true;
+  // Check each expanded keyword
+  for (const expandedKw of expandedKeywords) {
+    // Exact substring match (fast path)
+    if (cat.includes(expandedKw)) return true;
     
-    // Check similarity score
-    const similarity = stringSimilarity(kw, word);
-    if (similarity >= threshold) return true;
+    // Split category name into words and check each word
+    const categoryWords = cat.split(/[\s&,\-]+/).filter(w => w.length > 2);
+    
+    for (const word of categoryWords) {
+      // Check substring match for each word
+      if (word.includes(expandedKw)) return true;
+      
+      // Check similarity score
+      const similarity = stringSimilarity(expandedKw, word);
+      if (similarity >= threshold) return true;
+    }
   }
   
   return false;

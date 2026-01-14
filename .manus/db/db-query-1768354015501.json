@@ -1,0 +1,1486 @@
+{
+  "query": "SELECT s.id, s.siteNumber, s.description, uc.name as categoryName \nFROM sites s\nLEFT JOIN shopping_centres sc ON s.centreId = sc.id\nLEFT JOIN site_usage_categories suc ON s.id = suc.siteId\nLEFT JOIN usage_categories uc ON suc.categoryId = uc.id\nWHERE sc.name LIKE '%Chullora%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT s.id, s.siteNumber, s.description, uc.name as categoryName \nFROM sites s\nLEFT JOIN shopping_centres sc ON s.centreId = sc.id\nLEFT JOIN site_usage_categories suc ON s.id = suc.siteId\nLEFT JOIN usage_categories uc ON suc.categoryId = uc.id\nWHERE sc.name LIKE '%Chullora%';",
+  "rows": [
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Charities (Free)"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Charities (Paid)"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Government (Free)"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Renewable Energy"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Utilities"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Art & Craft"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Baby & Toddler"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Entertainment"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Gardening"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Homewares"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Music"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Photography"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Tools"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Wellness"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Beauty and Cosmetics"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Bedding and Furniture"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Boating and Marine"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Books"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Calendars"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Clothing"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Discount Variety"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Education / Recruitment / Training"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Financial and Insurance Services"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Fitness / Sporting Goods"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Florist"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Food and Beverage"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Health and Well-Being"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Home Improvements"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Household Goods"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Internal - Marketing and Centre Management"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Jewellery (Fashion) and Accessories"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Jewellery (Fine)"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "News and Stationery"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Pet Products"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Pharmaceuticals"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Real Estate / Property Developers"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Shoes / Footwear"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Technology and Telecommunications"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Travel"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Ugg Boots"
+    },
+    {
+      "id": "240001",
+      "siteNumber": "A",
+      "description": "In front of Woolworths",
+      "categoryName": "Candles"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Charities (Free)"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Charities (Paid)"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Government (Free)"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Renewable Energy"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Utilities"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Art & Craft"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Baby & Toddler"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Entertainment"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Gardening"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Homewares"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Music"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Photography"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Tools"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Wellness"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Beauty and Cosmetics"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Bedding and Furniture"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Boating and Marine"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Books"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Calendars"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Clothing"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Discount Variety"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Education / Recruitment / Training"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Financial and Insurance Services"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Fitness / Sporting Goods"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Florist"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Food and Beverage"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Health and Well-Being"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Home Improvements"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Household Goods"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Internal - Marketing and Centre Management"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Jewellery (Fashion) and Accessories"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Jewellery (Fine)"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "News and Stationery"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Pet Products"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Pharmaceuticals"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Real Estate / Property Developers"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Shoes / Footwear"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Technology and Telecommunications"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Travel"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Ugg Boots"
+    },
+    {
+      "id": "240002",
+      "siteNumber": "B",
+      "description": "IN FRONT OF V AND M GALLERY HAIRDRESSER.",
+      "categoryName": "Candles"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Charities (Free)"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Charities (Paid)"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Government (Free)"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Renewable Energy"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Utilities"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Art & Craft"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Baby & Toddler"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Entertainment"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Gardening"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Homewares"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Music"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Photography"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Tools"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Wellness"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Beauty and Cosmetics"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Bedding and Furniture"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Boating and Marine"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Books"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Calendars"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Clothing"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Discount Variety"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Education / Recruitment / Training"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Financial and Insurance Services"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Fitness / Sporting Goods"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Florist"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Food and Beverage"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Health and Well-Being"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Home Improvements"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Household Goods"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Internal - Marketing and Centre Management"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Jewellery (Fashion) and Accessories"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Jewellery (Fine)"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "News and Stationery"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Pet Products"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Pharmaceuticals"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Real Estate / Property Developers"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Shoes / Footwear"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Technology and Telecommunications"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Travel"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Ugg Boots"
+    },
+    {
+      "id": "240003",
+      "siteNumber": "C",
+      "description": "BETWEEN V AND M GALLERY AND PHARMACY",
+      "categoryName": "Candles"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Charities (Free)"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Charities (Paid)"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Government (Free)"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Renewable Energy"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Utilities"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Art & Craft"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Baby & Toddler"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Entertainment"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Gardening"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Homewares"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Music"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Photography"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Tools"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Wellness"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Beauty and Cosmetics"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Bedding and Furniture"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Boating and Marine"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Books"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Calendars"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Clothing"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Discount Variety"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Education / Recruitment / Training"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Financial and Insurance Services"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Fitness / Sporting Goods"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Florist"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Food and Beverage"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Health and Well-Being"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Home Improvements"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Household Goods"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Internal - Marketing and Centre Management"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Jewellery (Fashion) and Accessories"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Jewellery (Fine)"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "News and Stationery"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Pet Products"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Pharmaceuticals"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Real Estate / Property Developers"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Shoes / Footwear"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Technology and Telecommunications"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Travel"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Ugg Boots"
+    },
+    {
+      "id": "240004",
+      "siteNumber": "E",
+      "description": "ONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.",
+      "categoryName": "Candles"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Charities (Free)"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Charities (Paid)"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Government (Free)"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Renewable Energy"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Utilities"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Art & Craft"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Baby & Toddler"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Entertainment"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Gardening"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Homewares"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Music"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Photography"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Tools"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Wellness"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Beauty and Cosmetics"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Bedding and Furniture"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Boating and Marine"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Books"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Calendars"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Clothing"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Discount Variety"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Education / Recruitment / Training"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Financial and Insurance Services"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Fitness / Sporting Goods"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Florist"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Food and Beverage"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Health and Well-Being"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Home Improvements"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Household Goods"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Internal - Marketing and Centre Management"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Jewellery (Fashion) and Accessories"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Jewellery (Fine)"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "News and Stationery"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Pet Products"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Pharmaceuticals"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Real Estate / Property Developers"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Shoes / Footwear"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Technology and Telecommunications"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Travel"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Ugg Boots"
+    },
+    {
+      "id": "240005",
+      "siteNumber": "G",
+      "description": "BETWEEN PHARMACY AND AT GIRL ",
+      "categoryName": "Candles"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Charities (Free)"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Charities (Paid)"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Government (Free)"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Renewable Energy"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Utilities"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Art & Craft"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Baby & Toddler"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Entertainment"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Gardening"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Homewares"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Music"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Photography"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Tools"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Wellness"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Beauty and Cosmetics"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Bedding and Furniture"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Boating and Marine"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Books"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Calendars"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Clothing"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Discount Variety"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Education / Recruitment / Training"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Financial and Insurance Services"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Fitness / Sporting Goods"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Florist"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Food and Beverage"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Health and Well-Being"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Home Improvements"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Household Goods"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Internal - Marketing and Centre Management"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Jewellery (Fashion) and Accessories"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Jewellery (Fine)"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "News and Stationery"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Pet Products"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Pharmaceuticals"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Real Estate / Property Developers"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Shoes / Footwear"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Technology and Telecommunications"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Travel"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Ugg Boots"
+    },
+    {
+      "id": "240006",
+      "siteNumber": "D1",
+      "description": "IN FRONT OF COLES",
+      "categoryName": "Candles"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsiteNumber\tdescription\tcategoryName\n240001\tA\tIn front of Woolworths\tCharities (Free)\n240001\tA\tIn front of Woolworths\tCharities (Paid)\n240001\tA\tIn front of Woolworths\tGovernment (Free)\n240001\tA\tIn front of Woolworths\tRenewable Energy\n240001\tA\tIn front of Woolworths\tUtilities\n240001\tA\tIn front of Woolworths\tArt & Craft\n240001\tA\tIn front of Woolworths\tBaby & Toddler\n240001\tA\tIn front of Woolworths\tEntertainment\n240001\tA\tIn front of Woolworths\tGardening\n240001\tA\tIn front of Woolworths\tHomewares\n240001\tA\tIn front of Woolworths\tMusic\n240001\tA\tIn front of Woolworths\tPhotography\n240001\tA\tIn front of Woolworths\tTools\n240001\tA\tIn front of Woolworths\tWellness\n240001\tA\tIn front of Woolworths\tBeauty and Cosmetics\n240001\tA\tIn front of Woolworths\tBedding and Furniture\n240001\tA\tIn front of Woolworths\tBoating and Marine\n240001\tA\tIn front of Woolworths\tBooks\n240001\tA\tIn front of Woolworths\tCalendars\n240001\tA\tIn front of Woolworths\tClothing\n240001\tA\tIn front of Woolworths\tDiscount Variety\n240001\tA\tIn front of Woolworths\tEducation / Recruitment / Training\n240001\tA\tIn front of Woolworths\tFinancial and Insurance Services\n240001\tA\tIn front of Woolworths\tFitness / Sporting Goods\n240001\tA\tIn front of Woolworths\tFlorist\n240001\tA\tIn front of Woolworths\tFood and Beverage\n240001\tA\tIn front of Woolworths\tHealth and Well-Being\n240001\tA\tIn front of Woolworths\tHome Improvements\n240001\tA\tIn front of Woolworths\tHousehold Goods\n240001\tA\tIn front of Woolworths\tInternal - Marketing and Centre Management\n240001\tA\tIn front of Woolworths\tJewellery (Fashion) and Accessories\n240001\tA\tIn front of Woolworths\tJewellery (Fine)\n240001\tA\tIn front of Woolworths\tNews and Stationery\n240001\tA\tIn front of Woolworths\tPet Products\n240001\tA\tIn front of Woolworths\tPharmaceuticals\n240001\tA\tIn front of Woolworths\tReal Estate / Property Developers\n240001\tA\tIn front of Woolworths\tShoes / Footwear\n240001\tA\tIn front of Woolworths\tTechnology and Telecommunications\n240001\tA\tIn front of Woolworths\tTravel\n240001\tA\tIn front of Woolworths\tUgg Boots\n240001\tA\tIn front of Woolworths\tCandles\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tCharities (Free)\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tCharities (Paid)\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tGovernment (Free)\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tRenewable Energy\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tUtilities\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tArt & Craft\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tBaby & Toddler\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tEntertainment\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tGardening\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tHomewares\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tMusic\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tPhotography\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tTools\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tWellness\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tBeauty and Cosmetics\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tBedding and Furniture\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tBoating and Marine\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tBooks\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tCalendars\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tClothing\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tDiscount Variety\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tEducation / Recruitment / Training\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tFinancial and Insurance Services\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tFitness / Sporting Goods\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tFlorist\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tFood and Beverage\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tHealth and Well-Being\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tHome Improvements\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tHousehold Goods\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tInternal - Marketing and Centre Management\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tJewellery (Fashion) and Accessories\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tJewellery (Fine)\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tNews and Stationery\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tPet Products\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tPharmaceuticals\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tReal Estate / Property Developers\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tShoes / Footwear\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tTechnology and Telecommunications\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tTravel\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tUgg Boots\n240002\tB\tIN FRONT OF V AND M GALLERY HAIRDRESSER.\tCandles\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tCharities (Free)\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tCharities (Paid)\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tGovernment (Free)\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tRenewable Energy\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tUtilities\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tArt & Craft\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tBaby & Toddler\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tEntertainment\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tGardening\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tHomewares\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tMusic\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tPhotography\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tTools\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tWellness\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tBeauty and Cosmetics\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tBedding and Furniture\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tBoating and Marine\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tBooks\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tCalendars\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tClothing\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tDiscount Variety\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tEducation / Recruitment / Training\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tFinancial and Insurance Services\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tFitness / Sporting Goods\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tFlorist\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tFood and Beverage\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tHealth and Well-Being\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tHome Improvements\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tHousehold Goods\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tInternal - Marketing and Centre Management\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tJewellery (Fashion) and Accessories\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tJewellery (Fine)\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tNews and Stationery\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tPet Products\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tPharmaceuticals\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tReal Estate / Property Developers\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tShoes / Footwear\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tTechnology and Telecommunications\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tTravel\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tUgg Boots\n240003\tC\tBETWEEN V AND M GALLERY AND PHARMACY\tCandles\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tCharities (Free)\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tCharities (Paid)\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tGovernment (Free)\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tRenewable Energy\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tUtilities\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tArt & Craft\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tBaby & Toddler\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tEntertainment\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tGardening\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tHomewares\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tMusic\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tPhotography\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tTools\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tWellness\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tBeauty and Cosmetics\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tBedding and Furniture\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tBoating and Marine\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tBooks\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tCalendars\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tClothing\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tDiscount Variety\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tEducation / Recruitment / Training\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tFinancial and Insurance Services\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tFitness / Sporting Goods\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tFlorist\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tFood and Beverage\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tHealth and Well-Being\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tHome Improvements\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tHousehold Goods\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tInternal - Marketing and Centre Management\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tJewellery (Fashion) and Accessories\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tJewellery (Fine)\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tNews and Stationery\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tPet Products\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tPharmaceuticals\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tReal Estate / Property Developers\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tShoes / Footwear\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tTechnology and Telecommunications\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tTravel\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tUgg Boots\n240004\tE\tONLY USED BY CENTRE MANAGEMENT - OUTSIDE CHULLORA FLORIST.\tCandles\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tCharities (Free)\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tCharities (Paid)\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tGovernment (Free)\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tRenewable Energy\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tUtilities\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tArt & Craft\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tBaby & Toddler\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tEntertainment\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tGardening\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tHomewares\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tMusic\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tPhotography\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tTools\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tWellness\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tBeauty and Cosmetics\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tBedding and Furniture\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tBoating and Marine\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tBooks\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tCalendars\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tClothing\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tDiscount Variety\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tEducation / Recruitment / Training\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tFinancial and Insurance Services\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tFitness / Sporting Goods\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tFlorist\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tFood and Beverage\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tHealth and Well-Being\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tHome Improvements\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tHousehold Goods\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tInternal - Marketing and Centre Management\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tJewellery (Fashion) and Accessories\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tJewellery (Fine)\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tNews and Stationery\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tPet Products\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tPharmaceuticals\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tReal Estate / Property Developers\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tShoes / Footwear\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tTechnology and Telecommunications\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tTravel\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tUgg Boots\n240005\tG\tBETWEEN PHARMACY AND AT GIRL \tCandles\n240006\tD1\tIN FRONT OF COLES\tCharities (Free)\n240006\tD1\tIN FRONT OF COLES\tCharities (Paid)\n240006\tD1\tIN FRONT OF COLES\tGovernment (Free)\n240006\tD1\tIN FRONT OF COLES\tRenewable Energy\n240006\tD1\tIN FRONT OF COLES\tUtilities\n240006\tD1\tIN FRONT OF COLES\tArt & Craft\n240006\tD1\tIN FRONT OF COLES\tBaby & Toddler\n240006\tD1\tIN FRONT OF COLES\tEntertainment\n240006\tD1\tIN FRONT OF COLES\tGardening\n240006\tD1\tIN FRONT OF COLES\tHomewares\n240006\tD1\tIN FRONT OF COLES\tMusic\n240006\tD1\tIN FRONT OF COLES\tPhotography\n240006\tD1\tIN FRONT OF COLES\tTools\n240006\tD1\tIN FRONT OF COLES\tWellness\n240006\tD1\tIN FRONT OF COLES\tBeauty and Cosmetics\n240006\tD1\tIN FRONT OF COLES\tBedding and Furniture\n240006\tD1\tIN FRONT OF COLES\tBoating and Marine\n240006\tD1\tIN FRONT OF COLES\tBooks\n240006\tD1\tIN FRONT OF COLES\tCalendars\n240006\tD1\tIN FRONT OF COLES\tClothing\n240006\tD1\tIN FRONT OF COLES\tDiscount Variety\n240006\tD1\tIN FRONT OF COLES\tEducation / Recruitment / Training\n240006\tD1\tIN FRONT OF COLES\tFinancial and Insurance Services\n240006\tD1\tIN FRONT OF COLES\tFitness / Sporting Goods\n240006\tD1\tIN FRONT OF COLES\tFlorist\n240006\tD1\tIN FRONT OF COLES\tFood and Beverage\n240006\tD1\tIN FRONT OF COLES\tHealth and Well-Being\n240006\tD1\tIN FRONT OF COLES\tHome Improvements\n240006\tD1\tIN FRONT OF COLES\tHousehold Goods\n240006\tD1\tIN FRONT OF COLES\tInternal - Marketing and Centre Management\n240006\tD1\tIN FRONT OF COLES\tJewellery (Fashion) and Accessories\n240006\tD1\tIN FRONT OF COLES\tJewellery (Fine)\n240006\tD1\tIN FRONT OF COLES\tNews and Stationery\n240006\tD1\tIN FRONT OF COLES\tPet Products\n240006\tD1\tIN FRONT OF COLES\tPharmaceuticals\n240006\tD1\tIN FRONT OF COLES\tReal Estate / Property Developers\n240006\tD1\tIN FRONT OF COLES\tShoes / Footwear\n240006\tD1\tIN FRONT OF COLES\tTechnology and Telecommunications\n240006\tD1\tIN FRONT OF COLES\tTravel\n240006\tD1\tIN FRONT OF COLES\tUgg Boots\n240006\tD1\tIN FRONT OF COLES\tCandles\n",
+  "stderr": "",
+  "execution_time_ms": 1552
+}

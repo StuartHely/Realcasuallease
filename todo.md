@@ -1774,3 +1774,6 @@
 - [x] Add seasonal rate calendar view in admin (SeasonalRateCalendar component created)
 - [x] Implement booking cost preview with seasonal breakdown (PriceCalculator enhanced with day-by-day breakdown)
 - [x] Update calculateBookingCost to return all days with seasonal flag for transparent pricing
+
+## Bug Fixes (Jan 13, 2026 - Late Evening)
+- [x] Fix search to recognize product category variations (e.g., "uggs" should match "ugg" and "ugg boots")

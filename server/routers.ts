@@ -754,18 +754,17 @@ export const appRouter = router({
         // Parse query to extract requirements
         const { parseSearchQuery, siteMatchesRequirements } = await import("../shared/queryParser");
         const parsedQuery = parseSearchQuery(input.query);
-        console.log('[search] input.query:', input.query, 'parsedQuery:', parsedQuery);
+
         
         // Try site-level search first using the extracted centre name and category
         const searchQuery = parsedQuery.centreName || input.query;
-        console.log('[search] searchQuery:', searchQuery, 'productCategory:', parsedQuery.productCategory);
         const siteResults = await db.searchSitesWithCategory(searchQuery, parsedQuery.productCategory);
-        console.log('[search] siteResults count:', siteResults.length);
         
-        // If we found specific sites, use those
-        if (siteResults.length > 0 && siteResults.length <= 10) {
+        // If we found specific sites with category filter, extract their centres
+        let centres: any[] = [];
+        if (siteResults.length > 0 && parsedQuery.productCategory) {
           const centreIds = Array.from(new Set(siteResults.map(r => r.site.centreId)));
-          const centres = await Promise.all(
+          const centresFromSites = await Promise.all(
             centreIds.map(async (centreId) => {
               const centre = siteResults.find(r => r.site.centreId === centreId)?.centre;
               if (!centre) return null;
@@ -773,15 +772,11 @@ export const appRouter = router({
             })
           );
           
-          // Use these centres for the search
-          const validCentres = centres.filter((c): c is NonNullable<typeof c> => c !== null);
-          if (validCentres.length > 0) {
-            input.query = validCentres[0]!.name; // Use first centre name
-          }
+          centres = centresFromSites.filter((c): c is NonNullable<typeof c> => c !== null);
+        } else {
+          // Continue with regular search logic using the parsed centre name
+          centres = await db.searchShoppingCentres(searchQuery);
         }
-        
-        // Continue with regular search logic using the parsed centre name
-        const centres = await db.searchShoppingCentres(searchQuery);
         
         if (centres.length === 0) {
           // Get search suggestions when no results found
