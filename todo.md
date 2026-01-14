@@ -1746,3 +1746,15 @@
 
 ## Bug Fix (Jan 13, 2026)
 - [x] Fix image upload showing "failed" message even when upload succeeds in Admin Sites
+
+## New Features (Jan 13, 2026)
+- [x] Add daily rate to calendar hover tooltips in search results
+- [ ] Add image preview modal before upload in Admin Sites
+- [x] Add drag-and-drop image upload functionality in Admin Sites
+- [ ] Integrate image crop/rotate tool for image uploads
+
+## Features Completed (Jan 13, 2026 - Part 2)
+- [x] Add daily rate to calendar hover tooltips in search results - Shows weekday/weekend rates
+- [x] Add image preview modal before upload in Admin Sites - Full preview with crop/rotate tools
+- [x] Add drag-and-drop image upload functionality in Admin Sites - "Click or drag to upload" zones
+- [x] Integrate image crop/rotate tool for image uploads - Zoom (1x-3x), rotation (0-360°), quick 90° buttons, 4:3 crop area

@@ -650,7 +650,13 @@ export default function Search() {
                                             ? 'bg-red-500 hover:bg-red-600' 
                                             : 'bg-green-500 hover:bg-green-600'
                                         } transition-colors cursor-pointer`}
-                                        title={`Site ${site.siteNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : 'Available'}`}
+                                        title={(() => {
+                                          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                                          const rate = isWeekend && site.weekendPricePerDay 
+                                            ? `$${site.weekendPricePerDay}` 
+                                            : `$${site.pricePerDay}`;
+                                          return `Site ${site.siteNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : 'Available'} - ${rate}/day`;
+                                        })()}
                                       />
                                     </td>
                                   );

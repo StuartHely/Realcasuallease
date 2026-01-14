@@ -22,8 +22,10 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
-import { Edit, Image as ImageIcon, MapPin, Plus, Trash2, Upload, Tag } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Edit, Image as ImageIcon, MapPin, Plus, Trash2, Upload, Tag, X, RotateCw, Crop } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import Cropper from "react-easy-crop";
+import type { Area } from "react-easy-crop";
 import BulkImageImport from "@/components/BulkImageImport";
 import { ManageSiteCategoriesDialog } from "@/components/ManageSiteCategoriesDialog";
 import { toast } from "sonner";
@@ -47,6 +49,15 @@ export default function AdminSites() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [categoriesSite, setCategoriesSite] = useState<any>(null);
+  
+  // Image preview and crop states
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [previewSlot, setPreviewSlot] = useState<number | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
   const { data: centres } = trpc.centres.list.useQuery();
   const { data: sites, refetch } = trpc.sites.getByCentreId.useQuery(
@@ -157,6 +168,121 @@ export default function AdminSites() {
       refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete site");
+    }
+  };
+
+  // Helper function to create cropped image
+  const createCroppedImage = async (imageSrc: string, pixelCrop: Area, rotation: number): Promise<Blob> => {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.addEventListener('load', () => resolve(img));
+      img.addEventListener('error', (error) => reject(error));
+      img.src = imageSrc;
+    });
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('No 2d context');
+
+    const maxSize = Math.max(image.width, image.height);
+    const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2));
+
+    canvas.width = safeArea;
+    canvas.height = safeArea;
+
+    ctx.translate(safeArea / 2, safeArea / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.translate(-safeArea / 2, -safeArea / 2);
+
+    ctx.drawImage(
+      image,
+      safeArea / 2 - image.width * 0.5,
+      safeArea / 2 - image.height * 0.5
+    );
+
+    const data = ctx.getImageData(0, 0, safeArea, safeArea);
+
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+
+    ctx.putImageData(
+      data,
+      0 - safeArea / 2 + image.width * 0.5 - pixelCrop.x,
+      0 - safeArea / 2 + image.height * 0.5 - pixelCrop.y
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+      }, 'image/jpeg', 0.95);
+    });
+  };
+
+  const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const handleFileSelect = (file: File, slot: number) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select an image file");
+      return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
+    // Show preview modal
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setPreviewImage(reader.result as string);
+      setPreviewFile(file);
+      setPreviewSlot(slot);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setRotation(0);
+    };
+  };
+
+  const handleCropConfirm = async () => {
+    if (!previewImage || !previewFile || !selectedSite || previewSlot === null || !croppedAreaPixels) {
+      toast.error("Missing required data for upload");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      // Create cropped image
+      const croppedBlob = await createCroppedImage(previewImage, croppedAreaPixels, rotation);
+      
+      // Convert blob to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(croppedBlob);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("Failed to read file"));
+      });
+      
+      // Upload via tRPC
+      await uploadImageMutation.mutateAsync({
+        siteId: selectedSite.id,
+        imageSlot: previewSlot,
+        base64Image: base64,
+      });
+      
+      toast.success("Image uploaded and resized successfully");
+      refetch();
+      
+      // Close preview
+      setPreviewImage(null);
+      setPreviewFile(null);
+      setPreviewSlot(null);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -628,7 +754,24 @@ export default function AdminSites() {
                             </Button>
                           </div>
                         ) : (
-                          <div className="border-2 border-dashed rounded-md p-4 text-center">
+                          <div 
+                            className="border-2 border-dashed rounded-md p-4 text-center hover:border-blue-400 transition-colors"
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.currentTarget.classList.add('border-blue-500', 'bg-blue-50');
+                            }}
+                            onDragLeave={(e) => {
+                              e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+                              const file = e.dataTransfer.files?.[0];
+                              if (file && selectedSite) {
+                                handleFileSelect(file, slot);
+                              }
+                            }}
+                          >
                             <input
                               type="file"
                               accept="image/*"
@@ -637,13 +780,13 @@ export default function AdminSites() {
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file && selectedSite) {
-                                  handleImageUpload(selectedSite.id, slot, file);
+                                  handleFileSelect(file, slot);
                                 }
                               }}
                             />
                             <label htmlFor={`image-upload-${slot}`} className="cursor-pointer">
                               <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                              <div className="text-sm text-gray-600">Click to upload</div>
+                              <div className="text-sm text-gray-600">Click or drag to upload</div>
                               <div className="text-xs text-gray-400 mt-1">Max 5MB</div>
                             </label>
                           </div>
@@ -666,6 +809,118 @@ export default function AdminSites() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview and Crop Modal */}
+      <Dialog open={previewImage !== null} onOpenChange={(open) => {
+        if (!open) {
+          setPreviewImage(null);
+          setPreviewFile(null);
+          setPreviewSlot(null);
+          setCrop({ x: 0, y: 0 });
+          setZoom(1);
+          setRotation(0);
+        }
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Crop and Rotate Image</DialogTitle>
+            <DialogDescription>
+              Adjust the image before uploading. You can zoom, rotate, and crop to get the perfect shot.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Cropper */}
+            <div className="relative h-[400px] bg-gray-100 rounded-lg overflow-hidden">
+              {previewImage && (
+                <Cropper
+                  image={previewImage}
+                  crop={crop}
+                  zoom={zoom}
+                  rotation={rotation}
+                  aspect={4 / 3}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onRotationChange={setRotation}
+                  onCropComplete={onCropComplete}
+                />
+              )}
+            </div>
+            
+            {/* Controls */}
+            <div className="space-y-3">
+              <div>
+                <Label className="text-sm flex items-center gap-2">
+                  <span>Zoom</span>
+                  <span className="text-gray-500 text-xs">{zoom.toFixed(1)}x</span>
+                </Label>
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  value={zoom}
+                  onChange={(e) => setZoom(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <Label className="text-sm flex items-center gap-2">
+                  <RotateCw className="h-4 w-4" />
+                  <span>Rotation</span>
+                  <span className="text-gray-500 text-xs">{rotation}°</span>
+                </Label>
+                <input
+                  type="range"
+                  min={0}
+                  max={360}
+                  step={1}
+                  value={rotation}
+                  onChange={(e) => setRotation(parseInt(e.target.value))}
+                  className="w-full"
+                />
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setRotation((r) => (r - 90 + 360) % 360)}
+                  >
+                    Rotate Left 90°
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setRotation((r) => (r + 90) % 360)}
+                  >
+                    Rotate Right 90°
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setPreviewImage(null);
+                setPreviewFile(null);
+                setPreviewSlot(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleCropConfirm}
+              disabled={uploadingImage}
+            >
+              {uploadingImage ? 'Uploading...' : 'Upload Image'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
