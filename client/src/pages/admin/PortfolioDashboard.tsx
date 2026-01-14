@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RefreshCw, Bell } from "lucide-react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
@@ -14,6 +16,8 @@ export default function PortfolioDashboard() {
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1); // 1-12
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const [selectedState, setSelectedState] = useState<string>("all");
+  const [showBudgetBreakdown, setShowBudgetBreakdown] = useState(false);
+  const [breakdownType, setBreakdownType] = useState<"annual" | "ytd">("annual");
   
   const { data: metrics, isLoading, refetch } = trpc.dashboard.getMetrics.useQuery({
     month: selectedMonth,
@@ -424,9 +428,10 @@ export default function PortfolioDashboard() {
         {/* Budget Charts and Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Annual Budget Pie Chart */}
-          <Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => { setBreakdownType("annual"); setShowBudgetBreakdown(true); }}>
             <CardHeader>
               <CardTitle className="text-center">Annual Budget</CardTitle>
+              <p className="text-xs text-center text-gray-500 mt-1">Click for detailed breakdown</p>
             </CardHeader>
             <CardContent className="flex flex-col items-center">
               <div className="relative w-48 h-48">
@@ -470,9 +475,10 @@ export default function PortfolioDashboard() {
           </Card>
           
           {/* YTD Budget Pie Chart */}
-          <Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => { setBreakdownType("ytd"); setShowBudgetBreakdown(true); }}>
             <CardHeader>
               <CardTitle className="text-center">YTD Budget</CardTitle>
+              <p className="text-xs text-center text-gray-500 mt-1">Click for detailed breakdown</p>
             </CardHeader>
             <CardContent className="flex flex-col items-center">
               <div className="relative w-48 h-48">
@@ -545,6 +551,43 @@ export default function PortfolioDashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Budget Breakdown Modal */}
+      <Dialog open={showBudgetBreakdown} onOpenChange={setShowBudgetBreakdown}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {breakdownType === "annual" ? "Annual" : "YTD"} Budget Breakdown by Site
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <p className="text-sm text-gray-600 mb-4">
+              Detailed breakdown showing budget vs actual performance for each site
+            </p>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Site</TableHead>
+                    <TableHead>Centre</TableHead>
+                    <TableHead className="text-right">Budget</TableHead>
+                    <TableHead className="text-right">Actual</TableHead>
+                    <TableHead className="text-right">Variance</TableHead>
+                    <TableHead className="text-right">% Achieved</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                      Per-site budget breakdown coming soon
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

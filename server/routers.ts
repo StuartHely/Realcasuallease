@@ -1742,6 +1742,7 @@ export const appRouter = router({
           'mega_state_admin',
           'mega_admin'
         ]).optional(),
+        assignedState: z.string().optional(),
         canPayByInvoice: z.boolean().optional(),
         // Company details
         companyName: z.string().optional(),
@@ -1775,6 +1776,7 @@ export const appRouter = router({
         if (input.email) userUpdates.email = input.email;
         if (input.name) userUpdates.name = input.name;
         if (input.role) userUpdates.role = input.role;
+        if (input.assignedState !== undefined) userUpdates.assignedState = input.assignedState || null;
         if (input.canPayByInvoice !== undefined) userUpdates.canPayByInvoice = input.canPayByInvoice;
 
         if (Object.keys(userUpdates).length > 0) {
@@ -2015,6 +2017,45 @@ export const appRouter = router({
       const { getAvailableStates } = await import('./dashboardDb');
       return await getAvailableStates();
     }),
+  }),
+
+  // Budget Management
+  budgets: router({
+    list: adminProcedure.query(async () => {
+      return await db.getAllBudgets();
+    }),
+
+    create: adminProcedure
+      .input(z.object({
+        siteId: z.number(),
+        month: z.number().min(1).max(12),
+        year: z.number(),
+        budgetAmount: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createBudget(input);
+      }),
+
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        budgetAmount: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.updateBudget(input.id, input.budgetAmount);
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.deleteBudget(input.id);
+      }),
+
+    getBySite: adminProcedure
+      .input(z.object({ siteId: z.number(), year: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getBudgetsBySite(input.siteId, input.year);
+      }),
   }),
 });
 

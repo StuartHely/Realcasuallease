@@ -1823,3 +1823,17 @@
 
 ## Navigation Fix (Jan 14, 2026)
 - [x] Add Portfolio Dashboard link to admin sidebar navigation
+
+## Budget Management & Dashboard Enhancements (Jan 14, 2026)
+- [x] Create Budget Management admin page with CRUD interface
+- [x] Add backend tRPC procedures for budget CRUD operations
+- [x] Build budget entry form (select site, month, year, amount)
+- [x] Display budget list with edit/delete actions
+- [ ] Add bulk budget import feature (CSV upload)
+- [x] Populate budgets table with sample monthly targets for 2026
+- [x] Create State Admin assignment interface in Users page
+- [x] Add assignedState dropdown to user edit form
+- [x] Implement clickable budget pie charts with drill-down modal
+- [ ] Show per-site budget breakdown in modal (site name, budget, actual, variance)
+- [ ] Add color coding for over/under budget sites in breakdown
+- [ ] Write vitest tests for budget CRUD and chart interactions

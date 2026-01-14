@@ -14,7 +14,8 @@ import {
   bookings, InsertBooking,
   transactions, InsertTransaction,
   systemConfig, InsertSystemConfig,
-  auditLog, InsertAuditLog
+  auditLog, InsertAuditLog,
+  budgets
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -973,4 +974,98 @@ export async function updateSiteFloorAssignments(assignments: Array<{ siteId: nu
   }
   
   return { success: true, updated: assignments.length };
+}
+
+
+// ==================== Budget Management ====================
+
+export async function getAllBudgets() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .select({
+      id: budgets.id,
+      siteId: budgets.siteId,
+      siteName: sites.siteNumber,
+      centreName: shoppingCentres.name,
+      month: budgets.month,
+      year: budgets.year,
+      budgetAmount: budgets.budgetAmount,
+      createdAt: budgets.createdAt,
+    })
+    .from(budgets)
+    .leftJoin(sites, eq(budgets.siteId, sites.id))
+    .leftJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
+    .orderBy(desc(budgets.year), desc(budgets.month));
+  
+  return result;
+}
+
+export async function createBudget(input: { siteId: number; month: number; year: number; budgetAmount: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Check if budget already exists for this site/month/year
+  const existing = await db
+    .select()
+    .from(budgets)
+    .where(
+      and(
+        eq(budgets.siteId, input.siteId),
+        eq(budgets.month, input.month),
+        eq(budgets.year, input.year)
+      )
+    )
+    .limit(1);
+  
+  if (existing.length > 0) {
+    throw new Error("Budget already exists for this site, month, and year");
+  }
+  
+  await db.insert(budgets).values({
+    siteId: input.siteId,
+    month: input.month,
+    year: input.year,
+    budgetAmount: input.budgetAmount,
+  });
+  
+  return { success: true };
+}
+
+export async function updateBudget(id: number, budgetAmount: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(budgets)
+    .set({ budgetAmount })
+    .where(eq(budgets.id, id));
+  
+  return { success: true };
+}
+
+export async function deleteBudget(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(budgets).where(eq(budgets.id, id));
+  
+  return { success: true };
+}
+
+export async function getBudgetsBySite(siteId: number, year: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db
+    .select()
+    .from(budgets)
+    .where(
+      and(
+        eq(budgets.siteId, siteId),
+        eq(budgets.year, year)
+      )
+    )
+    .orderBy(budgets.month);
 }

@@ -189,6 +189,7 @@ export default function AdminUsers() {
       email: editingFullUser.email,
       name: editingFullUser.name,
       role: editingFullUser.role,
+      assignedState: editingFullUser.assignedState,
       canPayByInvoice: editingFullUser.canPayByInvoice,
       companyName: editingFullUser.profile?.companyName,
       website: editingFullUser.profile?.website,
@@ -682,6 +683,27 @@ export default function AdminUsers() {
                   <option value="mega_admin">Mega - Admin</option>
                 </select>
               </div>
+              {(editingFullUser.role === 'mega_state_admin' || editingFullUser.role === 'owner_state_admin') && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Assigned State</label>
+                  <select
+                    value={editingFullUser.assignedState || ""}
+                    onChange={(e) => setEditingFullUser({ ...editingFullUser, assignedState: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select state...</option>
+                    <option value="NSW">NSW</option>
+                    <option value="VIC">VIC</option>
+                    <option value="QLD">QLD</option>
+                    <option value="SA">SA</option>
+                    <option value="WA">WA</option>
+                    <option value="TAS">TAS</option>
+                    <option value="NT">NT</option>
+                    <option value="ACT">ACT</option>
+                  </select>
+                  <p className="text-sm text-muted-foreground">State Admins can only access centres in their assigned state</p>
+                </div>
+              )}
               <div className="flex items-start gap-3">
                 <Checkbox
                   checked={editingFullUser.canPayByInvoice}
