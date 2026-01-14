@@ -1758,3 +1758,10 @@
 - [x] Add image preview modal before upload in Admin Sites - Full preview with crop/rotate tools
 - [x] Add drag-and-drop image upload functionality in Admin Sites - "Click or drag to upload" zones
 - [x] Integrate image crop/rotate tool for image uploads - Zoom (1x-3x), rotation (0-360°), quick 90° buttons, 4:3 crop area
+
+## CRITICAL BUG - Seasonal Pricing (Jan 13, 2026)
+- [ ] Fix bulk seasonal rate increase showing $0 on calendar
+- [ ] Issue: Applied 30% increase to all Chullora sites for June 13-14, calendar now shows $0
+- [ ] Investigate seasonal pricing calculation logic
+- [ ] Verify seasonal_pricing table data integrity
+- [ ] Fix rate calculation to properly apply seasonal adjustments

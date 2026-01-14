@@ -1,0 +1,9 @@
+{
+  "query": "DELETE sr FROM seasonalRates sr\nJOIN sites s ON sr.siteId = s.id\nJOIN shopping_centres c ON s.centreId = c.id\nWHERE c.name LIKE '%Chullora%'\nAND sr.startDate <= '2026-06-14'\nAND sr.endDate >= '2026-06-13';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute DELETE sr FROM seasonalRates sr\nJOIN sites s ON sr.siteId = s.id\nJOIN shopping_centres c ON s.centreId = c.id\nWHERE c.name LIKE '%Chullora%'\nAND sr.startDate <= '2026-06-14'\nAND sr.endDate >= '2026-06-13';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1544
+}

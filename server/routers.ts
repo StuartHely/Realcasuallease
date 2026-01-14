@@ -1577,8 +1577,14 @@ export const appRouter = router({
         for (const site of allSites) {
           // Calculate increased rates
           const multiplier = 1 + (percentageIncrease / 100);
-          const weekdayRate = site.pricePerDay ? Math.round(parseFloat(site.pricePerDay) * multiplier * 100) / 100 : undefined;
-          const weekendRate = site.weekendPricePerDay ? Math.round(parseFloat(site.weekendPricePerDay) * multiplier * 100) / 100 : undefined;
+          const baseWeekdayRate = site.pricePerDay ? parseFloat(site.pricePerDay) : 0;
+          const baseWeekendRate = site.weekendPricePerDay ? parseFloat(site.weekendPricePerDay) : 0;
+          
+          const weekdayRate = baseWeekdayRate > 0 ? Math.round(baseWeekdayRate * multiplier * 100) / 100 : undefined;
+          // If weekend rate is $0 or null, use weekday rate as base for percentage increase
+          const weekendRate = baseWeekendRate > 0 
+            ? Math.round(baseWeekendRate * multiplier * 100) / 100 
+            : (baseWeekdayRate > 0 ? Math.round(baseWeekdayRate * multiplier * 100) / 100 : undefined);
           const weeklyRate = site.pricePerWeek ? Math.round(parseFloat(site.pricePerWeek) * multiplier * 100) / 100 : undefined;
 
           await createSeasonalRate({

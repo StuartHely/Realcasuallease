@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO seasonalRates (siteId, name, startDate, endDate, weekdayRate, weekendRate, weeklyRate, createdAt)\nSELECT \n  s.id,\n  'June 13-14 30% Increase',\n  '2026-06-13',\n  '2026-06-14',\n  ROUND(CAST(s.pricePerDay AS DECIMAL(10,2)) * 1.30, 2),\n  CASE \n    WHEN CAST(s.weekendPricePerDay AS DECIMAL(10,2)) > 0 \n    THEN ROUND(CAST(s.weekendPricePerDay AS DECIMAL(10,2)) * 1.30, 2)\n    ELSE ROUND(CAST(s.pricePerDay AS DECIMAL(10,2)) * 1.30, 2)\n  END,\n  ROUND(CAST(s.pricePerWeek AS DECIMAL(10,2)) * 1.30, 2),\n  NOW()\nFROM sites s\nJOIN shopping_centres c ON s.centreId = c.id\nWHERE c.name LIKE '%Chullora%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute INSERT INTO seasonalRates (siteId, name, startDate, endDate, weekdayRate, weekendRate, weeklyRate, createdAt)\nSELECT \n  s.id,\n  'June 13-14 30% Increase',\n  '2026-06-13',\n  '2026-06-14',\n  ROUND(CAST(s.pricePerDay AS DECIMAL(10,2)) * 1.30, 2),\n  CASE \n    WHEN CAST(s.weekendPricePerDay AS DECIMAL(10,2)) > 0 \n    THEN ROUND(CAST(s.weekendPricePerDay AS DECIMAL(10,2)) * 1.30, 2)\n    ELSE ROUND(CAST(s.pricePerDay AS DECIMAL(10,2)) * 1.30, 2)\n  END,\n  ROUND(CAST(s.pricePerWeek AS DECIMAL(10,2)) * 1.30, 2),\n  NOW()\nFROM sites s\nJOIN shopping_centres c ON s.centreId = c.id\nWHERE c.name LIKE '%Chullora%';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1526
+}
