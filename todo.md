@@ -1820,3 +1820,6 @@
 - [x] Display YTD and monthly metrics with last year comparison
 - [x] Show budget pie charts (annual and YTD)
 - [x] Display top performing sites by revenue and booked days
+
+## Navigation Fix (Jan 14, 2026)
+- [x] Add Portfolio Dashboard link to admin sidebar navigation

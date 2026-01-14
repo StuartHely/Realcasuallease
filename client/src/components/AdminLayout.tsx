@@ -58,6 +58,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
         title: "Overview",
         items: [
           { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
+          { icon: TrendingUp, label: "Portfolio Dashboard", path: "/admin/portfolio" },
         ],
       },
       {
@@ -113,6 +114,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
         title: "Overview",
         items: [
           { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
+          { icon: TrendingUp, label: "Portfolio Dashboard", path: "/admin/portfolio" },
         ],
       },
       {
@@ -134,6 +136,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
         title: "Overview",
         items: [
           { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
+          { icon: TrendingUp, label: "Portfolio Dashboard", path: "/admin/portfolio" },
         ],
       },
       {
