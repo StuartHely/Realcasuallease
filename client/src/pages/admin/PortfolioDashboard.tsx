@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -76,16 +77,19 @@ export default function PortfolioDashboard() {
   
   if (isLoading) {
     return (
+      <AdminLayout>
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
         </div>
       </div>
+      </AdminLayout>
     );
   }
   
   if (!metrics) {
     return (
+      <AdminLayout>
       <div className="p-8">
         <Card>
           <CardContent className="py-12">
@@ -93,6 +97,7 @@ export default function PortfolioDashboard() {
           </CardContent>
         </Card>
       </div>
+      </AdminLayout>
     );
   }
   
@@ -109,6 +114,7 @@ export default function PortfolioDashboard() {
   const fyOptions = [getCurrentFY() - 1, getCurrentFY(), getCurrentFY() + 1];
   
   return (
+    <AdminLayout>
     <div className="p-8 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
@@ -662,5 +668,6 @@ export default function PortfolioDashboard() {
         </DialogContent>
       </Dialog>
     </div>
+    </AdminLayout>
   );
 }

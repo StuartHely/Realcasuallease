@@ -1898,3 +1898,7 @@
 
 ## Modal Title Update (Jan 15, 2026)
 - [x] Change "Annual Budget Breakdown by Site" to "Annual Budget Breakdown by Centre"
+
+
+## Portfolio Dashboard Layout Fix (Jan 15, 2026)
+- [x] Add AdminLayout with sidebar navigation to Portfolio Dashboard page
