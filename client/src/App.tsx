@@ -33,7 +33,6 @@ import Payments from "./pages/admin/Payments";
 import InvoiceDashboard from "./pages/admin/InvoiceDashboard";
 import SearchAnalytics from "./pages/admin/SearchAnalytics";
 import PortfolioDashboard from "./pages/admin/PortfolioDashboard";
-import BudgetManagement from "./pages/admin/BudgetManagement";
 import FYBudgetManagement from "./pages/admin/FYBudgetManagement";
 import OwnerApprovals from "./pages/OwnerApprovals";
 import OwnerCentres from "./pages/OwnerCentres";
@@ -47,7 +46,6 @@ function Router() {
       <Route path="/centre/:id" component={CentreDetail} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/portfolio" component={PortfolioDashboard} />
-      <Route path="/admin/budgets" component={BudgetManagement} />
       <Route path="/admin/fy-budgets" component={FYBudgetManagement} />
       <Route path="/admin/centres" component={AdminCentres} />
       <Route path="/admin/sites" component={AdminSites} />

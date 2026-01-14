@@ -1882,3 +1882,9 @@
 - [x] Replace old site-level budget queries with centre-level FY budgets
 - [x] Update budget vs actual calculations for dashboard metrics
 - [x] Test both features end-to-end
+
+## Remove Old Budget Management (Jan 14, 2026)
+- [x] Remove old Budget Management page (/admin/budgets)
+- [x] Remove route from App.tsx
+- [x] Remove navigation link from AdminLayout
+- [x] Keep only FY Budget Management (/admin/fy-budgets)
