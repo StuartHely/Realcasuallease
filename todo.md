@@ -1849,9 +1849,3 @@
 - [x] Add validation for CSV format (siteId, month, year, budgetAmount columns)
 - [x] Show import summary (success count, error count, duplicate handling)
 - [x] Write vitest tests for budget breakdown query and CSV import
-
-## Bug Fix - Budget Management 400 Error (Jan 14, 2026)
-- [x] Investigate 400 error in Budget Management page
-- [x] Identify root cause (missing sites.list tRPC procedure)
-- [x] Fix the error (added sites.list procedure to routers)
-- [x] Test Budget Management page functionality

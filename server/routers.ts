@@ -189,10 +189,6 @@ export const appRouter = router({
 
   // Sites
   sites: router({
-    list: publicProcedure.query(async () => {
-      return await db.getSites();
-    }),
-    
     getByCentreId: publicProcedure
       .input(z.object({ centreId: z.number() }))
       .query(async ({ input }) => {
