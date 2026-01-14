@@ -19,6 +19,15 @@ export default function PortfolioDashboard() {
   const [showBudgetBreakdown, setShowBudgetBreakdown] = useState(false);
   const [breakdownType, setBreakdownType] = useState<"annual" | "ytd">("annual");
   
+  // Calculate current financial year (July-June)
+  const getCurrentFY = () => {
+    const now = new Date();
+    const month = now.getMonth(); // 0-11
+    const year = now.getFullYear();
+    return month >= 6 ? year + 1 : year;
+  };
+  const [selectedFY, setSelectedFY] = useState(getCurrentFY());
+  
   const { data: metrics, isLoading, refetch } = trpc.dashboard.getMetrics.useQuery({
     month: selectedMonth,
     year: selectedYear,
@@ -26,6 +35,12 @@ export default function PortfolioDashboard() {
   });
   
   const { data: availableStates } = trpc.dashboard.getAvailableStates.useQuery();
+  
+  // FY Budget metrics
+  const { data: fyBudgetMetrics } = trpc.dashboard.getFYBudgetMetrics.useQuery({
+    financialYear: selectedFY,
+    state: selectedState,
+  });
   
   const { data: siteBreakdown, isLoading: isLoadingBreakdown } = trpc.dashboard.getSiteBreakdown.useQuery(
     {
@@ -81,14 +96,17 @@ export default function PortfolioDashboard() {
     );
   }
   
-  // Calculate budget percentages for pie charts
+  // Calculate budget percentages for pie charts - using FY budget data
   const annualActual = metrics.thisYear.ytd.totalRevenue;
-  const annualBudget = metrics.budget.annualBudget;
+  const annualBudget = fyBudgetMetrics?.annualBudget || 0;
   const annualPercentage = annualBudget > 0 ? (annualActual / annualBudget) * 100 : 0;
   
   const ytdActual = metrics.thisYear.ytd.totalRevenue;
-  const ytdBudget = metrics.budget.ytdBudget;
+  const ytdBudget = fyBudgetMetrics?.ytdBudget || 0;
   const ytdPercentage = ytdBudget > 0 ? (ytdActual / ytdBudget) * 100 : 0;
+  
+  // Generate FY options
+  const fyOptions = [getCurrentFY() - 1, getCurrentFY(), getCurrentFY() + 1];
   
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
@@ -145,6 +163,22 @@ export default function PortfolioDashboard() {
               {availableStates?.map((state) => (
                 <SelectItem key={state} value={state}>
                   {state}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-gray-700">Financial Year:</label>
+          <Select value={selectedFY.toString()} onValueChange={(v) => setSelectedFY(parseInt(v))}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {fyOptions.map((fy) => (
+                <SelectItem key={fy} value={fy.toString()}>
+                  FY {fy - 1}-{fy.toString().slice(-2)}
                 </SelectItem>
               ))}
             </SelectContent>

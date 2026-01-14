@@ -2018,6 +2018,29 @@ export const appRouter = router({
       return await getAvailableStates();
     }),
 
+    getFYBudgetMetrics: adminProcedure
+      .input(z.object({
+        financialYear: z.number(),
+        state: z.string().optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        const { getFYBudgetMetrics, getPermittedCentreIds } = await import('./fyBudgetDb');
+        
+        // Determine which state to filter by
+        let filterState: string | null = null;
+        if (ctx.user.role === 'mega_state_admin' || ctx.user.role === 'owner_state_admin') {
+          filterState = ctx.user.assignedState || null;
+        } else if (input.state && input.state !== 'all') {
+          filterState = input.state;
+        }
+        
+        // Get permitted centre IDs
+        const centreIds = await getPermittedCentreIds(ctx.user.role, filterState);
+        
+        // Get FY budget metrics
+        return await getFYBudgetMetrics(centreIds, input.financialYear);
+      }),
+
     getSiteBreakdown: adminProcedure
       .input(z.object({
         year: z.number(),

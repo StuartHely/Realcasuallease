@@ -1873,3 +1873,12 @@
 - [x] Add route and navigation link
 - [x] Test all functionality end-to-end
 - [x] Fix AdminLayout import error (named vs default export)
+
+
+## FY Budget Enhancements (Jan 14, 2026)
+- [x] Add calculated monthly budget display table to FY Budget Management (already implemented)
+- [x] Show Annual Budget × Month % for each centre's 12 months (already implemented)
+- [x] Update Portfolio Dashboard to use FY budget data
+- [x] Replace old site-level budget queries with centre-level FY budgets
+- [x] Update budget vs actual calculations for dashboard metrics
+- [x] Test both features end-to-end

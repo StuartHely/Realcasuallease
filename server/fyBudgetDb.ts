@@ -178,3 +178,131 @@ export async function getAllCentresForBudget() {
     .from(shoppingCentres)
     .orderBy(shoppingCentres.name);
 }
+
+
+/**
+ * Get FY budget metrics for Portfolio Dashboard
+ * Uses centre-level budgets with monthly percentage distribution
+ * Financial year runs July to June
+ */
+export async function getFYBudgetMetrics(
+  centreIds: number[],
+  financialYear: number
+): Promise<{
+  annualBudget: number;
+  ytdBudget: number;
+  monthlyBudgets: Record<string, number>;
+}> {
+  const db = await getDb();
+  if (!db || centreIds.length === 0) {
+    return {
+      annualBudget: 0,
+      ytdBudget: 0,
+      monthlyBudgets: {},
+    };
+  }
+
+  // Get FY percentages for the year
+  const percentages = await getFyPercentages(financialYear);
+  if (!percentages) {
+    return {
+      annualBudget: 0,
+      ytdBudget: 0,
+      monthlyBudgets: {},
+    };
+  }
+
+  // Get centre budgets for the year
+  const budgets = await getCentreBudgetsForYear(financialYear);
+  const filteredBudgets = budgets.filter((b: any) => centreIds.includes(b.centreId));
+
+  // Calculate total annual budget
+  const annualBudget = filteredBudgets.reduce(
+    (sum: number, b: any) => sum + parseFloat(b.annualBudget),
+    0
+  );
+
+  // Calculate monthly budgets using percentages
+  const monthlyBudgets = calculateMonthlyBudgets(annualBudget, percentages);
+
+  // Determine which months are in YTD based on current date
+  // FY runs July (month 7) to June (month 6)
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1; // 1-12
+  const currentYear = now.getFullYear();
+
+  // Determine FY start year (e.g., FY 2026 starts July 2025)
+  const fyStartYear = financialYear - 1;
+
+  // Calculate YTD budget (sum of completed months in current FY)
+  let ytdBudget = 0;
+
+  // July to December of FY start year
+  if (currentYear > fyStartYear || (currentYear === fyStartYear && currentMonth >= 7)) {
+    if (currentYear > fyStartYear) {
+      // All of Jul-Dec are complete
+      ytdBudget += monthlyBudgets.july + monthlyBudgets.august + monthlyBudgets.september +
+                   monthlyBudgets.october + monthlyBudgets.november + monthlyBudgets.december;
+    } else {
+      // Only months up to current month
+      const fyMonths = ['july', 'august', 'september', 'october', 'november', 'december'];
+      const monthsToInclude = currentMonth - 6; // July = 7, so 7-6=1 month
+      for (let i = 0; i < monthsToInclude && i < fyMonths.length; i++) {
+        ytdBudget += monthlyBudgets[fyMonths[i] as keyof typeof monthlyBudgets];
+      }
+    }
+  }
+
+  // January to June of FY end year
+  if (currentYear === financialYear && currentMonth >= 1 && currentMonth <= 6) {
+    const fyMonths = ['january', 'february', 'march', 'april', 'may', 'june'];
+    for (let i = 0; i < currentMonth; i++) {
+      ytdBudget += monthlyBudgets[fyMonths[i] as keyof typeof monthlyBudgets];
+    }
+  }
+
+  return {
+    annualBudget,
+    ytdBudget,
+    monthlyBudgets,
+  };
+}
+
+/**
+ * Get permitted centre IDs based on user role and assigned state
+ */
+export async function getPermittedCentreIds(
+  userRole: string,
+  assignedState: string | null
+): Promise<number[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  // National admins see everything
+  if (userRole === 'mega_admin' || userRole === 'owner_super_admin') {
+    const allCentres = await db.select({ id: shoppingCentres.id }).from(shoppingCentres);
+    return allCentres.map((c: any) => c.id);
+  }
+
+  // State admins see only their state
+  if ((userRole === 'mega_state_admin' || userRole === 'owner_state_admin') && assignedState) {
+    const stateCentres = await db
+      .select({ id: shoppingCentres.id })
+      .from(shoppingCentres)
+      .where(eq(shoppingCentres.state, assignedState));
+    return stateCentres.map((c: any) => c.id);
+  }
+
+  return [];
+}
+
+/**
+ * Get current financial year (July-June)
+ */
+export function getCurrentFinancialYear(): number {
+  const now = new Date();
+  const month = now.getMonth(); // 0-11
+  const year = now.getFullYear();
+  // If July or later, we're in FY ending next year
+  return month >= 6 ? year + 1 : year;
+}
