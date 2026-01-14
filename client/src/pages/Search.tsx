@@ -471,23 +471,23 @@ export default function Search() {
                         noticeText = 'Sites below meet your stated USAGE requirement.';
                       }
                       
-                      const handleShowAllSites = () => {
+                      const handleShowAllSites = (e: React.MouseEvent) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         // Extract just the centre name from the query
                         // For "Chullora Marketplace uggs", we want "Chullora Marketplace"
-                        let centreName = parsedQuery.centreName;
-                        if (!centreName) {
-                          // Fallback: remove size patterns and product categories from query
-                          centreName = searchParams.query
-                            .replace(/\d+\s*x\s*\d+m?/gi, '') // Remove size patterns like "3x4m"
-                            .replace(/\b(shoes?|footwear|clothing|food|electronics|ugg|uggs|ugg boots)\b/gi, '') // Remove common categories
-                            .trim();
-                        }
+                        // Always strip size patterns and product categories from the query
+                        let centreName = (parsedQuery.centreName || searchParams.query)
+                          .replace(/\d+\s*x\s*\d+m?/gi, '') // Remove size patterns like "3x4m"
+                          .replace(/\b(shoes?|footwear|clothing|food|electronics|ugg|uggs|ugg boots)\b/gi, '') // Remove common categories
+                          .trim();
                         
                         const params = new URLSearchParams();
                         params.set('query', centreName);
                         params.set('date', format(searchParams.date, 'yyyy-MM-dd'));
+                        const newUrl = `/search?${params.toString()}`;
                         // Don't preserve category or auto-approved filters - show ALL sites
-                        window.location.href = `/search?${params.toString()}`;
+                        setLocation(newUrl);
                       };
                       
                       return (
@@ -496,6 +496,7 @@ export default function Search() {
                             {noticeText}
                           </div>
                           <Button
+                            type="button"
                             variant="outline"
                             onClick={handleShowAllSites}
                             className="text-blue-600 hover:text-blue-700"

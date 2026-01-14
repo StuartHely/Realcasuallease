@@ -1787,3 +1787,6 @@
 
 ## Button Navigation Debug (Jan 13, 2026)
 - [ ] Debug and fix "Show me all sized sites in this centre" button navigation to properly remove category filters
+
+## Button Navigation Fix (Jan 14, 2026)
+- [ ] Fix "Show me all sized sites in this centre" button click handler to properly navigate
