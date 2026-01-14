@@ -602,12 +602,12 @@ export default function PortfolioDashboard() {
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {breakdownType === "annual" ? "Annual" : "YTD"} Budget Breakdown by Site
+              {breakdownType === "annual" ? "Annual" : "YTD"} Budget Breakdown by Centre
             </DialogTitle>
           </DialogHeader>
           <div className="mt-4">
             <p className="text-sm text-gray-600 mb-4">
-              Detailed breakdown showing budget vs actual performance for each site
+              Detailed breakdown showing budget vs actual performance for each centre
             </p>
             <div className="rounded-md border">
               <Table>

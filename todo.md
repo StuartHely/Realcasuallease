@@ -1894,3 +1894,7 @@
 - [x] Change breakdown from SITE level to CENTRE level aggregation
 - [x] Update backend query to use centre_budgets table instead of old budgets table
 - [x] Update frontend modal to display centre names instead of site names
+
+
+## Modal Title Update (Jan 15, 2026)
+- [x] Change "Annual Budget Breakdown by Site" to "Annual Budget Breakdown by Centre"
