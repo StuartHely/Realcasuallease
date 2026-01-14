@@ -328,6 +328,48 @@ export const budgets = mysqlTable("budgets", {
   uniqueSiteMonthYear: index("unique_site_month_year").on(table.siteId, table.month, table.year),
 }));
 
+/**
+ * Financial year monthly percentage distribution
+ * Stores the percentage allocation for each month (July-June)
+ */
+export const fyPercentages = mysqlTable("fy_percentages", {
+  id: int("id").autoincrement().primaryKey(),
+  financialYear: int("financialYear").notNull(), // e.g., 2026 means FY 2025-26 (July 2025 - June 2026)
+  july: decimal("july", { precision: 5, scale: 2 }).default("8.33").notNull(),
+  august: decimal("august", { precision: 5, scale: 2 }).default("8.33").notNull(),
+  september: decimal("september", { precision: 5, scale: 2 }).default("8.33").notNull(),
+  october: decimal("october", { precision: 5, scale: 2 }).default("8.33").notNull(),
+  november: decimal("november", { precision: 5, scale: 2 }).default("8.33").notNull(),
+  december: decimal("december", { precision: 5, scale: 2 }).default("8.33").notNull(),
+  january: decimal("january", { precision: 5, scale: 2 }).default("8.33").notNull(),
+  february: decimal("february", { precision: 5, scale: 2 }).default("8.33").notNull(),
+  march: decimal("march", { precision: 5, scale: 2 }).default("8.33").notNull(),
+  april: decimal("april", { precision: 5, scale: 2 }).default("8.33").notNull(),
+  may: decimal("may", { precision: 5, scale: 2 }).default("8.33").notNull(),
+  june: decimal("june", { precision: 5, scale: 2 }).default("8.37").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  fyIdx: index("fy_idx").on(table.financialYear),
+}));
+
+/**
+ * Centre annual budgets for financial year
+ * Stores the total annual budget per centre
+ */
+export const centreBudgets = mysqlTable("centre_budgets", {
+  id: int("id").autoincrement().primaryKey(),
+  centreId: int("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
+  financialYear: int("financialYear").notNull(), // e.g., 2026 means FY 2025-26
+  annualBudget: decimal("annualBudget", { precision: 14, scale: 2 }).notNull(), // Total annual budget for the centre
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  centreIdIdx: index("centreId_idx").on(table.centreId),
+  fyIdx: index("fy_idx").on(table.financialYear),
+  uniqueCentreFy: index("unique_centre_fy").on(table.centreId, table.financialYear),
+}));
+
 export const imageAnalytics = mysqlTable("imageAnalytics", {
   id: int("id").autoincrement().primaryKey(),
   siteId: int("site_id").notNull().references(() => sites.id, { onDelete: 'cascade' }),
@@ -412,3 +454,7 @@ export type AuditLog = typeof auditLog.$inferSelect;
 export type InsertAuditLog = typeof auditLog.$inferInsert;
 export type Budget = typeof budgets.$inferSelect;
 export type InsertBudget = typeof budgets.$inferInsert;
+export type FyPercentages = typeof fyPercentages.$inferSelect;
+export type InsertFyPercentages = typeof fyPercentages.$inferInsert;
+export type CentreBudget = typeof centreBudgets.$inferSelect;
+export type InsertCentreBudget = typeof centreBudgets.$inferInsert;

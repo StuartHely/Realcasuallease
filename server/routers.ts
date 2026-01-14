@@ -2094,6 +2094,67 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await db.bulkImportBudgets(input.budgets);
       }),
+
+    // Financial Year Budget Management
+    getFyPercentages: adminProcedure
+      .input(z.object({ financialYear: z.number() }))
+      .query(async ({ input }) => {
+        const fyDb = await import("./fyBudgetDb");
+        return await fyDb.getFyPercentages(input.financialYear);
+      }),
+
+    saveFyPercentages: adminProcedure
+      .input(z.object({
+        financialYear: z.number(),
+        july: z.string(),
+        august: z.string(),
+        september: z.string(),
+        october: z.string(),
+        november: z.string(),
+        december: z.string(),
+        january: z.string(),
+        february: z.string(),
+        march: z.string(),
+        april: z.string(),
+        may: z.string(),
+        june: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const fyDb = await import("./fyBudgetDb");
+        return await fyDb.upsertFyPercentages(input);
+      }),
+
+    getCentreBudgetsForYear: adminProcedure
+      .input(z.object({ financialYear: z.number() }))
+      .query(async ({ input }) => {
+        const fyDb = await import("./fyBudgetDb");
+        return await fyDb.getCentreBudgetsForYear(input.financialYear);
+      }),
+
+    saveCentreBudget: adminProcedure
+      .input(z.object({
+        centreId: z.number(),
+        financialYear: z.number(),
+        annualBudget: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const fyDb = await import("./fyBudgetDb");
+        return await fyDb.upsertCentreBudget(input);
+      }),
+
+    deleteCentreBudget: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const fyDb = await import("./fyBudgetDb");
+        await fyDb.deleteCentreBudget(input.id);
+        return { success: true };
+      }),
+
+    getAllCentresForBudget: adminProcedure
+      .query(async () => {
+        const fyDb = await import("./fyBudgetDb");
+        return await fyDb.getAllCentresForBudget();
+      }),
   }),
 });
 

@@ -1849,3 +1849,27 @@
 - [x] Add validation for CSV format (siteId, month, year, budgetAmount columns)
 - [x] Show import summary (success count, error count, duplicate handling)
 - [x] Write vitest tests for budget breakdown query and CSV import
+
+
+## FY Budget Management Reimplementation (Jan 14, 2026)
+- [x] Verify current app is working after rollback
+- [x] Add fy_percentages and centre_budgets tables to schema
+- [x] Push database schema changes
+- [x] Create backend database helpers for FY budgeting
+- [x] Add tRPC procedures for FY budget CRUD
+- [ ] Test backend API endpoints
+- [ ] Create FYBudgetManagement frontend component
+- [ ] Test frontend component renders correctly
+- [ ] Add navigation link to admin sidebar
+- [ ] Final testing and checkpoint
+
+
+## FY Budget Management (Jan 14, 2026) - COMPLETED
+- [x] Add fy_percentages table for monthly percentage distribution
+- [x] Add centre_budgets table for annual budgets per centre
+- [x] Create backend database helpers for FY budgeting
+- [x] Add tRPC procedures for FY budget CRUD
+- [x] Create FY Budget Management frontend component
+- [x] Add route and navigation link
+- [x] Test all functionality end-to-end
+- [x] Fix AdminLayout import error (named vs default export)
