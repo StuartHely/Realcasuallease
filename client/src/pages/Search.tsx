@@ -472,17 +472,19 @@ export default function Search() {
                       }
                       
                       const handleShowAllSites = () => {
-                        // Remove size and category filters from the query
-                        const params = new URLSearchParams(window.location.search);
-                        const currentDate = params.get('date') || '';
-                        
-                        // Use the parsed centre name if available, otherwise use the first result's centre name
-                        const centreName = parsedQuery.centreName || (data?.centres && data.centres.length > 0 ? data.centres[0].name : '');
-                        
-                        if (centreName) {
-                          // Navigate to search with just the centre name
-                          setLocation(`/search?query=${encodeURIComponent(centreName)}&date=${currentDate}`);
+                        // Remove size and category filters from the query (same logic as existing button)
+                        const newQuery = parsedQuery.centreName || searchParams.query.split(/\d/)[0].trim();
+                        const params = new URLSearchParams();
+                        params.set('query', newQuery);
+                        params.set('date', format(searchParams.date, 'yyyy-MM-dd'));
+                        if (selectedCategoryId) {
+                          params.set('category', selectedCategoryId.toString());
                         }
+                        if (showOnlyAutoApproved) {
+                          params.set('autoApproved', 'true');
+                        }
+                        setLocation(`/search?${params.toString()}`);
+                        window.location.href = `/search?${params.toString()}`;
                       };
                       
                       return (
@@ -492,11 +494,10 @@ export default function Search() {
                           </div>
                           <Button
                             variant="outline"
-                            size="sm"
                             onClick={handleShowAllSites}
-                            className="text-sm"
+                            className="text-blue-600 hover:text-blue-700"
                           >
-                            Show me all sized sites
+                            Show me all sized sites in this centre
                           </Button>
                         </div>
                       );
