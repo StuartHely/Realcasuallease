@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { RefreshCw, Bell } from "lucide-react";
+import { RefreshCw, Bell, Download, FileSpreadsheet, FileText } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 
@@ -19,6 +20,7 @@ export default function PortfolioDashboard() {
   const [selectedState, setSelectedState] = useState<string>("all");
   const [showBudgetBreakdown, setShowBudgetBreakdown] = useState(false);
   const [breakdownType, setBreakdownType] = useState<"annual" | "ytd">("annual");
+  const [isExporting, setIsExporting] = useState(false);
   
   // Calculate current financial year (July-June)
   const getCurrentFY = () => {
@@ -53,6 +55,44 @@ export default function PortfolioDashboard() {
       enabled: showBudgetBreakdown, // Only fetch when modal is open
     }
   );
+  
+  const exportMutation = trpc.dashboard.exportBudgetReport.useMutation({
+    onSuccess: (data) => {
+      // Convert base64 to blob and download
+      const byteCharacters = atob(data.data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: data.mimeType });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setIsExporting(false);
+    },
+    onError: (error) => {
+      console.error('Export failed:', error);
+      alert('Export failed. Please try again.');
+      setIsExporting(false);
+    },
+  });
+  
+  const handleExport = (format: 'pdf' | 'excel') => {
+    setIsExporting(true);
+    exportMutation.mutate({
+      financialYear: selectedFY,
+      state: selectedState === 'all' ? undefined : selectedState,
+      format,
+    });
+  };
   
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-AU', {
@@ -191,15 +231,35 @@ export default function PortfolioDashboard() {
           </Select>
         </div>
         
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetch()}
-          className="ml-auto"
-        >
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Update
-        </Button>
+        <div className="ml-auto flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={isExporting}>
+                <Download className="h-4 w-4 mr-2" />
+                {isExporting ? 'Exporting...' : 'Export'}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => handleExport('excel')}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Export to Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                <FileText className="h-4 w-4 mr-2" />
+                Export to PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Update
+          </Button>
+        </div>
       </div>
       
       {/* Metrics Grid */}

@@ -1902,3 +1902,11 @@
 
 ## Portfolio Dashboard Layout Fix (Jan 15, 2026)
 - [x] Add AdminLayout with sidebar navigation to Portfolio Dashboard page
+
+
+## Export Budget Report Feature (Jan 15, 2026)
+- [x] Create backend endpoint for PDF export of budget vs actual report
+- [x] Create backend endpoint for Excel export of budget vs actual report
+- [x] Add Export dropdown button to Portfolio Dashboard header
+- [x] Include centre breakdown data in exported reports
+- [x] Test PDF and Excel downloads
