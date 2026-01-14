@@ -1837,3 +1837,15 @@
 - [ ] Show per-site budget breakdown in modal (site name, budget, actual, variance)
 - [ ] Add color coding for over/under budget sites in breakdown
 - [ ] Write vitest tests for budget CRUD and chart interactions
+
+## Budget vs Actual Reporting & Bulk Import (Jan 14, 2026)
+- [x] Create backend query to get per-site budget vs actual breakdown
+- [x] Add tRPC procedure for site-level budget performance data
+- [x] Populate drill-down modal with real per-site data (site name, budget, actual, variance, % achieved)
+- [x] Add color coding for variance (green for over-budget, red for under-budget)
+- [x] Implement CSV file upload component in Budget Management page
+- [x] Add backend CSV parser to validate and import budget data
+- [x] Create tRPC procedure for bulk budget import
+- [x] Add validation for CSV format (siteId, month, year, budgetAmount columns)
+- [x] Show import summary (success count, error count, duplicate handling)
+- [x] Write vitest tests for budget breakdown query and CSV import

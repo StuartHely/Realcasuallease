@@ -2017,6 +2017,31 @@ export const appRouter = router({
       const { getAvailableStates } = await import('./dashboardDb');
       return await getAvailableStates();
     }),
+
+    getSiteBreakdown: adminProcedure
+      .input(z.object({
+        year: z.number(),
+        breakdownType: z.enum(['annual', 'ytd']),
+        state: z.string().optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        const { getSiteBreakdown } = await import('./dashboardDb');
+        
+        // Determine which state to filter by
+        let filterState: string | undefined = input.state;
+        if (ctx.user.role === 'mega_state_admin' || ctx.user.role === 'owner_state_admin') {
+          // State admins can only see their assigned state
+          filterState = ctx.user.assignedState || undefined;
+        }
+        
+        return await getSiteBreakdown(
+          ctx.user.role,
+          ctx.user.assignedState || null,
+          input.year,
+          input.breakdownType,
+          filterState
+        );
+      }),
   }),
 
   // Budget Management
@@ -2055,6 +2080,19 @@ export const appRouter = router({
       .input(z.object({ siteId: z.number(), year: z.number() }))
       .query(async ({ input }) => {
         return await db.getBudgetsBySite(input.siteId, input.year);
+      }),
+
+    bulkImport: adminProcedure
+      .input(z.object({
+        budgets: z.array(z.object({
+          siteId: z.number(),
+          month: z.number().min(1).max(12),
+          year: z.number(),
+          budgetAmount: z.string(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.bulkImportBudgets(input.budgets);
       }),
   }),
 });

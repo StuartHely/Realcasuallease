@@ -27,6 +27,17 @@ export default function PortfolioDashboard() {
   
   const { data: availableStates } = trpc.dashboard.getAvailableStates.useQuery();
   
+  const { data: siteBreakdown, isLoading: isLoadingBreakdown } = trpc.dashboard.getSiteBreakdown.useQuery(
+    {
+      year: selectedYear,
+      breakdownType,
+      state: selectedState,
+    },
+    {
+      enabled: showBudgetBreakdown, // Only fetch when modal is open
+    }
+  );
+  
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-AU', {
       style: 'currency',
@@ -577,11 +588,39 @@ export default function PortfolioDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center text-gray-500 py-8">
-                      Per-site budget breakdown coming soon
-                    </TableCell>
-                  </TableRow>
+                  {isLoadingBreakdown ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                        <RefreshCw className="h-6 w-6 animate-spin mx-auto" />
+                      </TableCell>
+                    </TableRow>
+                  ) : !siteBreakdown || siteBreakdown.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                        No budget data available for this period
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    siteBreakdown.map((site) => {
+                      const varianceColor = site.variance >= 0 ? 'text-green-600' : 'text-red-600';
+                      const percentColor = site.percentAchieved >= 100 ? 'text-green-600' : site.percentAchieved >= 80 ? 'text-yellow-600' : 'text-red-600';
+                      
+                      return (
+                        <TableRow key={site.siteId}>
+                          <TableCell className="font-medium">{site.siteName}</TableCell>
+                          <TableCell>{site.centreName}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(site.budget)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(site.actual)}</TableCell>
+                          <TableCell className={`text-right font-semibold ${varianceColor}`}>
+                            {site.variance >= 0 ? '+' : ''}{formatCurrency(site.variance)}
+                          </TableCell>
+                          <TableCell className={`text-right font-semibold ${percentColor}`}>
+                            {Math.round(site.percentAchieved)}%
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
                 </TableBody>
               </Table>
             </div>

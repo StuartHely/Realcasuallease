@@ -1069,3 +1069,89 @@ export async function getBudgetsBySite(siteId: number, year: number) {
     )
     .orderBy(budgets.month);
 }
+
+
+/**
+ * Bulk import budgets from CSV data
+ */
+export async function bulkImportBudgets(budgetData: Array<{
+  siteId: number;
+  month: number;
+  year: number;
+  budgetAmount: string;
+}>): Promise<{
+  success: boolean;
+  imported: number;
+  skipped: number;
+  errors: Array<{ row: number; error: string }>;
+}> {
+  const db = await getDb();
+  if (!db) {
+    return { success: false, imported: 0, skipped: 0, errors: [{ row: 0, error: 'Database connection failed' }] };
+  }
+
+  let imported = 0;
+  let skipped = 0;
+  const errors: Array<{ row: number; error: string }> = [];
+
+  for (let i = 0; i < budgetData.length; i++) {
+    const record = budgetData[i];
+    const rowNum = i + 2; // +2 because row 1 is header, and arrays are 0-indexed
+
+    try {
+      // Validate data
+      if (!record.siteId || !record.month || !record.year || !record.budgetAmount) {
+        errors.push({ row: rowNum, error: 'Missing required fields' });
+        skipped++;
+        continue;
+      }
+
+      if (record.month < 1 || record.month > 12) {
+        errors.push({ row: rowNum, error: 'Month must be between 1 and 12' });
+        skipped++;
+        continue;
+      }
+
+      // Check if budget already exists
+      const existing = await db
+        .select()
+        .from(budgets)
+        .where(
+          and(
+            eq(budgets.siteId, record.siteId),
+            eq(budgets.month, record.month),
+            eq(budgets.year, record.year)
+          )
+        )
+        .limit(1);
+
+      if (existing.length > 0) {
+        // Update existing budget
+        await db
+          .update(budgets)
+          .set({ budgetAmount: record.budgetAmount })
+          .where(eq(budgets.id, existing[0].id));
+        imported++;
+      } else {
+        // Insert new budget
+        await db.insert(budgets).values({
+          siteId: record.siteId,
+          month: record.month,
+          year: record.year,
+          budgetAmount: record.budgetAmount,
+        });
+        imported++;
+      }
+    } catch (error: any) {
+      errors.push({ row: rowNum, error: error.message || 'Unknown error' });
+      skipped++;
+    }
+  }
+
+  return {
+    success: errors.length === 0,
+    imported,
+    skipped,
+    errors,
+  };
+}

@@ -34,14 +34,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, DollarSign } from "lucide-react";
+import { Plus, Pencil, Trash2, DollarSign, Upload, FileText } from "lucide-react";
 
 
 export default function BudgetManagement() {
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<any>(null);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     siteId: "",
@@ -84,6 +87,16 @@ export default function BudgetManagement() {
     },
     onError: (error) => {
       alert(`Error: ${error.message}`);
+    },
+  });
+
+  const importMutation = trpc.budgets.bulkImport.useMutation({
+    onSuccess: (result) => {
+      refetch();
+      setImportResult(result);
+    },
+    onError: (error) => {
+      alert(`Failed to import budgets: ${error.message}`);
     },
   });
 
@@ -133,6 +146,35 @@ export default function BudgetManagement() {
     }
   };
 
+  const handleCSVUpload = async () => {
+    if (!csvFile) {
+      alert("Please select a CSV file");
+      return;
+    }
+
+    const text = await csvFile.text();
+    const lines = text.split('\n').filter(line => line.trim());
+    
+    if (lines.length < 2) {
+      alert("CSV file is empty or invalid");
+      return;
+    }
+
+    // Parse CSV (expecting: siteId,month,year,budgetAmount)
+    const budgets = [];
+    for (let i = 1; i < lines.length; i++) {
+      const [siteId, month, year, budgetAmount] = lines[i].split(',').map(s => s.trim());
+      budgets.push({
+        siteId: parseInt(siteId),
+        month: parseInt(month),
+        year: parseInt(year),
+        budgetAmount: budgetAmount,
+      });
+    }
+
+    importMutation.mutate({ budgets });
+  };
+
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
@@ -162,10 +204,15 @@ export default function BudgetManagement() {
                   Set and manage monthly budget targets for each site
                 </CardDescription>
               </div>
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Budget
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => setIsImportDialogOpen(true)} variant="outline">
+                  Import CSV
+                </Button>
+                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Budget
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -353,6 +400,78 @@ export default function BudgetManagement() {
             <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
               {updateMutation.isPending ? "Updating..." : "Update Budget"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* CSV Import Dialog */}
+      <Dialog open={isImportDialogOpen} onOpenChange={(open) => {
+        setIsImportDialogOpen(open);
+        if (!open) {
+          setCsvFile(null);
+          setImportResult(null);
+        }
+      }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Bulk Import Budgets from CSV</DialogTitle>
+            <DialogDescription>
+              Upload a CSV file with columns: siteId, month, year, budgetAmount
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="csvFile">CSV File</Label>
+              <Input
+                id="csvFile"
+                type="file"
+                accept=".csv"
+                onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+              />
+              <p className="text-sm text-gray-500">
+                Expected format: siteId,month,year,budgetAmount (e.g., 1,1,2026,10000.00)
+              </p>
+            </div>
+            
+            {importResult && (
+              <div className="rounded-md border p-4">
+                <h4 className="font-semibold mb-2">Import Results</h4>
+                <div className="space-y-1 text-sm">
+                  <p className="text-green-600">✓ Imported: {importResult.imported}</p>
+                  <p className="text-yellow-600">⚠ Skipped: {importResult.skipped}</p>
+                  {importResult.errors.length > 0 && (
+                    <div className="mt-2">
+                      <p className="font-medium text-red-600">Errors:</p>
+                      <ul className="list-disc list-inside">
+                        {importResult.errors.slice(0, 5).map((err: any, i: number) => (
+                          <li key={i} className="text-red-600">
+                            Row {err.row}: {err.error}
+                          </li>
+                        ))}
+                        {importResult.errors.length > 5 && (
+                          <li className="text-gray-500">... and {importResult.errors.length - 5} more errors</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsImportDialogOpen(false);
+              setCsvFile(null);
+              setImportResult(null);
+            }}>
+              {importResult ? "Close" : "Cancel"}
+            </Button>
+            {!importResult && (
+              <Button onClick={handleCSVUpload} disabled={!csvFile || importMutation.isPending}>
+                <Upload className="h-4 w-4 mr-2" />
+                {importMutation.isPending ? "Importing..." : "Import"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -290,3 +290,125 @@ export async function getAvailableStates(): Promise<string[]> {
   
   return states.map((s: { state: string | null }) => s.state).filter(Boolean).sort() as string[];
 }
+
+/**
+ * Get per-site budget vs actual breakdown for drill-down modal
+ */
+export async function getSiteBreakdown(
+  userRole: string,
+  assignedState: string | null,
+  year: number,
+  breakdownType: 'annual' | 'ytd',
+  state?: string
+): Promise<Array<{
+  siteId: number;
+  siteName: string;
+  centreName: string;
+  budget: number;
+  actual: number;
+  variance: number;
+  percentAchieved: number;
+}>> {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Get permitted site IDs
+  const permittedSiteIds = await getPermittedSiteIds(userRole, assignedState);
+  if (permittedSiteIds.length === 0) return [];
+
+  // Determine date range
+  const currentMonth = new Date().getMonth() + 1; // 1-12
+  const startMonth = 1;
+  const endMonth = breakdownType === 'ytd' ? currentMonth : 12;
+
+  // Build site list with centre info
+  // Determine state filter
+  let stateFilter: string | null = null;
+  if (state && state !== 'all') {
+    stateFilter = state;
+  } else if ((userRole === 'mega_state_admin' || userRole === 'owner_state_admin') && assignedState) {
+    stateFilter = assignedState;
+  }
+
+  // Build query with state filter if needed
+  const sitesList = stateFilter
+    ? await db
+        .select({
+          siteId: sites.id,
+          siteName: sites.siteNumber,
+          centreName: shoppingCentres.name,
+          centreState: shoppingCentres.state,
+        })
+        .from(sites)
+        .innerJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
+        .where(
+          and(
+            inArray(sites.id, permittedSiteIds),
+            eq(shoppingCentres.state, stateFilter)
+          )
+        )
+    : await db
+        .select({
+          siteId: sites.id,
+          siteName: sites.siteNumber,
+          centreName: shoppingCentres.name,
+          centreState: shoppingCentres.state,
+        })
+        .from(sites)
+        .innerJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
+        .where(inArray(sites.id, permittedSiteIds));
+
+  // For each site, calculate budget and actual
+  const breakdown = await Promise.all(
+    sitesList.map(async (site: any) => {
+      // Get budget sum for the period
+      const budgetResult = await db
+        .select({
+          total: sql<string>`COALESCE(SUM(${budgets.budgetAmount}), 0)`,
+        })
+        .from(budgets)
+        .where(
+          and(
+            eq(budgets.siteId, site.siteId),
+            eq(budgets.year, year),
+            gte(budgets.month, startMonth),
+            lte(budgets.month, endMonth)
+          )
+        );
+
+      const budget = parseFloat(budgetResult[0]?.total || '0');
+
+      // Get actual revenue for the period
+      const actualResult = await db
+        .select({
+          total: sql<string>`COALESCE(SUM(${bookings.ownerAmount}), 0)`,
+        })
+        .from(bookings)
+        .where(
+          and(
+            eq(bookings.siteId, site.siteId),
+            eq(bookings.status, 'confirmed'),
+            gte(bookings.startDate, new Date(`${year}-${String(startMonth).padStart(2, '0')}-01`)),
+            lte(bookings.startDate, new Date(`${year}-${String(endMonth).padStart(2, '0')}-31`))
+          )
+        );
+
+      const actual = parseFloat(actualResult[0]?.total || '0');
+      const variance = actual - budget;
+      const percentAchieved = budget > 0 ? (actual / budget) * 100 : 0;
+
+      return {
+        siteId: site.siteId,
+        siteName: `Site ${site.siteName}`,
+        centreName: site.centreName,
+        budget,
+        actual,
+        variance,
+        percentAchieved,
+      };
+    })
+  );
+
+  // Sort by variance (worst performers first)
+  return breakdown.sort((a, b) => a.variance - b.variance);
+}
