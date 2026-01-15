@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -148,7 +149,8 @@ export default function SearchAnalytics() {
   };
 
   return (
-    <div className="container py-8">
+    <AdminLayout>
+    <div className="p-6">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">Search Analytics</h1>
@@ -382,5 +384,6 @@ export default function SearchAnalytics() {
         </>
       )}
     </div>
+    </AdminLayout>
   );
 }

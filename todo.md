@@ -1910,3 +1910,23 @@
 - [x] Add Export dropdown button to Portfolio Dashboard header
 - [x] Include centre breakdown data in exported reports
 - [x] Test PDF and Excel downloads
+
+
+## Bug Fix - Search Results Month Button (Jan 15, 2026)
+- [ ] Investigate Month button not responding on Search Results page
+- [ ] Fix the Month button click handler
+- [ ] Test Month button functionality
+
+## Search Analytics Dashboard (Jan 15, 2025)
+- [x] Design database schema for search analytics (search_logs, suggestion_clicks tables)
+- [x] Create backend tRPC procedures for logging searches and retrieving analytics
+- [x] Build Search Analytics Dashboard page in admin panel
+- [x] Track popular searches with result counts
+- [x] Track failed queries (zero results) to identify missing centres
+- [x] Track suggestion click-through rates
+- [x] Identify common misspellings that need attention
+- [x] Add time-based filtering (today, week, month, all time)
+- [x] Integrate search logging into existing search functionality
+- [x] Add navigation link to admin sidebar
+- [x] Add AdminLayout wrapper for consistent sidebar navigation
+- [x] Add CSV and Excel export functionality
