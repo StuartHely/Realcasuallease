@@ -2456,6 +2456,26 @@ export const appRouter = router({
         const fyDb = await import("./fyBudgetDb");
         return await fyDb.getAllCentresForBudget();
       }),
+
+    getCentresWithoutBudget: adminProcedure
+      .input(z.object({ financialYear: z.number() }))
+      .query(async ({ input }) => {
+        const fyDb = await import("./fyBudgetDb");
+        return await fyDb.getCentresWithoutBudget(input.financialYear);
+      }),
+
+    bulkImportCentreBudgets: adminProcedure
+      .input(z.object({
+        financialYear: z.number(),
+        data: z.array(z.object({
+          centreName: z.string(),
+          annualBudget: z.string(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        const fyDb = await import("./fyBudgetDb");
+        return await fyDb.bulkImportCentreBudgets(input.financialYear, input.data);
+      }),
   }),
 });
 

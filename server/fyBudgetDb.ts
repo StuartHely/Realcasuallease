@@ -458,3 +458,106 @@ export async function getCentreBreakdown(
   // Sort by variance (worst performers first)
   return breakdown.sort((a, b) => a.variance - b.variance);
 }
+
+
+/**
+ * Get centres that don't have a budget for the specified financial year
+ */
+export async function getCentresWithoutBudget(financialYear: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  // Get all centres
+  const allCentres = await db
+    .select({
+      id: shoppingCentres.id,
+      name: shoppingCentres.name,
+      state: shoppingCentres.state,
+    })
+    .from(shoppingCentres)
+    .orderBy(shoppingCentres.name);
+  
+  // Get centres that have budgets for this FY
+  const centresWithBudget = await db
+    .select({ centreId: centreBudgets.centreId })
+    .from(centreBudgets)
+    .where(eq(centreBudgets.financialYear, financialYear));
+  
+  const budgetedCentreIds = new Set(centresWithBudget.map((c: any) => c.centreId));
+  
+  // Return centres without budgets
+  return allCentres.filter((c: any) => !budgetedCentreIds.has(c.id));
+}
+
+/**
+ * Bulk import centre budgets from uploaded file data
+ * Matches centre names case-insensitively
+ */
+export async function bulkImportCentreBudgets(
+  financialYear: number,
+  data: Array<{ centreName: string; annualBudget: string }>
+): Promise<{
+  imported: Array<{ centreId: number; centreName: string; annualBudget: string }>;
+  unmatched: Array<{ centreName: string; annualBudget: string }>;
+  updated: number;
+  created: number;
+}> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  // Get all centres for matching
+  const allCentres = await db
+    .select({
+      id: shoppingCentres.id,
+      name: shoppingCentres.name,
+    })
+    .from(shoppingCentres);
+  
+  // Create a map for case-insensitive matching
+  const centreMap = new Map<string, { id: number; name: string }>();
+  for (const centre of allCentres) {
+    centreMap.set(centre.name.toLowerCase().trim(), centre);
+  }
+  
+  const imported: Array<{ centreId: number; centreName: string; annualBudget: string }> = [];
+  const unmatched: Array<{ centreName: string; annualBudget: string }> = [];
+  let updated = 0;
+  let created = 0;
+  
+  for (const row of data) {
+    const normalizedName = row.centreName.toLowerCase().trim();
+    const matchedCentre = centreMap.get(normalizedName);
+    
+    if (matchedCentre) {
+      // Check if budget already exists for this centre/FY
+      const existing = await getCentreBudget(matchedCentre.id, financialYear);
+      
+      if (existing) {
+        // Update existing budget
+        await db
+          .update(centreBudgets)
+          .set({ annualBudget: row.annualBudget })
+          .where(eq(centreBudgets.id, existing.id));
+        updated++;
+      } else {
+        // Create new budget
+        await db.insert(centreBudgets).values({
+          centreId: matchedCentre.id,
+          financialYear,
+          annualBudget: row.annualBudget,
+        });
+        created++;
+      }
+      
+      imported.push({
+        centreId: matchedCentre.id,
+        centreName: matchedCentre.name,
+        annualBudget: row.annualBudget,
+      });
+    } else {
+      unmatched.push(row);
+    }
+  }
+  
+  return { imported, unmatched, updated, created };
+}

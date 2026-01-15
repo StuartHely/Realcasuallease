@@ -1,14 +1,17 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import AdminLayout from "@/components/AdminLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Save, AlertCircle } from "lucide-react";
+import { Loader2, Plus, Save, AlertCircle, Upload, FileSpreadsheet, CheckCircle, XCircle, AlertTriangle, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 
 // Financial year months in order (July to June)
 const FY_MONTHS = [
@@ -53,12 +56,26 @@ function getCurrentFY(): number {
   return month >= 6 ? year + 1 : year;
 }
 
+type ImportResult = {
+  imported: Array<{ centreId: number; centreName: string; annualBudget: string }>;
+  unmatched: Array<{ centreName: string; annualBudget: string }>;
+  updated: number;
+  created: number;
+};
+
 export default function FYBudgetManagement() {
   const [selectedFY, setSelectedFY] = useState<number>(getCurrentFY());
   const [percentages, setPercentages] = useState<Record<MonthKey, string>>(DEFAULT_PERCENTAGES);
   const [showAddCentreDialog, setShowAddCentreDialog] = useState(false);
   const [selectedCentreId, setSelectedCentreId] = useState<string>("");
   const [newAnnualBudget, setNewAnnualBudget] = useState<string>("");
+  
+  // Bulk upload state
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [uploadedData, setUploadedData] = useState<Array<{ centreName: string; annualBudget: string }>>([]);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch FY percentages
   const { data: fyPercentagesData, isLoading: loadingPercentages, refetch: refetchPercentages } = 
@@ -70,6 +87,10 @@ export default function FYBudgetManagement() {
 
   // Fetch all centres for dropdown
   const { data: allCentres } = trpc.budgets.getAllCentresForBudget.useQuery();
+  
+  // Fetch centres without budget
+  const { data: centresWithoutBudget, refetch: refetchCentresWithoutBudget } = 
+    trpc.budgets.getCentresWithoutBudget.useQuery({ financialYear: selectedFY });
 
   // Mutations
   const savePercentagesMutation = trpc.budgets.saveFyPercentages.useMutation({
@@ -85,12 +106,24 @@ export default function FYBudgetManagement() {
   const saveCentreBudgetMutation = trpc.budgets.saveCentreBudget.useMutation({
     onSuccess: () => {
       refetchBudgets();
+      refetchCentresWithoutBudget();
       setShowAddCentreDialog(false);
       setSelectedCentreId("");
       setNewAnnualBudget("");
     },
     onError: (error) => {
       alert(`Error saving budget: ${error.message}`);
+    },
+  });
+
+  const bulkImportMutation = trpc.budgets.bulkImportCentreBudgets.useMutation({
+    onSuccess: (result) => {
+      setImportResult(result);
+      refetchBudgets();
+      refetchCentresWithoutBudget();
+    },
+    onError: (error) => {
+      alert(`Error importing budgets: ${error.message}`);
     },
   });
 
@@ -188,6 +221,96 @@ export default function FYBudgetManagement() {
     return [currentFY - 1, currentFY, currentFY + 1, currentFY + 2];
   }, []);
 
+  // Handle file upload
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsProcessingFile(true);
+    setUploadedData([]);
+    setImportResult(null);
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet);
+
+      // Parse the data - look for centre name and budget columns
+      const parsedData: Array<{ centreName: string; annualBudget: string }> = [];
+      
+      for (const row of jsonData) {
+        // Try to find centre name column (case-insensitive)
+        const centreNameKey = Object.keys(row).find(
+          (k) => k.toLowerCase().includes("centre") || k.toLowerCase().includes("center") || k.toLowerCase().includes("name")
+        );
+        
+        // Try to find budget column (case-insensitive)
+        const budgetKey = Object.keys(row).find(
+          (k) => k.toLowerCase().includes("budget") || k.toLowerCase().includes("annual") || k.toLowerCase().includes("total") || k.toLowerCase().includes("amount") || k.toLowerCase() === "$"
+        );
+
+        if (centreNameKey && budgetKey) {
+          const centreName = String(row[centreNameKey] || "").trim();
+          let budgetValue = row[budgetKey];
+          
+          // Clean up budget value - remove currency symbols, commas, etc.
+          if (typeof budgetValue === "string") {
+            budgetValue = budgetValue.replace(/[$,\s]/g, "");
+          }
+          
+          const annualBudget = String(parseFloat(budgetValue) || 0);
+          
+          if (centreName && annualBudget !== "0") {
+            parsedData.push({ centreName, annualBudget });
+          }
+        }
+      }
+
+      setUploadedData(parsedData);
+    } catch (error) {
+      console.error("Error parsing file:", error);
+      alert("Error parsing file. Please ensure it's a valid CSV or Excel file.");
+    } finally {
+      setIsProcessingFile(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  // Handle import confirmation
+  const handleConfirmImport = () => {
+    if (uploadedData.length === 0) return;
+    
+    bulkImportMutation.mutate({
+      financialYear: selectedFY,
+      data: uploadedData,
+    });
+  };
+
+  // Reset upload dialog
+  const handleCloseUploadDialog = () => {
+    setShowUploadDialog(false);
+    setUploadedData([]);
+    setImportResult(null);
+  };
+
+  // Download template
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      { "Centre Name": "Example Shopping Centre", "Annual Budget $": 100000 },
+      { "Centre Name": "Another Centre", "Annual Budget $": 150000 },
+    ];
+    
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Budget Template");
+    XLSX.writeFile(wb, `budget-template-FY${selectedFY}.xlsx`);
+  };
+
   const isLoading = loadingPercentages || loadingBudgets;
 
   return (
@@ -274,11 +397,25 @@ export default function FYBudgetManagement() {
             {/* Centre Budgets Card */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Centre Annual Budgets</CardTitle>
-                <Button onClick={() => setShowAddCentreDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Centre
-                </Button>
+                <div>
+                  <CardTitle>Centre Annual Budgets</CardTitle>
+                  {centresWithoutBudget && centresWithoutBudget.length > 0 && (
+                    <CardDescription className="text-orange-600 mt-1">
+                      <AlertTriangle className="inline h-4 w-4 mr-1" />
+                      {centresWithoutBudget.length} centre{centresWithoutBudget.length > 1 ? "s" : ""} without budget
+                    </CardDescription>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setShowUploadDialog(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Bulk Upload
+                  </Button>
+                  <Button onClick={() => setShowAddCentreDialog(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Centre
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {centreBudgets && centreBudgets.length > 0 ? (
@@ -328,11 +465,35 @@ export default function FYBudgetManagement() {
                   <div className="text-center py-8 text-muted-foreground">
                     No centre budgets set for FY {selectedFY - 1}-{selectedFY.toString().slice(-2)}.
                     <br />
-                    Click "Add Centre" to start adding budgets.
+                    Click "Add Centre" or "Bulk Upload" to start adding budgets.
                   </div>
                 )}
               </CardContent>
             </Card>
+
+            {/* Centres Without Budget Warning */}
+            {centresWithoutBudget && centresWithoutBudget.length > 0 && (
+              <Card className="border-orange-200 bg-orange-50">
+                <CardHeader>
+                  <CardTitle className="text-orange-800 flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    Centres Without Budget for FY {selectedFY - 1}-{selectedFY.toString().slice(-2)}
+                  </CardTitle>
+                  <CardDescription className="text-orange-700">
+                    The following centres do not have a budget assigned for this financial year
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {centresWithoutBudget.map((centre) => (
+                      <Badge key={centre.id} variant="outline" className="border-orange-300 text-orange-800">
+                        {centre.name} ({centre.state})
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
 
@@ -383,6 +544,205 @@ export default function FYBudgetManagement() {
                 ) : null}
                 Add Budget
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Bulk Upload Dialog */}
+        <Dialog open={showUploadDialog} onOpenChange={handleCloseUploadDialog}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Bulk Upload Centre Budgets</DialogTitle>
+              <DialogDescription>
+                Upload a CSV or Excel file with centre names and annual budget amounts for FY {selectedFY - 1}-{selectedFY.toString().slice(-2)}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6 py-4">
+              {/* File Upload Section */}
+              {!importResult && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Button variant="outline" onClick={handleDownloadTemplate}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Template
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Download a sample template to see the expected format
+                    </span>
+                  </div>
+                  
+                  <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
+                    <FileSpreadsheet className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Upload a CSV or Excel file with columns for Centre Name and Annual Budget
+                    </p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv,.xlsx,.xls"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="budget-file-upload"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isProcessingFile}
+                    >
+                      {isProcessingFile ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Upload className="h-4 w-4 mr-2" />
+                      )}
+                      Select File
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Preview Data */}
+              {uploadedData.length > 0 && !importResult && (
+                <div className="space-y-4">
+                  <Alert>
+                    <FileSpreadsheet className="h-4 w-4" />
+                    <AlertTitle>File Parsed Successfully</AlertTitle>
+                    <AlertDescription>
+                      Found {uploadedData.length} centre budget{uploadedData.length > 1 ? "s" : ""} in the file
+                    </AlertDescription>
+                  </Alert>
+                  
+                  <div className="max-h-60 overflow-y-auto border rounded-lg">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Centre Name</TableHead>
+                          <TableHead className="text-right">Annual Budget</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {uploadedData.map((row, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{row.centreName}</TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(parseFloat(row.annualBudget))}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+
+              {/* Import Results */}
+              {importResult && (
+                <div className="space-y-4">
+                  {/* Summary */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <Card className="bg-green-50 border-green-200">
+                      <CardContent className="pt-4">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <div>
+                            <p className="text-2xl font-bold text-green-700">{importResult.imported.length}</p>
+                            <p className="text-sm text-green-600">Imported</p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-green-600 mt-2">
+                          {importResult.created} created, {importResult.updated} updated
+                        </p>
+                      </CardContent>
+                    </Card>
+                    
+                    {importResult.unmatched.length > 0 && (
+                      <Card className="bg-orange-50 border-orange-200">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center gap-2">
+                            <XCircle className="h-5 w-5 text-orange-600" />
+                            <div>
+                              <p className="text-2xl font-bold text-orange-700">{importResult.unmatched.length}</p>
+                              <p className="text-sm text-orange-600">Unmatched</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+
+                  {/* Imported Centres */}
+                  {importResult.imported.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-2 text-green-700">Successfully Imported:</h4>
+                      <div className="max-h-40 overflow-y-auto border border-green-200 rounded-lg bg-green-50">
+                        <Table>
+                          <TableBody>
+                            {importResult.imported.map((item, index) => (
+                              <TableRow key={index}>
+                                <TableCell className="text-green-800">{item.centreName}</TableCell>
+                                <TableCell className="text-right text-green-800">
+                                  {formatCurrency(parseFloat(item.annualBudget))}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Unmatched Centres */}
+                  {importResult.unmatched.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-2 text-orange-700">
+                        Unmatched Centres (not found in system):
+                      </h4>
+                      <div className="max-h-40 overflow-y-auto border border-orange-200 rounded-lg bg-orange-50">
+                        <Table>
+                          <TableBody>
+                            {importResult.unmatched.map((item, index) => (
+                              <TableRow key={index}>
+                                <TableCell className="text-orange-800">{item.centreName}</TableCell>
+                                <TableCell className="text-right text-orange-800">
+                                  {formatCurrency(parseFloat(item.annualBudget))}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      <p className="text-sm text-orange-600 mt-2">
+                        Please check the spelling of these centre names or add them to the system first.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              {!importResult ? (
+                <>
+                  <Button variant="outline" onClick={handleCloseUploadDialog}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleConfirmImport}
+                    disabled={uploadedData.length === 0 || bulkImportMutation.isPending}
+                  >
+                    {bulkImportMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Upload className="h-4 w-4 mr-2" />
+                    )}
+                    Import {uploadedData.length} Budget{uploadedData.length !== 1 ? "s" : ""}
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={handleCloseUploadDialog}>
+                  Done
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
