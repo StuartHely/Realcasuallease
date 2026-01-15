@@ -1930,3 +1930,9 @@
 - [x] Add navigation link to admin sidebar
 - [x] Add AdminLayout wrapper for consistent sidebar navigation
 - [x] Add CSV and Excel export functionality
+
+## UX Enhancement: Enter Key Search (Jan 15, 2026)
+- [x] Enable Enter key to trigger search after entering date on front page
+- [x] Add form wrapper with onSubmit handler
+- [x] Add Enter key handler to text input when suggestions not shown
+- [x] Test keyboard navigation works smoothly

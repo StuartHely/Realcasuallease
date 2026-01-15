@@ -78,6 +78,13 @@ export default function Home() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Handle Enter key to trigger search when suggestions are not shown
+    if (e.key === "Enter" && (!showSuggestions || suggestions.length === 0)) {
+      e.preventDefault();
+      handleSearch();
+      return;
+    }
+    
     if (!showSuggestions || suggestions.length === 0) return;
 
     switch (e.key) {
@@ -143,7 +150,7 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex flex-col md:flex-row gap-4">
+                <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="flex flex-col md:flex-row gap-4">
                   <div className="flex-1 relative">
                     <Input
                       ref={inputRef}
@@ -193,11 +200,17 @@ export default function Home() {
                       type="date"
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleSearch();
+                        }
+                      }}
                       className="h-12 text-lg"
                     />
                   </div>
                   <Button
-                    onClick={handleSearch}
+                    type="submit"
                     size="lg"
                     className="h-12 px-8 bg-blue-600 hover:bg-blue-700"
                     disabled={!centreName || !date}
@@ -205,7 +218,7 @@ export default function Home() {
                     <Search className="mr-2 h-5 w-5" />
                     Search
                   </Button>
-                </div>
+                </form>
                 {/* State Filter Buttons */}
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <p className="text-sm text-gray-600 mb-3 text-center">
