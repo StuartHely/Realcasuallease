@@ -286,8 +286,7 @@ export async function searchShoppingCentres(query: string) {
     
     return (
       fuzzyMatch(centreQuery, centre.name || '', 2) ||
-      fuzzyMatch(centreQuery, centre.suburb || '', 2) ||
-      fuzzyMatch(centreQuery, centre.city || '', 2)
+      fuzzyMatch(centreQuery, centre.suburb || '', 2)
     );
   });
   

@@ -183,11 +183,9 @@ export default function Home() {
                             }`}
                           >
                             <div className="font-medium">{centre.name}</div>
-                            {(centre.suburb || centre.city) && (
+                            {centre.suburb && (
                               <div className="text-sm text-gray-500">
-                                {[centre.suburb, centre.city]
-                                  .filter(Boolean)
-                                  .join(", ")}
+                                {centre.suburb}
                               </div>
                             )}
                           </div>

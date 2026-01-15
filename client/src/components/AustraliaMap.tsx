@@ -9,7 +9,6 @@ interface Centre {
   latitude: string | null;
   longitude: string | null;
   suburb: string | null;
-  city: string | null;
   state: string | null;
   mapImageUrl: string | null;
 }
@@ -108,9 +107,9 @@ export default function AustraliaMap({ centres }: AustraliaMapProps) {
             <h3 style="font-weight: bold; font-size: 16px; margin-bottom: 8px; color: #123047;">
               ${centre.name}
             </h3>
-            ${centre.suburb || centre.city ? `
+            ${centre.suburb ? `
               <p style="font-size: 14px; color: #666; margin-bottom: 8px;">
-                ${[centre.suburb, centre.city, centre.state].filter(Boolean).join(", ")}
+                ${[centre.suburb, centre.state].filter(Boolean).join(", ")}
               </p>
             ` : ""}
             ${centre.mapImageUrl ? `

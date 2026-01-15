@@ -78,23 +78,20 @@ export async function findNearbyCentres(
   
   const queryLower = searchQuery.toLowerCase();
   
-  // Find centres in cities/suburbs that partially match the query
+  // Find centres in suburbs that partially match the query
   const nearbyCentres = allCentres
     .filter((centre: typeof allCentres[0]) => {
-      const city = (centre.city || "").toLowerCase();
       const suburb = (centre.suburb || "").toLowerCase();
       const state = (centre.state || "").toLowerCase();
       
-      // Check if query matches city, suburb, or state
-      return city.includes(queryLower) || 
-             suburb.includes(queryLower) || 
+      // Check if query matches suburb or state
+      return suburb.includes(queryLower) || 
              state.includes(queryLower) ||
-             queryLower.includes(city) ||
              queryLower.includes(suburb);
     })
     .slice(0, maxSuggestions)
     .map((centre: typeof allCentres[0]) => {
-      const location = centre.suburb || centre.city || centre.state;
+      const location = centre.suburb || centre.state;
       const reason = location 
         ? `Try "${centre.name}" in ${location}`
         : `Try "${centre.name}"`;

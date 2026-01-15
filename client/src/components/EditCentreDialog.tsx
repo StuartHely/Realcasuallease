@@ -13,7 +13,6 @@ interface EditCentreDialogProps {
     name: string;
     address?: string | null;
     suburb?: string | null;
-    city?: string | null;
     state?: string | null;
     postcode?: string | null;
     description?: string | null;
@@ -32,7 +31,6 @@ export function EditCentreDialog({ centre, open, onOpenChange }: EditCentreDialo
     name: centre.name || "",
     address: centre.address || "",
     suburb: centre.suburb || "",
-    city: centre.city || "",
     state: centre.state || "",
     postcode: centre.postcode || "",
     description: centre.description || "",
@@ -49,7 +47,6 @@ export function EditCentreDialog({ centre, open, onOpenChange }: EditCentreDialo
         name: centre.name || "",
         address: centre.address || "",
         suburb: centre.suburb || "",
-        city: centre.city || "",
         state: centre.state || "",
         postcode: centre.postcode || "",
         description: centre.description || "",
@@ -130,15 +127,6 @@ export function EditCentreDialog({ centre, open, onOpenChange }: EditCentreDialo
                 id="suburb"
                 value={formData.suburb}
                 onChange={(e) => setFormData({ ...formData, suburb: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
               />
             </div>
 

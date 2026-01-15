@@ -28,7 +28,6 @@ function OwnerCentresContent() {
       return (
         centre.name?.toLowerCase().includes(query) ||
         centre.suburb?.toLowerCase().includes(query) ||
-        centre.city?.toLowerCase().includes(query) ||
         centre.state?.toLowerCase().includes(query)
       );
     })
@@ -107,7 +106,6 @@ function OwnerCentresContent() {
                       <MapPin className="h-4 w-4" />
                       {centre.address && `${centre.address}, `}
                       {centre.suburb && `${centre.suburb}, `}
-                      {centre.city && `${centre.city}, `}
                       {centre.state} {centre.postcode}
                     </CardDescription>
                   </div>

@@ -87,7 +87,7 @@ export default function CentreDetail() {
                   <span>
                     {centre.address && <div key="address">{centre.address}</div>}
                     <div key="location">
-                      {[centre.suburb, centre.city, centre.state, centre.postcode]
+                      {[centre.suburb, centre.state, centre.postcode]
                         .filter(Boolean)
                         .join(", ")}
                     </div>

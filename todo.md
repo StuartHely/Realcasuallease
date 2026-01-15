@@ -1944,3 +1944,12 @@
 - [x] Display budget amounts and percentages (Budget, Actual, Variance, % Achieved)
 - [x] Add totals row at bottom of each table
 - [x] Test dashboard with budget data
+
+## Remove City Field from Shopping Centres (Jan 15, 2026)
+- [x] Remove City field from admin Shopping Centres form (Add/Edit)
+- [x] Remove City field from EditCentreDialog component
+- [x] Update display logic to use Suburb instead of City fallback
+- [x] Update search suggestions to not reference City
+- [x] Update backend routers to remove City from input schemas
+- [x] Update database helpers that reference City field
+- [x] Test centre creation and editing without City field

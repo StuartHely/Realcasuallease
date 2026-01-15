@@ -46,7 +46,6 @@ export default function Centres() {
       return (
         centre.name?.toLowerCase().includes(query) ||
         centre.suburb?.toLowerCase().includes(query) ||
-        centre.city?.toLowerCase().includes(query) ||
         centre.address?.toLowerCase().includes(query)
       );
     })
@@ -178,7 +177,7 @@ export default function Centres() {
                         <span>
                           {centre.address && <div key="address">{centre.address}</div>}
                           <div key="location">
-                            {[centre.suburb, centre.city, centre.state, centre.postcode]
+                            {[centre.suburb, centre.state, centre.postcode]
                               .filter(Boolean)
                               .filter((value, index, self) => self.indexOf(value) === index)
                               .join(", ")}

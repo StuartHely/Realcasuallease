@@ -32,7 +32,6 @@ export default function AdminCentres() {
     name: "",
     address: "",
     suburb: "",
-    city: "",
     state: "",
     postcode: "",
     description: "",
@@ -43,7 +42,6 @@ export default function AdminCentres() {
       name: "",
       address: "",
       suburb: "",
-      city: "",
       state: "",
       postcode: "",
       description: "",
@@ -69,7 +67,6 @@ export default function AdminCentres() {
       name: centre.name,
       address: centre.address || "",
       suburb: centre.suburb || "",
-      city: centre.city || "",
       state: centre.state || "",
       postcode: centre.postcode || "",
       description: centre.description || "",
@@ -153,23 +150,13 @@ export default function AdminCentres() {
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="suburb">Suburb</Label>
-                      <Input
-                        id="suburb"
-                        value={formData.suburb}
-                        onChange={(e) => setFormData({ ...formData, suburb: e.target.value })}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="city">City</Label>
-                      <Input
-                        id="city"
-                        value={formData.city}
-                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      />
-                    </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="suburb">Suburb</Label>
+                    <Input
+                      id="suburb"
+                      value={formData.suburb}
+                      onChange={(e) => setFormData({ ...formData, suburb: e.target.value })}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
@@ -240,23 +227,13 @@ export default function AdminCentres() {
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="edit-suburb">Suburb</Label>
-                    <Input
-                      id="edit-suburb"
-                      value={formData.suburb}
-                      onChange={(e) => setFormData({ ...formData, suburb: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="edit-city">City</Label>
-                    <Input
-                      id="edit-city"
-                      value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    />
-                  </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-suburb">Suburb</Label>
+                  <Input
+                    id="edit-suburb"
+                    value={formData.suburb}
+                    onChange={(e) => setFormData({ ...formData, suburb: e.target.value })}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
@@ -326,9 +303,7 @@ export default function AdminCentres() {
                   </div>
                 </div>
                 <CardDescription>
-                  {centre.suburb && centre.city
-                    ? `${centre.suburb}, ${centre.city}`
-                    : centre.suburb || centre.city || "No location"}
+                  {centre.suburb || "No location"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
