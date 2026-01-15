@@ -1936,3 +1936,11 @@
 - [x] Add form wrapper with onSubmit handler
 - [x] Add Enter key handler to text input when suggestions not shown
 - [x] Test keyboard navigation works smoothly
+
+## Portfolio Dashboard Budget Breakdown (Jan 15, 2026)
+- [x] Add Annual Budget Breakdown by Centre section
+- [x] Add YTD Budget Breakdown by Centre section
+- [x] Sort centres alphabetically in both sections
+- [x] Display budget amounts and percentages (Budget, Actual, Variance, % Achieved)
+- [x] Add totals row at bottom of each table
+- [x] Test dashboard with budget data

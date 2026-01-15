@@ -455,8 +455,8 @@ export async function getCentreBreakdown(
     })
   );
 
-  // Sort by variance (worst performers first)
-  return breakdown.sort((a, b) => a.variance - b.variance);
+  // Sort alphabetically by centre name
+  return breakdown.sort((a, b) => a.centreName.localeCompare(b.centreName));
 }
 
 

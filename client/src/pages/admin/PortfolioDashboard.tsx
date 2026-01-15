@@ -45,16 +45,22 @@ export default function PortfolioDashboard() {
     state: selectedState,
   });
   
-  const { data: centreBreakdown, isLoading: isLoadingBreakdown } = trpc.dashboard.getCentreBreakdown.useQuery(
-    {
-      financialYear: selectedFY,
-      breakdownType,
-      state: selectedState,
-    },
-    {
-      enabled: showBudgetBreakdown, // Only fetch when modal is open
-    }
-  );
+  // Always fetch both annual and YTD breakdown for inline display
+  const { data: annualBreakdown, isLoading: isLoadingAnnualBreakdown } = trpc.dashboard.getCentreBreakdown.useQuery({
+    financialYear: selectedFY,
+    breakdownType: 'annual',
+    state: selectedState,
+  });
+  
+  const { data: ytdBreakdown, isLoading: isLoadingYtdBreakdown } = trpc.dashboard.getCentreBreakdown.useQuery({
+    financialYear: selectedFY,
+    breakdownType: 'ytd',
+    state: selectedState,
+  });
+  
+  // For modal (backward compatibility)
+  const centreBreakdown = breakdownType === 'annual' ? annualBreakdown : ytdBreakdown;
+  const isLoadingBreakdown = breakdownType === 'annual' ? isLoadingAnnualBreakdown : isLoadingYtdBreakdown;
   
   const exportMutation = trpc.dashboard.exportBudgetReport.useMutation({
     onSuccess: (data) => {
@@ -658,6 +664,146 @@ export default function PortfolioDashboard() {
                   {format(new Date(metrics.lastUpdated), 'dd/MM/yyyy HH:mm')}
                 </p>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Annual Budget Breakdown by Centre */}
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Annual Budget Breakdown by Centre (FY {selectedFY - 1}-{selectedFY.toString().slice(-2)})</h2>
+          <Card>
+            <CardContent className="pt-6">
+              {isLoadingAnnualBreakdown ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin text-blue-600" />
+                </div>
+              ) : !annualBreakdown || annualBreakdown.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">No budget data available. Add centre budgets in Budget Management.</p>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Centre</TableHead>
+                        <TableHead>State</TableHead>
+                        <TableHead className="text-right">Annual Budget</TableHead>
+                        <TableHead className="text-right">Actual</TableHead>
+                        <TableHead className="text-right">Variance</TableHead>
+                        <TableHead className="text-right">% Achieved</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {annualBreakdown.map((centre: any) => {
+                        const varianceColor = centre.variance >= 0 ? 'text-green-600' : 'text-red-600';
+                        const percentColor = centre.percentAchieved >= 100 ? 'text-green-600' : centre.percentAchieved >= 80 ? 'text-yellow-600' : 'text-red-600';
+                        
+                        return (
+                          <TableRow key={centre.centreId}>
+                            <TableCell className="font-medium">{centre.centreName}</TableCell>
+                            <TableCell>{centre.centreState}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(centre.budget)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(centre.actual)}</TableCell>
+                            <TableCell className={`text-right font-semibold ${varianceColor}`}>
+                              {centre.variance >= 0 ? '+' : ''}{formatCurrency(centre.variance)}
+                            </TableCell>
+                            <TableCell className={`text-right font-semibold ${percentColor}`}>
+                              {Math.round(centre.percentAchieved)}%
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      {/* Totals Row */}
+                      <TableRow className="bg-gray-50 font-semibold">
+                        <TableCell>Total</TableCell>
+                        <TableCell></TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(annualBreakdown.reduce((sum: number, c: any) => sum + c.budget, 0))}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(annualBreakdown.reduce((sum: number, c: any) => sum + c.actual, 0))}
+                        </TableCell>
+                        <TableCell className={`text-right ${annualBreakdown.reduce((sum: number, c: any) => sum + c.variance, 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {annualBreakdown.reduce((sum: number, c: any) => sum + c.variance, 0) >= 0 ? '+' : ''}
+                          {formatCurrency(annualBreakdown.reduce((sum: number, c: any) => sum + c.variance, 0))}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {Math.round((annualBreakdown.reduce((sum: number, c: any) => sum + c.actual, 0) / annualBreakdown.reduce((sum: number, c: any) => sum + c.budget, 0)) * 100) || 0}%
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* YTD Budget Breakdown by Centre */}
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">YTD Budget Breakdown by Centre (FY {selectedFY - 1}-{selectedFY.toString().slice(-2)})</h2>
+          <Card>
+            <CardContent className="pt-6">
+              {isLoadingYtdBreakdown ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin text-blue-600" />
+                </div>
+              ) : !ytdBreakdown || ytdBreakdown.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">No budget data available. Add centre budgets in Budget Management.</p>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Centre</TableHead>
+                        <TableHead>State</TableHead>
+                        <TableHead className="text-right">YTD Budget</TableHead>
+                        <TableHead className="text-right">YTD Actual</TableHead>
+                        <TableHead className="text-right">Variance</TableHead>
+                        <TableHead className="text-right">% Achieved</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {ytdBreakdown.map((centre: any) => {
+                        const varianceColor = centre.variance >= 0 ? 'text-green-600' : 'text-red-600';
+                        const percentColor = centre.percentAchieved >= 100 ? 'text-green-600' : centre.percentAchieved >= 80 ? 'text-yellow-600' : 'text-red-600';
+                        
+                        return (
+                          <TableRow key={centre.centreId}>
+                            <TableCell className="font-medium">{centre.centreName}</TableCell>
+                            <TableCell>{centre.centreState}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(centre.budget)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(centre.actual)}</TableCell>
+                            <TableCell className={`text-right font-semibold ${varianceColor}`}>
+                              {centre.variance >= 0 ? '+' : ''}{formatCurrency(centre.variance)}
+                            </TableCell>
+                            <TableCell className={`text-right font-semibold ${percentColor}`}>
+                              {Math.round(centre.percentAchieved)}%
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      {/* Totals Row */}
+                      <TableRow className="bg-gray-50 font-semibold">
+                        <TableCell>Total</TableCell>
+                        <TableCell></TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(ytdBreakdown.reduce((sum: number, c: any) => sum + c.budget, 0))}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(ytdBreakdown.reduce((sum: number, c: any) => sum + c.actual, 0))}
+                        </TableCell>
+                        <TableCell className={`text-right ${ytdBreakdown.reduce((sum: number, c: any) => sum + c.variance, 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {ytdBreakdown.reduce((sum: number, c: any) => sum + c.variance, 0) >= 0 ? '+' : ''}
+                          {formatCurrency(ytdBreakdown.reduce((sum: number, c: any) => sum + c.variance, 0))}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {Math.round((ytdBreakdown.reduce((sum: number, c: any) => sum + c.actual, 0) / ytdBreakdown.reduce((sum: number, c: any) => sum + c.budget, 0)) * 100) || 0}%
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
