@@ -1999,3 +1999,7 @@
 - [x] Add calendar dropdown to New Date button for selecting new starting date
 - [x] Update search results to show 14 days from new selected date
 - [x] Test date picker functionality - URL and calendar update correctly
+
+## Date Range Indicator (Jan 16, 2026)
+- [x] Add date range indicator above calendar showing "Viewing [start date] - [end date]"
+- [x] Format dates in user-friendly format (e.g., "Jan 20 - Feb 2, 2026")

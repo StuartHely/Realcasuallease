@@ -406,6 +406,14 @@ export default function Search() {
                     })()}
 
                     {/* Calendar Heatmap */}
+                    {/* Date Range Indicator */}
+                    {dateRange.length > 0 && (
+                      <div className="text-center mb-3">
+                        <span className="text-sm text-muted-foreground">
+                          Viewing <span className="font-medium text-foreground">{format(dateRange[0], 'MMM d')}</span> - <span className="font-medium text-foreground">{format(dateRange[dateRange.length - 1], 'MMM d, yyyy')}</span>
+                        </span>
+                      </div>
+                    )}
                     {/* Calendar Navigation */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
