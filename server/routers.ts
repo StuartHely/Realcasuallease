@@ -2688,6 +2688,14 @@ export const appRouter = router({
 
   // Vacant Shop Bookings
   vacantShopBookings: router({
+    list: adminProcedure
+      .input(z.object({
+        status: z.enum(["pending", "confirmed", "cancelled", "completed", "rejected"]).optional(),
+      }))
+      .query(async ({ input }) => {
+        return await assetDb.listVacantShopBookings(input.status);
+      }),
+    
     getByShop: publicProcedure
       .input(z.object({ vacantShopId: z.number() }))
       .query(async ({ input }) => {
@@ -2812,6 +2820,14 @@ export const appRouter = router({
 
   // Third Line Bookings
   thirdLineBookings: router({
+    list: adminProcedure
+      .input(z.object({
+        status: z.enum(["pending", "confirmed", "cancelled", "completed", "rejected"]).optional(),
+      }))
+      .query(async ({ input }) => {
+        return await assetDb.listThirdLineBookings(input.status);
+      }),
+    
     getByAsset: publicProcedure
       .input(z.object({ thirdLineIncomeId: z.number() }))
       .query(async ({ input }) => {

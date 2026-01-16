@@ -622,3 +622,82 @@ export async function getThirdLineAvailabilityCalendar(centreId: number, startDa
     bookings: bookings.filter(b => b.thirdLineIncomeId === asset.id),
   }));
 }
+
+
+// ============ Admin Booking List Functions ============
+
+export async function listVacantShopBookings(status?: "pending" | "confirmed" | "cancelled" | "completed" | "rejected") {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (status) {
+    conditions.push(eq(vacantShopBookings.status, status));
+  }
+  
+  const query = db
+    .select({
+      id: vacantShopBookings.id,
+      bookingNumber: vacantShopBookings.bookingNumber,
+      vacantShopId: vacantShopBookings.vacantShopId,
+      shopName: vacantShops.shopNumber,
+      centreName: shoppingCentres.name,
+      customerId: vacantShopBookings.customerId,
+      customerEmail: vacantShopBookings.customerEmail,
+      customerName: sql<string>`COALESCE(${vacantShopBookings.customerEmail}, 'N/A')`,
+      startDate: vacantShopBookings.startDate,
+      endDate: vacantShopBookings.endDate,
+      totalAmount: vacantShopBookings.totalAmount,
+      status: vacantShopBookings.status,
+      paymentMethod: vacantShopBookings.paymentMethod,
+      createdAt: vacantShopBookings.createdAt,
+    })
+    .from(vacantShopBookings)
+    .innerJoin(vacantShops, eq(vacantShopBookings.vacantShopId, vacantShops.id))
+    .innerJoin(shoppingCentres, eq(vacantShops.centreId, shoppingCentres.id));
+  
+  if (conditions.length > 0) {
+    return query.where(and(...conditions)).orderBy(asc(vacantShopBookings.createdAt));
+  }
+  
+  return query.orderBy(asc(vacantShopBookings.createdAt));
+}
+
+export async function listThirdLineBookings(status?: "pending" | "confirmed" | "cancelled" | "completed" | "rejected") {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (status) {
+    conditions.push(eq(thirdLineBookings.status, status));
+  }
+  
+  const query = db
+    .select({
+      id: thirdLineBookings.id,
+      bookingNumber: thirdLineBookings.bookingNumber,
+      thirdLineIncomeId: thirdLineBookings.thirdLineIncomeId,
+      assetName: thirdLineIncome.assetNumber,
+      categoryName: thirdLineCategories.name,
+      centreName: shoppingCentres.name,
+      customerId: thirdLineBookings.customerId,
+      customerEmail: thirdLineBookings.customerEmail,
+      customerName: sql<string>`COALESCE(${thirdLineBookings.customerEmail}, 'N/A')`,
+      startDate: thirdLineBookings.startDate,
+      endDate: thirdLineBookings.endDate,
+      totalAmount: thirdLineBookings.totalAmount,
+      status: thirdLineBookings.status,
+      paymentMethod: thirdLineBookings.paymentMethod,
+      createdAt: thirdLineBookings.createdAt,
+    })
+    .from(thirdLineBookings)
+    .innerJoin(thirdLineIncome, eq(thirdLineBookings.thirdLineIncomeId, thirdLineIncome.id))
+    .innerJoin(shoppingCentres, eq(thirdLineIncome.centreId, shoppingCentres.id))
+    .leftJoin(thirdLineCategories, eq(thirdLineIncome.categoryId, thirdLineCategories.id));
+  
+  if (conditions.length > 0) {
+    return query.where(and(...conditions)).orderBy(asc(thirdLineBookings.createdAt));
+  }
+  
+  return query.orderBy(asc(thirdLineBookings.createdAt));
+}

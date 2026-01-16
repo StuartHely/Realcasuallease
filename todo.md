@@ -2091,3 +2091,31 @@
 - [x] Integrate 3rdL calendar into centre detail page
 - [ ] Add VS and 3rdL availability to search results calendar heatmap
 - [x] Test booking creation and availability checking (10 tests passing)
+
+## VS and 3rdL Admin Booking Management (Jan 16, 2026)
+
+### VS Bookings Admin Page
+- [x] Create VSBookings admin page with AdminLayout
+- [x] Add status tabs (Pending, Confirmed, Rejected, Cancelled, All)
+- [x] Display booking details (booking number, customer, shop, dates, amount)
+- [x] Add approve/reject buttons with confirmation dialogs
+- [x] Add search by booking number or customer name
+- [x] Add count badges to status tabs
+
+### 3rdL Bookings Admin Page
+- [x] Create ThirdLineBookings admin page with AdminLayout
+- [x] Add status tabs (Pending, Confirmed, Rejected, Cancelled, All)
+- [x] Display booking details (booking number, customer, asset, category, dates, amount)
+- [x] Add approve/reject buttons with confirmation dialogs
+- [x] Add search by booking number or customer name
+- [x] Add count badges to status tabs
+
+### Navigation
+- [x] Add VS Bookings link to AdminLayout sidebar
+- [x] Add 3rdL Bookings link to AdminLayout sidebar
+- [x] Add routes to App.tsx
+
+### Testing
+- [x] Test VS booking approval/rejection flow
+- [x] Test 3rdL booking approval/rejection flow
+- [ ] Verify status changes reflect in customer view

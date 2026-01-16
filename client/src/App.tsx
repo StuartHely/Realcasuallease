@@ -40,6 +40,8 @@ import VacantShops from "./pages/admin/VacantShops";
 import ThirdLineIncome from "./pages/admin/ThirdLineIncome";
 import ThirdLineCategories from "./pages/admin/ThirdLineCategories";
 import AssetMapPlacement from "./pages/admin/AssetMapPlacement";
+import VSBookings from "./pages/admin/VSBookings";
+import ThirdLineBookings from "./pages/admin/ThirdLineBookings";
 import OwnerApprovals from "./pages/OwnerApprovals";
 import OwnerCentres from "./pages/OwnerCentres";
 
@@ -76,6 +78,8 @@ function Router() {
       <Route path="/owner/approvals" component={OwnerApprovals} />
       <Route path="/owner/centres" component={OwnerCentres} />
       <Route path="/admin/bookings" component={AdminBookings} />
+      <Route path="/admin/vs-bookings" component={VSBookings} />
+      <Route path="/admin/third-line-bookings" component={ThirdLineBookings} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/payments" component={Payments} />
       <Route path="/admin/invoice-dashboard" component={InvoiceDashboard} />
