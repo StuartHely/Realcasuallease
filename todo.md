@@ -2007,3 +2007,42 @@
 ## Disable Previous Week for Past Dates (Jan 16, 2026)
 - [x] Add logic to disable Previous Week button when it would navigate to past dates
 - [x] Grey out button and show tooltip explaining why it's disabled ("Cannot view past dates")
+
+## Vacant Shops & Third Line Income Feature (Jan 16, 2026)
+
+### Database Schema
+- [x] Create vacantShops table (totalSize, dimensions, powered, description, images, centreId, floorLevelId, mapX, mapY)
+- [x] Create thirdLineIncome table (dimensions, powered, description, images, category, centreId, floorLevelId, mapX, mapY)
+- [x] Create thirdLineCategories table (admin-managed dropdown options)
+- [x] Add indexes for efficient querying by centre and type
+- [ ] Seed initial Third Line categories (ATM, Car Wash, etc.)
+
+### Backend API
+- [x] Create vacantShops tRPC router (CRUD operations)
+- [x] Create thirdLineIncome tRPC router (CRUD operations)
+- [x] Create thirdLineCategories tRPC router (admin CRUD)
+- [x] Add unified asset query that returns all types for a centre
+- [x] Optimize queries with proper indexing
+
+### Admin Interface
+- [x] Create Vacant Shops management page
+- [x] Create Third Line Income management page
+- [x] Create Third Line Categories management page
+- [ ] Add asset type to floor plan map editor
+
+### Frontend - Centre Detail Page
+- [x] Add always-visible dropdown for asset type selection (Casual Leasing, Vacant Shops, Third Line Income, All)
+- [x] Default to Casual Leasing view
+- [x] Dynamically filter map markers based on selected type
+- [x] Update site information display based on selected type
+
+### Frontend - Search Results
+- [ ] Add asset type filter to search
+- [ ] Display appropriate fields for each asset type
+- [ ] Maintain fast query performance
+
+### Testing
+- [x] Test CRUD operations for all asset types
+- [x] Test map filtering functionality
+- [x] Test admin category management
+- [x] Verify query performance with sample data

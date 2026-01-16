@@ -36,6 +36,9 @@ import InvoiceDashboard from "./pages/admin/InvoiceDashboard";
 import SearchAnalytics from "./pages/admin/SearchAnalytics";
 import PortfolioDashboard from "./pages/admin/PortfolioDashboard";
 import FYBudgetManagement from "./pages/admin/FYBudgetManagement";
+import VacantShops from "./pages/admin/VacantShops";
+import ThirdLineIncome from "./pages/admin/ThirdLineIncome";
+import ThirdLineCategories from "./pages/admin/ThirdLineCategories";
 import OwnerApprovals from "./pages/OwnerApprovals";
 import OwnerCentres from "./pages/OwnerCentres";
 
@@ -64,6 +67,9 @@ function Router() {
       <Route path="/admin/seasonal-rates" component={SeasonalRates} />
       <Route path="/admin/usage-categories" component={UsageCategories} />
       <Route path="/admin/centre-codes" component={CentreCodes} />
+      <Route path="/admin/vacant-shops" component={VacantShops} />
+      <Route path="/admin/third-line-income" component={ThirdLineIncome} />
+      <Route path="/admin/third-line-categories" component={ThirdLineCategories} />
       <Route path="/admin/pending-approvals" component={PendingApprovals} />
       <Route path="/owner/approvals" component={OwnerApprovals} />
       <Route path="/owner/centres" component={OwnerCentres} />

@@ -429,7 +429,81 @@ export const auditLog = mysqlTable("audit_log", {
   createdAtIdx: index("createdAt_idx").on(table.createdAt),
 }));
 
+/**
+ * Third Line Income Categories (admin-managed)
+ */
+export const thirdLineCategories = mysqlTable("third_line_categories", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull().unique(),
+  displayOrder: int("displayOrder").notNull().default(0),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/**
+ * Vacant Shops - Short-term physical retail tenancies
+ */
+export const vacantShops = mysqlTable("vacant_shops", {
+  id: int("id").autoincrement().primaryKey(),
+  centreId: int("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
+  shopNumber: varchar("shopNumber", { length: 50 }).notNull(),
+  totalSizeM2: decimal("totalSizeM2", { precision: 10, scale: 2 }), // Total size in square metres
+  dimensions: varchar("dimensions", { length: 100 }), // e.g., "5m x 8m"
+  powered: boolean("powered").default(false).notNull(),
+  description: text("description"),
+  imageUrl1: text("imageUrl1"),
+  imageUrl2: text("imageUrl2"),
+  pricePerWeek: decimal("pricePerWeek", { precision: 10, scale: 2 }),
+  pricePerMonth: decimal("pricePerMonth", { precision: 10, scale: 2 }),
+  floorLevelId: int("floorLevelId").references(() => floorLevels.id, { onDelete: "set null" }),
+  mapMarkerX: int("mapMarkerX"),
+  mapMarkerY: int("mapMarkerY"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  centreIdIdx: index("vs_centreId_idx").on(table.centreId),
+  floorLevelIdIdx: index("vs_floorLevelId_idx").on(table.floorLevelId),
+  isActiveIdx: index("vs_isActive_idx").on(table.isActive),
+}));
+
+/**
+ * Third Line Income - Non-tenancy assets (vending, signage, etc.)
+ */
+export const thirdLineIncome = mysqlTable("third_line_income", {
+  id: int("id").autoincrement().primaryKey(),
+  centreId: int("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
+  assetNumber: varchar("assetNumber", { length: 50 }).notNull(),
+  categoryId: int("categoryId").notNull().references(() => thirdLineCategories.id, { onDelete: "restrict" }),
+  dimensions: varchar("dimensions", { length: 100 }), // e.g., "1.5m x 0.8m"
+  powered: boolean("powered").default(false).notNull(),
+  description: text("description"),
+  imageUrl1: text("imageUrl1"),
+  imageUrl2: text("imageUrl2"),
+  pricePerWeek: decimal("pricePerWeek", { precision: 10, scale: 2 }),
+  pricePerMonth: decimal("pricePerMonth", { precision: 10, scale: 2 }),
+  floorLevelId: int("floorLevelId").references(() => floorLevels.id, { onDelete: "set null" }),
+  mapMarkerX: int("mapMarkerX"),
+  mapMarkerY: int("mapMarkerY"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  centreIdIdx: index("tli_centreId_idx").on(table.centreId),
+  categoryIdIdx: index("tli_categoryId_idx").on(table.categoryId),
+  floorLevelIdIdx: index("tli_floorLevelId_idx").on(table.floorLevelId),
+  isActiveIdx: index("tli_isActive_idx").on(table.isActive),
+}));
+
 // Type exports
+export type ThirdLineCategory = typeof thirdLineCategories.$inferSelect;
+export type InsertThirdLineCategory = typeof thirdLineCategories.$inferInsert;
+export type VacantShop = typeof vacantShops.$inferSelect;
+export type InsertVacantShop = typeof vacantShops.$inferInsert;
+export type ThirdLineIncome = typeof thirdLineIncome.$inferSelect;
+export type InsertThirdLineIncome = typeof thirdLineIncome.$inferInsert;
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type CustomerProfile = typeof customerProfiles.$inferSelect;

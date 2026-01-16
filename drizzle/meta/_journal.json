@@ -204,6 +204,13 @@
       "when": 1768386676060,
       "tag": "0028_fast_satana",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "5",
+      "when": 1768532900092,
+      "tag": "0029_friendly_scarlet_spider",
+      "breakpoints": true
     }
   ]
 }

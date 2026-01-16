@@ -37,7 +37,9 @@ import {
   Tag,
   Hash,
   Search,
-  Image
+  Image,
+  Store,
+  Layers
 } from "lucide-react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -66,6 +68,9 @@ const getMenuSections = (userRole: string): MenuSection[] => {
         items: [
           { icon: Building2, label: "Shopping Centres", path: "/admin/centres" },
           { icon: MapPin, label: "Sites", path: "/admin/sites" },
+          { icon: Store, label: "Vacant Shops", path: "/admin/vacant-shops" },
+          { icon: Layers, label: "Third Line Income", path: "/admin/third-line-income" },
+          { icon: Tag, label: "Third Line Categories", path: "/admin/third-line-categories" },
           { icon: Map, label: "Floor Plan Maps", path: "/admin/maps" },
           { icon: MapPin, label: "Site Assignment", path: "/admin/site-assignment" },
           { icon: Package, label: "Equipment", path: "/admin/equipment" },

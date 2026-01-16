@@ -8,6 +8,7 @@ import { getSystemConfig as getSystemConfigDb, updateSystemConfig as updateSyste
 import { trackImageView, trackImageClick, getTopPerformingImages, getImageAnalyticsBySite } from "./imageAnalyticsDb";
 import { getSeasonalRatesBySiteId, createSeasonalRate, updateSeasonalRate, deleteSeasonalRate } from "./seasonalRatesDb";
 import { getAllUsageCategories, getApprovedCategoriesForSite, setApprovedCategoriesForSite, getSitesWithCategoriesForCentre } from "./usageCategoriesDb";
+import * as assetDb from "./assetDb";
 import { TRPCError } from "@trpc/server";
 import { notifyOwner } from "./_core/notification";
 import { sendBookingConfirmationEmail, sendBookingRejectionEmail, sendNewBookingNotificationToOwner } from "./_core/bookingNotifications";
@@ -2478,6 +2479,210 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const fyDb = await import("./fyBudgetDb");
         return await fyDb.bulkImportCentreBudgets(input.financialYear, input.data);
+      }),
+  }),
+
+  // Third Line Categories (admin-managed)
+  thirdLineCategories: router({
+    list: publicProcedure.query(async () => {
+      return await assetDb.getAllThirdLineCategories();
+    }),
+    
+    listActive: publicProcedure.query(async () => {
+      return await assetDb.getActiveThirdLineCategories();
+    }),
+    
+    create: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        displayOrder: z.number().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await assetDb.createThirdLineCategory(input);
+        return { id };
+      }),
+    
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        displayOrder: z.number().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await assetDb.updateThirdLineCategory(id, data);
+        return { success: true };
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await assetDb.deleteThirdLineCategory(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // Vacant Shops
+  vacantShops: router({
+    getByCentre: publicProcedure
+      .input(z.object({ centreId: z.number() }))
+      .query(async ({ input }) => {
+        return await assetDb.getVacantShopsByCentre(input.centreId);
+      }),
+    
+    getActiveByCentre: publicProcedure
+      .input(z.object({ centreId: z.number() }))
+      .query(async ({ input }) => {
+        return await assetDb.getActiveVacantShopsByCentre(input.centreId);
+      }),
+    
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const shop = await assetDb.getVacantShopById(input.id);
+        if (!shop) throw new TRPCError({ code: "NOT_FOUND", message: "Vacant shop not found" });
+        return shop;
+      }),
+    
+    create: adminProcedure
+      .input(z.object({
+        centreId: z.number(),
+        shopNumber: z.string().min(1),
+        totalSizeM2: z.string().optional(),
+        dimensions: z.string().optional(),
+        powered: z.boolean().optional(),
+        description: z.string().optional(),
+        imageUrl1: z.string().optional(),
+        imageUrl2: z.string().optional(),
+        pricePerWeek: z.string().optional(),
+        pricePerMonth: z.string().optional(),
+        floorLevelId: z.number().nullable().optional(),
+        mapMarkerX: z.number().nullable().optional(),
+        mapMarkerY: z.number().nullable().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await assetDb.createVacantShop(input);
+        return { id };
+      }),
+    
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        shopNumber: z.string().min(1).optional(),
+        totalSizeM2: z.string().optional(),
+        dimensions: z.string().optional(),
+        powered: z.boolean().optional(),
+        description: z.string().optional(),
+        imageUrl1: z.string().optional(),
+        imageUrl2: z.string().optional(),
+        pricePerWeek: z.string().optional(),
+        pricePerMonth: z.string().optional(),
+        floorLevelId: z.number().nullable().optional(),
+        mapMarkerX: z.number().nullable().optional(),
+        mapMarkerY: z.number().nullable().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await assetDb.updateVacantShop(id, data);
+        return { success: true };
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await assetDb.deleteVacantShop(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // Third Line Income
+  thirdLineIncome: router({
+    getByCentre: publicProcedure
+      .input(z.object({ centreId: z.number() }))
+      .query(async ({ input }) => {
+        return await assetDb.getThirdLineIncomeByCentre(input.centreId);
+      }),
+    
+    getActiveByCentre: publicProcedure
+      .input(z.object({ centreId: z.number() }))
+      .query(async ({ input }) => {
+        return await assetDb.getActiveThirdLineIncomeByCentre(input.centreId);
+      }),
+    
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const asset = await assetDb.getThirdLineIncomeById(input.id);
+        if (!asset) throw new TRPCError({ code: "NOT_FOUND", message: "Third line income asset not found" });
+        return asset;
+      }),
+    
+    create: adminProcedure
+      .input(z.object({
+        centreId: z.number(),
+        assetNumber: z.string().min(1),
+        categoryId: z.number(),
+        dimensions: z.string().optional(),
+        powered: z.boolean().optional(),
+        description: z.string().optional(),
+        imageUrl1: z.string().optional(),
+        imageUrl2: z.string().optional(),
+        pricePerWeek: z.string().optional(),
+        pricePerMonth: z.string().optional(),
+        floorLevelId: z.number().nullable().optional(),
+        mapMarkerX: z.number().nullable().optional(),
+        mapMarkerY: z.number().nullable().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await assetDb.createThirdLineIncome(input);
+        return { id };
+      }),
+    
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        assetNumber: z.string().min(1).optional(),
+        categoryId: z.number().optional(),
+        dimensions: z.string().optional(),
+        powered: z.boolean().optional(),
+        description: z.string().optional(),
+        imageUrl1: z.string().optional(),
+        imageUrl2: z.string().optional(),
+        pricePerWeek: z.string().optional(),
+        pricePerMonth: z.string().optional(),
+        floorLevelId: z.number().nullable().optional(),
+        mapMarkerX: z.number().nullable().optional(),
+        mapMarkerY: z.number().nullable().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await assetDb.updateThirdLineIncome(id, data);
+        return { success: true };
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await assetDb.deleteThirdLineIncome(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // Unified Assets Query
+  assets: router({
+    getByCentre: publicProcedure
+      .input(z.object({
+        centreId: z.number(),
+        assetType: z.enum(["casual_leasing", "vacant_shops", "third_line", "all"]).optional(),
+      }))
+      .query(async ({ input }) => {
+        return await assetDb.getAllAssetsByCentre(input.centreId, input.assetType || "all");
       }),
   }),
 });
