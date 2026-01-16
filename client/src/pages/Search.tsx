@@ -489,7 +489,7 @@ export default function Search() {
                     >
                       <div style={{ width: 'max-content', height: '1px' }}>
                         {/* Spacer to create scrollbar width matching table */}
-                        <div style={{ width: `${centreSites.length > 0 ? 80 * 14 + 200 : 1000}px` }}></div>
+                        <div style={{ width: `${centreSites.length > 0 ? 80 * calendarDays + 200 : 1000}px` }}></div>
                       </div>
                     </div>
                     <div className="overflow-x-auto">

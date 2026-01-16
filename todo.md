@@ -1978,3 +1978,13 @@
 ## UX Enhancement: Clickable Banner (Jan 16, 2026)
 - [x] Make top banner "Real Casual Leasing" clickable to navigate to home page
 - [x] Updated Home.tsx, Search.tsx, MyBookings.tsx, Profile.tsx, SiteDetail.tsx, CentreDetail.tsx, Centres.tsx
+
+## Bug Fix - Centre Map Not Showing on Search Results (Jan 16, 2026)
+- [ ] Investigate why centre floor plan map is not appearing on Search Results page
+- [ ] Fix the issue so map displays below site listings
+- [ ] Test with multiple centres (Eastgate, Highlands, etc.)
+
+## Bug Fix - Month View Shows Only 16 Days (Jan 16, 2026)
+- [x] Fix Month view to show full 30 days instead of 16 days (fixed scrollbar width calculation)
+- [x] Verify 2 Weeks view still shows 14 days correctly
+- [x] Test calendar scrolling works properly with 30 columns
