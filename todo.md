@@ -2063,3 +2063,18 @@
 - [ ] Create VacantShopDetail page with enquiry form
 - [ ] Create ThirdLineIncomeDetail page with enquiry form
 - [ ] Add booking/enquiry workflow for non-casual-leasing assets
+
+## Centre Detail Page Map Markers (Jan 16, 2026)
+- [x] Update CentreDetail page to fetch Vacant Shops and Third Line Income data
+- [x] Pass all asset types to InteractiveMap component
+- [x] Display Vacant Shops markers in green on floor plan
+- [x] Display Third Line Income markers in purple on floor plan
+- [x] Update map legend to show all three asset types
+- [x] Test marker display and tooltips for all asset types
+
+## Bug Fix - Asset Map Placement 404 (Jan 16, 2026)
+- [x] Check App.tsx routes for Asset Map Placement page
+- [x] Verify AssetMapPlacement.tsx file exists
+- [x] Fix route configuration if missing
+- [x] Test admin navigation to Asset Map Placement
+- [x] Fix infinite loop issue with React state updates (setRef error from Radix UI)

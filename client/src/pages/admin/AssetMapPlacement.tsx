@@ -1,9 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -20,41 +19,39 @@ interface AssetMarker {
 }
 
 export default function AssetMapPlacement() {
-  const [selectedCentreId, setSelectedCentreId] = useState<number>(0);
-  const [selectedFloorLevelId, setSelectedFloorLevelId] = useState<number | null>(null);
+  const [selectedCentreId, setSelectedCentreId] = useState<string>("");
+  const [selectedFloorLevelId, setSelectedFloorLevelId] = useState<string>("");
   const [selectedAssetType, setSelectedAssetType] = useState<AssetType>("vacant_shops");
   const [markers, setMarkers] = useState<AssetMarker[]>([]);
-  const [isDragging, setIsDragging] = useState<number | null>(null);
-  const [dragOccurred, setDragOccurred] = useState(false);
-  const [mapPreviewUrl, setMapPreviewUrl] = useState<string>("");
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
+
+  const centreIdNum = selectedCentreId ? parseInt(selectedCentreId) : 0;
+  const floorLevelIdNum = selectedFloorLevelId ? parseInt(selectedFloorLevelId) : null;
 
   // Fetch centres
   const { data: centres = [] } = trpc.centres.list.useQuery();
 
   // Fetch selected centre details
   const { data: centre } = trpc.centres.getById.useQuery(
-    { id: selectedCentreId },
-    { enabled: selectedCentreId > 0 }
+    { id: centreIdNum },
+    { enabled: centreIdNum > 0 }
   );
 
   // Fetch floor levels for selected centre
   const { data: floorLevels = [] } = trpc.admin.getFloorLevels.useQuery(
-    { centreId: selectedCentreId },
-    { enabled: selectedCentreId > 0 }
+    { centreId: centreIdNum },
+    { enabled: centreIdNum > 0 }
   );
 
   // Fetch vacant shops for selected centre
   const { data: vacantShops = [], refetch: refetchVacantShops } = trpc.vacantShops.getByCentre.useQuery(
-    { centreId: selectedCentreId },
-    { enabled: selectedCentreId > 0 }
+    { centreId: centreIdNum },
+    { enabled: centreIdNum > 0 }
   );
 
   // Fetch third line income for selected centre
   const { data: thirdLineIncome = [], refetch: refetchThirdLine } = trpc.thirdLineIncome.getByCentre.useQuery(
-    { centreId: selectedCentreId },
-    { enabled: selectedCentreId > 0 }
+    { centreId: centreIdNum },
+    { enabled: centreIdNum > 0 }
   );
 
   // Mutations for updating markers
@@ -68,44 +65,32 @@ export default function AssetMapPlacement() {
     onError: (error) => toast.error(`Failed to save marker: ${error.message}`),
   });
 
-  // Get assets for current floor level and asset type
-  const getFilteredAssets = () => {
-    let assets: any[] = [];
-    
-    if (selectedAssetType === "vacant_shops") {
-      assets = vacantShops;
-    } else {
-      assets = thirdLineIncome;
+  // Compute map URL
+  const mapPreviewUrl = useMemo(() => {
+    if (floorLevels.length > 0 && floorLevelIdNum) {
+      const currentFloor = floorLevels.find((fl: any) => fl.id === floorLevelIdNum);
+      return currentFloor?.mapImageUrl || "";
+    } else if (floorLevels.length === 0 && centre?.mapImageUrl) {
+      return centre.mapImageUrl;
     }
+    return "";
+  }, [centre?.mapImageUrl, floorLevelIdNum, floorLevels]);
 
+  // Get assets for current floor level and asset type
+  const filteredAssets = useMemo(() => {
+    let assets: any[] = selectedAssetType === "vacant_shops" ? vacantShops : thirdLineIncome;
+    
     // Filter by floor level if multi-level centre
-    if (floorLevels.length > 0 && selectedFloorLevelId) {
-      assets = assets.filter((a: any) => a.floorLevelId === selectedFloorLevelId);
+    if (floorLevels.length > 0 && floorLevelIdNum) {
+      assets = assets.filter((a: any) => a.floorLevelId === floorLevelIdNum);
     }
 
     return assets;
-  };
-
-  // Load map and markers when floor level changes
-  useEffect(() => {
-    if (floorLevels.length > 0 && selectedFloorLevelId) {
-      const currentFloor = floorLevels.find((fl: any) => fl.id === selectedFloorLevelId);
-      if (currentFloor?.mapImageUrl) {
-        setMapPreviewUrl(currentFloor.mapImageUrl);
-      } else {
-        setMapPreviewUrl("");
-      }
-    } else if (floorLevels.length === 0 && centre?.mapImageUrl) {
-      setMapPreviewUrl(centre.mapImageUrl);
-    } else {
-      setMapPreviewUrl("");
-    }
-  }, [centre?.mapImageUrl, selectedFloorLevelId, floorLevels]);
+  }, [selectedAssetType, vacantShops, thirdLineIncome, floorLevels.length, floorLevelIdNum]);
 
   // Load existing markers when assets change
-  useEffect(() => {
-    const assets = getFilteredAssets();
-    const existingMarkers: AssetMarker[] = assets
+  const existingMarkers = useMemo(() => {
+    return filteredAssets
       .filter((asset: any) => asset.mapMarkerX !== null && asset.mapMarkerY !== null)
       .map((asset: any) => ({
         assetId: asset.id,
@@ -114,42 +99,43 @@ export default function AssetMapPlacement() {
         y: asset.mapMarkerY,
         displayNumber: selectedAssetType === "vacant_shops" ? asset.shopNumber : asset.assetNumber,
       }));
-    setMarkers(existingMarkers);
-  }, [vacantShops, thirdLineIncome, selectedAssetType, selectedFloorLevelId]);
+  }, [filteredAssets, selectedAssetType]);
 
-  // Auto-select first floor level when floor levels are loaded
-  useEffect(() => {
-    if (floorLevels.length > 0 && !selectedFloorLevelId) {
-      setSelectedFloorLevelId(floorLevels[0].id);
-    } else if (floorLevels.length === 0) {
-      setSelectedFloorLevelId(null);
-    }
-  }, [floorLevels, selectedFloorLevelId]);
+  // Combine existing markers with newly placed markers
+  const currentMarkers = useMemo(() => {
+    const newMarkers = markers.filter(m => m.assetType === selectedAssetType);
+    const existingIds = new Set(existingMarkers.map(m => m.assetId));
+    const newOnlyMarkers = newMarkers.filter(m => !existingIds.has(m.assetId));
+    return [...existingMarkers, ...newOnlyMarkers];
+  }, [markers, existingMarkers, selectedAssetType]);
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (dragOccurred) {
-      setDragOccurred(false);
-      return;
-    }
-    
-    if (!imageRef.current) return;
+  const handleCentreChange = useCallback((value: string) => {
+    setSelectedCentreId(value);
+    setSelectedFloorLevelId("");
+    setMarkers([]);
+  }, []);
 
-    const assets = getFilteredAssets();
-    if (assets.length === 0) {
-      toast.info("No assets available for this centre/floor. Add assets first.");
-      return;
-    }
+  const handleFloorLevelChange = useCallback((value: string) => {
+    setSelectedFloorLevelId(value);
+    setMarkers([]);
+  }, []);
 
-    const rect = imageRef.current.getBoundingClientRect();
+  const handleMapClick = useCallback((e: React.MouseEvent<HTMLImageElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
     const xPercent = (x / rect.width) * 100;
     const yPercent = (y / rect.height) * 100;
 
+    if (filteredAssets.length === 0) {
+      toast.info("No assets available for this centre/floor. Add assets first.");
+      return;
+    }
+
     // Find an unmapped asset
-    const unmappedAsset = assets.find(
-      (asset: any) => !markers.some((m) => m.assetId === asset.id && m.assetType === selectedAssetType)
+    const unmappedAsset = filteredAssets.find(
+      (asset: any) => !currentMarkers.some((m) => m.assetId === asset.id)
     );
 
     if (unmappedAsset) {
@@ -160,45 +146,15 @@ export default function AssetMapPlacement() {
         y: Math.round(yPercent * 10) / 10,
         displayNumber: selectedAssetType === "vacant_shops" ? unmappedAsset.shopNumber : unmappedAsset.assetNumber,
       };
-      setMarkers([...markers, newMarker]);
+      setMarkers(prev => [...prev, newMarker]);
       toast.success(`Marker added for ${newMarker.displayNumber}`);
     } else {
       toast.info("All assets already have markers. Remove a marker to add a new one.");
     }
-  };
+  }, [filteredAssets, currentMarkers, selectedAssetType]);
 
-  const handleMarkerDragStart = (assetId: number) => {
-    setIsDragging(assetId);
-    setDragOccurred(false);
-  };
-
-  const handleMarkerDrag = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isDragging === null || !imageRef.current) return;
-
-    setDragOccurred(true);
-
-    const rect = imageRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const xPercent = (x / rect.width) * 100;
-    const yPercent = (y / rect.height) * 100;
-
-    setMarkers(
-      markers.map((m) =>
-        m.assetId === isDragging && m.assetType === selectedAssetType
-          ? { ...m, x: Math.round(xPercent * 10) / 10, y: Math.round(yPercent * 10) / 10 }
-          : m
-      )
-    );
-  };
-
-  const handleMarkerDragEnd = () => {
-    setIsDragging(null);
-  };
-
-  const handleRemoveMarker = (assetId: number) => {
-    setMarkers(markers.filter((m) => !(m.assetId === assetId && m.assetType === selectedAssetType)));
+  const handleRemoveMarker = useCallback((assetId: number) => {
+    setMarkers(prev => prev.filter((m) => !(m.assetId === assetId && m.assetType === selectedAssetType)));
     
     // Also clear from database
     if (selectedAssetType === "vacant_shops") {
@@ -206,16 +162,18 @@ export default function AssetMapPlacement() {
     } else {
       updateThirdLineMutation.mutate({ id: assetId, mapMarkerX: null, mapMarkerY: null });
     }
-  };
+  }, [selectedAssetType, updateVacantShopMutation, updateThirdLineMutation]);
 
-  const handleSaveMarkers = async () => {
-    if (markers.length === 0) {
-      toast.error("No markers to save");
+  const handleSaveMarkers = useCallback(async () => {
+    const markersToSave = currentMarkers.filter(m => 
+      markers.some(nm => nm.assetId === m.assetId && nm.assetType === m.assetType)
+    );
+    
+    if (markersToSave.length === 0) {
+      toast.info("No new markers to save");
       return;
     }
 
-    const markersToSave = markers.filter((m) => m.assetType === selectedAssetType);
-    
     try {
       for (const marker of markersToSave) {
         if (selectedAssetType === "vacant_shops") {
@@ -232,18 +190,20 @@ export default function AssetMapPlacement() {
           });
         }
       }
+      setMarkers([]);
       toast.success(`${markersToSave.length} marker(s) saved successfully`);
     } catch (error) {
       // Error already handled by mutation
     }
-  };
+  }, [currentMarkers, markers, selectedAssetType, updateVacantShopMutation, updateThirdLineMutation]);
 
   const getMarkerColor = (assetType: AssetType) => {
-    return assetType === "vacant_shops" ? "#16a34a" : "#9333ea"; // green for vacant shops, purple for third line
+    return assetType === "vacant_shops" ? "#16a34a" : "#9333ea";
   };
 
-  const assets = getFilteredAssets();
-  const currentMarkers = markers.filter((m) => m.assetType === selectedAssetType);
+  const sortedCentres = useMemo(() => {
+    return [...centres].sort((a: any, b: any) => a.name.localeCompare(b.name));
+  }, [centres]);
 
   return (
     <AdminLayout>
@@ -262,22 +222,14 @@ export default function AssetMapPlacement() {
             <CardDescription>Choose a centre to manage asset map markers</CardDescription>
           </CardHeader>
           <CardContent>
-            <Select
-              value={selectedCentreId.toString()}
-              onValueChange={(value) => {
-                setSelectedCentreId(parseInt(value));
-                setSelectedFloorLevelId(null);
-                setMapPreviewUrl("");
-                setMarkers([]);
-              }}
-            >
+            <Select value={selectedCentreId} onValueChange={handleCentreChange}>
               <SelectTrigger className="max-w-md">
                 <SelectValue placeholder="Select a centre" />
               </SelectTrigger>
               <SelectContent>
-                {centres.sort((a: any, b: any) => a.name.localeCompare(b.name)).map((centre: any) => (
-                  <SelectItem key={centre.id} value={centre.id.toString()}>
-                    {centre.name} - {centre.suburb}, {centre.state}
+                {sortedCentres.map((c: any) => (
+                  <SelectItem key={c.id} value={c.id.toString()}>
+                    {c.name} - {c.suburb}, {c.state}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -285,7 +237,7 @@ export default function AssetMapPlacement() {
           </CardContent>
         </Card>
 
-        {selectedCentreId > 0 && (
+        {centreIdNum > 0 && (
           <>
             {/* Asset Type Selection */}
             <Card>
@@ -304,7 +256,7 @@ export default function AssetMapPlacement() {
                     Vacant Shops
                     <Badge variant="secondary" className="ml-1">
                       {vacantShops.filter((s: any) => 
-                        floorLevels.length === 0 || !selectedFloorLevelId || s.floorLevelId === selectedFloorLevelId
+                        floorLevels.length === 0 || !floorLevelIdNum || s.floorLevelId === floorLevelIdNum
                       ).length}
                     </Badge>
                   </Button>
@@ -317,7 +269,7 @@ export default function AssetMapPlacement() {
                     Third Line Income
                     <Badge variant="secondary" className="ml-1">
                       {thirdLineIncome.filter((a: any) => 
-                        floorLevels.length === 0 || !selectedFloorLevelId || a.floorLevelId === selectedFloorLevelId
+                        floorLevels.length === 0 || !floorLevelIdNum || a.floorLevelId === floorLevelIdNum
                       ).length}
                     </Badge>
                   </Button>
@@ -333,18 +285,17 @@ export default function AssetMapPlacement() {
                   <CardDescription>Select a floor level to place markers</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Tabs 
-                    value={selectedFloorLevelId?.toString() || ""} 
-                    onValueChange={(val) => setSelectedFloorLevelId(parseInt(val))}
-                  >
-                    <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${floorLevels.length}, 1fr)` }}>
-                      {floorLevels.map((floor: any) => (
-                        <TabsTrigger key={floor.id} value={floor.id.toString()}>
-                          {floor.levelName}
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
-                  </Tabs>
+                  <div className="flex flex-wrap gap-2">
+                    {floorLevels.map((floor: any) => (
+                      <Button
+                        key={floor.id}
+                        variant={floorLevelIdNum === floor.id ? "default" : "outline"}
+                        onClick={() => handleFloorLevelChange(floor.id.toString())}
+                      >
+                        {floor.levelName}
+                      </Button>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -358,7 +309,7 @@ export default function AssetMapPlacement() {
                     Position {selectedAssetType === "vacant_shops" ? "Vacant Shop" : "Third Line Income"} Markers
                   </CardTitle>
                   <CardDescription>
-                    Click on the map to add markers. Drag markers to reposition them. Click the X to remove.
+                    Click on the map to add markers. Click the X to remove.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -370,33 +321,25 @@ export default function AssetMapPlacement() {
                         <span>{selectedAssetType === "vacant_shops" ? "Vacant Shops" : "Third Line Income"}</span>
                       </div>
                       <span className="text-muted-foreground">
-                        {currentMarkers.length} of {assets.length} assets marked
+                        {currentMarkers.length} of {filteredAssets.length} assets marked
                       </span>
                     </div>
 
                     {/* Map */}
                     <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-4 overflow-auto">
-                      <div
-                        ref={canvasRef}
-                        className="relative inline-block cursor-crosshair"
-                        onClick={handleCanvasClick}
-                        onMouseMove={handleMarkerDrag}
-                        onMouseUp={handleMarkerDragEnd}
-                        onMouseLeave={handleMarkerDragEnd}
-                      >
+                      <div className="relative inline-block">
                         <img
-                          ref={imageRef}
                           src={mapPreviewUrl}
                           alt="Floor plan"
-                          className="max-w-full h-auto"
+                          className="max-w-full h-auto cursor-crosshair"
                           draggable={false}
+                          onClick={handleMapClick}
                         />
                         {currentMarkers.map((marker) => (
                           <div
                             key={`${marker.assetType}-${marker.assetId}`}
-                            className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-move group"
+                            className="absolute transform -translate-x-1/2 -translate-y-1/2 group"
                             style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
-                            onMouseDown={() => handleMarkerDragStart(marker.assetId)}
                           >
                             <div className="relative">
                               <div 
@@ -421,13 +364,13 @@ export default function AssetMapPlacement() {
                     </div>
 
                     {/* Unmapped Assets List */}
-                    {assets.length > currentMarkers.length && (
+                    {filteredAssets.length > currentMarkers.length && (
                       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                         <p className="text-sm font-medium text-amber-800 mb-2">
-                          Unmapped {selectedAssetType === "vacant_shops" ? "Shops" : "Assets"} ({assets.length - currentMarkers.length}):
+                          Unmapped {selectedAssetType === "vacant_shops" ? "Shops" : "Assets"} ({filteredAssets.length - currentMarkers.length}):
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          {assets
+                          {filteredAssets
                             .filter((asset: any) => !currentMarkers.some((m) => m.assetId === asset.id))
                             .map((asset: any) => (
                               <Badge key={asset.id} variant="outline">
@@ -442,13 +385,13 @@ export default function AssetMapPlacement() {
                     <div className="flex justify-end">
                       <Button
                         onClick={handleSaveMarkers}
-                        disabled={currentMarkers.length === 0 || updateVacantShopMutation.isPending || updateThirdLineMutation.isPending}
+                        disabled={markers.length === 0 || updateVacantShopMutation.isPending || updateThirdLineMutation.isPending}
                         className="bg-green-600 hover:bg-green-700"
                       >
                         <Save className="mr-2 h-4 w-4" />
                         {updateVacantShopMutation.isPending || updateThirdLineMutation.isPending 
                           ? "Saving..." 
-                          : `Save ${currentMarkers.length} Marker(s)`}
+                          : `Save Markers`}
                       </Button>
                     </div>
                   </div>
@@ -461,7 +404,9 @@ export default function AssetMapPlacement() {
                     <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>No floor plan map available for this {floorLevels.length > 0 ? "floor level" : "centre"}.</p>
                     <p className="text-sm mt-2">
-                      Please upload a map in the <strong>Floor Plan Maps</strong> section first.
+                      {floorLevels.length > 0 && !floorLevelIdNum 
+                        ? "Please select a floor level above."
+                        : "Please upload a map in the Floor Plan Maps section first."}
                     </p>
                   </div>
                 </CardContent>
