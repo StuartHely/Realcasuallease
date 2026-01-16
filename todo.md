@@ -2037,12 +2037,29 @@
 - [x] Update site information display based on selected type
 
 ### Frontend - Search Results
-- [ ] Add asset type filter to search
-- [ ] Display appropriate fields for each asset type
-- [ ] Maintain fast query performance
+- [x] Add asset type filter to search
+- [x] Display appropriate fields for each asset type
+- [x] Maintain fast query performance
 
 ### Testing
 - [x] Test CRUD operations for all asset types
 - [x] Test map filtering functionality
 - [x] Test admin category management
 - [x] Verify query performance with sample data
+
+## Map Marker Placement & Search Filter Enhancement (Jan 16, 2026)
+
+### Admin Map Marker Placement
+- [x] Add map marker placement for Vacant Shops in Asset Map Placement page
+- [x] Add map marker placement for Third Line Income in Asset Map Placement page
+- [x] Support floor level selection for multi-level centres
+
+### Search Results Enhancement
+- [x] Add asset type filter dropdown to search results page
+- [x] Display appropriate fields for each asset type in search results
+- [x] Maintain fast query performance with asset type filtering
+
+### Dedicated Detail Pages (Future)
+- [ ] Create VacantShopDetail page with enquiry form
+- [ ] Create ThirdLineIncomeDetail page with enquiry form
+- [ ] Add booking/enquiry workflow for non-casual-leasing assets

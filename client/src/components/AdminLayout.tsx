@@ -72,6 +72,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
           { icon: Layers, label: "Third Line Income", path: "/admin/third-line-income" },
           { icon: Tag, label: "Third Line Categories", path: "/admin/third-line-categories" },
           { icon: Map, label: "Floor Plan Maps", path: "/admin/maps" },
+          { icon: MapPin, label: "Asset Map Placement", path: "/admin/asset-map-placement" },
           { icon: MapPin, label: "Site Assignment", path: "/admin/site-assignment" },
           { icon: Package, label: "Equipment", path: "/admin/equipment" },
           { icon: Tag, label: "Usage Categories", path: "/admin/usage-categories" },

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
+import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays, Store, Zap, Layers } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, parse, addDays, isSameDay, subDays, isBefore, startOfDay } from "date-fns";
@@ -22,6 +22,7 @@ export default function Search() {
   const [focusedCell, setFocusedCell] = useState<{ siteIndex: number; dateIndex: number } | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [showOnlyAutoApproved, setShowOnlyAutoApproved] = useState(false);
+  const [selectedAssetType, setSelectedAssetType] = useState<"casual_leasing" | "vacant_shops" | "third_line" | "all">("casual_leasing");
   const calendarDays = 14; // Fixed 14-day view
 
   useEffect(() => {
@@ -61,6 +62,17 @@ export default function Search() {
 
   // Fetch all usage categories for filter dropdown
   const { data: allCategories } = trpc.usageCategories.list.useQuery();
+
+  // Fetch vacant shops and third line income for the searched centres
+  const centreIds = data?.centres?.map((c: any) => c.id) || [];
+  const { data: vacantShops } = trpc.vacantShops.getByCentre.useQuery(
+    { centreId: centreIds[0] || 0 },
+    { enabled: centreIds.length > 0 && (selectedAssetType === "vacant_shops" || selectedAssetType === "all") }
+  );
+  const { data: thirdLineIncome } = trpc.thirdLineIncome.getByCentre.useQuery(
+    { centreId: centreIds[0] || 0 },
+    { enabled: centreIds.length > 0 && (selectedAssetType === "third_line" || selectedAssetType === "all") }
+  );
 
   // Determine if a site is matched by the search query
   const isMatchedSite = (siteId: number) => {
@@ -237,6 +249,50 @@ export default function Search() {
             }
             return null;
           })()}
+          
+          {/* Asset Type Filter */}
+          <div className="mt-6 flex flex-wrap items-center gap-4">
+            <span className="text-sm font-medium text-gray-700">Asset Type:</span>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={selectedAssetType === "casual_leasing" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedAssetType("casual_leasing")}
+                className="flex items-center gap-1.5"
+              >
+                <MapPin className="h-4 w-4" />
+                Casual Leasing
+              </Button>
+              <Button
+                variant={selectedAssetType === "vacant_shops" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedAssetType("vacant_shops")}
+                className="flex items-center gap-1.5"
+              >
+                <Store className="h-4 w-4" />
+                Vacant Shops
+              </Button>
+              <Button
+                variant={selectedAssetType === "third_line" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedAssetType("third_line")}
+                className="flex items-center gap-1.5"
+              >
+                <Zap className="h-4 w-4" />
+                Third Line Income
+              </Button>
+              <Button
+                variant={selectedAssetType === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedAssetType("all")}
+                className="flex items-center gap-1.5"
+              >
+                <Layers className="h-4 w-4" />
+                All Assets
+              </Button>
+            </div>
+          </div>
+          
           {/* Show smart size suggestion if exact match not available */}
           {data?.sizeNotAvailable && data?.closestMatch && (
             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -302,8 +358,104 @@ export default function Search() {
 
         {data && data.centres.length > 0 && (
           <div className="space-y-8">
-            {/* Calendar Heatmap */}
-            {data.centres.map((centre) => {
+            {/* Vacant Shops Section */}
+            {(selectedAssetType === "vacant_shops" || selectedAssetType === "all") && vacantShops && vacantShops.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-2xl mb-1 flex items-center gap-2">
+                    <Store className="h-6 w-6 text-green-600" />
+                    Vacant Shops at {data.centres[0]?.name}
+                  </CardTitle>
+                  <CardDescription>
+                    Short-term vacant shop tenancies available for weekly or monthly booking
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {vacantShops.filter((shop: any) => shop.isActive).map((shop: any) => (
+                      <Card key={shop.id} className="border-green-200 bg-green-50/50">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <Store className="h-4 w-4 text-green-600" />
+                            Shop {shop.shopNumber}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2 text-sm">
+                          {shop.totalSizeM2 && <p><span className="font-medium">Size:</span> {shop.totalSizeM2}m²</p>}
+                          {shop.dimensions && <p><span className="font-medium">Dimensions:</span> {shop.dimensions}</p>}
+                          <p><span className="font-medium">Powered:</span> {shop.powered ? "Yes" : "No"}</p>
+                          {shop.pricePerWeek && <p><span className="font-medium">Price:</span> ${shop.pricePerWeek}/week</p>}
+                          {shop.pricePerMonth && <p className="text-muted-foreground">${shop.pricePerMonth}/month</p>}
+                          {shop.description && <p className="text-muted-foreground text-xs mt-2">{shop.description}</p>}
+                          <Button
+                            size="sm"
+                            className="w-full mt-3 bg-green-600 hover:bg-green-700"
+                            onClick={() => {
+                              // Navigate to enquiry or detail page
+                              alert(`Enquire about Vacant Shop ${shop.shopNumber}. Feature coming soon.`);
+                            }}
+                          >
+                            Enquire Now
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Third Line Income Section */}
+            {(selectedAssetType === "third_line" || selectedAssetType === "all") && thirdLineIncome && thirdLineIncome.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-2xl mb-1 flex items-center gap-2">
+                    <Zap className="h-6 w-6 text-purple-600" />
+                    Third Line Income at {data.centres[0]?.name}
+                  </CardTitle>
+                  <CardDescription>
+                    Non-tenancy assets such as vending machines, signage, and installations
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {thirdLineIncome.filter((asset: any) => asset.isActive).map((asset: any) => (
+                      <Card key={asset.id} className="border-purple-200 bg-purple-50/50">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <Zap className="h-4 w-4 text-purple-600" />
+                            {asset.assetNumber}
+                          </CardTitle>
+                          {asset.categoryName && (
+                            <Badge variant="secondary" className="w-fit">{asset.categoryName}</Badge>
+                          )}
+                        </CardHeader>
+                        <CardContent className="space-y-2 text-sm">
+                          {asset.dimensions && <p><span className="font-medium">Dimensions:</span> {asset.dimensions}</p>}
+                          <p><span className="font-medium">Powered:</span> {asset.powered ? "Yes" : "No"}</p>
+                          {asset.pricePerWeek && <p><span className="font-medium">Price:</span> ${asset.pricePerWeek}/week</p>}
+                          {asset.pricePerMonth && <p className="text-muted-foreground">${asset.pricePerMonth}/month</p>}
+                          {asset.description && <p className="text-muted-foreground text-xs mt-2">{asset.description}</p>}
+                          <Button
+                            size="sm"
+                            className="w-full mt-3 bg-purple-600 hover:bg-purple-700"
+                            onClick={() => {
+                              // Navigate to enquiry or detail page
+                              alert(`Enquire about ${asset.assetNumber}. Feature coming soon.`);
+                            }}
+                          >
+                            Enquire Now
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Calendar Heatmap - Casual Leasing Sites */}
+            {(selectedAssetType === "casual_leasing" || selectedAssetType === "all") && data.centres.map((centre) => {
               let centreSites = data.sites.filter((s) => s.centreId === centre.id);
               
               // Filter by selected category if one is chosen
