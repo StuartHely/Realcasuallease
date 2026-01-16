@@ -134,7 +134,7 @@ export async function getAllUsers() {
       productCategory: profile?.productCategory || null,
       productDetails: profile?.productDetails || null,
       insuranceCompany: profile?.insuranceCompany || null,
-      insurancePolicyNumber: profile?.insurancePolicyNumber || null,
+      insurancePolicyNo: profile?.insurancePolicyNo || null,
       insuranceAmount: profile?.insuranceAmount || null,
       insuranceExpiry: profile?.insuranceExpiry || null,
       insuranceDocumentUrl: profile?.insuranceDocumentUrl || null,
@@ -737,7 +737,7 @@ export async function getAuditLogs() {
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(auditLog).orderBy(desc(auditLog.timestamp));
+  return await db.select().from(auditLog).orderBy(desc(auditLog.createdAt));
 }
 
 // Floor Levels

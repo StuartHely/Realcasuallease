@@ -118,7 +118,10 @@ export default function Home() {
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setLocation("/")}
+          >
             <MapPin className="h-6 w-6 text-blue-600" />
             <h1 className="text-2xl font-bold text-blue-900">Real Casual Leasing</h1>
           </div>

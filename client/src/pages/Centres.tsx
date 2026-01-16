@@ -70,7 +70,10 @@ export default function Centres() {
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-blue-900">Real Casual Leasing</h1>
+            <h1 
+              className="text-2xl font-bold text-blue-900 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => setLocation("/")}
+            >Real Casual Leasing</h1>
             <Button
               onClick={() => setLocation("/")}
               variant="outline"

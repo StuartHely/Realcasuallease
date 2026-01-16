@@ -1974,3 +1974,7 @@
 - [x] Redirect unauthenticated users to login page
 - [x] Preserve intended destination URL for post-login redirect (sessionStorage returnUrl)
 - [x] Test authentication flow works correctly
+
+## UX Enhancement: Clickable Banner (Jan 16, 2026)
+- [x] Make top banner "Real Casual Leasing" clickable to navigate to home page
+- [x] Updated Home.tsx, Search.tsx, MyBookings.tsx, Profile.tsx, SiteDetail.tsx, CentreDetail.tsx, Centres.tsx

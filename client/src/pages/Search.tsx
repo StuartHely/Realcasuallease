@@ -190,7 +190,10 @@ export default function Search() {
             <Button variant="ghost" size="icon" onClick={() => setLocation("/")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div className="flex items-center gap-2">
+            <div 
+              className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => setLocation("/")}
+            >
               <MapPin className="h-6 w-6 text-blue-600" />
               <h1 className="text-2xl font-bold text-blue-900">Real Casual Leasing</h1>
             </div>
@@ -750,7 +753,6 @@ export default function Search() {
                     mapUrl={data.floorLevels.find((fl: any) => fl.mapImageUrl)?.mapImageUrl || ''}
                     sites={data.sites}
                     centreName={data.centres[0].name}
-                    floorLevels={data.floorLevels}
                   />
                 </CardContent>
               </Card>

@@ -193,7 +193,7 @@ export default function Payments() {
                       </div>
                       <p className="text-sm text-green-700 mt-1">
                         Paid on {formatDate(booking.paidAt)}
-                        {booking.paymentRecordedBy && ` by ${booking.paymentRecordedBy}`}
+                        
                       </p>
                     </div>
                   ) : (
