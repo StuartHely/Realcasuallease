@@ -6,9 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Building2, ArrowLeft, Calendar, DollarSign, Ruler, Zap, Store, Layers } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { format } from "date-fns";
+import { format, addMonths, startOfWeek } from "date-fns";
 import InteractiveMap from "@/components/InteractiveMap";
 import { NearbyCentresMap } from "@/components/NearbyCentresMap";
+import { AssetBookingCalendar } from "@/components/AssetBookingCalendar";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { toast } from "sonner";
 
 type AssetType = "casual_leasing" | "vacant_shops" | "third_line" | "all";
 
@@ -17,6 +20,13 @@ export default function CentreDetail() {
   const [, params] = useRoute("/centre/:id");
   const centreId = params?.id ? parseInt(params.id) : 0;
   const [assetType, setAssetType] = useState<AssetType>("casual_leasing");
+  const [selectedVSId, setSelectedVSId] = useState<number | null>(null);
+  const [selected3rdLId, setSelected3rdLId] = useState<number | null>(null);
+  const { user } = useAuth();
+  
+  // Date range for calendar queries (3 months ahead)
+  const calendarStartDate = useMemo(() => startOfWeek(new Date(), { weekStartsOn: 1 }), []);
+  const calendarEndDate = useMemo(() => addMonths(new Date(), 3), []);
 
   const { data: centre, isLoading: centreLoading } = trpc.centres.getById.useQuery(
     { id: centreId },
@@ -42,6 +52,102 @@ export default function CentreDetail() {
   );
 
   const isLoading = centreLoading || sitesLoading || vacantShopsLoading || thirdLineLoading;
+
+  // VS Bookings for selected shop
+  const { data: vsBookings = [] } = trpc.vacantShopBookings.getByShop.useQuery(
+    { vacantShopId: selectedVSId! },
+    { enabled: !!selectedVSId }
+  );
+
+  // 3rdL Bookings for selected asset
+  const { data: thirdLineBookings = [] } = trpc.thirdLineBookings.getByAsset.useQuery(
+    { thirdLineIncomeId: selected3rdLId! },
+    { enabled: !!selected3rdLId }
+  );
+
+  // Create VS booking mutation
+  const createVSBooking = trpc.vacantShopBookings.create.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Booking request submitted! Reference: ${data.bookingNumber}`);
+      setSelectedVSId(null);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to create booking");
+    },
+  });
+
+  // Create 3rdL booking mutation
+  const create3rdLBooking = trpc.thirdLineBookings.create.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Booking request submitted! Reference: ${data.bookingNumber}`);
+      setSelected3rdLId(null);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to create booking");
+    },
+  });
+
+  // Handle VS booking request
+  const handleVSBookingRequest = (startDate: Date, endDate: Date) => {
+    if (!user) {
+      toast.error("Please log in to make a booking");
+      return;
+    }
+    if (!selectedVSId) return;
+    
+    const selectedShop = vacantShops.find((s: any) => s.id === selectedVSId);
+    // Calculate simple pricing (weekly rate * number of weeks, minimum 1 week)
+    const weeks = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)));
+    const weeklyRate = selectedShop?.pricePerWeek ? Number(selectedShop.pricePerWeek) : 500;
+    const totalAmount = weeklyRate * weeks;
+    const gstPercentage = 10;
+    const gstAmount = totalAmount * (gstPercentage / 100);
+    const platformFee = totalAmount * 0.05; // 5% platform fee
+    const ownerAmount = totalAmount - platformFee;
+    
+    createVSBooking.mutate({
+      vacantShopId: selectedVSId,
+      startDate,
+      endDate,
+      totalAmount: totalAmount.toFixed(2),
+      gstAmount: gstAmount.toFixed(2),
+      gstPercentage: gstPercentage.toFixed(2),
+      ownerAmount: ownerAmount.toFixed(2),
+      platformFee: platformFee.toFixed(2),
+      paymentMethod: "invoice",
+    });
+  };
+
+  // Handle 3rdL booking request
+  const handle3rdLBookingRequest = (startDate: Date, endDate: Date) => {
+    if (!user) {
+      toast.error("Please log in to make a booking");
+      return;
+    }
+    if (!selected3rdLId) return;
+    
+    const selectedAsset = thirdLineAssets.find((a: any) => a.id === selected3rdLId);
+    // Calculate simple pricing
+    const weeks = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)));
+    const weeklyRate = selectedAsset?.pricePerWeek ? Number(selectedAsset.pricePerWeek) : 200;
+    const totalAmount = weeklyRate * weeks;
+    const gstPercentage = 10;
+    const gstAmount = totalAmount * (gstPercentage / 100);
+    const platformFee = totalAmount * 0.05;
+    const ownerAmount = totalAmount - platformFee;
+    
+    create3rdLBooking.mutate({
+      thirdLineIncomeId: selected3rdLId,
+      startDate,
+      endDate,
+      totalAmount: totalAmount.toFixed(2),
+      gstAmount: gstAmount.toFixed(2),
+      gstPercentage: gstPercentage.toFixed(2),
+      ownerAmount: ownerAmount.toFixed(2),
+      platformFee: platformFee.toFixed(2),
+      paymentMethod: "invoice",
+    });
+  };
 
   // Combine all assets for the map based on selected type
   const mapAssets = useMemo(() => {
@@ -448,14 +554,29 @@ export default function CentreDetail() {
                       </div>
                       <Button
                         className="w-full bg-green-600 hover:bg-green-700 mt-4"
-                        onClick={() => {
-                          // TODO: Navigate to vacant shop detail page when implemented
-                          // For now, show a toast
-                          alert(`Vacant Shop ${shop.shopNumber} - Contact centre for enquiries`);
-                        }}
+                        onClick={() => setSelectedVSId(selectedVSId === shop.id ? null : shop.id)}
                       >
-                        Enquire Now
+                        {selectedVSId === shop.id ? "Hide Calendar" : "Check Availability"}
                       </Button>
+                      
+                      {/* Booking Calendar for this shop */}
+                      {selectedVSId === shop.id && (
+                        <div className="mt-4">
+                          <AssetBookingCalendar
+                            assetId={shop.id}
+                            assetType="vacant_shop"
+                            assetName={`Shop ${shop.shopNumber}`}
+                            bookings={vsBookings.map((b: any) => ({
+                              ...b,
+                              startDate: new Date(b.startDate),
+                              endDate: new Date(b.endDate),
+                            }))}
+                            onDateSelect={handleVSBookingRequest}
+                            pricePerWeek={shop.pricePerWeek}
+                            pricePerMonth={shop.pricePerMonth}
+                          />
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -531,13 +652,29 @@ export default function CentreDetail() {
                       </div>
                       <Button
                         className="w-full bg-purple-600 hover:bg-purple-700 mt-4"
-                        onClick={() => {
-                          // TODO: Navigate to third line asset detail page when implemented
-                          alert(`${asset.categoryName || "Asset"} ${asset.assetNumber} - Contact centre for enquiries`);
-                        }}
+                        onClick={() => setSelected3rdLId(selected3rdLId === asset.id ? null : asset.id)}
                       >
-                        Enquire Now
+                        {selected3rdLId === asset.id ? "Hide Calendar" : "Check Availability"}
                       </Button>
+                      
+                      {/* Booking Calendar for this asset */}
+                      {selected3rdLId === asset.id && (
+                        <div className="mt-4">
+                          <AssetBookingCalendar
+                            assetId={asset.id}
+                            assetType="third_line"
+                            assetName={`${asset.categoryName || "Asset"} ${asset.assetNumber}`}
+                            bookings={thirdLineBookings.map((b: any) => ({
+                              ...b,
+                              startDate: new Date(b.startDate),
+                              endDate: new Date(b.endDate),
+                            }))}
+                            onDateSelect={handle3rdLBookingRequest}
+                            pricePerWeek={asset.pricePerWeek}
+                            pricePerMonth={asset.pricePerMonth}
+                          />
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}

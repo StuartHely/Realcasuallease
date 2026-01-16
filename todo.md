@@ -2078,3 +2078,16 @@
 - [x] Fix route configuration if missing
 - [x] Test admin navigation to Asset Map Placement
 - [x] Fix infinite loop issue with React state updates (setRef error from Radix UI)
+
+## VS and 3rdL Booking Calendars (Jan 16, 2026)
+- [x] Review existing booking schema for Casual Leasing
+- [x] Create vacantShopBookings table (or extend existing bookings table)
+- [x] Create thirdLineBookings table (or extend existing bookings table)
+- [x] Add backend tRPC procedures for VS bookings (create, list, check availability)
+- [x] Add backend tRPC procedures for 3rdL bookings (create, list, check availability)
+- [x] Create booking calendar UI component for VS assets (AssetBookingCalendar.tsx)
+- [x] Create booking calendar UI component for 3rdL assets (AssetBookingCalendar.tsx)
+- [x] Integrate VS calendar into centre detail page
+- [x] Integrate 3rdL calendar into centre detail page
+- [ ] Add VS and 3rdL availability to search results calendar heatmap
+- [x] Test booking creation and availability checking (10 tests passing)

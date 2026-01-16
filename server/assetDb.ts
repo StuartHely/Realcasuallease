@@ -5,11 +5,16 @@ import {
   thirdLineCategories,
   sites,
   floorLevels,
+  vacantShopBookings,
+  thirdLineBookings,
+  shoppingCentres,
   type InsertVacantShop,
   type InsertThirdLineIncome,
-  type InsertThirdLineCategory
+  type InsertThirdLineCategory,
+  type InsertVacantShopBooking,
+  type InsertThirdLineBooking
 } from "../drizzle/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, sql, gte, lte, or, ne } from "drizzle-orm";
 
 // ============ Third Line Categories ============
 
@@ -296,4 +301,324 @@ export async function getAllAssetsByCentre(centreId: number, assetType: AssetTyp
   }
 
   return results;
+}
+
+// ============ Vacant Shop Bookings ============
+
+export async function getVacantShopBookingsByShop(vacantShopId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(vacantShopBookings)
+    .where(eq(vacantShopBookings.vacantShopId, vacantShopId))
+    .orderBy(asc(vacantShopBookings.startDate));
+}
+
+export async function getVacantShopBookingsByCentre(centreId: number, startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get all vacant shops for this centre first
+  const shops = await db
+    .select({ id: vacantShops.id })
+    .from(vacantShops)
+    .where(eq(vacantShops.centreId, centreId));
+  
+  if (shops.length === 0) return [];
+  
+  const shopIds = shops.map(s => s.id);
+  
+  let query = db
+    .select({
+      id: vacantShopBookings.id,
+      bookingNumber: vacantShopBookings.bookingNumber,
+      vacantShopId: vacantShopBookings.vacantShopId,
+      shopNumber: vacantShops.shopNumber,
+      customerId: vacantShopBookings.customerId,
+      startDate: vacantShopBookings.startDate,
+      endDate: vacantShopBookings.endDate,
+      totalAmount: vacantShopBookings.totalAmount,
+      status: vacantShopBookings.status,
+    })
+    .from(vacantShopBookings)
+    .innerJoin(vacantShops, eq(vacantShopBookings.vacantShopId, vacantShops.id))
+    .where(sql`${vacantShopBookings.vacantShopId} IN (${sql.join(shopIds, sql`, `)})`);
+  
+  return query.orderBy(asc(vacantShopBookings.startDate));
+}
+
+export async function checkVacantShopAvailability(
+  vacantShopId: number, 
+  startDate: Date, 
+  endDate: Date,
+  excludeBookingId?: number
+) {
+  const db = await getDb();
+  if (!db) return true;
+  
+  // Check for overlapping bookings (confirmed or pending)
+  const conditions = [
+    eq(vacantShopBookings.vacantShopId, vacantShopId),
+    or(
+      eq(vacantShopBookings.status, "confirmed"),
+      eq(vacantShopBookings.status, "pending")
+    ),
+    // Overlapping date check: existing.start < new.end AND existing.end > new.start
+    lte(vacantShopBookings.startDate, endDate),
+    gte(vacantShopBookings.endDate, startDate),
+  ];
+  
+  if (excludeBookingId) {
+    conditions.push(ne(vacantShopBookings.id, excludeBookingId));
+  }
+  
+  const overlapping = await db
+    .select({ id: vacantShopBookings.id })
+    .from(vacantShopBookings)
+    .where(and(...conditions));
+  
+  return overlapping.length === 0;
+}
+
+export async function createVacantShopBooking(data: Omit<InsertVacantShopBooking, "id" | "createdAt" | "updatedAt">) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(vacantShopBookings).values(data);
+  return result.insertId;
+}
+
+export async function updateVacantShopBooking(id: number, data: Partial<InsertVacantShopBooking>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(vacantShopBookings).set(data).where(eq(vacantShopBookings.id, id));
+}
+
+export async function getVacantShopBookingById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [booking] = await db
+    .select()
+    .from(vacantShopBookings)
+    .where(eq(vacantShopBookings.id, id));
+  return booking;
+}
+
+// Generate booking number with centre code
+export async function generateVacantShopBookingNumber(vacantShopId: number): Promise<string> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Get centre code from vacant shop
+  const [shop] = await db
+    .select({
+      centreCode: shoppingCentres.centreCode,
+    })
+    .from(vacantShops)
+    .innerJoin(shoppingCentres, eq(vacantShops.centreId, shoppingCentres.id))
+    .where(eq(vacantShops.id, vacantShopId));
+  
+  const centreCode = shop?.centreCode || "VS";
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  
+  return `VS-${centreCode}-${timestamp}-${random}`;
+}
+
+// ============ Third Line Bookings ============
+
+export async function getThirdLineBookingsByAsset(thirdLineIncomeId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(thirdLineBookings)
+    .where(eq(thirdLineBookings.thirdLineIncomeId, thirdLineIncomeId))
+    .orderBy(asc(thirdLineBookings.startDate));
+}
+
+export async function getThirdLineBookingsByCentre(centreId: number, startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get all third line income assets for this centre first
+  const assets = await db
+    .select({ id: thirdLineIncome.id })
+    .from(thirdLineIncome)
+    .where(eq(thirdLineIncome.centreId, centreId));
+  
+  if (assets.length === 0) return [];
+  
+  const assetIds = assets.map(a => a.id);
+  
+  let query = db
+    .select({
+      id: thirdLineBookings.id,
+      bookingNumber: thirdLineBookings.bookingNumber,
+      thirdLineIncomeId: thirdLineBookings.thirdLineIncomeId,
+      assetNumber: thirdLineIncome.assetNumber,
+      categoryName: thirdLineCategories.name,
+      customerId: thirdLineBookings.customerId,
+      startDate: thirdLineBookings.startDate,
+      endDate: thirdLineBookings.endDate,
+      totalAmount: thirdLineBookings.totalAmount,
+      status: thirdLineBookings.status,
+    })
+    .from(thirdLineBookings)
+    .innerJoin(thirdLineIncome, eq(thirdLineBookings.thirdLineIncomeId, thirdLineIncome.id))
+    .leftJoin(thirdLineCategories, eq(thirdLineIncome.categoryId, thirdLineCategories.id))
+    .where(sql`${thirdLineBookings.thirdLineIncomeId} IN (${sql.join(assetIds, sql`, `)})`);
+  
+  return query.orderBy(asc(thirdLineBookings.startDate));
+}
+
+export async function checkThirdLineAvailability(
+  thirdLineIncomeId: number, 
+  startDate: Date, 
+  endDate: Date,
+  excludeBookingId?: number
+) {
+  const db = await getDb();
+  if (!db) return true;
+  
+  // Check for overlapping bookings (confirmed or pending)
+  const conditions = [
+    eq(thirdLineBookings.thirdLineIncomeId, thirdLineIncomeId),
+    or(
+      eq(thirdLineBookings.status, "confirmed"),
+      eq(thirdLineBookings.status, "pending")
+    ),
+    // Overlapping date check
+    lte(thirdLineBookings.startDate, endDate),
+    gte(thirdLineBookings.endDate, startDate),
+  ];
+  
+  if (excludeBookingId) {
+    conditions.push(ne(thirdLineBookings.id, excludeBookingId));
+  }
+  
+  const overlapping = await db
+    .select({ id: thirdLineBookings.id })
+    .from(thirdLineBookings)
+    .where(and(...conditions));
+  
+  return overlapping.length === 0;
+}
+
+export async function createThirdLineBooking(data: Omit<InsertThirdLineBooking, "id" | "createdAt" | "updatedAt">) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(thirdLineBookings).values(data);
+  return result.insertId;
+}
+
+export async function updateThirdLineBooking(id: number, data: Partial<InsertThirdLineBooking>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(thirdLineBookings).set(data).where(eq(thirdLineBookings.id, id));
+}
+
+export async function getThirdLineBookingById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [booking] = await db
+    .select()
+    .from(thirdLineBookings)
+    .where(eq(thirdLineBookings.id, id));
+  return booking;
+}
+
+// Generate booking number with centre code
+export async function generateThirdLineBookingNumber(thirdLineIncomeId: number): Promise<string> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Get centre code from third line income asset
+  const [asset] = await db
+    .select({
+      centreCode: shoppingCentres.centreCode,
+    })
+    .from(thirdLineIncome)
+    .innerJoin(shoppingCentres, eq(thirdLineIncome.centreId, shoppingCentres.id))
+    .where(eq(thirdLineIncome.id, thirdLineIncomeId));
+  
+  const centreCode = asset?.centreCode || "3L";
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  
+  return `3L-${centreCode}-${timestamp}-${random}`;
+}
+
+// ============ Availability Calendar Data ============
+
+export async function getVacantShopAvailabilityCalendar(centreId: number, startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get all active vacant shops for this centre
+  const shops = await getActiveVacantShopsByCentre(centreId);
+  
+  // Get all bookings in the date range
+  const shopIds = shops.map(s => s.id);
+  if (shopIds.length === 0) return [];
+  
+  const bookings = await db
+    .select({
+      vacantShopId: vacantShopBookings.vacantShopId,
+      startDate: vacantShopBookings.startDate,
+      endDate: vacantShopBookings.endDate,
+      status: vacantShopBookings.status,
+    })
+    .from(vacantShopBookings)
+    .where(and(
+      sql`${vacantShopBookings.vacantShopId} IN (${sql.join(shopIds, sql`, `)})`,
+      lte(vacantShopBookings.startDate, endDate),
+      gte(vacantShopBookings.endDate, startDate),
+      or(
+        eq(vacantShopBookings.status, "confirmed"),
+        eq(vacantShopBookings.status, "pending")
+      )
+    ));
+  
+  return shops.map(shop => ({
+    ...shop,
+    assetType: "vacant_shops" as const,
+    bookings: bookings.filter(b => b.vacantShopId === shop.id),
+  }));
+}
+
+export async function getThirdLineAvailabilityCalendar(centreId: number, startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get all active third line income assets for this centre
+  const assets = await getActiveThirdLineIncomeByCentre(centreId);
+  
+  // Get all bookings in the date range
+  const assetIds = assets.map(a => a.id);
+  if (assetIds.length === 0) return [];
+  
+  const bookings = await db
+    .select({
+      thirdLineIncomeId: thirdLineBookings.thirdLineIncomeId,
+      startDate: thirdLineBookings.startDate,
+      endDate: thirdLineBookings.endDate,
+      status: thirdLineBookings.status,
+    })
+    .from(thirdLineBookings)
+    .where(and(
+      sql`${thirdLineBookings.thirdLineIncomeId} IN (${sql.join(assetIds, sql`, `)})`,
+      lte(thirdLineBookings.startDate, endDate),
+      gte(thirdLineBookings.endDate, startDate),
+      or(
+        eq(thirdLineBookings.status, "confirmed"),
+        eq(thirdLineBookings.status, "pending")
+      )
+    ));
+  
+  return assets.map(asset => ({
+    ...asset,
+    assetType: "third_line" as const,
+    bookings: bookings.filter(b => b.thirdLineIncomeId === asset.id),
+  }));
 }

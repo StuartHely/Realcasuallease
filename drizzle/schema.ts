@@ -532,3 +532,82 @@ export type FyPercentages = typeof fyPercentages.$inferSelect;
 export type InsertFyPercentages = typeof fyPercentages.$inferInsert;
 export type CentreBudget = typeof centreBudgets.$inferSelect;
 export type InsertCentreBudget = typeof centreBudgets.$inferInsert;
+
+/**
+ * Vacant Shop Bookings - Bookings for short-term vacant shop tenancies
+ */
+export const vacantShopBookings = mysqlTable("vacant_shop_bookings", {
+  id: int("id").autoincrement().primaryKey(),
+  bookingNumber: varchar("bookingNumber", { length: 50 }).notNull().unique(),
+  vacantShopId: int("vacantShopId").notNull().references(() => vacantShops.id, { onDelete: "cascade" }),
+  customerId: int("customerId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  startDate: timestamp("startDate").notNull(),
+  endDate: timestamp("endDate").notNull(),
+  totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull(),
+  gstAmount: decimal("gstAmount", { precision: 12, scale: 2 }).notNull(),
+  gstPercentage: decimal("gstPercentage", { precision: 5, scale: 2 }).notNull(),
+  ownerAmount: decimal("ownerAmount", { precision: 12, scale: 2 }).notNull(),
+  platformFee: decimal("platformFee", { precision: 12, scale: 2 }).notNull(),
+  status: mysqlEnum("status", ["pending", "confirmed", "cancelled", "completed", "rejected"]).default("pending").notNull(),
+  requiresApproval: boolean("requiresApproval").default(false).notNull(),
+  approvedBy: int("approvedBy").references(() => users.id),
+  approvedAt: timestamp("approvedAt"),
+  rejectionReason: text("rejectionReason"),
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
+  paymentMethod: mysqlEnum("paymentMethod", ["stripe", "invoice"]).default("stripe").notNull(),
+  paidAt: timestamp("paidAt"),
+  paymentRecordedBy: int("paymentRecordedBy").references(() => users.id),
+  paymentDueDate: timestamp("paymentDueDate"),
+  customerEmail: varchar("customerEmail", { length: 320 }),
+  customerNotes: text("customerNotes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  vacantShopIdIdx: index("vsb_vacantShopId_idx").on(table.vacantShopId),
+  customerIdIdx: index("vsb_customerId_idx").on(table.customerId),
+  startDateIdx: index("vsb_startDate_idx").on(table.startDate),
+  statusIdx: index("vsb_status_idx").on(table.status),
+  dateRangeIdx: index("vsb_date_range_idx").on(table.vacantShopId, table.startDate, table.endDate),
+}));
+
+/**
+ * Third Line Income Bookings - Bookings for non-tenancy assets
+ */
+export const thirdLineBookings = mysqlTable("third_line_bookings", {
+  id: int("id").autoincrement().primaryKey(),
+  bookingNumber: varchar("bookingNumber", { length: 50 }).notNull().unique(),
+  thirdLineIncomeId: int("thirdLineIncomeId").notNull().references(() => thirdLineIncome.id, { onDelete: "cascade" }),
+  customerId: int("customerId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  startDate: timestamp("startDate").notNull(),
+  endDate: timestamp("endDate").notNull(),
+  totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull(),
+  gstAmount: decimal("gstAmount", { precision: 12, scale: 2 }).notNull(),
+  gstPercentage: decimal("gstPercentage", { precision: 5, scale: 2 }).notNull(),
+  ownerAmount: decimal("ownerAmount", { precision: 12, scale: 2 }).notNull(),
+  platformFee: decimal("platformFee", { precision: 12, scale: 2 }).notNull(),
+  status: mysqlEnum("status", ["pending", "confirmed", "cancelled", "completed", "rejected"]).default("pending").notNull(),
+  requiresApproval: boolean("requiresApproval").default(false).notNull(),
+  approvedBy: int("approvedBy").references(() => users.id),
+  approvedAt: timestamp("approvedAt"),
+  rejectionReason: text("rejectionReason"),
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
+  paymentMethod: mysqlEnum("paymentMethod", ["stripe", "invoice"]).default("stripe").notNull(),
+  paidAt: timestamp("paidAt"),
+  paymentRecordedBy: int("paymentRecordedBy").references(() => users.id),
+  paymentDueDate: timestamp("paymentDueDate"),
+  customerEmail: varchar("customerEmail", { length: 320 }),
+  customerNotes: text("customerNotes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  thirdLineIncomeIdIdx: index("tlb_thirdLineIncomeId_idx").on(table.thirdLineIncomeId),
+  customerIdIdx: index("tlb_customerId_idx").on(table.customerId),
+  startDateIdx: index("tlb_startDate_idx").on(table.startDate),
+  statusIdx: index("tlb_status_idx").on(table.status),
+  dateRangeIdx: index("tlb_date_range_idx").on(table.thirdLineIncomeId, table.startDate, table.endDate),
+}));
+
+export type VacantShopBooking = typeof vacantShopBookings.$inferSelect;
+export type InsertVacantShopBooking = typeof vacantShopBookings.$inferInsert;
+export type ThirdLineBooking = typeof thirdLineBookings.$inferSelect;
+export type InsertThirdLineBooking = typeof thirdLineBookings.$inferInsert;

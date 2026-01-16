@@ -2685,6 +2685,254 @@ export const appRouter = router({
         return await assetDb.getAllAssetsByCentre(input.centreId, input.assetType || "all");
       }),
   }),
+
+  // Vacant Shop Bookings
+  vacantShopBookings: router({
+    getByShop: publicProcedure
+      .input(z.object({ vacantShopId: z.number() }))
+      .query(async ({ input }) => {
+        return await assetDb.getVacantShopBookingsByShop(input.vacantShopId);
+      }),
+    
+    getByCentre: publicProcedure
+      .input(z.object({ 
+        centreId: z.number(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await assetDb.getVacantShopBookingsByCentre(input.centreId, input.startDate, input.endDate);
+      }),
+    
+    checkAvailability: publicProcedure
+      .input(z.object({
+        vacantShopId: z.number(),
+        startDate: z.date(),
+        endDate: z.date(),
+        excludeBookingId: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        const isAvailable = await assetDb.checkVacantShopAvailability(
+          input.vacantShopId,
+          input.startDate,
+          input.endDate,
+          input.excludeBookingId
+        );
+        return { available: isAvailable };
+      }),
+    
+    getAvailabilityCalendar: publicProcedure
+      .input(z.object({
+        centreId: z.number(),
+        startDate: z.date(),
+        endDate: z.date(),
+      }))
+      .query(async ({ input }) => {
+        return await assetDb.getVacantShopAvailabilityCalendar(
+          input.centreId,
+          input.startDate,
+          input.endDate
+        );
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        vacantShopId: z.number(),
+        startDate: z.date(),
+        endDate: z.date(),
+        totalAmount: z.string(),
+        gstAmount: z.string(),
+        gstPercentage: z.string(),
+        ownerAmount: z.string(),
+        platformFee: z.string(),
+        customerNotes: z.string().optional(),
+        paymentMethod: z.enum(["stripe", "invoice"]).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Check availability first
+        const isAvailable = await assetDb.checkVacantShopAvailability(
+          input.vacantShopId,
+          input.startDate,
+          input.endDate
+        );
+        
+        if (!isAvailable) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "This vacant shop is not available for the selected dates",
+          });
+        }
+        
+        // Generate booking number
+        const bookingNumber = await assetDb.generateVacantShopBookingNumber(input.vacantShopId);
+        
+        const id = await assetDb.createVacantShopBooking({
+          bookingNumber,
+          vacantShopId: input.vacantShopId,
+          customerId: ctx.user.id,
+          startDate: input.startDate,
+          endDate: input.endDate,
+          totalAmount: input.totalAmount,
+          gstAmount: input.gstAmount,
+          gstPercentage: input.gstPercentage,
+          ownerAmount: input.ownerAmount,
+          platformFee: input.platformFee,
+          customerNotes: input.customerNotes,
+          customerEmail: ctx.user.email || undefined,
+          paymentMethod: input.paymentMethod || "stripe",
+          status: "pending",
+          requiresApproval: false,
+        });
+        
+        return { id, bookingNumber };
+      }),
+    
+    updateStatus: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "confirmed", "cancelled", "completed", "rejected"]),
+        rejectionReason: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const updateData: any = { status: input.status };
+        
+        if (input.status === "confirmed") {
+          updateData.approvedBy = ctx.user.id;
+          updateData.approvedAt = new Date();
+        }
+        
+        if (input.status === "rejected" && input.rejectionReason) {
+          updateData.rejectionReason = input.rejectionReason;
+        }
+        
+        await assetDb.updateVacantShopBooking(input.id, updateData);
+        return { success: true };
+      }),
+  }),
+
+  // Third Line Bookings
+  thirdLineBookings: router({
+    getByAsset: publicProcedure
+      .input(z.object({ thirdLineIncomeId: z.number() }))
+      .query(async ({ input }) => {
+        return await assetDb.getThirdLineBookingsByAsset(input.thirdLineIncomeId);
+      }),
+    
+    getByCentre: publicProcedure
+      .input(z.object({ 
+        centreId: z.number(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await assetDb.getThirdLineBookingsByCentre(input.centreId, input.startDate, input.endDate);
+      }),
+    
+    checkAvailability: publicProcedure
+      .input(z.object({
+        thirdLineIncomeId: z.number(),
+        startDate: z.date(),
+        endDate: z.date(),
+        excludeBookingId: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        const isAvailable = await assetDb.checkThirdLineAvailability(
+          input.thirdLineIncomeId,
+          input.startDate,
+          input.endDate,
+          input.excludeBookingId
+        );
+        return { available: isAvailable };
+      }),
+    
+    getAvailabilityCalendar: publicProcedure
+      .input(z.object({
+        centreId: z.number(),
+        startDate: z.date(),
+        endDate: z.date(),
+      }))
+      .query(async ({ input }) => {
+        return await assetDb.getThirdLineAvailabilityCalendar(
+          input.centreId,
+          input.startDate,
+          input.endDate
+        );
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        thirdLineIncomeId: z.number(),
+        startDate: z.date(),
+        endDate: z.date(),
+        totalAmount: z.string(),
+        gstAmount: z.string(),
+        gstPercentage: z.string(),
+        ownerAmount: z.string(),
+        platformFee: z.string(),
+        customerNotes: z.string().optional(),
+        paymentMethod: z.enum(["stripe", "invoice"]).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Check availability first
+        const isAvailable = await assetDb.checkThirdLineAvailability(
+          input.thirdLineIncomeId,
+          input.startDate,
+          input.endDate
+        );
+        
+        if (!isAvailable) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "This third line asset is not available for the selected dates",
+          });
+        }
+        
+        // Generate booking number
+        const bookingNumber = await assetDb.generateThirdLineBookingNumber(input.thirdLineIncomeId);
+        
+        const id = await assetDb.createThirdLineBooking({
+          bookingNumber,
+          thirdLineIncomeId: input.thirdLineIncomeId,
+          customerId: ctx.user.id,
+          startDate: input.startDate,
+          endDate: input.endDate,
+          totalAmount: input.totalAmount,
+          gstAmount: input.gstAmount,
+          gstPercentage: input.gstPercentage,
+          ownerAmount: input.ownerAmount,
+          platformFee: input.platformFee,
+          customerNotes: input.customerNotes,
+          customerEmail: ctx.user.email || undefined,
+          paymentMethod: input.paymentMethod || "stripe",
+          status: "pending",
+          requiresApproval: false,
+        });
+        
+        return { id, bookingNumber };
+      }),
+    
+    updateStatus: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "confirmed", "cancelled", "completed", "rejected"]),
+        rejectionReason: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const updateData: any = { status: input.status };
+        
+        if (input.status === "confirmed") {
+          updateData.approvedBy = ctx.user.id;
+          updateData.approvedAt = new Date();
+        }
+        
+        if (input.status === "rejected" && input.rejectionReason) {
+          updateData.rejectionReason = input.rejectionReason;
+        }
+        
+        await assetDb.updateThirdLineBooking(input.id, updateData);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

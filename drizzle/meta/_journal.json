@@ -211,6 +211,13 @@
       "when": 1768532900092,
       "tag": "0029_friendly_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1768540269162,
+      "tag": "0030_wild_agent_brand",
+      "breakpoints": true
     }
   ]
 }
