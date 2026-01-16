@@ -1988,3 +1988,14 @@
 - [x] Fix Month view to show full 30 days instead of 16 days (fixed scrollbar width calculation)
 - [x] Verify 2 Weeks view still shows 14 days correctly
 - [x] Test calendar scrolling works properly with 30 columns
+
+## Bug Fix - Month View Still Shows 16 Days (Jan 16, 2026)
+- [ ] Investigate why Month view still shows only 16 days after previous fix
+- [ ] Ensure 30 days are visible when Month is selected
+
+## Search Results Calendar Navigation Update (Jan 16, 2026)
+- [x] Remove Month button option (keep 14-day view only)
+- [x] Add "New Date" button between "Next Week" and "Today"
+- [x] Add calendar dropdown to New Date button for selecting new starting date
+- [x] Update search results to show 14 days from new selected date
+- [x] Test date picker functionality - URL and calendar update correctly

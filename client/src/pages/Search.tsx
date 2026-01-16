@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, parse, addDays, isSameDay, subDays } from "date-fns";
 import InteractiveMap from "@/components/InteractiveMap";
 import { NearbyCentresMap } from "@/components/NearbyCentresMap";
@@ -20,7 +22,7 @@ export default function Search() {
   const [focusedCell, setFocusedCell] = useState<{ siteIndex: number; dateIndex: number } | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [showOnlyAutoApproved, setShowOnlyAutoApproved] = useState(false);
-  const [calendarDays, setCalendarDays] = useState<number>(14); // 14 or 30 days
+  const calendarDays = 14; // Fixed 14-day view
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -407,23 +409,6 @@ export default function Search() {
                     {/* Calendar Navigation */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">View:</span>
-                        <Button
-                          variant={calendarDays === 14 ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setCalendarDays(14)}
-                        >
-                          2 Weeks
-                        </Button>
-                        <Button
-                          variant={calendarDays === 30 ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setCalendarDays(30)}
-                        >
-                          Month
-                        </Button>
-                      </div>
-                      <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -454,6 +439,32 @@ export default function Search() {
                         Next Week
                         <ChevronRight className="h-4 w-4" />
                       </Button>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1"
+                          >
+                            <Calendar className="h-4 w-4" />
+                            New Date
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={searchParams?.date}
+                            onSelect={(date) => {
+                              if (date && searchParams) {
+                                const params = new URLSearchParams(window.location.search);
+                                params.set('date', format(date, 'yyyy-MM-dd'));
+                                window.location.search = params.toString();
+                              }
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
                       <Button
                         variant="outline"
                         size="sm"
