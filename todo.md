@@ -2003,3 +2003,7 @@
 ## Date Range Indicator (Jan 16, 2026)
 - [x] Add date range indicator above calendar showing "Viewing [start date] - [end date]"
 - [x] Format dates in user-friendly format (e.g., "Jan 20 - Feb 2, 2026")
+
+## Disable Previous Week for Past Dates (Jan 16, 2026)
+- [x] Add logic to disable Previous Week button when it would navigate to past dates
+- [x] Grey out button and show tooltip explaining why it's disabled ("Cannot view past dates")

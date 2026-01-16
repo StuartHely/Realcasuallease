@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { format, parse, addDays, isSameDay, subDays } from "date-fns";
+import { format, parse, addDays, isSameDay, subDays, isBefore, startOfDay } from "date-fns";
 import InteractiveMap from "@/components/InteractiveMap";
 import { NearbyCentresMap } from "@/components/NearbyCentresMap";
 import { SearchSkeleton } from "@/components/SearchSkeleton";
@@ -417,21 +417,35 @@ export default function Search() {
                     {/* Calendar Navigation */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          if (!searchParams) return;
-                          const newDate = subDays(searchParams.date, 7);
-                          const params = new URLSearchParams(window.location.search);
-                          params.set('date', format(newDate, 'yyyy-MM-dd'));
-                          window.location.search = params.toString();
-                        }}
-                        className="flex items-center gap-1"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        Previous Week
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  if (!searchParams) return;
+                                  const newDate = subDays(searchParams.date, 7);
+                                  const params = new URLSearchParams(window.location.search);
+                                  params.set('date', format(newDate, 'yyyy-MM-dd'));
+                                  window.location.search = params.toString();
+                                }}
+                                className="flex items-center gap-1"
+                                disabled={searchParams ? isBefore(subDays(searchParams.date, 7), startOfDay(new Date())) : false}
+                              >
+                                <ChevronLeft className="h-4 w-4" />
+                                Previous Week
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          {searchParams && isBefore(subDays(searchParams.date, 7), startOfDay(new Date())) && (
+                            <TooltipContent>
+                              <p>Cannot view past dates</p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                       <Button
                         variant="outline"
                         size="sm"
