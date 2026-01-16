@@ -297,113 +297,6 @@ export default function Search() {
 
         {data && data.centres.length > 0 && (
           <div className="space-y-8">
-            {/* Category Filter */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  Filter by Accepted Business Category
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>Sites may accept all categories or only specific ones. Use this filter to find sites that welcome your business type for instant approval.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </CardTitle>
-                <CardDescription>
-                  Show only sites that accept your business type
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-4 items-center">
-                  <Select
-                    value={selectedCategoryId?.toString() || "all"}
-                    onValueChange={(value) => {
-                      const newCategoryId = value === "all" ? null : parseInt(value);
-                      setSelectedCategoryId(newCategoryId);
-                      
-                      // Update URL
-                      const params = new URLSearchParams(window.location.search);
-                      if (newCategoryId) {
-                        params.set("category", newCategoryId.toString());
-                      } else {
-                        params.delete("category");
-                      }
-                      window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
-                    }}
-                  >
-                    <SelectTrigger className="w-[300px]">
-                      <SelectValue placeholder="All categories" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All categories</SelectItem>
-                      {allCategories?.sort((a, b) => a.name.localeCompare(b.name)).map((category) => (
-                        <SelectItem key={category.id} value={category.id.toString()}>
-                          {category.name} {category.isFree && "(Free)"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedCategoryId && (
-                    <Button variant="outline" size="sm" onClick={() => {
-                      setSelectedCategoryId(null);
-                      const params = new URLSearchParams(window.location.search);
-                      params.delete("category");
-                      window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
-                    }}>
-                      Clear Filter
-                    </Button>
-                  )}
-                </div>
-                {selectedCategoryId && (
-                  <div className="flex items-center space-x-2 mt-4">
-                    <Checkbox
-                      id="autoApproved"
-                      checked={showOnlyAutoApproved}
-                      onCheckedChange={(checked) => {
-                        setShowOnlyAutoApproved(checked as boolean);
-                        const params = new URLSearchParams(window.location.search);
-                        if (checked) {
-                          params.set("autoApproved", "true");
-                        } else {
-                          params.delete("autoApproved");
-                        }
-                        window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
-                      }}
-                    />
-                    <label
-                      htmlFor="autoApproved"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                    >
-                      Show only sites with instant approval for this category
-                    </label>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            {/* Interactive Map - Show if centre has a map */}
-            {data.centres[0]?.mapImageUrl && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Centre Floor Plan</CardTitle>
-                  <CardDescription>
-                    Click on any site marker to view details and book
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <InteractiveMap
-                    centreId={data.centres[0].id}
-                    mapUrl={data.centres[0].mapImageUrl}
-                    sites={data.sites}
-                    centreName={data.centres[0].name}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
             {/* Calendar Heatmap */}
             {data.centres.map((centre) => {
               let centreSites = data.sites.filter((s) => s.centreId === centre.id);
@@ -841,6 +734,26 @@ export default function Search() {
                 </Card>
               );
             })}
+            
+            {/* Centre Floor Plan Map - Show below sites listing */}
+            {data.centres[0]?.mapImageUrl && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Centre Floor Plan</CardTitle>
+                  <CardDescription>
+                    Click on any site marker to view details and book
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <InteractiveMap
+                    centreId={data.centres[0].id}
+                    mapUrl={data.centres[0].mapImageUrl}
+                    sites={data.sites}
+                    centreName={data.centres[0].name}
+                  />
+                </CardContent>
+              </Card>
+            )}
             
             {/* Nearby Centres Map */}
             {data.centres.length > 0 && data.centres[0].latitude && data.centres[0].longitude && (

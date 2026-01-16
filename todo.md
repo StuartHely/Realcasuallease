@@ -1953,3 +1953,8 @@
 - [x] Update backend routers to remove City from input schemas
 - [x] Update database helpers that reference City field
 - [x] Test centre creation and editing without City field
+
+## Search Results Page Updates (Jan 16, 2026)
+- [x] Remove Filter by Accepted Business Category section
+- [x] Add centre map below available sites listing (floor plan map like Centre Detail page)
+- [x] Test search results page with map display
