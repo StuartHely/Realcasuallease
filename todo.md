@@ -1967,3 +1967,10 @@
 - [x] Fix Eastgate map not showing on Search Results page - Updated smart search to return floor levels
 - [x] Admin centres page was working correctly (57+ centres showing) - confirmed no issue
 - [x] Updated Search.tsx to use floor levels for map display instead of centre mapImageUrl
+
+## Site-Wide Login Requirement (Jan 16, 2026)
+- [x] Add authentication check to App.tsx to protect all routes (AuthGuard component)
+- [x] Create dedicated login page with Manus OAuth (/login route)
+- [x] Redirect unauthenticated users to login page
+- [x] Preserve intended destination URL for post-login redirect (sessionStorage returnUrl)
+- [x] Test authentication flow works correctly

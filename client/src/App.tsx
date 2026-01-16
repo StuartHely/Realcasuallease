@@ -3,7 +3,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import AuthGuard from "./components/AuthGuard";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Search from "./pages/Search";
 import Centres from "./pages/Centres";
@@ -40,6 +42,10 @@ import OwnerCentres from "./pages/OwnerCentres";
 function Router() {
   return (
     <Switch>
+      {/* Login page - accessible without authentication */}
+      <Route path="/login" component={Login} />
+      
+      {/* All other routes require authentication */}
       <Route path="/" component={Home} />
       <Route path="/search" component={Search} />
       <Route path="/centres" component={Centres} />
@@ -49,9 +55,9 @@ function Router() {
       <Route path="/admin/fy-budgets" component={FYBudgetManagement} />
       <Route path="/admin/centres" component={AdminCentres} />
       <Route path="/admin/sites" component={AdminSites} />
-           <Route path="/admin/maps" component={Maps} />
-          <Route path="/admin/system-config" component={SystemConfig} />
-          <Route path="/admin/image-analytics" component={ImageAnalytics} />
+      <Route path="/admin/maps" component={Maps} />
+      <Route path="/admin/system-config" component={SystemConfig} />
+      <Route path="/admin/image-analytics" component={ImageAnalytics} />
       <Route path="/admin/search-analytics" component={SearchAnalytics} />
       <Route path="/admin/site-assignment" component={AdminSiteAssignment} />
       <Route path="/admin/equipment" component={Equipment} />
@@ -59,8 +65,8 @@ function Router() {
       <Route path="/admin/usage-categories" component={UsageCategories} />
       <Route path="/admin/centre-codes" component={CentreCodes} />
       <Route path="/admin/pending-approvals" component={PendingApprovals} />
-        <Route path="/owner/approvals" component={OwnerApprovals} />
-        <Route path="/owner/centres" component={OwnerCentres} />
+      <Route path="/owner/approvals" component={OwnerApprovals} />
+      <Route path="/owner/centres" component={OwnerCentres} />
       <Route path="/admin/bookings" component={AdminBookings} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/payments" component={Payments} />
@@ -84,7 +90,9 @@ function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <AuthGuard>
+            <Router />
+          </AuthGuard>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
