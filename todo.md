@@ -1958,3 +1958,12 @@
 - [x] Remove Filter by Accepted Business Category section
 - [x] Add centre map below available sites listing (floor plan map like Centre Detail page)
 - [x] Test search results page with map display
+
+## Bug Fixes (Jan 16, 2026)
+- [ ] Fix Eastgate map not showing on Search Results page (map is already uploaded)
+- [ ] Fix Admin centres page showing no centres
+
+## Bug Fixes (Jan 16, 2026)
+- [x] Fix Eastgate map not showing on Search Results page - Updated smart search to return floor levels
+- [x] Admin centres page was working correctly (57+ centres showing) - confirmed no issue
+- [x] Updated Search.tsx to use floor levels for map display instead of centre mapImageUrl

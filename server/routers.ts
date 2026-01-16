@@ -948,7 +948,13 @@ export const appRouter = router({
           searchDate: input.date,
         });
         
-        return { centres, sites: allSites, availability, matchedSiteIds, sizeNotAvailable, closestMatch, siteCategories };
+        // Fetch floor levels for the first centre to display floor plan map
+        let floorLevels: any[] = [];
+        if (centres.length > 0) {
+          floorLevels = await db.getFloorLevelsByCentre(centres[0].id);
+        }
+        
+        return { centres, sites: allSites, availability, matchedSiteIds, sizeNotAvailable, closestMatch, siteCategories, floorLevels };
       }),
     byNameAndDate: publicProcedure
       .input(z.object({

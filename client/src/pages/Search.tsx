@@ -736,7 +736,7 @@ export default function Search() {
             })}
             
             {/* Centre Floor Plan Map - Show below sites listing */}
-            {data.centres[0]?.mapImageUrl && (
+            {data.floorLevels && data.floorLevels.length > 0 && data.floorLevels.some((fl: any) => fl.mapImageUrl) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Centre Floor Plan</CardTitle>
@@ -747,9 +747,10 @@ export default function Search() {
                 <CardContent>
                   <InteractiveMap
                     centreId={data.centres[0].id}
-                    mapUrl={data.centres[0].mapImageUrl}
+                    mapUrl={data.floorLevels.find((fl: any) => fl.mapImageUrl)?.mapImageUrl || ''}
                     sites={data.sites}
                     centreName={data.centres[0].name}
+                    floorLevels={data.floorLevels}
                   />
                 </CardContent>
               </Card>
