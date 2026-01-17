@@ -2232,3 +2232,19 @@
 - [x] Verified casual leasing searches still work without asset type keywords
 - [x] Verified asset type tabs are displayed correctly
 - [x] Verified search results display correct asset type information
+
+
+## Booking Approval Workflow for VS/3rdL (Jan 17, 2026)
+- [x] Add approval_status field to vacant_shop_bookings and third_line_bookings tables (pending/approved/rejected)
+- [x] Add admin approval/rejection procedures to routers.ts
+- [x] Create admin dashboard page for managing VS/3rdL enquiries at /admin/enquiries
+- [x] Display pending enquiries with user details and asset information
+- [x] Add approve/reject buttons with optional rejection reason
+- [x] Send confirmation email when enquiry is approved
+- [x] Send rejection email with reason when enquiry is rejected
+- [x] Update vacantShopBookings.updateStatus to send emails on approval/rejection
+- [x] Update thirdLineBookings.updateStatus to send emails on approval/rejection
+- [x] Create AdminEnquiries component with tabbed interface
+- [x] Add route /admin/enquiries to App.tsx
+- [x] Test approval workflow - Dashboard loads and displays correctly
+- [x] Verified email functions are integrated into approval/rejection procedures

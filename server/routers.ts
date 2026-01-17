@@ -2849,6 +2849,11 @@ export const appRouter = router({
         rejectionReason: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        const booking = await assetDb.getVacantShopBookingById(input.id);
+        if (!booking) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
+        }
+        
         const updateData: any = { status: input.status };
         
         if (input.status === "confirmed") {
@@ -2861,6 +2866,41 @@ export const appRouter = router({
         }
         
         await assetDb.updateVacantShopBooking(input.id, updateData);
+        
+        // Send confirmation email
+        if (input.status === "confirmed" && booking.customerEmail) {
+          const shop = await assetDb.getVacantShopById(booking.vacantShopId);
+          const centre = await db.getShoppingCentreById(shop?.centreId || 0);
+          const { sendVSThirdLineConfirmationEmail } = await import("./_core/bookingNotifications");
+          await sendVSThirdLineConfirmationEmail(
+            "vacant_shop",
+            shop?.shopNumber || "Vacant Shop",
+            booking.customerEmail,
+            booking.customerEmail,
+            centre?.name || "Shopping Centre",
+            booking.startDate,
+            booking.endDate,
+            booking.totalAmount
+          );
+        }
+        
+        // Send rejection email
+        if (input.status === "rejected" && booking.customerEmail && input.rejectionReason) {
+          const shop = await assetDb.getVacantShopById(booking.vacantShopId);
+          const centre = await db.getShoppingCentreById(shop?.centreId || 0);
+          const { sendVSThirdLineRejectionEmail } = await import("./_core/bookingNotifications");
+          await sendVSThirdLineRejectionEmail(
+            "vacant_shop",
+            shop?.shopNumber || "Vacant Shop",
+            booking.customerEmail,
+            booking.customerEmail,
+            centre?.name || "Shopping Centre",
+            booking.startDate,
+            booking.endDate,
+            input.rejectionReason
+          );
+        }
+        
         return { success: true };
       }),
   }),
@@ -3001,6 +3041,11 @@ export const appRouter = router({
         rejectionReason: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        const booking = await assetDb.getThirdLineBookingById(input.id);
+        if (!booking) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
+        }
+        
         const updateData: any = { status: input.status };
         
         if (input.status === "confirmed") {
@@ -3013,6 +3058,43 @@ export const appRouter = router({
         }
         
         await assetDb.updateThirdLineBooking(input.id, updateData);
+        
+        // Send confirmation email
+        if (input.status === "confirmed" && booking.customerEmail) {
+          const asset = await assetDb.getThirdLineIncomeById(booking.thirdLineIncomeId);
+          const centre = await db.getShoppingCentreById(asset?.centreId || 0);
+          const { sendVSThirdLineConfirmationEmail } = await import("./_core/bookingNotifications");
+          await sendVSThirdLineConfirmationEmail(
+            "third_line",
+            asset?.assetNumber || "Third Line Asset",
+            booking.customerEmail,
+            booking.customerEmail,
+            centre?.name || "Shopping Centre",
+            booking.startDate,
+            booking.endDate,
+            booking.totalAmount,
+            asset?.categoryName || undefined
+          );
+        }
+        
+        // Send rejection email
+        if (input.status === "rejected" && booking.customerEmail && input.rejectionReason) {
+          const asset = await assetDb.getThirdLineIncomeById(booking.thirdLineIncomeId);
+          const centre = await db.getShoppingCentreById(asset?.centreId || 0);
+          const { sendVSThirdLineRejectionEmail } = await import("./_core/bookingNotifications");
+          await sendVSThirdLineRejectionEmail(
+            "third_line",
+            asset?.assetNumber || "Third Line Asset",
+            booking.customerEmail,
+            booking.customerEmail,
+            centre?.name || "Shopping Centre",
+            booking.startDate,
+            booking.endDate,
+            input.rejectionReason,
+            asset?.categoryName || undefined
+          );
+        }
+        
         return { success: true };
       }),
   }),
