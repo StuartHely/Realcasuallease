@@ -7,6 +7,8 @@ export interface ParsedQuery {
   minSizeM2?: number;
   minTables?: number;
   productCategory?: string;
+  assetType?: 'casual' | 'vacant_shop' | 'third_line'; // Asset type filter
+  thirdLineCategory?: string; // Third line category (ATM, Vending Machine, etc.)
   originalQuery: string;
   parsedDate?: string; // ISO format YYYY-MM-DD
   dateRangeEnd?: string; // ISO format YYYY-MM-DD for date ranges
@@ -48,6 +50,53 @@ function parseTableRequirement(query: string): number | undefined {
   if (tableMatch) {
     return parseInt(tableMatch[1]);
   }
+  return undefined;
+}
+
+/**
+ * Extract asset type from query
+ * Supports: "Vacant Shop", "VS", "Vending Machine", "ATM", "Third Line", "3rdL", etc.
+ */
+function extractAssetType(query: string): 'casual' | 'vacant_shop' | 'third_line' | undefined {
+  const lowerQuery = query.toLowerCase();
+  
+  // Vacant Shop patterns
+  if (/\b(vacant\s+shop|vs|vacant)\b/i.test(lowerQuery)) {
+    return 'vacant_shop';
+  }
+  
+  // Third Line Income patterns
+  if (/\b(third\s+line|3rd\s+line|3rdl|vending|atm|car\s+wash|digital\s+signage|installation)\b/i.test(lowerQuery)) {
+    return 'third_line';
+  }
+  
+  // Casual Leasing patterns (explicit)
+  if (/\b(casual\s+leasing|casual|pop\s*-?\s*up|popup|pop-up)\b/i.test(lowerQuery)) {
+    return 'casual';
+  }
+  
+  return undefined;
+}
+
+/**
+ * Extract third line category from query
+ * Common categories: ATM, Vending Machine, Car Wash, Digital Signage, etc.
+ */
+function extractThirdLineCategory(query: string): string | undefined {
+  const lowerQuery = query.toLowerCase();
+  
+  const thirdLineCategories = [
+    'atm', 'vending machine', 'vending', 'car wash', 'digital signage', 'signage',
+    'installation', 'kiosk', 'phone booth', 'mailbox', 'bike rack', 'seating',
+    'water fountain', 'bin', 'trash', 'recycling', 'charging station', 'charger'
+  ];
+  
+  for (const category of thirdLineCategories) {
+    if (lowerQuery.includes(category)) {
+      return category;
+    }
+  }
+  
   return undefined;
 }
 
@@ -106,11 +155,14 @@ function extractProductCategory(query: string): string | undefined {
 }
 
 /**
- * Remove size, table, and category requirements from query to extract centre name
+ * Remove size, table, category, and asset type requirements from query to extract centre name
  */
 function extractCentreName(query: string): string {
   let centreName = query;
 
+  // Remove asset type patterns
+  centreName = centreName.replace(/\b(vacant\s+shop|vs|vending\s+machine|vending|atm|car\s+wash|digital\s+signage|third\s+line|3rd\s+line|3rdl|casual\s+leasing|casual|pop\s*-?\s*up|popup|pop-up|installation|kiosk|phone\s+booth|mailbox|bike\s+rack|seating|water\s+fountain|bin|trash|recycling|charging\s+station|charger)\b/gi, '');
+  
   // Remove dimension patterns (handles "3x4m", "3 x 4m", "3m x 4m", "3x3", "3 by 4", "3by4")
   centreName = centreName.replace(/\d+\.?\d*\s*m?\s*(?:[xX×]|by)\s*\d+\.?\d*\s*m?/gi, '');
   
@@ -391,6 +443,8 @@ export function parseSearchQuery(query: string): ParsedQuery {
     minSizeM2: parseSizeRequirement(cleanedQuery),
     minTables: parseTableRequirement(cleanedQuery),
     productCategory: extractProductCategory(cleanedQuery),
+    assetType: extractAssetType(cleanedQuery),
+    thirdLineCategory: extractThirdLineCategory(cleanedQuery),
     originalQuery: trimmedQuery,
     parsedDate,
     dateRangeEnd: endDate,

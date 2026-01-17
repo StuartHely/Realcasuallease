@@ -16,6 +16,7 @@ export default function ThirdLineDetail() {
   const [, params] = useRoute("/third-line/:id");
   const [, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const [bookedDates, setBookedDates] = useState<{ startDate: Date; endDate: Date }[]>([]);
   
   const assetId = params?.id ? parseInt(params.id) : 0;
   
@@ -27,6 +28,24 @@ export default function ThirdLineDetail() {
     { id: asset?.centreId || 0 },
     { enabled: !!asset?.centreId }
   );
+  
+  // Fetch booked dates for this asset
+  const { data: bookings } = trpc.thirdLineBookings.getByAsset.useQuery(
+    { thirdLineIncomeId: assetId },
+    { enabled: assetId > 0 }
+  );
+  
+  useEffect(() => {
+    if (bookings) {
+      const booked = bookings
+        .filter((b: any) => b.status === 'confirmed' || b.status === 'pending')
+        .map((b: any) => ({
+          startDate: new Date(b.startDate),
+          endDate: new Date(b.endDate)
+        }));
+      setBookedDates(booked);
+    }
+  }, [bookings]);
   // Category info is embedded in the asset data, no need for separate query
 
   const [startDate, setStartDate] = useState("");
@@ -34,6 +53,19 @@ export default function ThirdLineDetail() {
   const [enquiryMessage, setEnquiryMessage] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  
+  // Check if a date is booked
+  const isDateBooked = (date: Date): boolean => {
+    return bookedDates.some(booking => {
+      const checkDate = new Date(date);
+      checkDate.setHours(0, 0, 0, 0);
+      const bookStart = new Date(booking.startDate);
+      bookStart.setHours(0, 0, 0, 0);
+      const bookEnd = new Date(booking.endDate);
+      bookEnd.setHours(0, 0, 0, 0);
+      return checkDate >= bookStart && checkDate <= bookEnd;
+    });
+  };
 
   // Get all available images
   const images = [
@@ -329,6 +361,20 @@ export default function ThirdLineDetail() {
 
                 {isAuthenticated && (
                   <>
+                    <div className="bg-purple-50 p-3 rounded-lg mb-4">
+                      <p className="text-sm font-semibold text-purple-900 mb-2">Availability Status</p>
+                      <div className="flex gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-green-500 rounded"></div>
+                          <span>Available</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-red-500 rounded"></div>
+                          <span>Booked</span>
+                        </div>
+                      </div>
+                    </div>
+                    
                     <div>
                       <Label htmlFor="startDate">Start Date</Label>
                       <Input
@@ -337,6 +383,9 @@ export default function ThirdLineDetail() {
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
                       />
+                      {startDate && isDateBooked(new Date(startDate)) && (
+                        <p className="text-xs text-red-600 mt-1">⚠️ This date is booked</p>
+                      )}
                     </div>
 
                     <div>
@@ -347,6 +396,9 @@ export default function ThirdLineDetail() {
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                       />
+                      {endDate && isDateBooked(new Date(endDate)) && (
+                        <p className="text-xs text-red-600 mt-1">⚠️ This date is booked</p>
+                      )}
                     </div>
 
                     <div>

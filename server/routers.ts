@@ -2772,6 +2772,9 @@ export const appRouter = router({
         // Generate booking number
         const bookingNumber = await assetDb.generateVacantShopBookingNumber(input.vacantShopId);
         
+        // Get shop details for email
+        const shop = await assetDb.getVacantShopById(input.vacantShopId);
+        
         const id = await assetDb.createVacantShopBooking({
           bookingNumber,
           vacantShopId: input.vacantShopId,
@@ -2789,6 +2792,21 @@ export const appRouter = router({
           status: "pending",
           requiresApproval: false,
         });
+        
+        // Send enquiry email notification
+        if (shop && ctx.user.email) {
+          const { sendVacantShopEnquiryEmail } = await import("./_core/bookingNotifications");
+          const centre = await db.getShoppingCentreById(shop.centreId);
+          await sendVacantShopEnquiryEmail(
+            shop.shopNumber,
+            ctx.user.name || "Valued Customer",
+            ctx.user.email,
+            centre?.name || "Shopping Centre",
+            input.startDate,
+            input.endDate,
+            input.customerNotes || ""
+          );
+        }
         
         return { id, bookingNumber };
       }),
@@ -2904,6 +2922,9 @@ export const appRouter = router({
         // Generate booking number
         const bookingNumber = await assetDb.generateThirdLineBookingNumber(input.thirdLineIncomeId);
         
+        // Get asset details for email
+        const asset = await assetDb.getThirdLineIncomeById(input.thirdLineIncomeId);
+        
         const id = await assetDb.createThirdLineBooking({
           bookingNumber,
           thirdLineIncomeId: input.thirdLineIncomeId,
@@ -2921,6 +2942,23 @@ export const appRouter = router({
           status: "pending",
           requiresApproval: false,
         });
+        
+        // Send enquiry email notification
+        if (asset && ctx.user.email) {
+          const { sendThirdLineEnquiryEmail } = await import("./_core/bookingNotifications");
+          const centre = await db.getShoppingCentreById(asset.centreId);
+          const categoryName = asset.categoryName || "Third Line Asset";
+          await sendThirdLineEnquiryEmail(
+            asset.assetNumber,
+            categoryName,
+            ctx.user.name || "Valued Customer",
+            ctx.user.email,
+            centre?.name || "Shopping Centre",
+            input.startDate,
+            input.endDate,
+            input.customerNotes || ""
+          );
+        }
         
         return { id, bookingNumber };
       }),

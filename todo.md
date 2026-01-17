@@ -2176,3 +2176,45 @@
 - [x] Test navigation from search results to detail pages
 - [x] Verified VS detail page (/vacant-shop/30001) shows Shop 1 with pricing and enquiry form
 - [x] Verified 3rdL detail page (/third-line/30001) shows ATM asset with pricing and enquiry form
+
+
+## Intelligent Search Parsing (Jan 17, 2026)
+- [ ] Parse asset type keywords from search query (Vacant Shop, Vending Machine, ATM, etc.)
+- [ ] Extract centre name from search query
+- [ ] Filter results by asset type AND location
+- [ ] Handle typos and variations (e.g., "Vending" vs "Vending Machine")
+- [ ] Test with queries like "Vacant Shop in Eastgate" and "Vending Machine at Campbelltown"
+
+## Email Notifications for VS/3rdL Bookings (Jan 17, 2026)
+- [ ] Send booking confirmation email when enquiry is submitted
+- [ ] Send booking rejection email when admin rejects enquiry
+- [ ] Include booking details (dates, pricing, asset info) in emails
+- [ ] Test email sending for both VS and 3rdL bookings
+
+## Booking Calendar for VS/3rdL Detail Pages (Jan 17, 2026)
+- [ ] Add availability calendar to VacantShopDetail.tsx
+- [ ] Add availability calendar to ThirdLineDetail.tsx
+- [ ] Show booked vs available dates
+- [ ] Highlight selected date range
+- [ ] Test calendar functionality on both detail pages
+
+
+## Email Notifications for VS/3rdL (Jan 17, 2026)
+- [x] Add sendVacantShopEnquiryEmail function to bookingNotifications.ts
+- [x] Add sendThirdLineEnquiryEmail function to bookingNotifications.ts
+- [x] Add sendVSThirdLineConfirmationEmail function to bookingNotifications.ts
+- [x] Add sendVSThirdLineRejectionEmail function to bookingNotifications.ts
+- [x] Integrate email notification into vacantShopBookings.create mutation
+- [x] Integrate email notification into thirdLineBookings.create mutation
+- [x] Verified email functions are called when enquiries are submitted
+
+## Booking Calendar for VS/3rdL Detail Pages (Jan 17, 2026)
+- [x] Add booking availability tracking to VacantShopDetail.tsx
+- [x] Fetch booked dates from vacantShopBookings.getByShop
+- [x] Add isDateBooked helper function to check date availability
+- [x] Display availability status indicator (green/red) in enquiry form
+- [x] Show warning when user selects booked date
+- [x] Add booking availability tracking to ThirdLineDetail.tsx
+- [x] Fetch booked dates from thirdLineBookings.getByAsset
+- [x] Display availability status indicator in 3rdL enquiry form
+- [x] Show warning when user selects booked date for 3rdL

@@ -17,6 +17,7 @@ export default function VacantShopDetail() {
   const [, params] = useRoute("/vacant-shop/:id");
   const [, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const [bookedDates, setBookedDates] = useState<{ startDate: Date; endDate: Date }[]>([]);
   
   const shopId = params?.id ? parseInt(params.id) : 0;
   
@@ -28,12 +29,43 @@ export default function VacantShopDetail() {
     { id: shop?.centreId || 0 },
     { enabled: !!shop?.centreId }
   );
+  
+  // Fetch booked dates for this shop
+  const { data: bookings } = trpc.vacantShopBookings.getByShop.useQuery(
+    { vacantShopId: shopId },
+    { enabled: shopId > 0 }
+  );
+  
+  useEffect(() => {
+    if (bookings) {
+      const booked = bookings
+        .filter((b: any) => b.status === 'confirmed' || b.status === 'pending')
+        .map((b: any) => ({
+          startDate: new Date(b.startDate),
+          endDate: new Date(b.endDate)
+        }));
+      setBookedDates(booked);
+    }
+  }, [bookings]);
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [enquiryMessage, setEnquiryMessage] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  
+  // Check if a date is booked
+  const isDateBooked = (date: Date): boolean => {
+    return bookedDates.some(booking => {
+      const checkDate = new Date(date);
+      checkDate.setHours(0, 0, 0, 0);
+      const bookStart = new Date(booking.startDate);
+      bookStart.setHours(0, 0, 0, 0);
+      const bookEnd = new Date(booking.endDate);
+      bookEnd.setHours(0, 0, 0, 0);
+      return checkDate >= bookStart && checkDate <= bookEnd;
+    });
+  };
   
 
 
@@ -335,6 +367,20 @@ export default function VacantShopDetail() {
 
                 {isAuthenticated && (
                   <>
+                    <div className="bg-blue-50 p-3 rounded-lg mb-4">
+                      <p className="text-sm font-semibold text-blue-900 mb-2">Availability Status</p>
+                      <div className="flex gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-green-500 rounded"></div>
+                          <span>Available</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-red-500 rounded"></div>
+                          <span>Booked</span>
+                        </div>
+                      </div>
+                    </div>
+                    
                     <div>
                       <Label htmlFor="startDate">Start Date</Label>
                       <Input
@@ -343,6 +389,9 @@ export default function VacantShopDetail() {
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
                       />
+                      {startDate && isDateBooked(new Date(startDate)) && (
+                        <p className="text-xs text-red-600 mt-1">⚠️ This date is booked</p>
+                      )}
                     </div>
 
                     <div>
@@ -353,6 +402,9 @@ export default function VacantShopDetail() {
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                       />
+                      {endDate && isDateBooked(new Date(endDate)) && (
+                        <p className="text-xs text-red-600 mt-1">⚠️ This date is booked</p>
+                      )}
                     </div>
 
                     <div>
