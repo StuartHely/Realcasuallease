@@ -2159,4 +2159,5 @@
 ## Bug Fix - Duplicate React Key Error (Jan 17, 2026)
 - [x] Found duplicate keys in VS and 3rdL card rendering
 - [x] Fixed by using composite keys: `vs-${shop.id}` and `3rdl-${asset.id}`
+- [x] Fixed duplicate centres in search.smart router by deduplicating when extracting from siteResults
 - [x] Verified no console errors on search results page

@@ -763,16 +763,14 @@ export const appRouter = router({
         // If we found specific sites with category filter, extract their centres
         let centres: any[] = [];
         if (siteResults.length > 0 && parsedQuery.productCategory) {
-          const centreIds = Array.from(new Set(siteResults.map(r => r.site.centreId)));
-          const centresFromSites = await Promise.all(
-            centreIds.map(async (centreId) => {
-              const centre = siteResults.find(r => r.site.centreId === centreId)?.centre;
-              if (!centre) return null;
-              return centre;
-            })
-          );
+          const centresMap = new Map();
+          for (const result of siteResults) {
+            if (!centresMap.has(result.site.centreId) && result.centre) {
+              centresMap.set(result.site.centreId, result.centre);
+            }
+          }
           
-          centres = centresFromSites.filter((c): c is NonNullable<typeof c> => c !== null);
+          centres = Array.from(centresMap.values());
         } else {
           // Continue with regular search logic using the parsed centre name
           centres = await db.searchShoppingCentres(searchQuery);
