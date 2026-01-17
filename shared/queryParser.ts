@@ -8,6 +8,8 @@ export interface ParsedQuery {
   minTables?: number;
   productCategory?: string;
   originalQuery: string;
+  parsedDate?: string; // ISO format YYYY-MM-DD
+  dateRangeEnd?: string; // ISO format YYYY-MM-DD for date ranges
 }
 
 /**
@@ -168,17 +170,230 @@ function extractCentreName(query: string): string {
 }
 
 /**
+ * Parse natural language date from query
+ * Supports formats:
+ * - "6 June", "June 6", "6th June", "June 6th"
+ * - "6/6", "6/6/2026", "06/06/2026" (Australian DD/MM format)
+ * - "from 6 June", "on 6 June", "for 6 June"
+ * - "next Monday", "this Friday", "tomorrow", "today"
+ * - Date ranges: "6 June to 12 June", "6-12 June", "6 June - 12 June"
+ */
+function parseDateFromQuery(query: string): { date?: string; endDate?: string; cleanedQuery: string } {
+  const lowerQuery = query.toLowerCase();
+  let cleanedQuery = query;
+  let parsedDate: string | undefined;
+  let endDate: string | undefined;
+  
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  
+  const monthNames: Record<string, number> = {
+    'january': 0, 'jan': 0,
+    'february': 1, 'feb': 1,
+    'march': 2, 'mar': 2,
+    'april': 3, 'apr': 3,
+    'may': 4,
+    'june': 5, 'jun': 5,
+    'july': 6, 'jul': 6,
+    'august': 7, 'aug': 7,
+    'september': 8, 'sep': 8, 'sept': 8,
+    'october': 9, 'oct': 9,
+    'november': 10, 'nov': 10,
+    'december': 11, 'dec': 11,
+  };
+  
+  const dayNames: Record<string, number> = {
+    'sunday': 0, 'sun': 0,
+    'monday': 1, 'mon': 1,
+    'tuesday': 2, 'tue': 2, 'tues': 2,
+    'wednesday': 3, 'wed': 3,
+    'thursday': 4, 'thu': 4, 'thur': 4, 'thurs': 4,
+    'friday': 5, 'fri': 5,
+    'saturday': 6, 'sat': 6,
+  };
+  
+  // Helper to format date as YYYY-MM-DD
+  const formatDate = (d: Date): string => {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  
+  // Helper to get next occurrence of a date (if date has passed this year, use next year)
+  const getNextOccurrence = (month: number, day: number): Date => {
+    const date = new Date(currentYear, month, day);
+    if (date < now) {
+      date.setFullYear(currentYear + 1);
+    }
+    return date;
+  };
+  
+  // Helper to get next weekday
+  const getNextWeekday = (targetDay: number, isNext: boolean = false): Date => {
+    const result = new Date(now);
+    const currentDay = result.getDay();
+    let daysToAdd = targetDay - currentDay;
+    
+    if (isNext) {
+      // "next Monday" means the Monday of next week
+      daysToAdd = daysToAdd <= 0 ? daysToAdd + 7 : daysToAdd;
+      if (daysToAdd <= 7) daysToAdd += 7; // Always go to next week
+    } else {
+      // "this Monday" or just "Monday" means the coming Monday
+      if (daysToAdd <= 0) daysToAdd += 7;
+    }
+    
+    result.setDate(result.getDate() + daysToAdd);
+    return result;
+  };
+  
+  // Check for "today" or "tomorrow"
+  if (/\btoday\b/i.test(lowerQuery)) {
+    parsedDate = formatDate(now);
+    cleanedQuery = cleanedQuery.replace(/\btoday\b/gi, '');
+  } else if (/\btomorrow\b/i.test(lowerQuery)) {
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    parsedDate = formatDate(tomorrow);
+    cleanedQuery = cleanedQuery.replace(/\btomorrow\b/gi, '');
+  }
+  
+  // Check for "next/this [weekday]"
+  if (!parsedDate) {
+    const weekdayPattern = /\b(next|this)?\s*(sunday|sun|monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat)\b/i;
+    const weekdayMatch = lowerQuery.match(weekdayPattern);
+    if (weekdayMatch) {
+      const isNext = weekdayMatch[1]?.toLowerCase() === 'next';
+      const dayName = weekdayMatch[2].toLowerCase();
+      const targetDay = dayNames[dayName];
+      if (targetDay !== undefined) {
+        const date = getNextWeekday(targetDay, isNext);
+        parsedDate = formatDate(date);
+        cleanedQuery = cleanedQuery.replace(weekdayPattern, '');
+      }
+    }
+  }
+  
+  // Check for date range: "6 June to 12 June", "6-12 June", "6 June - 12 June"
+  if (!parsedDate) {
+    // Pattern: "6 June to 12 June" or "6 June - 12 June"
+    const rangePattern1 = /\b(?:from\s+)?(\d{1,2})(?:st|nd|rd|th)?\s+(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec)\s+(?:to|until|-|–)\s+(\d{1,2})(?:st|nd|rd|th)?\s+(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec)(?:\s+(\d{4}))?/i;
+    const rangeMatch1 = lowerQuery.match(rangePattern1);
+    if (rangeMatch1) {
+      const startDay = parseInt(rangeMatch1[1]);
+      const startMonth = monthNames[rangeMatch1[2].toLowerCase()];
+      const endDay = parseInt(rangeMatch1[3]);
+      const endMonth = monthNames[rangeMatch1[4].toLowerCase()];
+      const year = rangeMatch1[5] ? parseInt(rangeMatch1[5]) : currentYear;
+      
+      const startDate = getNextOccurrence(startMonth, startDay);
+      if (rangeMatch1[5]) startDate.setFullYear(year);
+      parsedDate = formatDate(startDate);
+      
+      const endDateObj = new Date(startDate.getFullYear(), endMonth, endDay);
+      endDate = formatDate(endDateObj);
+      
+      cleanedQuery = cleanedQuery.replace(rangePattern1, '');
+    }
+    
+    // Pattern: "6-12 June" or "6 - 12 June"
+    if (!parsedDate) {
+      const rangePattern2 = /\b(?:from\s+)?(\d{1,2})(?:st|nd|rd|th)?\s*(?:-|–|to)\s*(\d{1,2})(?:st|nd|rd|th)?\s+(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec)(?:\s+(\d{4}))?/i;
+      const rangeMatch2 = lowerQuery.match(rangePattern2);
+      if (rangeMatch2) {
+        const startDay = parseInt(rangeMatch2[1]);
+        const endDay = parseInt(rangeMatch2[2]);
+        const month = monthNames[rangeMatch2[3].toLowerCase()];
+        const year = rangeMatch2[4] ? parseInt(rangeMatch2[4]) : currentYear;
+        
+        const startDate = getNextOccurrence(month, startDay);
+        if (rangeMatch2[4]) startDate.setFullYear(year);
+        parsedDate = formatDate(startDate);
+        
+        const endDateObj = new Date(startDate.getFullYear(), month, endDay);
+        endDate = formatDate(endDateObj);
+        
+        cleanedQuery = cleanedQuery.replace(rangePattern2, '');
+      }
+    }
+  }
+  
+  // Check for single date: "6 June", "June 6", "6th June", "June 6th"
+  if (!parsedDate) {
+    // Pattern: "6 June" or "6th June"
+    const datePattern1 = /\b(?:from|on|for)?\s*(\d{1,2})(?:st|nd|rd|th)?\s+(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec)(?:\s+(\d{4}))?\b/i;
+    const dateMatch1 = lowerQuery.match(datePattern1);
+    if (dateMatch1) {
+      const day = parseInt(dateMatch1[1]);
+      const month = monthNames[dateMatch1[2].toLowerCase()];
+      const year = dateMatch1[3] ? parseInt(dateMatch1[3]) : currentYear;
+      
+      const date = getNextOccurrence(month, day);
+      if (dateMatch1[3]) date.setFullYear(year);
+      parsedDate = formatDate(date);
+      cleanedQuery = cleanedQuery.replace(datePattern1, '');
+    }
+    
+    // Pattern: "June 6" or "June 6th"
+    if (!parsedDate) {
+      const datePattern2 = /\b(?:from|on|for)?\s*(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec)\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s+(\d{4}))?\b/i;
+      const dateMatch2 = lowerQuery.match(datePattern2);
+      if (dateMatch2) {
+        const month = monthNames[dateMatch2[1].toLowerCase()];
+        const day = parseInt(dateMatch2[2]);
+        const year = dateMatch2[3] ? parseInt(dateMatch2[3]) : currentYear;
+        
+        const date = getNextOccurrence(month, day);
+        if (dateMatch2[3]) date.setFullYear(year);
+        parsedDate = formatDate(date);
+        cleanedQuery = cleanedQuery.replace(datePattern2, '');
+      }
+    }
+  }
+  
+  // Check for numeric date: "6/6", "06/06", "6/6/2026" (Australian DD/MM format)
+  if (!parsedDate) {
+    const numericPattern = /\b(?:from|on|for)?\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/;
+    const numericMatch = query.match(numericPattern);
+    if (numericMatch) {
+      const day = parseInt(numericMatch[1]);
+      const month = parseInt(numericMatch[2]) - 1; // 0-indexed
+      let year = numericMatch[3] ? parseInt(numericMatch[3]) : currentYear;
+      if (year < 100) year += 2000; // Handle 2-digit years
+      
+      const date = new Date(year, month, day);
+      // Only use if it's a valid date
+      if (date.getDate() === day && date.getMonth() === month) {
+        parsedDate = formatDate(date);
+        cleanedQuery = cleanedQuery.replace(numericPattern, '');
+      }
+    }
+  }
+  
+  // Clean up prepositions and extra whitespace
+  cleanedQuery = cleanedQuery
+    .replace(/\b(from|on|for|at|in)\s*$/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  return { date: parsedDate, endDate, cleanedQuery };
+}
+
+/**
  * Parse a search query to extract centre name and site requirements
  */
 export function parseSearchQuery(query: string): ParsedQuery {
   const trimmedQuery = query.trim();
   
+  // First extract date from query
+  const { date: parsedDate, endDate, cleanedQuery } = parseDateFromQuery(trimmedQuery);
+  
   return {
-    centreName: extractCentreName(trimmedQuery),
-    minSizeM2: parseSizeRequirement(trimmedQuery),
-    minTables: parseTableRequirement(trimmedQuery),
-    productCategory: extractProductCategory(trimmedQuery),
+    centreName: extractCentreName(cleanedQuery),
+    minSizeM2: parseSizeRequirement(cleanedQuery),
+    minTables: parseTableRequirement(cleanedQuery),
+    productCategory: extractProductCategory(cleanedQuery),
     originalQuery: trimmedQuery,
+    parsedDate,
+    dateRangeEnd: endDate,
   };
 }
 

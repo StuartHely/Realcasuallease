@@ -2126,3 +2126,16 @@
 - [x] Implement word-by-word matching instead of full substring match
 - [x] Score centres by percentage of query words matched
 - [x] Test with various query patterns including extra words (12 tests passing)
+
+## Unified Search Input with Natural Language Date (Jan 17, 2026)
+- [x] Review current queryParser.ts and Home.tsx search UI
+- [x] Add natural language date parsing (e.g., "6 June", "June 6", "6/6", "next Monday", "from 6 June")
+- [x] Support date ranges ("6 June to 12 June", "6-12 June")
+- [x] Handle Australian date format (DD/MM) as default
+- [x] Assume current year if not specified, next occurrence if date passed
+- [x] Update Home.tsx to use single unified search input
+- [x] Remove separate date picker (keep as optional fallback or remove entirely)
+- [x] Update Search.tsx to extract date from query if not provided separately
+- [x] Default to today's date if no date detected in query
+- [x] Test with various query patterns including dates (18 tests passing)
+- [x] Update placeholder text to show example with date
