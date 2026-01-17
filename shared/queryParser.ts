@@ -401,6 +401,22 @@ function parseDateFromQuery(query: string): { date?: string; endDate?: string; c
     }
   }
   
+  // Check for month-only: "in July", "July", "for July"
+  if (!parsedDate) {
+    const monthOnlyPattern = /\b(?:in|for|during)?\s*(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|sept|october|oct|november|nov|december|dec)(?:\s+(\d{4}))?\b/i;
+    const monthOnlyMatch = lowerQuery.match(monthOnlyPattern);
+    if (monthOnlyMatch) {
+      const month = monthNames[monthOnlyMatch[1].toLowerCase()];
+      const year = monthOnlyMatch[2] ? parseInt(monthOnlyMatch[2]) : currentYear;
+      
+      // Default to 1st of the month
+      const date = getNextOccurrence(month, 1);
+      if (monthOnlyMatch[2]) date.setFullYear(year);
+      parsedDate = formatDate(date);
+      cleanedQuery = cleanedQuery.replace(monthOnlyPattern, '');
+    }
+  }
+  
   // Check for numeric date: "6/6", "06/06", "6/6/2026" (Australian DD/MM format)
   if (!parsedDate) {
     const numericPattern = /\b(?:from|on|for)?\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/;

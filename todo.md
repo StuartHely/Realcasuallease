@@ -2248,3 +2248,13 @@
 - [x] Add route /admin/enquiries to App.tsx
 - [x] Test approval workflow - Dashboard loads and displays correctly
 - [x] Verified email functions are integrated into approval/rejection procedures
+
+
+## Date Parsing Bug Fix - Month Names (Jan 17, 2026)
+- [x] Investigate why "July" is being parsed as January
+- [x] Check queryParser.ts parseDate function for month name handling
+- [x] Fix month name parsing to correctly map month names to month numbers
+- [x] Added month-only pattern to handle queries like "in July", "July", "for July"
+- [x] Default to 1st of the month when no specific day is provided
+- [x] Test with "Chullora Marketplace in July" - PASSED (returns 01/07/2026)
+- [x] Verified calendar displays Jul 1 - Jul 14, 2026
