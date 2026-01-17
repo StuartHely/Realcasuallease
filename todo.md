@@ -2160,4 +2160,7 @@
 - [x] Found duplicate keys in VS and 3rdL card rendering
 - [x] Fixed by using composite keys: `vs-${shop.id}` and `3rdl-${asset.id}`
 - [x] Fixed duplicate centres in search.smart router by deduplicating when extracting from siteResults
-- [x] Verified no console errors on search results page
+- [x] Fixed table row keys using composite keys: `site-casual-${centre.id}-${site.id}`
+- [x] Fixed centre card keys: `centre-casual-${centre.id}`
+- [x] Fixed site detail card keys: `site-detail-casual-${centre.id}-${site.id}`
+- [x] Verified no console errors on search results page with all asset types

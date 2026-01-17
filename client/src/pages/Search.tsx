@@ -484,7 +484,7 @@ export default function Search() {
               if (centreSites.length === 0) return null;
               
               return (
-                <Card key={centre.id}>
+                <Card key={`centre-casual-${centre.id}`}>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-2xl mb-1">{centre.name}</CardTitle>
                     <CardDescription>
@@ -709,7 +709,7 @@ export default function Search() {
                               const isMatched = isMatchedSite(site.id);
                               return (
                               <tr 
-                                key={site.id} 
+                                key={`site-casual-${centre.id}-${site.id}`} 
                                 className={`hover:bg-gray-50 ${isMatched ? 'bg-yellow-50' : ''}`}
                                 id={`site-${site.id}`}
                               >
@@ -787,7 +787,7 @@ export default function Search() {
                         
                         return (
                           <Card 
-                            key={site.id} 
+                            key={`site-detail-casual-${centre.id}-${site.id}`} 
                             className={`border-l-4 ${
                               isMatchedSite(site.id) 
                                 ? 'border-l-yellow-500 bg-yellow-50 shadow-lg' 
