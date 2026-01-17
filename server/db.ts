@@ -271,26 +271,41 @@ export async function searchShoppingCentres(query: string) {
   // Get all centres
   const allCentres = await db.select().from(shoppingCentres);
   
-  // Simple substring matching helper
-  const fuzzyMatch = (query: string, target: string, threshold: number) => {
-    const q = query.toLowerCase();
-    const t = target.toLowerCase();
-    // Only check if target contains query (not the reverse)
-    return t.includes(q);
+  // Word-by-word matching - checks if significant words from query appear in target
+  const wordMatch = (query: string, target: string): { matches: boolean; score: number } => {
+    const queryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 1);
+    const targetLower = target.toLowerCase();
+    
+    // Count how many query words appear in target
+    let matchCount = 0;
+    for (const word of queryWords) {
+      if (targetLower.includes(word)) {
+        matchCount++;
+      }
+    }
+    
+    // Calculate match score (percentage of query words found)
+    const score = queryWords.length > 0 ? matchCount / queryWords.length : 0;
+    
+    // Consider it a match if at least one significant word matches
+    // and prioritize by how many words match
+    return { matches: matchCount > 0, score };
   };
   
-  // Filter using fuzzy matching and exclude test centres
-  const matchedCentres = allCentres.filter(centre => {
-    // Only include centres marked for main site
-    if (!centre.includeInMainSite) return false;
-    
-    return (
-      fuzzyMatch(centreQuery, centre.name || '', 2) ||
-      fuzzyMatch(centreQuery, centre.suburb || '', 2)
-    );
-  });
+  // Filter and score centres using word matching
+  const scoredCentres = allCentres
+    .filter(centre => centre.includeInMainSite)
+    .map(centre => {
+      const nameMatch = wordMatch(centreQuery, centre.name || '');
+      const suburbMatch = wordMatch(centreQuery, centre.suburb || '');
+      const bestScore = Math.max(nameMatch.score, suburbMatch.score);
+      const matches = nameMatch.matches || suburbMatch.matches;
+      return { centre, score: bestScore, matches };
+    })
+    .filter(item => item.matches)
+    .sort((a, b) => b.score - a.score); // Sort by best match first
   
-  return matchedCentres;
+  return scoredCentres.map(item => item.centre);
 }
 
 export async function uploadCentreMap(centreId: number, imageData: string, fileName: string) {

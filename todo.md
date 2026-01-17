@@ -2119,3 +2119,10 @@
 - [x] Test VS booking approval/rejection flow
 - [x] Test 3rdL booking approval/rejection flow
 - [ ] Verify status changes reflect in customer view
+
+## Search Bug Fix - Extra Words Causing Incorrect Results (Jan 17, 2026)
+- [x] Investigate why "campbelltown mall 2x3 random" returns wrong centres
+- [x] Identify how extra/unrecognized words affect search matching
+- [x] Implement word-by-word matching instead of full substring match
+- [x] Score centres by percentage of query words matched
+- [x] Test with various query patterns including extra words (12 tests passing)
