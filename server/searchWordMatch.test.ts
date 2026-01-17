@@ -89,6 +89,76 @@ describe("Search with Extra Words", () => {
     });
   });
 
+  describe("Single centre filtering", () => {
+    const wordMatch = (query: string, target: string): { matches: boolean; score: number } => {
+      const queryWords = query.toLowerCase().split(/s+/).filter(w => w.length > 1);
+      const targetLower = target.toLowerCase();
+      
+      let matchCount = 0;
+      for (const word of queryWords) {
+        if (targetLower.includes(word)) {
+          matchCount++;
+        }
+      }
+      
+      const score = queryWords.length > 0 ? matchCount / queryWords.length : 0;
+      return { matches: matchCount > 0, score };
+    };
+
+    const filterToSingleCentre = (scoredCentres: { centre: any; score: number }[]) => {
+      if (scoredCentres.length > 0 && scoredCentres[0].score >= 0.5) {
+        const topScore = scoredCentres[0].score;
+        const significantlyBetterMatches = scoredCentres.filter(item => item.score >= topScore * 0.9);
+        
+        if (significantlyBetterMatches.length === 1 || topScore >= 0.7) {
+          return [scoredCentres[0].centre];
+        }
+      }
+      return scoredCentres.map(item => item.centre);
+    };
+
+    it('should return only one centre when score is >= 0.7', () => {
+      const centres = [
+        { name: "Eastgate Bondi", suburb: "Bondi" },
+        { name: "Westgate Mall", suburb: "West" },
+      ];
+      
+      const query = "Eastgate Bondi";
+      const scored = centres.map(c => ({
+        centre: c,
+        score: Math.max(
+          wordMatch(query, c.name).score,
+          wordMatch(query, c.suburb).score
+        ),
+      })).filter(item => item.score > 0).sort((a, b) => b.score - a.score);
+
+      const result = filterToSingleCentre(scored);
+      expect(result.length).toBe(1);
+      expect(result[0].name).toBe("Eastgate Bondi");
+    });
+
+    it('should return only best match for "2x3m fashion at Eastgate Bondi"', () => {
+      const centres = [
+        { name: "Eastgate Bondi", suburb: "Bondi" },
+        { name: "Bondi Junction", suburb: "Bondi" },
+        { name: "Fashion Mall", suburb: "Sydney" },
+      ];
+      
+      const query = "2x3m fashion at Eastgate Bondi";
+      const scored = centres.map(c => ({
+        centre: c,
+        score: Math.max(
+          wordMatch(query, c.name).score,
+          wordMatch(query, c.suburb).score
+        ),
+      })).filter(item => item.score > 0).sort((a, b) => b.score - a.score);
+
+      const result = filterToSingleCentre(scored);
+      expect(result.length).toBe(1);
+      expect(result[0].name).toBe("Eastgate Bondi");
+    });
+  });
+
   describe("Centre ranking by score", () => {
     const centres = [
       { name: "Campbelltown Mall", suburb: "Campbelltown" },

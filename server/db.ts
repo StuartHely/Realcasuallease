@@ -305,6 +305,19 @@ export async function searchShoppingCentres(query: string) {
     .filter(item => item.matches)
     .sort((a, b) => b.score - a.score); // Sort by best match first
   
+  // If we have a high-confidence match (score >= 0.5), only return that centre
+  // This prevents showing multiple centres when user clearly specifies one
+  if (scoredCentres.length > 0 && scoredCentres[0].score >= 0.5) {
+    // Check if the top match is significantly better than others
+    const topScore = scoredCentres[0].score;
+    const significantlyBetterMatches = scoredCentres.filter(item => item.score >= topScore * 0.9);
+    
+    // If only one centre has a high score, return just that one
+    if (significantlyBetterMatches.length === 1 || topScore >= 0.7) {
+      return [scoredCentres[0].centre];
+    }
+  }
+  
   return scoredCentres.map(item => item.centre);
 }
 

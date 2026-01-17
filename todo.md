@@ -2139,3 +2139,8 @@
 - [x] Default to today's date if no date detected in query
 - [x] Test with various query patterns including dates (18 tests passing)
 - [x] Update placeholder text to show example with date
+
+## Search Bug Fix - Show Only Matched Centre (Jan 17, 2026)
+- [x] Investigate why search shows multiple centres when specific centre name is in query
+- [x] Fix search to only show the matched centre when score >= 0.7 or significantly better than others
+- [x] Test with queries like "2x3m fashion at Eastgate Bondi from 6 June" - now shows only Eastgate Bondi Junction
