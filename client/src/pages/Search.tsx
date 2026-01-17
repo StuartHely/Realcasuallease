@@ -373,7 +373,7 @@ export default function Search() {
                 <CardContent>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {vacantShops.filter((shop: any) => shop.isActive).map((shop: any) => (
-                      <Card key={shop.id} className="border-green-200 bg-green-50/50">
+                      <Card key={`vs-${shop.id}`} className="border-green-200 bg-green-50/50">
                         <CardHeader className="pb-2">
                           <CardTitle className="text-lg flex items-center gap-2">
                             <Store className="h-4 w-4 text-green-600" />
@@ -420,7 +420,7 @@ export default function Search() {
                 <CardContent>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {thirdLineIncome.filter((asset: any) => asset.isActive).map((asset: any) => (
-                      <Card key={asset.id} className="border-purple-200 bg-purple-50/50">
+                      <Card key={`3rdl-${asset.id}`} className="border-purple-200 bg-purple-50/50">
                         <CardHeader className="pb-2">
                           <CardTitle className="text-lg flex items-center gap-2">
                             <Zap className="h-4 w-4 text-purple-600" />

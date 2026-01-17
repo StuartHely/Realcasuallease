@@ -2155,3 +2155,8 @@
 - [x] Check search.smart router to see if it fetches VS and 3rdL sites
 - [x] Updated getSearchDataOptimized to fetch VS and 3rdL sites alongside Casual Leasing sites
 - [x] Verified VS and 3rdL sites now appear in search results with correct markers on map
+
+## Bug Fix - Duplicate React Key Error (Jan 17, 2026)
+- [x] Found duplicate keys in VS and 3rdL card rendering
+- [x] Fixed by using composite keys: `vs-${shop.id}` and `3rdl-${asset.id}`
+- [x] Verified no console errors on search results page
