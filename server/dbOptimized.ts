@@ -1,5 +1,5 @@
 import { getDb } from "./db";
-import { bookings, sites } from "../drizzle/schema";
+import { bookings, sites, vacantShops, thirdLineIncome } from "../drizzle/schema";
 import { and, eq, gte, lte, or, inArray } from "drizzle-orm";
 import { getApprovedCategoriesForSite } from "./usageCategoriesDb";
 
@@ -102,10 +102,29 @@ export async function getSearchDataOptimized(
   if (!db) throw new Error("Database not available");
 
   // Fetch all sites for all centres in one query
-  const allSites = await db
+  const casualLeasingSites = await db
     .select()
     .from(sites)
     .where(inArray(sites.centreId, centreIds));
+  
+  // Fetch Vacant Shops
+  const vacantShopsData = await db
+    .select()
+    .from(vacantShops)
+    .where(inArray(vacantShops.centreId, centreIds));
+  
+  // Fetch Third Line Income
+  const thirdLineAssets = await db
+    .select()
+    .from(thirdLineIncome)
+    .where(inArray(thirdLineIncome.centreId, centreIds));
+  
+  // Combine all sites and add assetType field
+  const allSites = [
+    ...casualLeasingSites.map(s => ({ ...s, assetType: "casual_leasing" })),
+    ...vacantShopsData.map(s => ({ ...s, assetType: "vacant_shops" })),
+    ...thirdLineAssets.map(s => ({ ...s, assetType: "third_line" })),
+  ];
 
   // Group sites by centre
   const sitesByCentre = new Map<number, any[]>();

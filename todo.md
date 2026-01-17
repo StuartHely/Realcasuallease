@@ -2150,3 +2150,8 @@
 - [x] Fix Search.tsx to pass assetTypeFilter prop to InteractiveMap component
 - [x] Update InteractiveMap to filter sites by assetTypeFilter
 - [x] Test with Eastgate Bondi (2 VS, 1 3rdL) to verify markers appear
+
+## Bug - VS/3rdL Not Showing in Search Results (Jan 17, 2026)
+- [x] Check search.smart router to see if it fetches VS and 3rdL sites
+- [x] Updated getSearchDataOptimized to fetch VS and 3rdL sites alongside Casual Leasing sites
+- [x] Verified VS and 3rdL sites now appear in search results with correct markers on map

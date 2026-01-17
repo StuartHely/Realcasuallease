@@ -1,0 +1,31 @@
+{
+  "query": "SELECT id, dimensions, mapMarkerX, mapMarkerY, floorLevelId FROM vacant_shops WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%' LIMIT 1) UNION ALL SELECT id, dimensions, mapMarkerX, mapMarkerY, floorLevelId FROM third_line_income WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%' LIMIT 1);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, dimensions, mapMarkerX, mapMarkerY, floorLevelId FROM vacant_shops WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%' LIMIT 1) UNION ALL SELECT id, dimensions, mapMarkerX, mapMarkerY, floorLevelId FROM third_line_income WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%' LIMIT 1);",
+  "rows": [
+    {
+      "id": "30001",
+      "dimensions": "5x5",
+      "mapMarkerX": "48",
+      "mapMarkerY": "35",
+      "floorLevelId": "90001"
+    },
+    {
+      "id": "60001",
+      "dimensions": "10m x 12m",
+      "mapMarkerX": "NULL",
+      "mapMarkerY": "NULL",
+      "floorLevelId": "90001"
+    },
+    {
+      "id": "30001",
+      "dimensions": "1x1",
+      "mapMarkerX": "49",
+      "mapMarkerY": "34",
+      "floorLevelId": "90001"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tdimensions\tmapMarkerX\tmapMarkerY\tfloorLevelId\n30001\t5x5\t48\t35\t90001\n60001\t10m x 12m\tNULL\tNULL\t90001\n30001\t1x1\t49\t34\t90001\n",
+  "stderr": "",
+  "execution_time_ms": 1522
+}
