@@ -755,6 +755,37 @@ export const appRouter = router({
         const { parseSearchQuery, siteMatchesRequirements } = await import("../shared/queryParser");
         const parsedQuery = parseSearchQuery(input.query);
 
+        // If asset type is specified (VS or 3rdL), search only that type
+        if (parsedQuery.assetType === 'vacant_shop') {
+          const searchQuery = parsedQuery.centreName || input.query;
+          const centres = await db.searchShoppingCentres(searchQuery);
+          if (centres.length === 0) {
+            return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'vacant_shop' };
+          }
+          const allShops: any[] = [];
+          for (const centre of centres) {
+            const shops = await assetDb.getVacantShopsByCentre(centre.id);
+            allShops.push(...shops.map((s: any) => ({ ...s, centreName: centre.name, assetType: 'vacant_shop' })));
+          }
+          return { centres, sites: allShops, availability: [], matchedSiteIds: [], assetType: 'vacant_shop' };
+        }
+        
+        if (parsedQuery.assetType === 'third_line') {
+          const searchQuery = parsedQuery.centreName || input.query;
+          const centres = await db.searchShoppingCentres(searchQuery);
+          if (centres.length === 0) {
+            return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'third_line' };
+          }
+          const allAssets: any[] = [];
+          for (const centre of centres) {
+            const assets = await assetDb.getThirdLineIncomeByCentre(centre.id);
+            const filtered = parsedQuery.thirdLineCategory 
+              ? assets.filter((a: any) => a.categoryName?.toLowerCase().includes(parsedQuery.thirdLineCategory!.toLowerCase()))
+              : assets;
+            allAssets.push(...filtered.map((a: any) => ({ ...a, centreName: centre.name, assetType: 'third_line' })));
+          }
+          return { centres, sites: allAssets, availability: [], matchedSiteIds: [], assetType: 'third_line' };
+        }
         
         // Try site-level search first using the extracted centre name and category
         const searchQuery = parsedQuery.centreName || input.query;

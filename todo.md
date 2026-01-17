@@ -2218,3 +2218,17 @@
 - [x] Fetch booked dates from thirdLineBookings.getByAsset
 - [x] Display availability status indicator in 3rdL enquiry form
 - [x] Show warning when user selects booked date for 3rdL
+
+
+## Intelligent Search Parsing (Jan 17, 2026)
+- [x] Extract asset type keywords from search queries (Vacant Shop, Vending Machine, ATM, etc.)
+- [x] Extract third line categories from search queries
+- [x] Parse centre name and asset type from combined queries (e.g., "Vending Machine at Campbelltown")
+- [x] Update queryParser.ts to recognize asset types and return assetType in parsed result
+- [x] Modify search.smart router to filter by asset type when detected
+- [x] Route to correct asset type search (VS, 3rdL, or casual leasing)
+- [x] Test with "Vacant Shop in Eastgate" query - PASSED (shows 2 vacant shops)
+- [x] Test with "Eastgate" query - PASSED (shows casual leasing sites with full calendar)
+- [x] Verified casual leasing searches still work without asset type keywords
+- [x] Verified asset type tabs are displayed correctly
+- [x] Verified search results display correct asset type information
