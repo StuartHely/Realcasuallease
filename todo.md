@@ -2164,3 +2164,15 @@
 - [x] Fixed centre card keys: `centre-casual-${centre.id}`
 - [x] Fixed site detail card keys: `site-detail-casual-${centre.id}-${site.id}`
 - [x] Verified no console errors on search results page with all asset types
+
+
+## Create VS/3rdL Detail Pages (Jan 17, 2026)
+- [x] Create VacantShopDetail.tsx page component
+- [x] Create ThirdLineDetail.tsx page component
+- [x] Add routes to App.tsx for /vacant-shop/:id and /third-line/:id
+- [x] Display full asset information (size, dimensions, pricing, description, images)
+- [x] Add enquiry form for users to submit booking requests
+- [x] Link "View Details" buttons from search results to detail pages
+- [x] Test navigation from search results to detail pages
+- [x] Verified VS detail page (/vacant-shop/30001) shows Shop 1 with pricing and enquiry form
+- [x] Verified 3rdL detail page (/third-line/30001) shows ATM asset with pricing and enquiry form

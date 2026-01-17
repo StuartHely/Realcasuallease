@@ -11,6 +11,8 @@ import Search from "./pages/Search";
 import Centres from "./pages/Centres";
 import CentreDetail from "./pages/CentreDetail";
 import SiteDetail from "./pages/SiteDetail";
+import VacantShopDetail from "./pages/VacantShopDetail";
+import ThirdLineDetail from "./pages/ThirdLineDetail";
 import MyBookings from "./pages/MyBookings";
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -88,6 +90,8 @@ function Router() {
       <Route path="/admin/audit" component={AdminAudit} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/site/:id" component={SiteDetail} />
+      <Route path="/vacant-shop/:id" component={VacantShopDetail} />
+      <Route path="/third-line/:id" component={ThirdLineDetail} />
       <Route path="/my-bookings" component={MyBookings} />
       <Route path="/profile" component={Profile} />
       <Route path="/404" component={NotFound} />

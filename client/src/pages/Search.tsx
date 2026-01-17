@@ -390,12 +390,9 @@ export default function Search() {
                           <Button
                             size="sm"
                             className="w-full mt-3 bg-green-600 hover:bg-green-700"
-                            onClick={() => {
-                              // Navigate to enquiry or detail page
-                              alert(`Enquire about Vacant Shop ${shop.shopNumber}. Feature coming soon.`);
-                            }}
+                            onClick={() => setLocation(`/vacant-shop/${shop.id}`)}
                           >
-                            Enquire Now
+                            View Details
                           </Button>
                         </CardContent>
                       </Card>
@@ -439,12 +436,9 @@ export default function Search() {
                           <Button
                             size="sm"
                             className="w-full mt-3 bg-purple-600 hover:bg-purple-700"
-                            onClick={() => {
-                              // Navigate to enquiry or detail page
-                              alert(`Enquire about ${asset.assetNumber}. Feature coming soon.`);
-                            }}
+                            onClick={() => setLocation(`/third-line/${asset.id}`)}
                           >
-                            Enquire Now
+                            View Details
                           </Button>
                         </CardContent>
                       </Card>
