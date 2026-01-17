@@ -2144,3 +2144,9 @@
 - [x] Investigate why search shows multiple centres when specific centre name is in query
 - [x] Fix search to only show the matched centre when score >= 0.7 or significantly better than others
 - [x] Test with queries like "2x3m fashion at Eastgate Bondi from 6 June" - now shows only Eastgate Bondi Junction
+
+## Bug Fix - Search Results Map Not Showing VS/3rdL (Jan 17, 2026)
+- [x] Investigate why map doesn't update when VS or 3rdL asset type is selected
+- [x] Fix Search.tsx to pass assetTypeFilter prop to InteractiveMap component
+- [x] Update InteractiveMap to filter sites by assetTypeFilter
+- [x] Test with Eastgate Bondi (2 VS, 1 3rdL) to verify markers appear

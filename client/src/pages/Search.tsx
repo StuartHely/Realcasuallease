@@ -938,6 +938,7 @@ export default function Search() {
                     mapUrl={data.floorLevels.find((fl: any) => fl.mapImageUrl)?.mapImageUrl || ''}
                     sites={data.sites}
                     centreName={data.centres[0].name}
+                    assetTypeFilter={selectedAssetType}
                   />
                 </CardContent>
               </Card>

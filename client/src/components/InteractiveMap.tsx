@@ -70,9 +70,16 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
     : null;
   const displayMapUrl = currentFloor?.mapImageUrl || mapUrl;
 
-  // Filter sites for current floor (or all sites if single-level)
+  // Filter sites for current floor (or all sites if single-level) and by asset type
   const sitesWithMarkers = sites.filter((site: Site) => {
     const hasMarkers = site.mapMarkerX !== null && site.mapMarkerY !== null;
+    const siteAssetType = site.assetType || "casual_leasing";
+    
+    // Filter by asset type
+    if (assetTypeFilter !== "all" && siteAssetType !== assetTypeFilter) {
+      return false;
+    }
+    
     if (!isMultiLevel) return hasMarkers;
     return hasMarkers && site.floorLevelId === selectedFloorId;
   });

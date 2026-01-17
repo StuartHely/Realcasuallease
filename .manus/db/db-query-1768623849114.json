@@ -1,0 +1,22 @@
+{
+  "query": "SELECT 'vacant_shops' as type, COUNT(*) as count FROM vacant_shops UNION ALL SELECT 'third_line_income' as type, COUNT(*) as count FROM third_line_income UNION ALL SELECT 'third_line_categories' as type, COUNT(*) as count FROM third_line_categories;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT 'vacant_shops' as type, COUNT(*) as count FROM vacant_shops UNION ALL SELECT 'third_line_income' as type, COUNT(*) as count FROM third_line_income UNION ALL SELECT 'third_line_categories' as type, COUNT(*) as count FROM third_line_categories;",
+  "rows": [
+    {
+      "type": "third_line_categories",
+      "count": "36"
+    },
+    {
+      "type": "third_line_income",
+      "count": "7"
+    },
+    {
+      "type": "vacant_shops",
+      "count": "7"
+    }
+  ],
+  "messages": [],
+  "stdout": "type\tcount\nthird_line_categories\t36\nthird_line_income\t7\nvacant_shops\t7\n",
+  "stderr": "",
+  "execution_time_ms": 1511
+}
