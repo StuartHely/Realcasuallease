@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE sites SET siteNumber = '6' WHERE id = (SELECT id FROM (SELECT id FROM sites WHERE centreId = (SELECT id FROM shopping_centres WHERE name = 'Waverley Gardens') AND siteNumber = '5' LIMIT 1) AS t);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute UPDATE sites SET siteNumber = '6' WHERE id = (SELECT id FROM (SELECT id FROM sites WHERE centreId = (SELECT id FROM shopping_centres WHERE name = 'Waverley Gardens') AND siteNumber = '5' LIMIT 1) AS t);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1488
+}

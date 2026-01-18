@@ -1,0 +1,35 @@
+{
+  "query": "SELECT * FROM sites WHERE centreId = (SELECT id FROM shopping_centres WHERE name = 'Waverley Gardens') LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT * FROM sites WHERE centreId = (SELECT id FROM shopping_centres WHERE name = 'Waverley Gardens') LIMIT 1;",
+  "rows": [
+    {
+      "id": "300001",
+      "centreId": "360001",
+      "siteNumber": "2",
+      "description": "In the intersection between Ferguson Plarre and Prouds",
+      "size": "4m x 4m x1.5",
+      "maxTables": "6",
+      "powerAvailable": "Yes",
+      "restrictions": "",
+      "pricePerDay": "150.00",
+      "pricePerWeek": "750.00",
+      "instantBooking": "1",
+      "imageUrl1": "NULL",
+      "imageUrl2": "NULL",
+      "imageUrl3": "NULL",
+      "imageUrl4": "NULL",
+      "videoUrl": "NULL",
+      "isActive": "1",
+      "createdAt": "2026-01-18 10:15:54",
+      "updatedAt": "2026-01-18 10:15:54",
+      "mapMarkerX": "NULL",
+      "mapMarkerY": "NULL",
+      "floorLevelId": "NULL",
+      "weekendPricePerDay": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcentreId\tsiteNumber\tdescription\tsize\tmaxTables\tpowerAvailable\trestrictions\tpricePerDay\tpricePerWeek\tinstantBooking\timageUrl1\timageUrl2\timageUrl3\timageUrl4\tvideoUrl\tisActive\tcreatedAt\tupdatedAt\tmapMarkerX\tmapMarkerY\tfloorLevelId\tweekendPricePerDay\n300001\t360001\t2\tIn the intersection between Ferguson Plarre and Prouds\t4m x 4m x1.5\t6\tYes\t\t150.00\t750.00\t1\tNULL\tNULL\tNULL\tNULL\tNULL\t1\t2026-01-18 10:15:54\t2026-01-18 10:15:54\tNULL\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 1557
+}

@@ -2360,3 +2360,10 @@
 
 ## Bug Fixes (Jan 18, 2026 - Part 4)
 - [x] Fix misaligned site markers between Admin Maps and live search results (Highlands) - fixed by changing container from w-full to inline-block
+
+## Bug Fixes (Jan 18, 2026 - Part 6)
+- [ ] Fix "Failed to update a site, Failed query" error in Admin Sites page
+
+## New Features (Jan 18, 2026)
+- [x] Add 'Include in Live Site' checkbox to Edit Shopping Centre form
+- [x] Control centre visibility in search results based on this setting

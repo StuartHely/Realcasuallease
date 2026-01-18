@@ -1119,6 +1119,7 @@ export const appRouter = router({
         state: z.string().optional(),
         postcode: z.string().optional(),
         description: z.string().optional(),
+        includeInMainSite: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
         return await db.updateShoppingCentre(input.id, input);
@@ -1154,12 +1155,12 @@ export const appRouter = router({
         siteNumber: z.string().optional(),
         description: z.string().optional(),
         size: z.string().optional(),
-        maxTables: z.number().optional(),
+        maxTables: z.number().nullish(),
         powerAvailable: z.string().optional(),
         restrictions: z.string().optional(),
         dailyRate: z.string().optional(),
         weeklyRate: z.string().optional(),
-        weekendRate: z.string().optional(),
+        weekendRate: z.string().nullish(),
         instantBooking: z.boolean().optional(),
         imageUrl1: z.string().nullish(),
         imageUrl2: z.string().nullish(),
@@ -1171,11 +1172,20 @@ export const appRouter = router({
         const data: any = { ...rest };
         
         // Map frontend field names to database column names
-        if (dailyRate !== undefined) data.pricePerDay = dailyRate;
-        if (weeklyRate !== undefined) data.pricePerWeek = weeklyRate;
-        if (weekendRate !== undefined) data.weekendPricePerDay = weekendRate;
+        // Handle empty strings as null for decimal fields
+        if (dailyRate !== undefined) data.pricePerDay = dailyRate || null;
+        if (weeklyRate !== undefined) data.pricePerWeek = weeklyRate || null;
+        if (weekendRate !== undefined) data.weekendPricePerDay = weekendRate || null;
         
-        return await db.updateSite(id, data);
+        console.log('[updateSite] Updating site:', { id, data });
+        try {
+          const result = await db.updateSite(id, data);
+          console.log('[updateSite] Success:', result);
+          return result;
+        } catch (error: any) {
+          console.error('[updateSite] Error:', error.message, error.stack);
+          throw error;
+        }
       }),
 
     getSystemConfig: protectedProcedure

@@ -510,7 +510,42 @@ export async function updateSite(id: number, updates: Partial<InsertSite>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return await db.update(sites).set(updates).where(eq(sites.id, id));
+  // Log the raw input for debugging
+  console.log("[updateSite] Input:", JSON.stringify({ id, updates }, null, 2));
+  
+  // Clean up the updates object - remove undefined values and convert types
+  const cleanUpdates: Record<string, any> = {};
+  for (const [key, value] of Object.entries(updates)) {
+    if (value !== undefined) {
+      cleanUpdates[key] = value;
+    }
+  }
+  
+  console.log("[updateSite] Clean updates:", JSON.stringify(cleanUpdates, null, 2));
+  
+  if (Object.keys(cleanUpdates).length === 0) {
+    console.log("[updateSite] No updates to apply");
+    return { rowsAffected: 0 };
+  }
+
+  try {
+    const result = await db.update(sites).set(cleanUpdates).where(eq(sites.id, id));
+    console.log("[updateSite] Success, result:", result);
+    return result;
+  } catch (error: any) {
+    console.error("[updateSite] Failed to update site:", {
+      siteId: id,
+      cleanUpdates,
+      errorMessage: error.message,
+      errorCode: error.code,
+      errorErrno: error.errno,
+      sqlState: error.sqlState,
+      sqlMessage: error.sqlMessage,
+      sql: error.sql,
+      stack: error.stack
+    });
+    throw new Error(`Failed to update site: ${error.message}`);
+  }
 }
 
 export async function deleteSite(id: number) {

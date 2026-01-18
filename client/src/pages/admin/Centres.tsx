@@ -14,7 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Building2, Edit, MapPin, Plus, Trash2 } from "lucide-react";
+import { Building2, Edit, Eye, EyeOff, MapPin, Plus, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -35,6 +36,7 @@ export default function AdminCentres() {
     state: "",
     postcode: "",
     description: "",
+    includeInMainSite: true,
   });
 
   const resetForm = () => {
@@ -45,6 +47,7 @@ export default function AdminCentres() {
       state: "",
       postcode: "",
       description: "",
+      includeInMainSite: true,
     });
   };
 
@@ -70,6 +73,7 @@ export default function AdminCentres() {
       state: centre.state || "",
       postcode: centre.postcode || "",
       description: centre.description || "",
+      includeInMainSite: centre.includeInMainSite ?? true,
     });
     setIsEditOpen(true);
   };
@@ -262,6 +266,21 @@ export default function AdminCentres() {
                     rows={3}
                   />
                 </div>
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="edit-includeInMainSite" className="text-base font-medium">
+                      Include in Live Site
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      When enabled, this centre will appear in search results on the public site
+                    </p>
+                  </div>
+                  <Switch
+                    id="edit-includeInMainSite"
+                    checked={formData.includeInMainSite}
+                    onCheckedChange={(checked) => setFormData({ ...formData, includeInMainSite: checked })}
+                  />
+                </div>
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
@@ -278,12 +297,18 @@ export default function AdminCentres() {
         {/* Centres List */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {centres?.sort((a, b) => (a.name || '').localeCompare(b.name || '')).map((centre) => (
-            <Card key={centre.id}>
+            <Card key={centre.id} className={!centre.includeInMainSite ? "opacity-60 border-dashed" : ""}>
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     <Building2 className="h-5 w-5 text-blue-600" />
                     <CardTitle className="text-lg">{centre.name}</CardTitle>
+                    {!centre.includeInMainSite && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                        <EyeOff className="h-3 w-3" />
+                        Hidden
+                      </span>
+                    )}
                   </div>
                   <div className="flex gap-1">
                     <Button
