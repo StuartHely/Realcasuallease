@@ -2354,3 +2354,9 @@
 
 ## UI/UX Improvements (Jan 18, 2026)
 - [x] Update floor level creation message in Site Assignment to use consistent naming
+
+## Bug Fixes (Jan 18, 2026 - Part 3)
+- [ ] Investigate and fix missing floor plan map for Highlands Marketplace
+
+## Bug Fixes (Jan 18, 2026 - Part 4)
+- [x] Fix misaligned site markers between Admin Maps and live search results (Highlands)
