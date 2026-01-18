@@ -16,6 +16,10 @@ export default function AdminMaps() {
   const [selectedCentreId, setSelectedCentreId] = useState<number>(0);
   const [selectedFloorLevelId, setSelectedFloorLevelId] = useState<number | null>(null);
   const [mapImage, setMapImage] = useState<File | null>(null);
+  const [showHideConfirm, setShowHideConfirm] = useState(false);
+  const [showUnhideConfirm, setShowUnhideConfirm] = useState(false);
+  const [floorToHide, setFloorToHide] = useState<{ id: number; name: string } | null>(null);
+  const [floorToUnhide, setFloorToUnhide] = useState<{ id: number; name: string } | null>(null);
   const [mapPreviewUrl, setMapPreviewUrl] = useState<string>("");
   const [markers, setMarkers] = useState<Array<{ siteId: number; x: number; y: number; siteNumber: string }>>([]);
   const [isDragging, setIsDragging] = useState<number | null>(null);
@@ -64,15 +68,25 @@ export default function AdminMaps() {
     },
   });
 
-  // Delete floor level mutation
+  // Hide floor level mutation
   const hideFloorLevelMutation = trpc.admin.hideFloorLevel.useMutation({
     onSuccess: () => {
-      toast.success("Floor level deleted successfully");
+      toast.success("Floor level hidden successfully. Historical data preserved.");
       refetchFloorLevels();
-      setSelectedFloorLevelId(null);
     },
     onError: (error: any) => {
-      toast.error(`Failed to delete floor level: ${error.message}`);
+      toast.error(`Failed to hide floor level: ${error.message}`);
+    },
+  });
+
+  // Unhide floor level mutation
+  const unhideFloorLevelMutation = trpc.admin.unhideFloorLevel.useMutation({
+    onSuccess: () => {
+      toast.success("Floor level restored to public view.");
+      refetchFloorLevels();
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to unhide floor level: ${error.message}`);
     },
   });
 
@@ -210,11 +224,40 @@ export default function AdminMaps() {
     reader.readAsDataURL(mapImage);
   };
 
-  const handleHideFloorLevel = async (floorLevelId: number, levelName: string) => {
-    if (!confirm(`Are you sure you want to hide "${levelName}"? Hidden floors won't appear in public views but all historical data will be preserved.`)) {
-      return;
+  const handleHideFloorLevel = (floorLevelId: number, levelName: string) => {
+    setFloorToHide({ id: floorLevelId, name: levelName });
+    setShowHideConfirm(true);
+  };
+
+  const confirmHideFloor = async () => {
+    if (!floorToHide) return;
+    try {
+      await hideFloorLevelMutation.mutateAsync({ floorLevelId: floorToHide.id });
+      toast.success(`Floor "${floorToHide.name}" has been hidden`);
+    } catch (error) {
+      console.error('Hide mutation failed:', error);
+      toast.error('Failed to hide floor');
     }
-    await hideFloorLevelMutation.mutateAsync({ floorLevelId });
+    setShowHideConfirm(false);
+    setFloorToHide(null);
+  };
+
+  const handleUnhideFloorLevel = (floorLevelId: number, levelName: string) => {
+    setFloorToUnhide({ id: floorLevelId, name: levelName });
+    setShowUnhideConfirm(true);
+  };
+
+  const confirmUnhideFloor = async () => {
+    if (!floorToUnhide) return;
+    try {
+      await unhideFloorLevelMutation.mutateAsync({ floorLevelId: floorToUnhide.id });
+      toast.success(`Floor "${floorToUnhide.name}" has been restored to public view`);
+    } catch (error) {
+      console.error('Unhide mutation failed:', error);
+      toast.error('Failed to restore floor');
+    }
+    setShowUnhideConfirm(false);
+    setFloorToUnhide(null);
   };
 
   const handleCreateFloorLevel = async () => {
@@ -412,25 +455,41 @@ export default function AdminMaps() {
                       <Tabs value={selectedFloorLevelId?.toString() || ""} onValueChange={(val) => setSelectedFloorLevelId(parseInt(val))}>
                         <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${floorLevels.length}, 1fr)` }}>
                           {floorLevels.map((floor: any) => (
-                            <TabsTrigger key={floor.id} value={floor.id.toString()}>
+                            <TabsTrigger key={floor.id} value={floor.id.toString()} className={floor.isHidden ? "opacity-50 line-through" : ""}>
                               {floor.levelName}
+                              {floor.isHidden && (
+                                <span className="ml-2 text-xs bg-yellow-500 text-white px-1.5 py-0.5 rounded-full">Hidden</span>
+                              )}
                             </TabsTrigger>
                           ))}
                         </TabsList>
                       </Tabs>
                       {selectedFloorLevelId && (
-                        <div className="flex justify-end">
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => {
-                              const floor = floorLevels.find((f: any) => f.id === selectedFloorLevelId);
-                              if (floor) handleHideFloorLevel(floor.id, floor.levelName);
-                            }}
-                            disabled={hideFloorLevelMutation.isPending}
-                          >
-                            {hideFloorLevelMutation.isPending ? "Hiding..." : "Hide Selected Floor"}
-                          </Button>
+                        <div className="flex justify-end gap-2">
+                          {(() => {
+                            const floor = floorLevels.find((f: any) => f.id === selectedFloorLevelId);
+                            if (!floor) return null;
+                            return floor.isHidden ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleUnhideFloorLevel(floor.id, floor.levelName)}
+                                disabled={unhideFloorLevelMutation.isPending}
+                                className="border-green-500 text-green-600 hover:bg-green-50"
+                              >
+                                {unhideFloorLevelMutation.isPending ? "Restoring..." : "Restore to Public"}
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleHideFloorLevel(floor.id, floor.levelName)}
+                                disabled={hideFloorLevelMutation.isPending}
+                              >
+                                {hideFloorLevelMutation.isPending ? "Hiding..." : "Hide Selected Floor"}
+                              </Button>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
@@ -581,6 +640,46 @@ export default function AdminMaps() {
         )}
       </div>
       </div>
+
+      {/* Hide Floor Confirmation Dialog */}
+      {showHideConfirm && floorToHide && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-semibold mb-2">Hide Floor</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to hide "{floorToHide.name}"? Hidden floors won't appear in public views but all historical data will be preserved.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => { setShowHideConfirm(false); setFloorToHide(null); }}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmHideFloor} disabled={hideFloorLevelMutation.isPending}>
+                {hideFloorLevelMutation.isPending ? "Hiding..." : "Hide Floor"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unhide Floor Confirmation Dialog */}
+      {showUnhideConfirm && floorToUnhide && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-semibold mb-2">Restore Floor</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to restore "{floorToUnhide.name}" to public view?
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => { setShowUnhideConfirm(false); setFloorToUnhide(null); }}>
+                Cancel
+              </Button>
+              <Button className="bg-green-600 hover:bg-green-700" onClick={confirmUnhideFloor} disabled={unhideFloorLevelMutation.isPending}>
+                {unhideFloorLevelMutation.isPending ? "Restoring..." : "Restore Floor"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, centre_id, level_name, level_number, is_hidden FROM floor_levels WHERE centre_id = 150000 OR centre_id IN (SELECT id FROM shopping_centres WHERE name LIKE '%Bass Hill%') ORDER BY centre_id, level_number;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, centre_id, level_name, level_number, is_hidden FROM floor_levels WHERE centre_id = 150000 OR centre_id IN (SELECT id FROM shopping_centres WHERE name LIKE '%Bass Hill%') ORDER BY centre_id, level_number;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'centre_id' in 'where clause'"
+  ]
+}

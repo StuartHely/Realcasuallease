@@ -2301,3 +2301,15 @@
 - [x] Ensure admin views include hidden floors (pass includeHidden=true)
 - [x] Test Hide Floor functionality in admin maps page
 - [x] Verify hidden floors don't appear in public views but preserve booking history
+
+
+## Unhide Floor & Hidden Indicator (Jan 17, 2026)
+- [x] Create unhideFloorLevel backend function in db.ts
+- [x] Add unhideFloorLevel tRPC procedure to routers.ts
+- [x] Add "Restore to Public" button for hidden floors in admin Maps.tsx
+- [x] Add visual indicator (yellow "Hidden" badge) for hidden floors in admin view
+- [x] Show hidden floors with distinct styling (strikethrough text, dimmed opacity)
+- [x] Replaced window.confirm with proper modal confirmation dialogs
+- [x] Test hide floor functionality - PASSED (floor shows Hidden badge)
+- [x] Test unhide functionality restores floor to public view - PASSED
+- [x] Verify hidden indicator displays correctly for hidden floors - PASSED

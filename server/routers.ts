@@ -1321,6 +1321,12 @@ export const appRouter = router({
         return await db.hideFloorLevel(input.floorLevelId);
       }),
 
+    unhideFloorLevel: adminProcedure
+      .input(z.object({ floorLevelId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.unhideFloorLevel(input.floorLevelId);
+      }),
+
     uploadFloorLevelMap: adminProcedure
       .input(z.object({
         floorLevelId: z.number(),

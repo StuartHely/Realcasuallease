@@ -823,6 +823,15 @@ export async function hideFloorLevel(id: number) {
     .where(eq(floorLevels.id, id));
 }
 
+export async function unhideFloorLevel(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.update(floorLevels)
+    .set({ isHidden: false })
+    .where(eq(floorLevels.id, id));
+}
+
 export async function getFloorLevelsByCentre(centreId: number, includeHidden: boolean = false) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
