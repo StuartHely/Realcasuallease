@@ -409,10 +409,15 @@ function parseDateFromQuery(query: string): { date?: string; endDate?: string; c
       const month = monthNames[monthOnlyMatch[1].toLowerCase()];
       const year = monthOnlyMatch[2] ? parseInt(monthOnlyMatch[2]) : currentYear;
       
-      // Default to 1st of the month
-      const date = getNextOccurrence(month, 1);
-      if (monthOnlyMatch[2]) date.setFullYear(year);
-      parsedDate = formatDate(date);
+      // Set start date to 1st of the month
+      const startDate = getNextOccurrence(month, 1);
+      if (monthOnlyMatch[2]) startDate.setFullYear(year);
+      parsedDate = formatDate(startDate);
+      
+      // Set end date to last day of the month
+      const endDateObj = new Date(startDate.getFullYear(), month + 1, 0); // Day 0 of next month = last day of current month
+      endDate = formatDate(endDateObj);
+      
       cleanedQuery = cleanedQuery.replace(monthOnlyPattern, '');
     }
   }

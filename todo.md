@@ -2258,3 +2258,12 @@
 - [x] Default to 1st of the month when no specific day is provided
 - [x] Test with "Chullora Marketplace in July" - PASSED (returns 01/07/2026)
 - [x] Verified calendar displays Jul 1 - Jul 14, 2026
+
+
+## Month Range Support for Date Parsing (Jan 17, 2026)
+- [x] Update queryParser.ts to calculate end date as last day of month for month-only queries
+- [x] Set startDate to 1st of month and endDate to last day of month (28/29/30/31 depending on month)
+- [x] Handle leap years correctly for February (using Date(year, month+1, 0) trick)
+- [x] Test with "Chullora Marketplace in July" - PASSED (returns July 1-31, 2026)
+- [x] Verify calendar displays entire month range - PASSED (shows Jul 1-28 across multiple weeks)
+- [x] Verify URL parameters include both date and endDate - PASSED (date=2026-07-01&endDate=2026-07-31)
