@@ -65,7 +65,7 @@ export default function AdminMaps() {
   });
 
   // Delete floor level mutation
-  const deleteFloorLevelMutation = trpc.admin.deleteFloorLevel.useMutation({
+  const hideFloorLevelMutation = trpc.admin.hideFloorLevel.useMutation({
     onSuccess: () => {
       toast.success("Floor level deleted successfully");
       refetchFloorLevels();
@@ -210,11 +210,11 @@ export default function AdminMaps() {
     reader.readAsDataURL(mapImage);
   };
 
-  const handleDeleteFloorLevel = async (floorLevelId: number, levelName: string) => {
-    if (!confirm(`Are you sure you want to delete "${levelName}"? This action cannot be undone.`)) {
+  const handleHideFloorLevel = async (floorLevelId: number, levelName: string) => {
+    if (!confirm(`Are you sure you want to hide "${levelName}"? Hidden floors won't appear in public views but all historical data will be preserved.`)) {
       return;
     }
-    await deleteFloorLevelMutation.mutateAsync({ floorLevelId });
+    await hideFloorLevelMutation.mutateAsync({ floorLevelId });
   };
 
   const handleCreateFloorLevel = async () => {
@@ -425,12 +425,11 @@ export default function AdminMaps() {
                             size="sm"
                             onClick={() => {
                               const floor = floorLevels.find((f: any) => f.id === selectedFloorLevelId);
-                              if (floor) handleDeleteFloorLevel(floor.id, floor.levelName);
+                              if (floor) handleHideFloorLevel(floor.id, floor.levelName);
                             }}
-                            disabled={deleteFloorLevelMutation.isPending}
+                            disabled={hideFloorLevelMutation.isPending}
                           >
-                            <X className="mr-2 h-4 w-4" />
-                            {deleteFloorLevelMutation.isPending ? "Deleting..." : "Delete Selected Floor"}
+                            {hideFloorLevelMutation.isPending ? "Hiding..." : "Hide Selected Floor"}
                           </Button>
                         </div>
                       )}

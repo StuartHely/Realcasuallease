@@ -2267,3 +2267,37 @@
 - [x] Test with "Chullora Marketplace in July" - PASSED (returns July 1-31, 2026)
 - [x] Verify calendar displays entire month range - PASSED (shows Jul 1-28 across multiple weeks)
 - [x] Verify URL parameters include both date and endDate - PASSED (date=2026-07-01&endDate=2026-07-31)
+
+
+## Map Management - 2nd Floor Naming Bug (Jan 17, 2026)
+- [ ] Investigate why 2nd floor cannot be named in Map Management
+- [ ] Check if there's a validation issue preventing floor name input
+- [ ] Check if there's a duplicate floor number validation blocking the 2nd floor
+- [ ] Fix the bug to allow naming 2nd floor with both names and numbers
+- [ ] Test adding and naming multiple floors
+
+
+## Replace Delete Floor with Hide Floor (Soft Delete) - Jan 17, 2026
+- [ ] Add `isHidden` boolean field to floor_levels table schema
+- [ ] Run database migration to add isHidden column (default false)
+- [ ] Update deleteFloorLevel to set isHidden=true instead of deleting
+- [ ] Rename "Delete Floor" button to "Hide Floor" in Maps.tsx
+- [ ] Update floor level queries to filter out hidden floors from public views
+- [ ] Ensure hidden floors still appear in admin views with "(Hidden)" indicator
+- [ ] Preserve all historical booking data when floor is hidden
+- [ ] Test hiding a floor and verify sites/bookings are preserved
+- [ ] Verify hidden floors don't appear in search results or public pages
+
+
+## Replace Delete Floor with Hide Floor (Soft Delete) - Jan 17, 2026
+- [x] Add isHidden boolean field to floor_levels schema
+- [x] Run database migration to add isHidden column
+- [x] Create hideFloorLevel backend function in db.ts
+- [x] Add hideFloorLevel tRPC procedure to routers.ts
+- [x] Update frontend Maps.tsx to use "Hide Floor" instead of "Delete Floor"
+- [x] Change confirmation message to explain soft delete preserves historical data
+- [x] Update getFloorLevelsByCentre to filter hidden floors from public views
+- [x] Update getFloorLevelsByCentreId to filter hidden floors from public views
+- [x] Ensure admin views include hidden floors (pass includeHidden=true)
+- [x] Test Hide Floor functionality in admin maps page
+- [x] Verify hidden floors don't appear in public views but preserve booking history

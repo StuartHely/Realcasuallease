@@ -769,14 +769,19 @@ export async function getAuditLogs() {
 }
 
 // Floor Levels
-export async function getFloorLevelsByCentreId(centreId: number) {
+export async function getFloorLevelsByCentreId(centreId: number, includeHidden: boolean = false) {
   const db = await getDb();
   if (!db) return [];
+
+  const conditions = [eq(floorLevels.centreId, centreId)];
+  if (!includeHidden) {
+    conditions.push(eq(floorLevels.isHidden, false));
+  }
 
   return await db
     .select()
     .from(floorLevels)
-    .where(eq(floorLevels.centreId, centreId))
+    .where(and(...conditions))
     .orderBy(floorLevels.displayOrder);
 }
 
@@ -809,13 +814,27 @@ export async function deleteFloorLevel(id: number) {
   return await db.delete(floorLevels).where(eq(floorLevels.id, id));
 }
 
-export async function getFloorLevelsByCentre(centreId: number) {
+export async function hideFloorLevel(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.update(floorLevels)
+    .set({ isHidden: true })
+    .where(eq(floorLevels.id, id));
+}
+
+export async function getFloorLevelsByCentre(centreId: number, includeHidden: boolean = false) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
+  const conditions = [eq(floorLevels.centreId, centreId)];
+  if (!includeHidden) {
+    conditions.push(eq(floorLevels.isHidden, false));
+  }
+  
   return await db.select()
     .from(floorLevels)
-    .where(eq(floorLevels.centreId, centreId))
+    .where(and(...conditions))
     .orderBy(floorLevels.displayOrder);
 }
 

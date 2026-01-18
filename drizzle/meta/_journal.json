@@ -218,6 +218,13 @@
       "when": 1768540269162,
       "tag": "0030_wild_agent_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "5",
+      "when": 1768703545843,
+      "tag": "0031_hot_karen_page",
+      "breakpoints": true
     }
   ]
 }

@@ -93,6 +93,7 @@ export const floorLevels = mysqlTable("floor_levels", {
   levelNumber: int("levelNumber").notNull(), // 0 for ground, 1 for level 1, etc.
   mapImageUrl: text("mapImageUrl"),
   displayOrder: int("displayOrder").notNull(), // For custom ordering
+  isHidden: boolean("isHidden").default(false).notNull(), // Soft delete - hide from public but preserve historical data
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

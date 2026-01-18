@@ -1295,7 +1295,7 @@ export const appRouter = router({
     getFloorLevels: adminProcedure
       .input(z.object({ centreId: z.number() }))
       .query(async ({ input }) => {
-        return await db.getFloorLevelsByCentre(input.centreId);
+        return await db.getFloorLevelsByCentre(input.centreId, true); // Include hidden floors for admin
       }),
 
     createFloorLevel: adminProcedure
@@ -1313,6 +1313,12 @@ export const appRouter = router({
       .input(z.object({ floorLevelId: z.number() }))
       .mutation(async ({ input }) => {
         return await db.deleteFloorLevel(input.floorLevelId);
+      }),
+
+    hideFloorLevel: adminProcedure
+      .input(z.object({ floorLevelId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.hideFloorLevel(input.floorLevelId);
       }),
 
     uploadFloorLevelMap: adminProcedure
