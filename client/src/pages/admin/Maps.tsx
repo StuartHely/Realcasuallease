@@ -262,20 +262,14 @@ export default function AdminMaps() {
 
   const handleCreateFloorLevel = async () => {
     if (!newFloorName || !newFloorNumber || selectedCentreId === 0) {
-      toast.error("Please enter floor name and number");
-      return;
-    }
-
-    const levelNum = parseInt(newFloorNumber);
-    if (isNaN(levelNum)) {
-      toast.error("Floor number must be a valid number");
+      toast.error("Please enter floor name and level code");
       return;
     }
 
     await createFloorLevelMutation.mutateAsync({
       centreId: selectedCentreId,
       levelName: newFloorName,
-      levelNumber: levelNum,
+      levelNumber: newFloorNumber.trim(), // Now accepts text like "G", "L1", "M", "Upper"
       displayOrder: floorLevels.length,
     });
   };
@@ -509,11 +503,11 @@ export default function AdminMaps() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="floor-number">Floor Number</Label>
+                        <Label htmlFor="floor-number">Floor Level Code</Label>
                         <Input
                           id="floor-number"
-                          type="number"
-                          placeholder="0 for ground, 1 for level 1"
+                          type="text"
+                          placeholder="e.g., G, L1, M, Upper"
                           value={newFloorNumber}
                           onChange={(e) => setNewFloorNumber(e.target.value)}
                         />

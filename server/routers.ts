@@ -1302,7 +1302,7 @@ export const appRouter = router({
       .input(z.object({
         centreId: z.number(),
         levelName: z.string(),
-        levelNumber: z.number(),
+        levelNumber: z.string(), // e.g., "G", "L1", "M", "Upper"
         displayOrder: z.number(),
       }))
       .mutation(async ({ input }) => {

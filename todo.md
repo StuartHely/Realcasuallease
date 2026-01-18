@@ -2313,3 +2313,12 @@
 - [x] Test hide floor functionality - PASSED (floor shows Hidden badge)
 - [x] Test unhide functionality restores floor to public view - PASSED
 - [x] Verify hidden indicator displays correctly for hidden floors - PASSED
+
+
+## Floor Level Code Field - Accept Text Input (Jan 18, 2026)
+- [x] Change Floor Number input from type="number" to type="text"
+- [x] Update schema - changed levelNumber from int to varchar(20)
+- [x] Update backend validation to accept text floor numbers (z.string())
+- [x] Renamed label from "Floor Number" to "Floor Level Code"
+- [x] Updated placeholder to "e.g., G, L1, M, Upper"
+- [x] Test creating floors with text names - PASSED (created "Coles Level" with code "CL")

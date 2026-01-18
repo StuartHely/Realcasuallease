@@ -90,7 +90,7 @@ export const floorLevels = mysqlTable("floor_levels", {
   id: int("id").autoincrement().primaryKey(),
   centreId: int("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
   levelName: varchar("levelName", { length: 100 }).notNull(), // e.g., "Ground Floor", "Level 1", "Level 2"
-  levelNumber: int("levelNumber").notNull(), // 0 for ground, 1 for level 1, etc.
+  levelNumber: varchar("levelNumber", { length: 20 }).notNull(), // e.g., "G", "L1", "M", "Coles Level"
   mapImageUrl: text("mapImageUrl"),
   displayOrder: int("displayOrder").notNull(), // For custom ordering
   isHidden: boolean("isHidden").default(false).notNull(), // Soft delete - hide from public but preserve historical data
