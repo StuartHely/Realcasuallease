@@ -422,21 +422,60 @@ function parseDateFromQuery(query: string): { date?: string; endDate?: string; c
     }
   }
   
-  // Check for numeric date: "6/6", "06/06", "6/6/2026" (Australian DD/MM format)
+  // Check for numeric date formats (Australian DD/MM format)
+  // Supports: "6/6", "06/06", "6/6/2026", "6/6/26", "06062026", "060626"
   if (!parsedDate) {
-    const numericPattern = /\b(?:from|on|for)?\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/;
-    const numericMatch = query.match(numericPattern);
-    if (numericMatch) {
-      const day = parseInt(numericMatch[1]);
-      const month = parseInt(numericMatch[2]) - 1; // 0-indexed
-      let year = numericMatch[3] ? parseInt(numericMatch[3]) : currentYear;
-      if (year < 100) year += 2000; // Handle 2-digit years
+    // First try ddmmyyyy format (8 digits, no separators) - e.g., "06062026"
+    const ddmmyyyyPattern = /\b(\d{2})(\d{2})(\d{4})\b/;
+    const ddmmyyyyMatch = query.match(ddmmyyyyPattern);
+    if (ddmmyyyyMatch) {
+      const day = parseInt(ddmmyyyyMatch[1]);
+      const month = parseInt(ddmmyyyyMatch[2]) - 1; // 0-indexed
+      const year = parseInt(ddmmyyyyMatch[3]);
       
       const date = new Date(year, month, day);
       // Only use if it's a valid date
-      if (date.getDate() === day && date.getMonth() === month) {
+      if (date.getDate() === day && date.getMonth() === month && day <= 31 && month <= 11) {
         parsedDate = formatDate(date);
-        cleanedQuery = cleanedQuery.replace(numericPattern, '');
+        cleanedQuery = cleanedQuery.replace(ddmmyyyyPattern, '');
+      }
+    }
+    
+    // Try ddmmyy format (6 digits, no separators) - e.g., "060626"
+    if (!parsedDate) {
+      const ddmmyyPattern = /\b(\d{2})(\d{2})(\d{2})\b/;
+      const ddmmyyMatch = query.match(ddmmyyPattern);
+      if (ddmmyyMatch) {
+        const day = parseInt(ddmmyyMatch[1]);
+        const month = parseInt(ddmmyyMatch[2]) - 1; // 0-indexed
+        let year = parseInt(ddmmyyMatch[3]);
+        year += 2000; // Assume 20xx for 2-digit years
+        
+        const date = new Date(year, month, day);
+        // Only use if it's a valid date (day 1-31, month 1-12)
+        if (date.getDate() === day && date.getMonth() === month && day <= 31 && month <= 11) {
+          parsedDate = formatDate(date);
+          cleanedQuery = cleanedQuery.replace(ddmmyyPattern, '');
+        }
+      }
+    }
+    
+    // Try dd/mm/yyyy or dd/mm/yy format (with slashes) - e.g., "06/06/2026" or "06/06/26"
+    if (!parsedDate) {
+      const numericPattern = /\b(?:from|on|for)?\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/;
+      const numericMatch = query.match(numericPattern);
+      if (numericMatch) {
+        const day = parseInt(numericMatch[1]);
+        const month = parseInt(numericMatch[2]) - 1; // 0-indexed
+        let year = numericMatch[3] ? parseInt(numericMatch[3]) : currentYear;
+        if (year < 100) year += 2000; // Handle 2-digit years
+        
+        const date = new Date(year, month, day);
+        // Only use if it's a valid date
+        if (date.getDate() === day && date.getMonth() === month) {
+          parsedDate = formatDate(date);
+          cleanedQuery = cleanedQuery.replace(numericPattern, '');
+        }
       }
     }
   }

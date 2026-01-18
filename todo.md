@@ -2342,3 +2342,9 @@
 
 ## Bug Fixes (Jan 18, 2026)
 - [x] Fix duplicate React key error on Search page (site-casual-120010-30001 and site-detail-casual-120010-30001)
+
+## Date Parser Enhancement (Jan 18, 2026)
+- [x] Add support for ddmmyyyy format (e.g., 06062026)
+- [x] Add support for ddmmyy format (e.g., 060626)
+- [x] Add support for dd/mm/yyyy format (e.g., 06/06/2026)
+- [x] Add support for dd/mm/yy format (e.g., 06/06/26)
