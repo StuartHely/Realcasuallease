@@ -1,0 +1,50 @@
+{
+  "query": "SELECT 'sites' as type, id, siteNumber as identifier FROM sites WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%') UNION ALL SELECT 'vacant_shops' as type, id, shopNumber as identifier FROM vacant_shops WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%') UNION ALL SELECT 'third_line' as type, id, assetNumber as identifier FROM third_line_income WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%') ORDER BY type, id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT 'sites' as type, id, siteNumber as identifier FROM sites WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%') UNION ALL SELECT 'vacant_shops' as type, id, shopNumber as identifier FROM vacant_shops WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%') UNION ALL SELECT 'third_line' as type, id, assetNumber as identifier FROM third_line_income WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%') ORDER BY type, id;",
+  "rows": [
+    {
+      "type": "sites",
+      "id": "120001",
+      "identifier": "2"
+    },
+    {
+      "type": "sites",
+      "id": "120002",
+      "identifier": "10"
+    },
+    {
+      "type": "sites",
+      "id": "120003",
+      "identifier": "11"
+    },
+    {
+      "type": "sites",
+      "id": "120004",
+      "identifier": "L2-33"
+    },
+    {
+      "type": "sites",
+      "id": "120005",
+      "identifier": "L2-99"
+    },
+    {
+      "type": "third_line",
+      "id": "30001",
+      "identifier": "ATM"
+    },
+    {
+      "type": "vacant_shops",
+      "id": "30001",
+      "identifier": "1"
+    },
+    {
+      "type": "vacant_shops",
+      "id": "60001",
+      "identifier": "X1"
+    }
+  ],
+  "messages": [],
+  "stdout": "type\tid\tidentifier\nsites\t120001\t2\nsites\t120002\t10\nsites\t120003\t11\nsites\t120004\tL2-33\nsites\t120005\tL2-99\nthird_line\t30001\tATM\nvacant_shops\t30001\t1\nvacant_shops\t60001\tX1\n",
+  "stderr": "",
+  "execution_time_ms": 1542
+}

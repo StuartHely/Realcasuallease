@@ -1,0 +1,42 @@
+{
+  "query": "SELECT 'sites' as type, id FROM sites WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%') UNION ALL SELECT 'vacant_shops' as type, id FROM vacant_shops WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%') UNION ALL SELECT 'third_line' as type, id FROM third_line_income WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT 'sites' as type, id FROM sites WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%') UNION ALL SELECT 'vacant_shops' as type, id FROM vacant_shops WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%') UNION ALL SELECT 'third_line' as type, id FROM third_line_income WHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%');",
+  "rows": [
+    {
+      "type": "vacant_shops",
+      "id": "30001"
+    },
+    {
+      "type": "vacant_shops",
+      "id": "60001"
+    },
+    {
+      "type": "sites",
+      "id": "120001"
+    },
+    {
+      "type": "sites",
+      "id": "120002"
+    },
+    {
+      "type": "sites",
+      "id": "120003"
+    },
+    {
+      "type": "sites",
+      "id": "120004"
+    },
+    {
+      "type": "sites",
+      "id": "120005"
+    },
+    {
+      "type": "third_line",
+      "id": "30001"
+    }
+  ],
+  "messages": [],
+  "stdout": "type\tid\nvacant_shops\t30001\nvacant_shops\t60001\nsites\t120001\nsites\t120002\nsites\t120003\nsites\t120004\nsites\t120005\nthird_line\t30001\n",
+  "stderr": "",
+  "execution_time_ms": 1544
+}

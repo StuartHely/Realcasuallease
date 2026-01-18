@@ -2339,3 +2339,6 @@
 - [x] Remove Floor Level Code field from Add New Floor Level form in Maps.tsx
 - [x] Delete test floors "Test Floor" and "Coles Level" from Bass Hill Plaza
 - [x] Implement alphabetical sorting of floors by levelName instead of displayOrder
+
+## Bug Fixes (Jan 18, 2026)
+- [x] Fix duplicate React key error on Search page (site-casual-120010-30001 and site-detail-casual-120010-30001)
