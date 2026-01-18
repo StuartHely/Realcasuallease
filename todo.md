@@ -2348,3 +2348,9 @@
 - [x] Add support for ddmmyy format (e.g., 060626)
 - [x] Add support for dd/mm/yyyy format (e.g., 06/06/2026)
 - [x] Add support for dd/mm/yy format (e.g., 06/06/26)
+
+## Bug Fixes (Jan 18, 2026 - Part 2)
+- [x] Fix missing centre map for Chullora search results (floor level was hidden, now unhidden - but no map image uploaded yet)
+
+## UI/UX Improvements (Jan 18, 2026)
+- [x] Update floor level creation message in Site Assignment to use consistent naming

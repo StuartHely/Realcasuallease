@@ -124,7 +124,7 @@ export default function AdminSiteAssignment() {
             <Card className="mt-6">
               <CardContent className="pt-6">
                 <p className="text-center text-muted-foreground">
-                  This shopping centre has no floor levels defined. Please create floor levels in the Maps tool first.
+                  This shopping centre has no floor levels defined. Please create floor levels in Admin → Maps first.
                 </p>
               </CardContent>
             </Card>
