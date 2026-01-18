@@ -782,7 +782,7 @@ export async function getFloorLevelsByCentreId(centreId: number, includeHidden: 
     .select()
     .from(floorLevels)
     .where(and(...conditions))
-    .orderBy(floorLevels.displayOrder);
+    .orderBy(floorLevels.levelName); // Sort alphabetically by floor name
 }
 
 export async function getFloorLevelById(id: number) {
@@ -844,7 +844,7 @@ export async function getFloorLevelsByCentre(centreId: number, includeHidden: bo
   return await db.select()
     .from(floorLevels)
     .where(and(...conditions))
-    .orderBy(floorLevels.displayOrder);
+    .orderBy(floorLevels.levelName); // Sort alphabetically by floor name
 }
 
 export async function uploadFloorLevelMap(floorLevelId: number, imageData: string, fileName: string) {

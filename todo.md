@@ -2322,3 +2322,20 @@
 - [x] Renamed label from "Floor Number" to "Floor Level Code"
 - [x] Updated placeholder to "e.g., G, L1, M, Upper"
 - [x] Test creating floors with text names - PASSED (created "Coles Level" with code "CL")
+
+
+## Remove Floor Level Code Field & Delete Test Floors (Jan 18, 2026)
+- [ ] Remove "Floor Level Code" field from the floor creation form in Maps.tsx
+- [ ] Update createFloorLevel backend to not require levelNumber
+- [ ] Make levelNumber optional or auto-generate it in the database
+- [ ] Delete "Test Floor" from Bass Hill Plaza
+- [ ] Delete "Coles Level" from Bass Hill Plaza
+- [ ] Implement alphabetical sorting of floors by levelName
+- [ ] Update getFloorLevelsByCentre to sort by levelName alphabetically
+- [ ] Test floor creation with only Floor Name field
+- [ ] Verify floors are sorted alphabetically in tabs
+
+## Floor Management Simplification (Jan 18, 2026)
+- [x] Remove Floor Level Code field from Add New Floor Level form in Maps.tsx
+- [x] Delete test floors "Test Floor" and "Coles Level" from Bass Hill Plaza
+- [x] Implement alphabetical sorting of floors by levelName instead of displayOrder

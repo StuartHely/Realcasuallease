@@ -25,7 +25,6 @@ export default function AdminMaps() {
   const [isDragging, setIsDragging] = useState<number | null>(null);
   const [dragOccurred, setDragOccurred] = useState(false);
   const [newFloorName, setNewFloorName] = useState("");
-  const [newFloorNumber, setNewFloorNumber] = useState("");
   const canvasRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
@@ -61,7 +60,6 @@ export default function AdminMaps() {
       toast.success("Floor level created successfully");
       refetchFloorLevels();
       setNewFloorName("");
-      setNewFloorNumber("");
     },
     onError: (error: any) => {
       toast.error(`Failed to create floor level: ${error.message}`);
@@ -261,15 +259,15 @@ export default function AdminMaps() {
   };
 
   const handleCreateFloorLevel = async () => {
-    if (!newFloorName || !newFloorNumber || selectedCentreId === 0) {
-      toast.error("Please enter floor name and level code");
+    if (!newFloorName || selectedCentreId === 0) {
+      toast.error("Please enter floor name");
       return;
     }
 
     await createFloorLevelMutation.mutateAsync({
       centreId: selectedCentreId,
       levelName: newFloorName,
-      levelNumber: newFloorNumber.trim(), // Now accepts text like "G", "L1", "M", "Upper"
+      levelNumber: `${floorLevels.length + 1}`, // Auto-generate sequential number
       displayOrder: floorLevels.length,
     });
   };
@@ -492,31 +490,21 @@ export default function AdminMaps() {
                   {/* Add New Floor Level */}
                   <div className="border-t pt-4">
                     <h4 className="text-sm font-semibold mb-3">Add New Floor Level</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
                         <Label htmlFor="floor-name">Floor Name</Label>
                         <Input
                           id="floor-name"
-                          placeholder="e.g., Ground Floor, Level 1"
+                          placeholder="e.g., Ground Floor, Level 1, Mezzanine"
                           value={newFloorName}
                           onChange={(e) => setNewFloorName(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="floor-number">Floor Level Code</Label>
-                        <Input
-                          id="floor-number"
-                          type="text"
-                          placeholder="e.g., G, L1, M, Upper"
-                          value={newFloorNumber}
-                          onChange={(e) => setNewFloorNumber(e.target.value)}
                         />
                       </div>
                       <div className="flex items-end">
                         <Button
                           onClick={handleCreateFloorLevel}
                           disabled={createFloorLevelMutation.isPending}
-                          className="w-full bg-green-600 hover:bg-green-700"
+                          className="bg-green-600 hover:bg-green-700"
                         >
                           <Plus className="mr-2 h-4 w-4" />
                           {createFloorLevelMutation.isPending ? "Creating..." : "Add Floor"}
