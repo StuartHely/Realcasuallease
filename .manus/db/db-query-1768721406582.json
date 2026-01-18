@@ -1,0 +1,55 @@
+{
+  "query": "SELECT s.id, s.siteNumber, s.mapMarkerX, s.mapMarkerY, s.floorLevelId, fl.levelName, fl.mapImageUrl\nFROM sites s\nLEFT JOIN floor_levels fl ON s.floorLevelId = fl.id\nWHERE s.centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Highlands%' LIMIT 1)\nORDER BY s.siteNumber;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT s.id, s.siteNumber, s.mapMarkerX, s.mapMarkerY, s.floorLevelId, fl.levelName, fl.mapImageUrl\nFROM sites s\nLEFT JOIN floor_levels fl ON s.floorLevelId = fl.id\nWHERE s.centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Highlands%' LIMIT 1)\nORDER BY s.siteNumber;",
+  "rows": [
+    {
+      "id": "60018",
+      "siteNumber": "1",
+      "mapMarkerX": "43",
+      "mapMarkerY": "56",
+      "floorLevelId": "210001",
+      "levelName": "Ground",
+      "mapImageUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310419663028265080/6yeAhZnHexQXKcGnnUhDLE/centres/floor-maps/210001-1768720402603.png"
+    },
+    {
+      "id": "60019",
+      "siteNumber": "3",
+      "mapMarkerX": "44",
+      "mapMarkerY": "59",
+      "floorLevelId": "210001",
+      "levelName": "Ground",
+      "mapImageUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310419663028265080/6yeAhZnHexQXKcGnnUhDLE/centres/floor-maps/210001-1768720402603.png"
+    },
+    {
+      "id": "60020",
+      "siteNumber": "5",
+      "mapMarkerX": "47",
+      "mapMarkerY": "69",
+      "floorLevelId": "210001",
+      "levelName": "Ground",
+      "mapImageUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310419663028265080/6yeAhZnHexQXKcGnnUhDLE/centres/floor-maps/210001-1768720402603.png"
+    },
+    {
+      "id": "60021",
+      "siteNumber": "7",
+      "mapMarkerX": "59",
+      "mapMarkerY": "60",
+      "floorLevelId": "210001",
+      "levelName": "Ground",
+      "mapImageUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310419663028265080/6yeAhZnHexQXKcGnnUhDLE/centres/floor-maps/210001-1768720402603.png"
+    },
+    {
+      "id": "60022",
+      "siteNumber": "8",
+      "mapMarkerX": "38",
+      "mapMarkerY": "58",
+      "floorLevelId": "210001",
+      "levelName": "Ground",
+      "mapImageUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310419663028265080/6yeAhZnHexQXKcGnnUhDLE/centres/floor-maps/210001-1768720402603.png"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsiteNumber\tmapMarkerX\tmapMarkerY\tfloorLevelId\tlevelName\tmapImageUrl\n60018\t1\t43\t56\t210001\tGround\thttps://d2xsxph8kpxj0f.cloudfront.net/310419663028265080/6yeAhZnHexQXKcGnnUhDLE/centres/floor-maps/210001-1768720402603.png\n60019\t3\t44\t59\t210001\tGround\thttps://d2xsxph8kpxj0f.cloudfront.net/310419663028265080/6yeAhZnHexQXKcGnnUhDLE/centres/floor-maps/210001-1768720402603.png\n60020\t5\t47\t69\t210001\tGround\thttps://d2xsxph8kpxj0f.cloudfront.net/310419663028265080/6yeAhZnHexQXKcGnnUhDLE/centres/floor-maps/210001-1768720402603.png\n60021\t7\t59\t60\t210001\tGround\thttps://d2xsxph8kpxj0f.cloudfront.net/310419663028265080/6yeAhZnHexQXKcGnnUhDLE/centres/floor-maps/210001-1768720402603.png\n60022\t8\t38\t58\t210001\tGround\thttps://d2xsxph8kpxj0f.cloudfront.net/310419663028265080/6yeAhZnHexQXKcGnnUhDLE/centres/floor-maps/210001-1768720402603.png\n",
+  "stderr": "",
+  "execution_time_ms": 1564
+}

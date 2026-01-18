@@ -2359,4 +2359,4 @@
 - [ ] Investigate and fix missing floor plan map for Highlands Marketplace
 
 ## Bug Fixes (Jan 18, 2026 - Part 4)
-- [x] Fix misaligned site markers between Admin Maps and live search results (Highlands)
+- [x] Fix misaligned site markers between Admin Maps and live search results (Highlands) - fixed by changing container from w-full to inline-block

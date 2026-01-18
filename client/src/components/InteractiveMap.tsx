@@ -148,7 +148,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
     <div className="bg-white rounded-lg border-2 border-gray-200">
       <div 
         ref={mapContainerRef} 
-        className="relative w-full"
+        className="relative inline-block"
         onMouseLeave={handleMarkerLeave}
       >
         <img
