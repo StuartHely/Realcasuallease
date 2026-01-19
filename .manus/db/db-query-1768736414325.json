@@ -1,0 +1,110 @@
+{
+  "query": "SELECT startDate, COUNT(*) as cnt, SUM(ownerAmount) as total\nFROM bookings \nWHERE status = 'confirmed' AND startDate >= '2025-07-01'\nGROUP BY startDate\nORDER BY startDate\nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT startDate, COUNT(*) as cnt, SUM(ownerAmount) as total\nFROM bookings \nWHERE status = 'confirmed' AND startDate >= '2025-07-01'\nGROUP BY startDate\nORDER BY startDate\nLIMIT 20;",
+  "rows": [
+    {
+      "startDate": "2026-01-19 00:00:00",
+      "cnt": "1",
+      "total": "1980.00"
+    },
+    {
+      "startDate": "2026-02-05 05:04:17",
+      "cnt": "1",
+      "total": "675.00"
+    },
+    {
+      "startDate": "2026-02-05 06:14:15",
+      "cnt": "1",
+      "total": "675.00"
+    },
+    {
+      "startDate": "2026-02-05 06:15:29",
+      "cnt": "1",
+      "total": "675.00"
+    },
+    {
+      "startDate": "2026-02-05 06:16:51",
+      "cnt": "1",
+      "total": "675.00"
+    },
+    {
+      "startDate": "2026-02-05 06:18:08",
+      "cnt": "1",
+      "total": "675.00"
+    },
+    {
+      "startDate": "2026-02-05 06:18:52",
+      "cnt": "1",
+      "total": "675.00"
+    },
+    {
+      "startDate": "2026-04-16 05:18:11",
+      "cnt": "1",
+      "total": "675.00"
+    },
+    {
+      "startDate": "2026-04-16 05:18:56",
+      "cnt": "1",
+      "total": "675.00"
+    },
+    {
+      "startDate": "2026-06-01 00:00:00",
+      "cnt": "49",
+      "total": "6247.50"
+    },
+    {
+      "startDate": "2026-06-02 00:00:00",
+      "cnt": "25",
+      "total": "3187.50"
+    },
+    {
+      "startDate": "2026-06-03 00:00:00",
+      "cnt": "49",
+      "total": "6247.50"
+    },
+    {
+      "startDate": "2026-06-04 00:00:00",
+      "cnt": "25",
+      "total": "3187.50"
+    },
+    {
+      "startDate": "2026-06-05 00:00:00",
+      "cnt": "49",
+      "total": "6247.50"
+    },
+    {
+      "startDate": "2026-06-06 00:00:00",
+      "cnt": "26",
+      "total": "3315.00"
+    },
+    {
+      "startDate": "2026-06-07 00:00:00",
+      "cnt": "50",
+      "total": "6375.00"
+    },
+    {
+      "startDate": "2026-06-08 00:00:00",
+      "cnt": "25",
+      "total": "3191.75"
+    },
+    {
+      "startDate": "2026-06-09 00:00:00",
+      "cnt": "51",
+      "total": "6506.75"
+    },
+    {
+      "startDate": "2026-06-10 00:00:00",
+      "cnt": "25",
+      "total": "3191.75"
+    },
+    {
+      "startDate": "2026-06-11 00:00:00",
+      "cnt": "51",
+      "total": "6506.75"
+    }
+  ],
+  "messages": [],
+  "stdout": "startDate\tcnt\ttotal\n2026-01-19 00:00:00\t1\t1980.00\n2026-02-05 05:04:17\t1\t675.00\n2026-02-05 06:14:15\t1\t675.00\n2026-02-05 06:15:29\t1\t675.00\n2026-02-05 06:16:51\t1\t675.00\n2026-02-05 06:18:08\t1\t675.00\n2026-02-05 06:18:52\t1\t675.00\n2026-04-16 05:18:11\t1\t675.00\n2026-04-16 05:18:56\t1\t675.00\n2026-06-01 00:00:00\t49\t6247.50\n2026-06-02 00:00:00\t25\t3187.50\n2026-06-03 00:00:00\t49\t6247.50\n2026-06-04 00:00:00\t25\t3187.50\n2026-06-05 00:00:00\t49\t6247.50\n2026-06-06 00:00:00\t26\t3315.00\n2026-06-07 00:00:00\t50\t6375.00\n2026-06-08 00:00:00\t25\t3191.75\n2026-06-09 00:00:00\t51\t6506.75\n2026-06-10 00:00:00\t25\t3191.75\n2026-06-11 00:00:00\t51\t6506.75\n",
+  "stderr": "",
+  "execution_time_ms": 1495
+}

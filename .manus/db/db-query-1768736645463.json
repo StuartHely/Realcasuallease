@@ -1,0 +1,15 @@
+{
+  "query": "SELECT COUNT(*) as cnt, MIN(startDate) as earliest, MAX(startDate) as latest FROM bookings WHERE status = 'confirmed' AND startDate >= '2025-07-01' AND startDate <= '2026-01-18'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT COUNT(*) as cnt, MIN(startDate) as earliest, MAX(startDate) as latest FROM bookings WHERE status = 'confirmed' AND startDate >= '2025-07-01' AND startDate <= '2026-01-18'",
+  "rows": [
+    {
+      "cnt": "0",
+      "earliest": "NULL",
+      "latest": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "cnt\tearliest\tlatest\n0\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 1541
+}

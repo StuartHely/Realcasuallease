@@ -1,0 +1,50 @@
+{
+  "query": "SELECT b.siteId as booking_siteId, \n       (SELECT COUNT(*) FROM sites WHERE id = b.siteId) as exists_in_sites\nFROM bookings b \nWHERE b.status = 'confirmed' AND b.startDate >= '2025-07-01' \nGROUP BY b.siteId\nLIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT b.siteId as booking_siteId, \n       (SELECT COUNT(*) FROM sites WHERE id = b.siteId) as exists_in_sites\nFROM bookings b \nWHERE b.status = 'confirmed' AND b.startDate >= '2025-07-01' \nGROUP BY b.siteId\nLIMIT 10;",
+  "rows": [
+    {
+      "booking_siteId": "60020",
+      "exists_in_sites": "1"
+    },
+    {
+      "booking_siteId": "60022",
+      "exists_in_sites": "1"
+    },
+    {
+      "booking_siteId": "60025",
+      "exists_in_sites": "1"
+    },
+    {
+      "booking_siteId": "60041",
+      "exists_in_sites": "1"
+    },
+    {
+      "booking_siteId": "60046",
+      "exists_in_sites": "1"
+    },
+    {
+      "booking_siteId": "60048",
+      "exists_in_sites": "1"
+    },
+    {
+      "booking_siteId": "60050",
+      "exists_in_sites": "1"
+    },
+    {
+      "booking_siteId": "60063",
+      "exists_in_sites": "1"
+    },
+    {
+      "booking_siteId": "60073",
+      "exists_in_sites": "1"
+    },
+    {
+      "booking_siteId": "180006",
+      "exists_in_sites": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "booking_siteId\texists_in_sites\n60020\t1\n60022\t1\n60025\t1\n60041\t1\n60046\t1\n60048\t1\n60050\t1\n60063\t1\n60073\t1\n180006\t1\n",
+  "stderr": "",
+  "execution_time_ms": 1525
+}

@@ -40,9 +40,13 @@ export async function getPermittedSiteIds(userRole: string, assignedState: strin
 }
 
 /**
- * Calculate YTD metrics (Jan 1 to today)
+ * Calculate YTD metrics (July 1 of FY start year to today)
+ * Uses Financial Year (July-June) to match budget breakdown
+ * @param siteIds - Array of site IDs to calculate metrics for
+ * @param year - The calendar year parameter (used for month/year selection, not FY)
+ * @param financialYear - Optional: The selected financial year (e.g., 2026 for FY 2025-26)
  */
-export async function getYTDMetrics(siteIds: number[], year: number) {
+export async function getYTDMetrics(siteIds: number[], year: number, financialYear?: number) {
   const db = await getDb();
   if (!db || siteIds.length === 0) {
     return {
@@ -52,33 +56,97 @@ export async function getYTDMetrics(siteIds: number[], year: number) {
     };
   }
   
-  const startDate = new Date(year, 0, 1); // Jan 1
-  const endDate = new Date(); // Today
+  const now = new Date();
+  const currentMonth = now.getMonth(); // 0-11
+  const currentCalendarYear = now.getFullYear();
   
-  // Get all confirmed bookings in date range for permitted sites
-  const ytdBookings = await db
-    .select({
-      siteId: bookings.siteId,
-      siteName: sites.siteNumber,
-      centreName: shoppingCentres.name,
-      ownerAmount: bookings.ownerAmount,
-      startDate: bookings.startDate,
-      endDate: bookings.endDate,
-    })
-    .from(bookings)
-    .innerJoin(sites, eq(bookings.siteId, sites.id))
-    .innerJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
-    .where(
-      and(
-        inArray(bookings.siteId, siteIds),
-        eq(bookings.status, 'confirmed'),
-        gte(bookings.startDate, startDate),
-        lte(bookings.endDate, endDate)
-      )
-    );
+  // Determine FY start year based on the selected financial year if provided
+  // Otherwise, use the current date to determine which FY we're in
+  let fyStartYear: number;
+  let fyEndYear: number;
+  
+  if (financialYear) {
+    // Use the explicitly selected financial year
+    fyStartYear = financialYear - 1; // FY 2025-26 starts July 2025
+    fyEndYear = financialYear;
+  } else {
+    // Calculate based on current date
+    if (currentMonth >= 6) {
+      // July-December: we're in FY that ends next year
+      fyStartYear = currentCalendarYear;
+      fyEndYear = currentCalendarYear + 1;
+    } else {
+      // January-June: we're in FY that started last year
+      fyStartYear = currentCalendarYear - 1;
+      fyEndYear = currentCalendarYear;
+    }
+  }
+  
+  const startDate = new Date(Date.UTC(fyStartYear, 6, 1)); // July 1 of FY start year (UTC)
+  
+  // For YTD, end date is either end of today or the end of the FY, whichever is earlier
+  const fyEndDate = new Date(Date.UTC(fyEndYear, 5, 30, 23, 59, 59, 999)); // June 30 of FY end year (end of day UTC)
+  
+  // Use end of today (UTC) to include all bookings that start today
+  // Add 1 day to ensure we include bookings that start on the current UTC date
+  const endOfTodayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
+  const endDate = endOfTodayUTC < fyEndDate ? endOfTodayUTC : fyEndDate; // Use end of today if within FY, otherwise FY end
+  
+  console.log('[YTD Debug] FY Start Year:', fyStartYear);
+  console.log('[YTD Debug] Start Date:', startDate.toISOString());
+  console.log('[YTD Debug] End Date:', endDate.toISOString());
+  console.log('[YTD Debug] Site IDs count:', siteIds.length);
+  console.log('[YTD Debug] First 5 site IDs:', siteIds.slice(0, 5));
+  
+  // Get all confirmed bookings in date range
+  // Use raw SQL to avoid the siteId mismatch issue between bookings and sites tables
+  const ytdBookingsResult = await db.execute(sql`
+    SELECT 
+      b.siteId,
+      b.ownerAmount,
+      b.startDate,
+      b.endDate,
+      s.siteNumber as siteName,
+      sc.name as centreName
+    FROM bookings b
+    LEFT JOIN sites s ON b.siteId = s.id
+    LEFT JOIN shopping_centres sc ON s.centreId = sc.id
+    WHERE b.status = 'confirmed'
+      AND b.startDate >= ${startDate}
+      AND b.startDate <= ${endDate}
+  `);
+  
+  // db.execute returns [rows, fields] for MySQL
+  const ytdBookings = Array.isArray(ytdBookingsResult) && ytdBookingsResult.length > 0 
+    ? (Array.isArray(ytdBookingsResult[0]) ? ytdBookingsResult[0] : ytdBookingsResult) 
+    : [];
+  
+  console.log('[YTD Debug] Bookings found:', ytdBookings.length);
+  if (ytdBookings.length > 0) {
+    console.log('[YTD Debug] First booking:', ytdBookings[0]);
+  }
+  
+  // Debug: Check what bookings exist in the database using raw SQL
+  const rawBookings = await db.execute(sql`
+    SELECT b.siteId, b.status, b.startDate, b.ownerAmount, s.id as sites_table_id
+    FROM bookings b
+    LEFT JOIN sites s ON b.siteId = s.id
+    WHERE b.status = 'confirmed' AND b.startDate >= '2025-07-01'
+    LIMIT 5
+  `);
+  console.log('[YTD Debug] Raw SQL bookings:', JSON.stringify(rawBookings, null, 2));
+  
+  // Debug: Check if any bookings have startDate before today
+  const pastBookings = await db.execute(sql`
+    SELECT COUNT(*) as cnt, MIN(startDate) as earliest, MAX(startDate) as latest
+    FROM bookings 
+    WHERE status = 'confirmed' AND startDate >= '2025-07-01' AND startDate < '2026-01-18'
+  `);
+  console.log('[YTD Debug] Past bookings (before today):', JSON.stringify(pastBookings, null, 2));
   
   // Calculate total revenue (owner's share)
   const totalRevenue = ytdBookings.reduce((sum: number, b: any) => sum + parseFloat(b.ownerAmount), 0);
+  console.log('[YTD Debug] Total Revenue:', totalRevenue);
   
   // Calculate total booked days
   const totalBookedDays = ytdBookings.reduce((sum: number, b: any) => {

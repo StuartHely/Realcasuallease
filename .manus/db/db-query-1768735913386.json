@@ -1,0 +1,220 @@
+{
+  "query": "SELECT \n  b.id,\n  b.status,\n  b.startDate,\n  b.ownerAmount,\n  sc.name as centreName\nFROM bookings b\nJOIN sites s ON b.siteId = s.id\nJOIN shopping_centres sc ON s.centreId = sc.id\nWHERE b.status = 'confirmed'\n  AND b.startDate >= '2025-07-01'\n  AND b.startDate <= '2026-06-30'\nORDER BY b.startDate\nLIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT \n  b.id,\n  b.status,\n  b.startDate,\n  b.ownerAmount,\n  sc.name as centreName\nFROM bookings b\nJOIN sites s ON b.siteId = s.id\nJOIN shopping_centres sc ON s.centreId = sc.id\nWHERE b.status = 'confirmed'\n  AND b.startDate >= '2025-07-01'\n  AND b.startDate <= '2026-06-30'\nORDER BY b.startDate\nLIMIT 30;",
+  "rows": [
+    {
+      "id": "180001",
+      "status": "confirmed",
+      "startDate": "2026-01-19 00:00:00",
+      "ownerAmount": "1980.00",
+      "centreName": "Eastgate Bondi Junction"
+    },
+    {
+      "id": "90546",
+      "status": "confirmed",
+      "startDate": "2026-02-05 05:04:17",
+      "ownerAmount": "675.00",
+      "centreName": "Test Centre for Categories"
+    },
+    {
+      "id": "120001",
+      "status": "confirmed",
+      "startDate": "2026-02-05 06:14:15",
+      "ownerAmount": "675.00",
+      "centreName": "Test Centre for Categories"
+    },
+    {
+      "id": "120006",
+      "status": "confirmed",
+      "startDate": "2026-02-05 06:15:29",
+      "ownerAmount": "675.00",
+      "centreName": "Test Centre for Categories"
+    },
+    {
+      "id": "120011",
+      "status": "confirmed",
+      "startDate": "2026-02-05 06:16:51",
+      "ownerAmount": "675.00",
+      "centreName": "Test Centre for Categories"
+    },
+    {
+      "id": "120017",
+      "status": "confirmed",
+      "startDate": "2026-02-05 06:18:08",
+      "ownerAmount": "675.00",
+      "centreName": "Test Centre for Categories"
+    },
+    {
+      "id": "120023",
+      "status": "confirmed",
+      "startDate": "2026-02-05 06:18:52",
+      "ownerAmount": "675.00",
+      "centreName": "Test Centre for Categories"
+    },
+    {
+      "id": "120018",
+      "status": "confirmed",
+      "startDate": "2026-04-16 05:18:11",
+      "ownerAmount": "675.00",
+      "centreName": "Test Centre for Categories"
+    },
+    {
+      "id": "120024",
+      "status": "confirmed",
+      "startDate": "2026-04-16 05:18:56",
+      "ownerAmount": "675.00",
+      "centreName": "Test Centre for Categories"
+    },
+    {
+      "id": "90295",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Rockdale Plaza"
+    },
+    {
+      "id": "90001",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Highlands Marketplace"
+    },
+    {
+      "id": "90083",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Campbelltown Mall"
+    },
+    {
+      "id": "90051",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Campbelltown Mall"
+    },
+    {
+      "id": "90309",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Rockdale Plaza"
+    },
+    {
+      "id": "90233",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Wanneroo Central"
+    },
+    {
+      "id": "90029",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Highlands Marketplace"
+    },
+    {
+      "id": "90287",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Rockdale Plaza"
+    },
+    {
+      "id": "90219",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Pacific Square"
+    },
+    {
+      "id": "90168",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Carnes Hill Marketplace"
+    },
+    {
+      "id": "90278",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Rockdale Plaza"
+    },
+    {
+      "id": "90241",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Wanneroo Central"
+    },
+    {
+      "id": "90255",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Wanneroo Central"
+    },
+    {
+      "id": "90015",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Highlands Marketplace"
+    },
+    {
+      "id": "90147",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Carnes Hill Marketplace"
+    },
+    {
+      "id": "90075",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Campbelltown Mall"
+    },
+    {
+      "id": "90176",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Pacific Square"
+    },
+    {
+      "id": "90068",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Campbelltown Mall"
+    },
+    {
+      "id": "90097",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Campbelltown Mall"
+    },
+    {
+      "id": "90104",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Campbelltown Mall"
+    },
+    {
+      "id": "90044",
+      "status": "confirmed",
+      "startDate": "2026-06-01 00:00:00",
+      "ownerAmount": "127.50",
+      "centreName": "Campbelltown Mall"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tstatus\tstartDate\townerAmount\tcentreName\n180001\tconfirmed\t2026-01-19 00:00:00\t1980.00\tEastgate Bondi Junction\n90546\tconfirmed\t2026-02-05 05:04:17\t675.00\tTest Centre for Categories\n120001\tconfirmed\t2026-02-05 06:14:15\t675.00\tTest Centre for Categories\n120006\tconfirmed\t2026-02-05 06:15:29\t675.00\tTest Centre for Categories\n120011\tconfirmed\t2026-02-05 06:16:51\t675.00\tTest Centre for Categories\n120017\tconfirmed\t2026-02-05 06:18:08\t675.00\tTest Centre for Categories\n120023\tconfirmed\t2026-02-05 06:18:52\t675.00\tTest Centre for Categories\n120018\tconfirmed\t2026-04-16 05:18:11\t675.00\tTest Centre for Categories\n120024\tconfirmed\t2026-04-16 05:18:56\t675.00\tTest Centre for Categories\n90295\tconfirmed\t2026-06-01 00:00:00\t127.50\tRockdale Plaza\n90001\tconfirmed\t2026-06-01 00:00:00\t127.50\tHighlands Marketplace\n90083\tconfirmed\t2026-06-01 00:00:00\t127.50\tCampbelltown Mall\n90051\tconfirmed\t2026-06-01 00:00:00\t127.50\tCampbelltown Mall\n90309\tconfirmed\t2026-06-01 00:00:00\t127.50\tRockdale Plaza\n90233\tconfirmed\t2026-06-01 00:00:00\t127.50\tWanneroo Central\n90029\tconfirmed\t2026-06-01 00:00:00\t127.50\tHighlands Marketplace\n90287\tconfirmed\t2026-06-01 00:00:00\t127.50\tRockdale Plaza\n90219\tconfirmed\t2026-06-01 00:00:00\t127.50\tPacific Square\n90168\tconfirmed\t2026-06-01 00:00:00\t127.50\tCarnes Hill Marketplace\n90278\tconfirmed\t2026-06-01 00:00:00\t127.50\tRockdale Plaza\n90241\tconfirmed\t2026-06-01 00:00:00\t127.50\tWanneroo Central\n90255\tconfirmed\t2026-06-01 00:00:00\t127.50\tWanneroo Central\n90015\tconfirmed\t2026-06-01 00:00:00\t127.50\tHighlands Marketplace\n90147\tconfirmed\t2026-06-01 00:00:00\t127.50\tCarnes Hill Marketplace\n90075\tconfirmed\t2026-06-01 00:00:00\t127.50\tCampbelltown Mall\n90176\tconfirmed\t2026-06-01 00:00:00\t127.50\tPacific Square\n90068\tconfirmed\t2026-06-01 00:00:00\t127.50\tCampbelltown Mall\n90097\tconfirmed\t2026-06-01 00:00:00\t127.50\tCampbelltown Mall\n90104\tconfirmed\t2026-06-01 00:00:00\t127.50\tCampbelltown Mall\n90044\tconfirmed\t2026-06-01 00:00:00\t127.50\tCampbelltown Mall\n",
+  "stderr": "",
+  "execution_time_ms": 1539
+}

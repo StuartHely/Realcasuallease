@@ -1,0 +1,14 @@
+{
+  "query": "SELECT MIN(siteId) as min_siteId, MAX(siteId) as max_siteId FROM bookings WHERE status = 'confirmed' AND startDate >= '2025-07-01';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT MIN(siteId) as min_siteId, MAX(siteId) as max_siteId FROM bookings WHERE status = 'confirmed' AND startDate >= '2025-07-01';",
+  "rows": [
+    {
+      "min_siteId": "60018",
+      "max_siteId": "180008"
+    }
+  ],
+  "messages": [],
+  "stdout": "min_siteId\tmax_siteId\n60018\t180008\n",
+  "stderr": "",
+  "execution_time_ms": 1537
+}

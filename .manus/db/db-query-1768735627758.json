@@ -1,0 +1,115 @@
+{
+  "query": "SELECT \n  sc.name as centre_name,\n  COUNT(b.id) as booking_count,\n  SUM(b.totalAmount) as total_revenue,\n  SUM(CASE WHEN b.status = 'confirmed' THEN b.totalAmount ELSE 0 END) as confirmed_revenue,\n  SUM(CASE WHEN b.status = 'paid' THEN b.totalAmount ELSE 0 END) as paid_revenue\nFROM bookings b\nJOIN sites s ON b.siteId = s.id\nJOIN shopping_centres sc ON s.centreId = sc.id\nWHERE b.createdAt >= '2025-07-01'\nGROUP BY sc.id, sc.name\nHAVING total_revenue > 0\nORDER BY total_revenue DESC\nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT \n  sc.name as centre_name,\n  COUNT(b.id) as booking_count,\n  SUM(b.totalAmount) as total_revenue,\n  SUM(CASE WHEN b.status = 'confirmed' THEN b.totalAmount ELSE 0 END) as confirmed_revenue,\n  SUM(CASE WHEN b.status = 'paid' THEN b.totalAmount ELSE 0 END) as paid_revenue\nFROM bookings b\nJOIN sites s ON b.siteId = s.id\nJOIN shopping_centres sc ON s.centreId = sc.id\nWHERE b.createdAt >= '2025-07-01'\nGROUP BY sc.id, sc.name\nHAVING total_revenue > 0\nORDER BY total_revenue DESC\nLIMIT 20;",
+  "rows": [
+    {
+      "centre_name": "Corio Village",
+      "booking_count": "147",
+      "total_revenue": "22050.00",
+      "confirmed_revenue": "22050.00",
+      "paid_revenue": "0.00"
+    },
+    {
+      "centre_name": "Campbelltown Mall",
+      "booking_count": "83",
+      "total_revenue": "13520.00",
+      "confirmed_revenue": "12185.00",
+      "paid_revenue": "0.00"
+    },
+    {
+      "centre_name": "Bass Hill Plaza",
+      "booking_count": "65",
+      "total_revenue": "9750.00",
+      "confirmed_revenue": "9750.00",
+      "paid_revenue": "0.00"
+    },
+    {
+      "centre_name": "Carnes Hill Marketplace",
+      "booking_count": "59",
+      "total_revenue": "9150.00",
+      "confirmed_revenue": "8700.00",
+      "paid_revenue": "0.00"
+    },
+    {
+      "centre_name": "Rockdale Plaza",
+      "booking_count": "60",
+      "total_revenue": "9000.00",
+      "confirmed_revenue": "9000.00",
+      "paid_revenue": "0.00"
+    },
+    {
+      "centre_name": "Pacific Square",
+      "booking_count": "57",
+      "total_revenue": "8550.00",
+      "confirmed_revenue": "8550.00",
+      "paid_revenue": "0.00"
+    },
+    {
+      "centre_name": "Wanneroo Central",
+      "booking_count": "37",
+      "total_revenue": "5550.00",
+      "confirmed_revenue": "5550.00",
+      "paid_revenue": "0.00"
+    },
+    {
+      "centre_name": "Highlands Marketplace",
+      "booking_count": "36",
+      "total_revenue": "5400.00",
+      "confirmed_revenue": "5400.00",
+      "paid_revenue": "0.00"
+    },
+    {
+      "centre_name": "Test Centre for Categories",
+      "booking_count": "6",
+      "total_revenue": "4500.00",
+      "confirmed_revenue": "750.00",
+      "paid_revenue": "0.00"
+    },
+    {
+      "centre_name": "Test Centre for Categories",
+      "booking_count": "6",
+      "total_revenue": "4500.00",
+      "confirmed_revenue": "1500.00",
+      "paid_revenue": "0.00"
+    },
+    {
+      "centre_name": "Test Centre for Categories",
+      "booking_count": "6",
+      "total_revenue": "4500.00",
+      "confirmed_revenue": "1500.00",
+      "paid_revenue": "0.00"
+    },
+    {
+      "centre_name": "Test Centre for Categories",
+      "booking_count": "5",
+      "total_revenue": "3750.00",
+      "confirmed_revenue": "750.00",
+      "paid_revenue": "0.00"
+    },
+    {
+      "centre_name": "Test Centre for Categories",
+      "booking_count": "5",
+      "total_revenue": "3750.00",
+      "confirmed_revenue": "750.00",
+      "paid_revenue": "0.00"
+    },
+    {
+      "centre_name": "Test Centre for Categories",
+      "booking_count": "5",
+      "total_revenue": "3750.00",
+      "confirmed_revenue": "750.00",
+      "paid_revenue": "0.00"
+    },
+    {
+      "centre_name": "Eastgate Bondi Junction",
+      "booking_count": "1",
+      "total_revenue": "2200.00",
+      "confirmed_revenue": "2200.00",
+      "paid_revenue": "0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "centre_name\tbooking_count\ttotal_revenue\tconfirmed_revenue\tpaid_revenue\nCorio Village\t147\t22050.00\t22050.00\t0.00\nCampbelltown Mall\t83\t13520.00\t12185.00\t0.00\nBass Hill Plaza\t65\t9750.00\t9750.00\t0.00\nCarnes Hill Marketplace\t59\t9150.00\t8700.00\t0.00\nRockdale Plaza\t60\t9000.00\t9000.00\t0.00\nPacific Square\t57\t8550.00\t8550.00\t0.00\nWanneroo Central\t37\t5550.00\t5550.00\t0.00\nHighlands Marketplace\t36\t5400.00\t5400.00\t0.00\nTest Centre for Categories\t6\t4500.00\t750.00\t0.00\nTest Centre for Categories\t6\t4500.00\t1500.00\t0.00\nTest Centre for Categories\t6\t4500.00\t1500.00\t0.00\nTest Centre for Categories\t5\t3750.00\t750.00\t0.00\nTest Centre for Categories\t5\t3750.00\t750.00\t0.00\nTest Centre for Categories\t5\t3750.00\t750.00\t0.00\nEastgate Bondi Junction\t1\t2200.00\t2200.00\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 1539
+}

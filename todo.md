@@ -2367,3 +2367,16 @@
 ## New Features (Jan 18, 2026)
 - [x] Add 'Include in Live Site' checkbox to Edit Shopping Centre form
 - [x] Control centre visibility in search results based on this setting
+
+## Portfolio Dashboard Investigation (Jan 18, 2026)
+- [x] Verify data consistency between Portfolio Dashboard and other Admin pages
+- [x] Check Update button functionality
+
+## Portfolio Dashboard Fix (Jan 18, 2026)
+- [ ] Fix YTD metrics to match Annual Budget Breakdown totals
+
+## Portfolio Dashboard Updates (Jan 18, 2026)
+- [x] Add toast notification when Update button is clicked ("Data Updated") - already implemented
+- [x] Fix YTD metrics to use selected Financial Year instead of always using current date
+- [x] Pass financialYear parameter from frontend to backend for YTD calculations
+- [x] Fix YTD date comparison to use UTC dates to handle timezone issues (booking at 05:00 UTC was excluded when sandbox time was 00:46 UTC)

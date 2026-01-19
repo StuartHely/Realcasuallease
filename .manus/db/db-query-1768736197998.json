@@ -1,0 +1,70 @@
+{
+  "query": "SELECT DISTINCT siteId FROM bookings WHERE status = 'confirmed' AND startDate >= '2025-07-01' ORDER BY siteId LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT DISTINCT siteId FROM bookings WHERE status = 'confirmed' AND startDate >= '2025-07-01' ORDER BY siteId LIMIT 20;",
+  "rows": [
+    {
+      "siteId": "60018"
+    },
+    {
+      "siteId": "60019"
+    },
+    {
+      "siteId": "60020"
+    },
+    {
+      "siteId": "60022"
+    },
+    {
+      "siteId": "60023"
+    },
+    {
+      "siteId": "60025"
+    },
+    {
+      "siteId": "60028"
+    },
+    {
+      "siteId": "60029"
+    },
+    {
+      "siteId": "60032"
+    },
+    {
+      "siteId": "60033"
+    },
+    {
+      "siteId": "60034"
+    },
+    {
+      "siteId": "60035"
+    },
+    {
+      "siteId": "60036"
+    },
+    {
+      "siteId": "60037"
+    },
+    {
+      "siteId": "60039"
+    },
+    {
+      "siteId": "60040"
+    },
+    {
+      "siteId": "60041"
+    },
+    {
+      "siteId": "60042"
+    },
+    {
+      "siteId": "60043"
+    },
+    {
+      "siteId": "60045"
+    }
+  ],
+  "messages": [],
+  "stdout": "siteId\n60018\n60019\n60020\n60022\n60023\n60025\n60028\n60029\n60032\n60033\n60034\n60035\n60036\n60037\n60039\n60040\n60041\n60042\n60043\n60045\n",
+  "stderr": "",
+  "execution_time_ms": 1497
+}

@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id FROM sites ORDER BY id LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id FROM sites ORDER BY id LIMIT 20;",
+  "rows": [
+    {
+      "id": "60018"
+    },
+    {
+      "id": "60019"
+    },
+    {
+      "id": "60020"
+    },
+    {
+      "id": "60021"
+    },
+    {
+      "id": "60022"
+    },
+    {
+      "id": "60023"
+    },
+    {
+      "id": "60024"
+    },
+    {
+      "id": "60025"
+    },
+    {
+      "id": "60026"
+    },
+    {
+      "id": "60027"
+    },
+    {
+      "id": "60028"
+    },
+    {
+      "id": "60029"
+    },
+    {
+      "id": "60030"
+    },
+    {
+      "id": "60031"
+    },
+    {
+      "id": "60032"
+    },
+    {
+      "id": "60033"
+    },
+    {
+      "id": "60034"
+    },
+    {
+      "id": "60035"
+    },
+    {
+      "id": "60036"
+    },
+    {
+      "id": "60037"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\n60018\n60019\n60020\n60021\n60022\n60023\n60024\n60025\n60026\n60027\n60028\n60029\n60030\n60031\n60032\n60033\n60034\n60035\n60036\n60037\n",
+  "stderr": "",
+  "execution_time_ms": 1516
+}

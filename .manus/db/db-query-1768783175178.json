@@ -1,0 +1,190 @@
+{
+  "query": "SELECT id, siteId, status, startDate, endDate, ownerAmount, DATE(startDate) as start_dt \nFROM bookings \nWHERE status = 'confirmed' \nORDER BY startDate DESC \nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, siteId, status, startDate, endDate, ownerAmount, DATE(startDate) as start_dt \nFROM bookings \nWHERE status = 'confirmed' \nORDER BY startDate DESC \nLIMIT 20;",
+  "rows": [
+    {
+      "id": "90294",
+      "siteId": "60056",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90197",
+      "siteId": "60045",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90240",
+      "siteId": "60049",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90211",
+      "siteId": "60046",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90160",
+      "siteId": "60040",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90146",
+      "siteId": "60039",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90373",
+      "siteId": "60063",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90138",
+      "siteId": "60037",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90117",
+      "siteId": "60035",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90189",
+      "siteId": "60043",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90028",
+      "siteId": "60020",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90036",
+      "siteId": "60022",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90175",
+      "siteId": "60042",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90124",
+      "siteId": "60036",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90308",
+      "siteId": "60057",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90067",
+      "siteId": "60029",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90043",
+      "siteId": "60023",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "131.75",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90014",
+      "siteId": "60019",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90082",
+      "siteId": "60032",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    },
+    {
+      "id": "90096",
+      "siteId": "60033",
+      "status": "confirmed",
+      "startDate": "2026-06-14 00:00:00",
+      "endDate": "2026-06-14 00:00:00",
+      "ownerAmount": "127.50",
+      "start_dt": "2026-06-14"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsiteId\tstatus\tstartDate\tendDate\townerAmount\tstart_dt\n90294\t60056\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90197\t60045\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90240\t60049\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90211\t60046\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90160\t60040\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90146\t60039\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90373\t60063\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90138\t60037\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90117\t60035\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90189\t60043\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90028\t60020\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90036\t60022\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90175\t60042\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90124\t60036\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90308\t60057\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90067\t60029\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90043\t60023\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t131.75\t2026-06-14\n90014\t60019\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90082\t60032\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n90096\t60033\tconfirmed\t2026-06-14 00:00:00\t2026-06-14 00:00:00\t127.50\t2026-06-14\n",
+  "stderr": "",
+  "execution_time_ms": 1551
+}

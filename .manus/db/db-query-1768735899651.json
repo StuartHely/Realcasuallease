@@ -1,0 +1,20 @@
+{
+  "query": "SELECT \n  status,\n  COUNT(*) as count,\n  SUM(ownerAmount) as total_owner_amount\nFROM bookings\nWHERE startDate >= '2025-07-01'\nGROUP BY status;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT \n  status,\n  COUNT(*) as count,\n  SUM(ownerAmount) as total_owner_amount\nFROM bookings\nWHERE startDate >= '2025-07-01'\nGROUP BY status;",
+  "rows": [
+    {
+      "status": "confirmed",
+      "count": "550",
+      "total_owner_amount": "76387.25"
+    },
+    {
+      "status": "pending",
+      "count": "28",
+      "total_owner_amount": "18481.50"
+    }
+  ],
+  "messages": [],
+  "stdout": "status\tcount\ttotal_owner_amount\nconfirmed\t550\t76387.25\npending\t28\t18481.50\n",
+  "stderr": "",
+  "execution_time_ms": 1519
+}

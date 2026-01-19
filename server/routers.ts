@@ -2017,6 +2017,7 @@ export const appRouter = router({
         month: z.number().min(1).max(12),
         year: z.number(),
         state: z.string().optional(), // For National Admin filtering by state
+        financialYear: z.number().optional(), // For YTD calculations based on selected FY
       }))
       .query(async ({ input, ctx }) => {
         const { getPermittedSiteIds, getYTDMetrics, getMonthlyMetrics, getBudgetMetrics, getPendingApprovalsCount } = await import('./dashboardDb');
@@ -2038,13 +2039,14 @@ export const appRouter = router({
           throw new TRPCError({ code: 'FORBIDDEN', message: 'No dashboard access for your role' });
         }
         
-        // Get current year metrics
-        const ytdMetrics = await getYTDMetrics(siteIds, input.year);
+        // Get current year metrics - use financialYear for YTD if provided
+        const ytdMetrics = await getYTDMetrics(siteIds, input.year, input.financialYear);
         const monthMetrics = await getMonthlyMetrics(siteIds, input.month, input.year);
         
         // Get last year metrics for comparison
         const lastYear = input.year - 1;
-        const ytdMetricsLastYear = await getYTDMetrics(siteIds, lastYear);
+        const lastFY = input.financialYear ? input.financialYear - 1 : undefined;
+        const ytdMetricsLastYear = await getYTDMetrics(siteIds, lastYear, lastFY);
         const monthMetricsLastYear = await getMonthlyMetrics(siteIds, input.month, lastYear);
         
         // Get budget data

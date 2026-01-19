@@ -1,0 +1,20 @@
+{
+  "query": "SELECT b.id, b.siteId, b.status, DATE_FORMAT(b.startDate, '%Y-%m-%d') as startDate, DATE_FORMAT(b.endDate, '%Y-%m-%d') as endDate, b.ownerAmount, s.siteNumber, sc.name as centreName\nFROM bookings b\nLEFT JOIN sites s ON b.siteId = s.id\nLEFT JOIN shopping_centres sc ON s.centreId = sc.id\nWHERE b.status = 'confirmed' AND b.startDate >= '2026-01-01' AND b.startDate <= '2026-01-31'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT b.id, b.siteId, b.status, DATE_FORMAT(b.startDate, '%Y-%m-%d') as startDate, DATE_FORMAT(b.endDate, '%Y-%m-%d') as endDate, b.ownerAmount, s.siteNumber, sc.name as centreName\nFROM bookings b\nLEFT JOIN sites s ON b.siteId = s.id\nLEFT JOIN shopping_centres sc ON s.centreId = sc.id\nWHERE b.status = 'confirmed' AND b.startDate >= '2026-01-01' AND b.startDate <= '2026-01-31'",
+  "rows": [
+    {
+      "id": "180001",
+      "siteId": "120001",
+      "status": "confirmed",
+      "startDate": "2026-01-19",
+      "endDate": "2026-01-25",
+      "ownerAmount": "1980.00",
+      "siteNumber": "2",
+      "centreName": "Eastgate Bondi Junction"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsiteId\tstatus\tstartDate\tendDate\townerAmount\tsiteNumber\tcentreName\n180001\t120001\tconfirmed\t2026-01-19\t2026-01-25\t1980.00\t2\tEastgate Bondi Junction\n",
+  "stderr": "",
+  "execution_time_ms": 1475
+}

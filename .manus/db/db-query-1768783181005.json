@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, siteId, status, startDate, endDate, ownerAmount \nFROM bookings \nWHERE status = 'confirmed' \nAND startDate >= '2026-01-01' AND startDate < '2026-02-01'\nORDER BY startDate;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, siteId, status, startDate, endDate, ownerAmount \nFROM bookings \nWHERE status = 'confirmed' \nAND startDate >= '2026-01-01' AND startDate < '2026-02-01'\nORDER BY startDate;",
+  "rows": [
+    {
+      "id": "180001",
+      "siteId": "120001",
+      "status": "confirmed",
+      "startDate": "2026-01-19 00:00:00",
+      "endDate": "2026-01-25 00:00:00",
+      "ownerAmount": "1980.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsiteId\tstatus\tstartDate\tendDate\townerAmount\n180001\t120001\tconfirmed\t2026-01-19 00:00:00\t2026-01-25 00:00:00\t1980.00\n",
+  "stderr": "",
+  "execution_time_ms": 1514
+}

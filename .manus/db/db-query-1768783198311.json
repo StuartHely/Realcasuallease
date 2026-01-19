@@ -1,0 +1,16 @@
+{
+  "query": "SELECT COUNT(*) as cnt, SUM(ownerAmount) as total_revenue, MIN(DATE_FORMAT(startDate, '%Y-%m-%d')) as earliest, MAX(DATE_FORMAT(startDate, '%Y-%m-%d')) as latest\nFROM bookings \nWHERE status = 'confirmed' \nAND startDate >= '2025-07-01' \nAND startDate <= CURDATE();",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT COUNT(*) as cnt, SUM(ownerAmount) as total_revenue, MIN(DATE_FORMAT(startDate, '%Y-%m-%d')) as earliest, MAX(DATE_FORMAT(startDate, '%Y-%m-%d')) as latest\nFROM bookings \nWHERE status = 'confirmed' \nAND startDate >= '2025-07-01' \nAND startDate <= CURDATE();",
+  "rows": [
+    {
+      "cnt": "1",
+      "total_revenue": "1980.00",
+      "earliest": "2026-01-19",
+      "latest": "2026-01-19"
+    }
+  ],
+  "messages": [],
+  "stdout": "cnt\ttotal_revenue\tearliest\tlatest\n1\t1980.00\t2026-01-19\t2026-01-19\n",
+  "stderr": "",
+  "execution_time_ms": 1513
+}

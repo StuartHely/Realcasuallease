@@ -11,6 +11,7 @@ import { RefreshCw, Bell, Download, FileSpreadsheet, FileText } from "lucide-rea
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function PortfolioDashboard() {
   const [, setLocation] = useLocation();
@@ -35,6 +36,7 @@ export default function PortfolioDashboard() {
     month: selectedMonth,
     year: selectedYear,
     state: selectedState,
+    financialYear: selectedFY,
   });
   
   const { data: availableStates } = trpc.dashboard.getAvailableStates.useQuery();
@@ -260,7 +262,12 @@ export default function PortfolioDashboard() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => refetch()}
+            onClick={() => {
+              refetch();
+              toast.success("Data Updated", {
+                description: "Portfolio dashboard data has been refreshed."
+              });
+            }}
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Update
