@@ -197,31 +197,25 @@ export default function Home() {
 
       {/* Hero Section */}
       <main className="flex-1">
-        <section className="py-20 px-4">
-          <div className="container mx-auto max-w-4xl text-center">
-            <h2 className="text-5xl font-bold text-blue-900 mb-6">
-              Find Your Perfect Pop-Up Space
+        <section className="py-12 md:py-20 px-4">
+          <div className="container mx-auto max-w-5xl text-center">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-blue-900 mb-4 md:mb-6 leading-tight">
+              The Easiest Way to Book Casual Leasing in Shopping Centres
             </h2>
-            <p className="text-xl text-gray-600 mb-12">
-              Book short-term retail spaces in Australian shopping centres instantly
+            <p className="text-lg md:text-xl text-gray-600 mb-8 md:mb-12 max-w-3xl mx-auto">
+              Describe the space you need in any order. We'll handle the rest.
             </p>
 
             {/* Search Box */}
             <Card className="shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-2xl">Search Available Spaces</CardTitle>
-                <CardDescription>
-                  Type your search including centre, size, category, and date
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="pt-6 md:pt-8 space-y-4">
                 <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="flex flex-col gap-4">
                   <div className="flex flex-col md:flex-row gap-4">
                     <div className="flex-1 relative">
                       <Input
                         ref={inputRef}
                         type="text"
-                        placeholder="e.g., 2x3m fashion at Campbelltown from 6 June"
+                        placeholder="Eg. 15–20sqm fashion at Eastgate from next week."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={handleKeyDown}
@@ -271,27 +265,6 @@ export default function Home() {
                     </Button>
                   </div>
                   
-                  {/* Search hints */}
-                  <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-gray-500">
-                    <Info className="h-4 w-4" />
-                    <span>Try:</span>
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery("Campbelltown Mall 3x3m shoes from next Monday")}
-                      className="text-blue-600 hover:underline"
-                    >
-                      Campbelltown Mall 3x3m shoes from next Monday
-                    </button>
-                    <span>or</span>
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery("Highlands Marketplace food tomorrow")}
-                      className="text-blue-600 hover:underline"
-                    >
-                      Highlands Marketplace food tomorrow
-                    </button>
-                  </div>
-                  
                   {/* Show detected date feedback */}
                   {searchQuery.trim() && (
                     <div className="flex items-center justify-center gap-2 text-sm">
@@ -314,9 +287,9 @@ export default function Home() {
                 </form>
                 
                 {/* State Filter Buttons */}
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <p className="text-sm text-gray-600 mb-3 text-center">
-                    Or browse by state:
+                <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-200">
+                  <p className="text-base font-medium text-gray-800 mb-4 text-center">
+                    Browse all available spaces
                   </p>
                   <div className="flex flex-wrap justify-center gap-3">
                 {[

@@ -2390,3 +2390,12 @@
 - [x] Upload new Real Casual Leasing logo to S3 storage and client/public/logo.png
 - [x] Update all page headers to use the new logo image
 - [x] Verify logo displays correctly across all pages (Home, Search, MyBookings, Profile, SiteDetail, CentreDetail, Centres, VacantShopDetail, ThirdLineDetail)
+
+## Homepage Redesign (Jan 19, 2026)
+- [x] Update main heading to "The Easiest Way to Book Casual Leasing in Shopping Centres"
+- [x] Update subheading to "Describe the space you need in any order. We'll handle the rest."
+- [x] Update search placeholder to "Eg. 15–20sqm fashion at Eastgate from next week."
+- [x] Remove "Try:" example links below search box
+- [x] Change state filter heading to "Browse all available spaces"
+- [x] Widen the search card container for desktop (max-w-4xl → max-w-5xl)
+- [x] Ensure mobile responsiveness with proper text sizing and wrapping (text-3xl md:text-4xl lg:text-5xl)
