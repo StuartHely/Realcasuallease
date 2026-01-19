@@ -1797,7 +1797,7 @@ export const appRouter = router({
           'mega_state_admin',
           'mega_admin'
         ]).optional(),
-        assignedState: z.string().optional(),
+        assignedState: z.string().nullable().optional(),
         canPayByInvoice: z.boolean().optional(),
         // Company details
         companyName: z.string().optional(),

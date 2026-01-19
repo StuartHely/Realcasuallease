@@ -2412,3 +2412,20 @@
 ## Asset Map Placement Enhancement (Jan 19, 2026)
 - [x] Add visual highlighting for assets missing map markers (red warning box with triangle icon)
 - [x] Test the highlighting feature - confirmed working with shop #1 unmapped test
+
+## Invoice Dashboard Verification (Jan 19, 2026)
+- [x] Navigate to Admin Financial Invoice Dashboard
+- [x] Test all dashboard functionality - all features working correctly
+- [x] Verify summary cards, tabs, filters, search, and export
+- [x] No issues found - dashboard ready for invoice-based bookings
+
+## Invoice Booking Flow Verification (Jan 19, 2026)
+- [x] Check user schema for invoice approval field - `canPayByInvoice` field exists on users table
+- [x] Check booking flow for invoice payment option - Backend correctly sets paymentMethod based on user's canPayByInvoice flag
+- [x] Check Invoice Dashboard query logic - Queries filter by paymentMethod='invoice', status='confirmed', paidAt IS NULL
+- [x] Identify gaps: VacantShop/ThirdLine/CentreDetail pages hardcode paymentMethod='invoice' instead of checking user's canPayByInvoice flag
+- [x] Main Sites booking flow correctly uses user's canPayByInvoice flag from backend
+
+## Bug Fix - Admin Edit User assignedState Error (Jan 19, 2026)
+- [x] Fix "Invalid input: expected string, received null" error for assignedState when saving company details
+- [x] Test the fix - Company details saved successfully without error
