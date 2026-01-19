@@ -2404,3 +2404,11 @@
 - [x] Investigate Eastgate Map not showing in Admin Content Management Asset Map Placement - Maps are present, just need floor level selection
 - [x] Auto-select first floor level when centre is selected to show map by default
 - [x] Verify the fix works correctly - Ground Floor auto-selected for Eastgate, map displays immediately
+
+## Asset Map Placement Enhancement (Jan 19, 2026)
+- [ ] Add visual highlighting for assets missing map markers
+- [ ] Test the highlighting feature
+
+## Asset Map Placement Enhancement (Jan 19, 2026)
+- [x] Add visual highlighting for assets missing map markers (red warning box with triangle icon)
+- [x] Test the highlighting feature - confirmed working with shop #1 unmapped test

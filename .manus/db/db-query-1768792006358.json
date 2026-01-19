@@ -1,0 +1,9 @@
+{
+  "query": "\nUPDATE vacant_shops \nSET mapMarkerX = NULL, mapMarkerY = NULL\nWHERE id = (\n  SELECT vs.id FROM vacant_shops vs\n  JOIN shopping_centres c ON vs.centreId = c.id\n  WHERE c.name = 'Eastgate Bondi Junction'\n  LIMIT 1\n);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute \nUPDATE vacant_shops \nSET mapMarkerX = NULL, mapMarkerY = NULL\nWHERE id = (\n  SELECT vs.id FROM vacant_shops vs\n  JOIN shopping_centres c ON vs.centreId = c.id\n  WHERE c.name = 'Eastgate Bondi Junction'\n  LIMIT 1\n);\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1540
+}

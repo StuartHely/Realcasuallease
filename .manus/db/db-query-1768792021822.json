@@ -1,0 +1,22 @@
+{
+  "query": "\nSELECT vs.id, vs.shopNumber, vs.mapMarkerX, vs.mapMarkerY\nFROM vacant_shops vs\nJOIN shopping_centres c ON vs.centreId = c.id\nWHERE c.name = 'Eastgate Bondi Junction';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute \nSELECT vs.id, vs.shopNumber, vs.mapMarkerX, vs.mapMarkerY\nFROM vacant_shops vs\nJOIN shopping_centres c ON vs.centreId = c.id\nWHERE c.name = 'Eastgate Bondi Junction';\n",
+  "rows": [
+    {
+      "id": "30001",
+      "shopNumber": "1",
+      "mapMarkerX": "NULL",
+      "mapMarkerY": "NULL"
+    },
+    {
+      "id": "60001",
+      "shopNumber": "X1",
+      "mapMarkerX": "55",
+      "mapMarkerY": "35"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tshopNumber\tmapMarkerX\tmapMarkerY\n30001\t1\tNULL\tNULL\n60001\tX1\t55\t35\n",
+  "stderr": "",
+  "execution_time_ms": 1518
+}

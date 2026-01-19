@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import { MapPin, Save, X, Store, Zap } from "lucide-react";
+import { MapPin, Save, X, Store, Zap, AlertTriangle } from "lucide-react";
 
 type AssetType = "vacant_shops" | "third_line";
 
@@ -372,15 +372,21 @@ export default function AssetMapPlacement() {
 
                     {/* Unmapped Assets List */}
                     {filteredAssets.length > currentMarkers.length && (
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                        <p className="text-sm font-medium text-amber-800 mb-2">
-                          Unmapped {selectedAssetType === "vacant_shops" ? "Shops" : "Assets"} ({filteredAssets.length - currentMarkers.length}):
+                      <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 shadow-md">
+                        <div className="flex items-center gap-2 mb-3">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                          <p className="text-base font-semibold text-red-800">
+                            {filteredAssets.length - currentMarkers.length} Unmapped {selectedAssetType === "vacant_shops" ? "Shop" : "Asset"}{filteredAssets.length - currentMarkers.length > 1 ? "s" : ""}
+                          </p>
+                        </div>
+                        <p className="text-sm text-red-700 mb-3">
+                          Click on the map to place markers for the following assets:
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {filteredAssets
                             .filter((asset: any) => !currentMarkers.some((m) => m.assetId === asset.id))
                             .map((asset: any) => (
-                              <Badge key={asset.id} variant="outline">
+                              <Badge key={asset.id} className="bg-red-100 text-red-800 border-red-300 font-semibold">
                                 {selectedAssetType === "vacant_shops" ? asset.shopNumber : asset.assetNumber}
                               </Badge>
                             ))}

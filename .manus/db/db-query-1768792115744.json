@@ -1,0 +1,9 @@
+{
+  "query": "\nUPDATE vacant_shops \nSET mapMarkerX = 50, mapMarkerY = 50\nWHERE id = 1;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute \nUPDATE vacant_shops \nSET mapMarkerX = 50, mapMarkerY = 50\nWHERE id = 1;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1554
+}
