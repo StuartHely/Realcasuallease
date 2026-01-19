@@ -933,6 +933,30 @@ export default function Search() {
                     centreName={data.centres[0].name}
                     assetTypeFilter={selectedAssetType}
                   />
+                  
+                  {/* Centre Description - Show below the map */}
+                  {data.centres[0]?.description && (
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">About {data.centres[0].name}</h3>
+                      <p className="text-gray-600 whitespace-pre-line leading-relaxed">
+                        {data.centres[0].description}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Centre Description - Show as standalone card if no floor plan map */}
+            {data.centres[0]?.description && (!data.floorLevels || data.floorLevels.length === 0 || !data.floorLevels.some((fl: any) => fl.mapImageUrl)) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>About {data.centres[0].name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 whitespace-pre-line leading-relaxed">
+                    {data.centres[0].description}
+                  </p>
                 </CardContent>
               </Card>
             )}

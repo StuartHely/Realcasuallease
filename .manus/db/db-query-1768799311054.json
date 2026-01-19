@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, name, description FROM shopping_centres WHERE name LIKE '%Eastgate%' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, name, description FROM shopping_centres WHERE name LIKE '%Eastgate%' LIMIT 1;",
+  "rows": [
+    {
+      "id": "120010",
+      "name": "Eastgate Bondi Junction",
+      "description": "Eastgate Bondi Junction is a well-established sub-regional Shopping Centre located in the heart of Bondi Junction, Sydney between Spring Street and Ebley Street and adjacent to the bustling Oxford Street."
+    }
+  ],
+  "messages": [
+    "The centre is conveniently positioned only 200m from Bondi Junctions Bus and Train Interchange and Westfield Bondi. ",
+    "No food casual leasing.",
+    "Parking for casual lessees is on the rooftop for $19.00 per day.",
+    "Eastgate Bondi Junction is anchored by Coles, Aldi and Kmart with over 25 specialty stores. "
+  ],
+  "stdout": "id\tname\tdescription\n120010\tEastgate Bondi Junction\tEastgate Bondi Junction is a well-established sub-regional Shopping Centre located in the heart of Bondi Junction, Sydney between Spring Street and Ebley Street and adjacent to the bustling Oxford Street.\n\nThe centre is conveniently positioned only 200m from Bondi Junctions Bus and Train Interchange and Westfield Bondi. \n\nNo food casual leasing.\nParking for casual lessees is on the rooftop for $19.00 per day.\n\nEastgate Bondi Junction is anchored by Coles, Aldi and Kmart with over 25 specialty stores. \n",
+  "stderr": "",
+  "execution_time_ms": 1555
+}

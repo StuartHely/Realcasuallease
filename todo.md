@@ -2429,3 +2429,7 @@
 ## Bug Fix - Admin Edit User assignedState Error (Jan 19, 2026)
 - [x] Fix "Invalid input: expected string, received null" error for assignedState when saving company details
 - [x] Test the fix - Company details saved successfully without error
+
+## Search Results - Centre Description (Jan 19, 2026)
+- [x] Display centre description below the map when a centre is found in search results
+- [x] Test with centres that have descriptions - Eastgate description displays correctly below floor plan
