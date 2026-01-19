@@ -169,11 +169,17 @@ export default function ThirdLineIncome() {
         reader.onerror = () => reject(new Error("Failed to read file"));
       });
 
-      await uploadImageMutation.mutateAsync({
+      const result = await uploadImageMutation.mutateAsync({
         assetId: editingAsset.id,
         imageSlot: previewSlot,
         base64Image: base64,
       });
+
+      // Update editingAsset with the new image URL so it displays immediately
+      setEditingAsset((prev: any) => ({
+        ...prev,
+        [`imageUrl${previewSlot}`]: result.url,
+      }));
 
       toast.success("Image uploaded successfully");
       refetch();

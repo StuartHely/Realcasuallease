@@ -2460,3 +2460,7 @@
 ## Feature - Drag-and-Drop Image Upload for VS and 3rdL (Jan 19, 2026)
 - [x] Add same image upload component as Edit Site to Vacant Shops admin form
 - [x] Add same image upload component as Edit Site to Third Line Income admin form
+
+## Bug Fix - VS Image Upload Not Saving (Jan 19, 2026)
+- [x] Investigate why uploaded images are not being saved to database
+- [x] Fix: editingShop/editingAsset state wasn't being updated after upload, so images didn't display until page refresh

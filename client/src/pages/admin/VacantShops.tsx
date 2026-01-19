@@ -168,11 +168,17 @@ export default function VacantShops() {
         reader.onerror = () => reject(new Error("Failed to read file"));
       });
 
-      await uploadImageMutation.mutateAsync({
+      const result = await uploadImageMutation.mutateAsync({
         shopId: editingShop.id,
         imageSlot: previewSlot,
         base64Image: base64,
       });
+
+      // Update editingShop with the new image URL so it displays immediately
+      setEditingShop((prev: any) => ({
+        ...prev,
+        [`imageUrl${previewSlot}`]: result.url,
+      }));
 
       toast.success("Image uploaded successfully");
       refetch();
