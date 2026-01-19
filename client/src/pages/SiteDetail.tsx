@@ -148,8 +148,7 @@ export default function SiteDetail() {
               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setLocation("/")}
             >
-              <MapPin className="h-6 w-6 text-blue-600" />
-              <h1 className="text-2xl font-bold text-blue-900">Real Casual Leasing</h1>
+              <img src="/logo.png" alt="Real Casual Leasing" className="h-12" />
             </div>
           </div>
           <nav className="flex items-center gap-4">

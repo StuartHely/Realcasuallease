@@ -2380,3 +2380,13 @@
 - [x] Fix YTD metrics to use selected Financial Year instead of always using current date
 - [x] Pass financialYear parameter from frontend to backend for YTD calculations
 - [x] Fix YTD date comparison to use UTC dates to handle timezone issues (booking at 05:00 UTC was excluded when sandbox time was 00:46 UTC)
+
+## Branding Update (Jan 19, 2026)
+- [x] Search for "vacantshops.com.au" references - VERIFIED: None found in codebase
+- [x] Verified "VacantShops" references are feature names (Vacant Shop = product type), not branding
+- [x] Codebase correctly uses "Real Casual Leasing" as brand name
+
+## Logo Update (Jan 19, 2026)
+- [x] Upload new Real Casual Leasing logo to S3 storage and client/public/logo.png
+- [x] Update all page headers to use the new logo image
+- [x] Verify logo displays correctly across all pages (Home, Search, MyBookings, Profile, SiteDetail, CentreDetail, Centres, VacantShopDetail, ThirdLineDetail)
