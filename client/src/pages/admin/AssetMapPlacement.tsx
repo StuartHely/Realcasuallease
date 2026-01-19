@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -108,6 +108,13 @@ export default function AssetMapPlacement() {
     const newOnlyMarkers = newMarkers.filter(m => !existingIds.has(m.assetId));
     return [...existingMarkers, ...newOnlyMarkers];
   }, [markers, existingMarkers, selectedAssetType]);
+
+  // Auto-select first floor level when centre is selected
+  useEffect(() => {
+    if (floorLevels.length > 0 && !selectedFloorLevelId) {
+      setSelectedFloorLevelId(floorLevels[0].id.toString());
+    }
+  }, [floorLevels, selectedFloorLevelId]);
 
   const handleCentreChange = useCallback((value: string) => {
     setSelectedCentreId(value);

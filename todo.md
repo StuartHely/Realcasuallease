@@ -2399,3 +2399,8 @@
 - [x] Change state filter heading to "Browse all available spaces"
 - [x] Widen the search card container for desktop (max-w-4xl → max-w-5xl)
 - [x] Ensure mobile responsiveness with proper text sizing and wrapping (text-3xl md:text-4xl lg:text-5xl)
+
+## Bug Fix - Eastgate Map Not Showing (Jan 19, 2026)
+- [x] Investigate Eastgate Map not showing in Admin Content Management Asset Map Placement - Maps are present, just need floor level selection
+- [x] Auto-select first floor level when centre is selected to show map by default
+- [x] Verify the fix works correctly - Ground Floor auto-selected for Eastgate, map displays immediately
