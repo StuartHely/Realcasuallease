@@ -2453,3 +2453,6 @@
 - [x] Test with different centre name searches
 - [x] Fix site number matching to be precise ("Site 2" matches only "2", not "L2-33" or "22")
 - [x] Fix description keyword detection by comparing query length to actual centre name from database
+
+## Bug Fix - VS and 3rdL Image Upload Label (Jan 19, 2026)
+- [x] Change image upload field label from "URL" to "File Location" for Vacant Shops and Third Line Income

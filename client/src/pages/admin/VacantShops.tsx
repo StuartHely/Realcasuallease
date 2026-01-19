@@ -313,7 +313,7 @@ export default function VacantShops() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="imageUrl1">Image URL 1</Label>
+                <Label htmlFor="imageUrl1">Image File Location 1</Label>
                 <Input
                   id="imageUrl1"
                   value={formData.imageUrl1}
@@ -322,7 +322,7 @@ export default function VacantShops() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="imageUrl2">Image URL 2</Label>
+                <Label htmlFor="imageUrl2">Image File Location 2</Label>
                 <Input
                   id="imageUrl2"
                   value={formData.imageUrl2}
