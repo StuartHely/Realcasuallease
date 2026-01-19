@@ -102,10 +102,10 @@ export default function VacantShops() {
   );
 
   const createMutation = trpc.vacantShops.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (newShop) => {
       toast.success("Vacant shop created successfully");
-      setIsDialogOpen(false);
-      resetForm();
+      // Set editingShop to the newly created shop so user can upload images
+      setEditingShop(newShop);
       refetch();
     },
     onError: (error) => toast.error(error.message),
@@ -308,6 +308,7 @@ export default function VacantShops() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-16">Image</TableHead>
                       <TableHead>Shop #</TableHead>
                       <TableHead>Size (m²)</TableHead>
                       <TableHead>Dimensions</TableHead>
@@ -321,6 +322,15 @@ export default function VacantShops() {
                   <TableBody>
                     {shops.map((shop: any) => (
                       <TableRow key={shop.id}>
+                        <TableCell>
+                          {shop.imageUrl1 ? (
+                            <img src={shop.imageUrl1} alt={`Shop ${shop.shopNumber}`} className="w-12 h-12 object-cover rounded" />
+                          ) : (
+                            <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                              <Store className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="font-medium">{shop.shopNumber}</TableCell>
                         <TableCell>{shop.totalSizeM2 || "-"}</TableCell>
                         <TableCell>{shop.dimensions || "-"}</TableCell>
@@ -436,7 +446,7 @@ export default function VacantShops() {
                 />
               </div>
               
-              {/* Image Upload Section - Only show when editing */}
+              {/* Image Upload Section - Show when editing or after creating */}
               {editingShop && (
                 <div className="col-span-2 space-y-2">
                   <Label>Shop Images</Label>

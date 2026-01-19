@@ -2468,3 +2468,10 @@
 ## Bug Fix - VS Images Not Appearing (Jan 19, 2026)
 - [x] Verify Image 2 upload persists correctly - confirmed working
 - [x] Add VS images to search results display
+
+## Feature - VS/3rdL Image Enhancements (Jan 19, 2026)
+- [x] Add 3rdL images to search results display
+- [x] Add image thumbnails to VS admin table
+- [x] Add image thumbnails to 3rdL admin table
+- [x] Enable image upload during VS creation (not just edit)
+- [x] Enable image upload during 3rdL creation (not just edit)

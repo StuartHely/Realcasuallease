@@ -463,6 +463,15 @@ export default function Search() {
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {thirdLineIncome.filter((asset: any) => asset.isActive).map((asset: any) => (
                       <Card key={`3rdl-${asset.id}`} className="border-purple-200 bg-purple-50/50">
+                        {(asset.imageUrl1 || asset.imageUrl2) && (
+                          <div className="relative h-40 overflow-hidden rounded-t-lg">
+                            <img
+                              src={asset.imageUrl1 || asset.imageUrl2}
+                              alt={asset.assetNumber}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
                         <CardHeader className="pb-2">
                           <CardTitle className="text-lg flex items-center gap-2">
                             <Zap className="h-4 w-4 text-purple-600" />

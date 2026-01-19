@@ -103,10 +103,10 @@ export default function ThirdLineIncome() {
   );
 
   const createMutation = trpc.thirdLineIncome.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (newAsset) => {
       toast.success("Third Line Income asset created successfully");
-      setIsDialogOpen(false);
-      resetForm();
+      // Set editingAsset to the newly created asset so user can upload images
+      setEditingAsset(newAsset);
       refetch();
     },
     onError: (error) => toast.error(error.message),
@@ -317,6 +317,7 @@ export default function ThirdLineIncome() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-16">Image</TableHead>
                       <TableHead>Asset #</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Dimensions</TableHead>
@@ -330,6 +331,15 @@ export default function ThirdLineIncome() {
                   <TableBody>
                     {assets.map((asset: any) => (
                       <TableRow key={asset.id}>
+                        <TableCell>
+                          {asset.imageUrl1 ? (
+                            <img src={asset.imageUrl1} alt={asset.assetNumber} className="w-12 h-12 object-cover rounded" />
+                          ) : (
+                            <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                              <Layers className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="font-medium">{asset.assetNumber}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{asset.categoryName || getCategoryName(asset.categoryId)}</Badge>
@@ -456,7 +466,7 @@ export default function ThirdLineIncome() {
                 />
               </div>
 
-              {/* Image Upload Section - Only show when editing */}
+              {/* Image Upload Section - Show when editing or after creating */}
               {editingAsset && (
                 <div className="col-span-2 space-y-2">
                   <Label>Asset Images</Label>
