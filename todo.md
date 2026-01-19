@@ -2443,3 +2443,13 @@
 - [x] Investigate why VS and 3rdL sites don't show their locations on the map - sites data wasn't being combined
 - [x] Fix the asset type filtering in InteractiveMap component - created combinedSites array with all asset types
 - [x] Test the fix with all asset types - Casual Leasing (blue), Vacant Shops (green), Third Line Income (purple) all showing correctly
+
+## Bug Fix - Inconsistent Matched Badge Highlighting (Jan 19, 2026)
+- [x] Investigate why searching "Eastgate" shows yellow "Matched" badge but "Waverley" doesn't
+- [x] Fix the inconsistent highlighting logic for centre-only searches
+  - Centre-only searches (e.g., "Waverley", "Eastgate") now show NO Matched badges
+  - Site-specific searches (e.g., "Eastgate Site 2") correctly show Matched badge only on matching site
+  - Description keyword searches (e.g., "Waverley Outside Prouds") correctly show Matched badge on sites with matching description
+- [x] Test with different centre name searches
+- [x] Fix site number matching to be precise ("Site 2" matches only "2", not "L2-33" or "22")
+- [x] Fix description keyword detection by comparing query length to actual centre name from database

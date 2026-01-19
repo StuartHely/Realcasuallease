@@ -1,0 +1,35 @@
+{
+  "query": "SELECT id, siteNumber, description FROM sites WHERE centreId IN (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%') LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, siteNumber, description FROM sites WHERE centreId IN (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%') LIMIT 10;",
+  "rows": [
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery"
+    },
+    {
+      "id": "120002",
+      "siteNumber": "10",
+      "description": "Outside Chat Time at the Centre Entry."
+    },
+    {
+      "id": "120003",
+      "siteNumber": "11",
+      "description": "Outside Chat Time at the Centre Entry"
+    },
+    {
+      "id": "120004",
+      "siteNumber": "L2-33",
+      "description": "Located Top Level between Brow Bar and Dymocks."
+    },
+    {
+      "id": "120005",
+      "siteNumber": "L2-99",
+      "description": "Located Top Level between Brow Bar and Dymocks."
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsiteNumber\tdescription\n120001\t2\tBetween Coles and Tender Gourmet Butchery\n120002\t10\tOutside Chat Time at the Centre Entry.\n120003\t11\tOutside Chat Time at the Centre Entry\n120004\tL2-33\tLocated Top Level between Brow Bar and Dymocks.\n120005\tL2-99\tLocated Top Level between Brow Bar and Dymocks.\n",
+  "stderr": "",
+  "execution_time_ms": 1767
+}

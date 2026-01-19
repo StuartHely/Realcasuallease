@@ -412,6 +412,16 @@ export async function searchSitesWithCategory(query: string, categoryKeyword?: s
   const lowerQuery = query.toLowerCase();
   const queryWords = lowerQuery.split(/\s+/).filter(w => w.length > 0);
   
+  // Extract site number from "site X" pattern (e.g., "site 2", "site 10")
+  const siteNumberMatch = lowerQuery.match(/site\s*(\d+)/i);
+  const targetSiteNumber = siteNumberMatch ? siteNumberMatch[1] : null;
+  
+  // Remove "site" word from query words if we found a site number pattern
+  // This prevents "site" from being required to match in the combined text
+  const filteredQueryWords = targetSiteNumber 
+    ? queryWords.filter(w => w !== 'site')
+    : queryWords;
+  
   // Group sites by site ID to consolidate multiple category matches
   const siteMap = new Map<number, { site: typeof sites.$inferSelect; centre: typeof shoppingCentres.$inferSelect | null; categories: Array<typeof usageCategories.$inferSelect> }>();
   
@@ -456,12 +466,32 @@ export async function searchSitesWithCategory(query: string, categoryKeyword?: s
       }
     }
     
-    // Check if query matches as a whole
-    if (combined.includes(lowerQuery)) return true;
+    // If searching for a specific site number, check if this site matches
+    if (targetSiteNumber) {
+      // Check if the site number matches exactly
+      // "2" should match "2" but not "22", "L2-33", or "12"
+      // Also handle formats like "2A", "2B" (site 2 with suffix)
+      const siteNumMatches = siteNumber === targetSiteNumber || 
+        // Match "2A", "2B" etc (number followed by letter suffix)
+        new RegExp(`^${targetSiteNumber}[a-z]?$`, 'i').test(siteNumber);
+      
+      // Also check if the centre name matches (for queries like "Eastgate Site 2")
+      const otherWordsMatch = filteredQueryWords
+        .filter(w => w !== targetSiteNumber) // Remove the site number from words to check
+        .every(word => combined.includes(word));
+      
+      if (siteNumMatches && otherWordsMatch) return true;
+    }
+    
+    // Check if query matches as a whole (but skip if we have a site number pattern)
+    if (!targetSiteNumber && combined.includes(lowerQuery)) return true;
     
     // Check if all words in query appear somewhere in the combined text
-    const allWordsMatch = queryWords.every(word => combined.includes(word));
-    if (allWordsMatch) return true;
+    // Skip this check if we have a site number pattern, as we already handled it above
+    if (!targetSiteNumber) {
+      const allWordsMatch = filteredQueryWords.every(word => combined.includes(word));
+      if (allWordsMatch) return true;
+    }
     
     // Check for substring matches in individual fields
     if (siteNumber.includes(lowerQuery) || 

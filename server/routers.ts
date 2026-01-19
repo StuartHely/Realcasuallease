@@ -787,9 +787,39 @@ export const appRouter = router({
           return { centres, sites: allAssets, availability: [], matchedSiteIds: [], assetType: 'third_line' };
         }
         
-        // Try site-level search first using the extracted centre name and category
+        // First, search for sites using the full query to find any matches
+        // This allows description-based searches like "Waverley Outside Prouds" to work
+        const siteResults = await db.searchSitesWithCategory(input.query, parsedQuery.productCategory);
+        
+        // Determine if query has site-specific keywords beyond just centre name
+        const lowerQuery = input.query.toLowerCase();
+        
+        // Check for explicit site-specific patterns
+        const hasSiteNumber = /site\s*\d+|#\d+|\bsite\b/i.test(lowerQuery);
+        const hasProductCategory = !!parsedQuery.productCategory;
+        const hasSizeRequirement = parsedQuery.minSizeM2 !== undefined;
+        const hasTableRequirement = parsedQuery.minTables !== undefined;
+        
+        // Check if the query contains more than just a centre name by looking at the actual
+        // centre names from the site results. If the query is longer than the centre name,
+        // it likely contains description keywords.
+        let queryHasDescriptionKeywords = false;
+        if (siteResults.length > 0 && siteResults.length < 10) {
+          // Get the actual centre name from the matched sites
+          const actualCentreName = siteResults[0].centre?.name?.toLowerCase() || '';
+          // If the query is significantly longer than the centre name, it has extra keywords
+          if (actualCentreName && lowerQuery.length > actualCentreName.length + 3) {
+            queryHasDescriptionKeywords = true;
+          }
+        }
+        
+        // If we found specific site matches with description keywords,
+        // or if there are explicit requirements, consider it a site-specific query
+        const hasSiteSpecificQuery = queryHasDescriptionKeywords || 
+          hasSiteNumber || hasProductCategory || hasSizeRequirement || hasTableRequirement;
+        
+        // For centre search, use the extracted centre name if available
         const searchQuery = parsedQuery.centreName || input.query;
-        const siteResults = await db.searchSitesWithCategory(searchQuery, parsedQuery.productCategory);
         
         // If we found specific sites with category filter, extract their centres
         let centres: any[] = [];
@@ -846,7 +876,9 @@ export const appRouter = router({
 
         const allSites: any[] = [];
         const availability: any[] = [];
-        const matchedSiteIds: number[] = siteResults.map(r => r.site.id);
+        
+        // Populate matchedSiteIds based on the earlier computed hasSiteSpecificQuery
+        const matchedSiteIds: number[] = hasSiteSpecificQuery ? siteResults.map(r => r.site.id) : [];
         
         // Track if any sites match the size requirement
         let hasMatchingSites = false;
