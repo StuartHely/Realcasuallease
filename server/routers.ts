@@ -2682,6 +2682,26 @@ export const appRouter = router({
         await assetDb.deleteVacantShop(input.id);
         return { success: true };
       }),
+
+    uploadImage: adminProcedure
+      .input(z.object({
+        shopId: z.number(),
+        imageSlot: z.number().min(1).max(2),
+        base64Image: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { processAssetImage } = await import('./imageProcessing');
+        const { url } = await processAssetImage(
+          input.base64Image,
+          'vacant-shop',
+          input.shopId,
+          input.imageSlot
+        );
+        await assetDb.updateVacantShop(input.shopId, {
+          [`imageUrl${input.imageSlot}`]: url,
+        } as any);
+        return { url };
+      }),
   }),
 
   // Third Line Income
@@ -2756,6 +2776,26 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await assetDb.deleteThirdLineIncome(input.id);
         return { success: true };
+      }),
+
+    uploadImage: adminProcedure
+      .input(z.object({
+        assetId: z.number(),
+        imageSlot: z.number().min(1).max(2),
+        base64Image: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { processAssetImage } = await import('./imageProcessing');
+        const { url } = await processAssetImage(
+          input.base64Image,
+          'third-line',
+          input.assetId,
+          input.imageSlot
+        );
+        await assetDb.updateThirdLineIncome(input.assetId, {
+          [`imageUrl${input.imageSlot}`]: url,
+        } as any);
+        return { url };
       }),
   }),
 

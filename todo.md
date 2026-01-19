@@ -2456,3 +2456,7 @@
 
 ## Bug Fix - VS and 3rdL Image Upload Label (Jan 19, 2026)
 - [x] Change image upload field label from "URL" to "File Location" for Vacant Shops and Third Line Income
+
+## Feature - Drag-and-Drop Image Upload for VS and 3rdL (Jan 19, 2026)
+- [x] Add same image upload component as Edit Site to Vacant Shops admin form
+- [x] Add same image upload component as Edit Site to Third Line Income admin form

@@ -12,6 +12,37 @@ import { storagePut } from './storage';
  * @param slot - Image slot number (1-4)
  * @returns Object containing the uploaded image URL
  */
+export async function processAssetImage(
+  base64Image: string,
+  assetType: 'vacant-shop' | 'third-line',
+  assetId: number,
+  slot: number
+): Promise<{ url: string }> {
+  const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
+  const imageBuffer = Buffer.from(base64Data, 'base64');
+
+  const processedImage = await sharp(imageBuffer)
+    .resize(1200, 800, {
+      fit: 'inside',
+      withoutEnlargement: true,
+    })
+    .webp({ quality: 85 })
+    .toBuffer();
+
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(7);
+  const fileName = `${assetType}-${assetId}-slot${slot}-${timestamp}-${random}.webp`;
+  const fileKey = `${assetType}s/${assetId}/${fileName}`;
+
+  const { url } = await storagePut(
+    fileKey,
+    processedImage,
+    'image/webp'
+  );
+
+  return { url };
+}
+
 export async function processSiteImage(
   base64Image: string,
   siteId: number,
