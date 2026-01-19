@@ -2433,3 +2433,13 @@
 ## Search Results - Centre Description (Jan 19, 2026)
 - [x] Display centre description below the map when a centre is found in search results
 - [x] Test with centres that have descriptions - Eastgate description displays correctly below floor plan
+
+## Bug Fix - VS and 3rdL Sites Not Showing on Map (Jan 19, 2026)
+- [ ] Investigate why Vacant Shop and Third Line Income sites don't show their locations on the map when their asset type is selected
+- [ ] Fix the asset type filtering in InteractiveMap component
+- [ ] Test the fix with all asset types (Casual Leasing, Vacant Shops, Third Line Income)
+
+## Bug Fix - VS and 3rdL Sites Not Showing on Map (Jan 19, 2026)
+- [x] Investigate why VS and 3rdL sites don't show their locations on the map - sites data wasn't being combined
+- [x] Fix the asset type filtering in InteractiveMap component - created combinedSites array with all asset types
+- [x] Test the fix with all asset types - Casual Leasing (blue), Vacant Shops (green), Third Line Income (purple) all showing correctly

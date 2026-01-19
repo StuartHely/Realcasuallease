@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,43 @@ export default function Search() {
     { centreId: centreIds[0] || 0 },
     { enabled: centreIds.length > 0 && (selectedAssetType === "third_line" || selectedAssetType === "all") }
   );
+
+  // Combine all asset types for the interactive map
+  const combinedSites = useMemo(() => {
+    const sites = [];
+    
+    // Add casual leasing sites
+    if (data?.sites) {
+      sites.push(...data.sites.map((site: any) => ({
+        ...site,
+        assetType: "casual_leasing" as const
+      })));
+    }
+    
+    // Add vacant shops
+    if (vacantShops) {
+      sites.push(...vacantShops.map((shop: any) => ({
+        ...shop,
+        id: `vs-${shop.id}`,
+        originalId: shop.id,
+        displayNumber: shop.shopNumber,
+        assetType: "vacant_shops" as const
+      })));
+    }
+    
+    // Add third line income
+    if (thirdLineIncome) {
+      sites.push(...thirdLineIncome.map((asset: any) => ({
+        ...asset,
+        id: `tli-${asset.id}`,
+        originalId: asset.id,
+        displayNumber: asset.assetNumber,
+        assetType: "third_line" as const
+      })));
+    }
+    
+    return sites;
+  }, [data?.sites, vacantShops, thirdLineIncome]);
 
   // Determine if a site is matched by the search query
   const isMatchedSite = (siteId: number) => {
@@ -929,7 +966,7 @@ export default function Search() {
                   <InteractiveMap
                     centreId={data.centres[0].id}
                     mapUrl={data.floorLevels.find((fl: any) => fl.mapImageUrl)?.mapImageUrl || ''}
-                    sites={data.sites}
+                    sites={combinedSites}
                     centreName={data.centres[0].name}
                     assetTypeFilter={selectedAssetType}
                   />

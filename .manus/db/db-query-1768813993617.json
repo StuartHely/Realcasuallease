@@ -1,0 +1,24 @@
+{
+  "query": "SELECT id, shopNumber, mapMarkerX, mapMarkerY, floorLevelId \nFROM vacant_shops \nWHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, shopNumber, mapMarkerX, mapMarkerY, floorLevelId \nFROM vacant_shops \nWHERE centreId = (SELECT id FROM shopping_centres WHERE name LIKE '%Eastgate%');",
+  "rows": [
+    {
+      "id": "30001",
+      "shopNumber": "1",
+      "mapMarkerX": "87",
+      "mapMarkerY": "83",
+      "floorLevelId": "90001"
+    },
+    {
+      "id": "60001",
+      "shopNumber": "X1",
+      "mapMarkerX": "45",
+      "mapMarkerY": "23",
+      "floorLevelId": "90001"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tshopNumber\tmapMarkerX\tmapMarkerY\tfloorLevelId\n30001\t1\t87\t83\t90001\n60001\tX1\t45\t23\t90001\n",
+  "stderr": "",
+  "execution_time_ms": 1526
+}
