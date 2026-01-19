@@ -410,6 +410,15 @@ export default function Search() {
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {vacantShops.filter((shop: any) => shop.isActive).map((shop: any) => (
                       <Card key={`vs-${shop.id}`} className="border-green-200 bg-green-50/50">
+                        {(shop.imageUrl1 || shop.imageUrl2) && (
+                          <div className="relative h-40 overflow-hidden rounded-t-lg">
+                            <img
+                              src={shop.imageUrl1 || shop.imageUrl2}
+                              alt={`Shop ${shop.shopNumber}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
                         <CardHeader className="pb-2">
                           <CardTitle className="text-lg flex items-center gap-2">
                             <Store className="h-4 w-4 text-green-600" />

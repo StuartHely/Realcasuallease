@@ -2464,3 +2464,7 @@
 ## Bug Fix - VS Image Upload Not Saving (Jan 19, 2026)
 - [x] Investigate why uploaded images are not being saved to database
 - [x] Fix: editingShop/editingAsset state wasn't being updated after upload, so images didn't display until page refresh
+
+## Bug Fix - VS Images Not Appearing (Jan 19, 2026)
+- [x] Verify Image 2 upload persists correctly - confirmed working
+- [x] Add VS images to search results display
