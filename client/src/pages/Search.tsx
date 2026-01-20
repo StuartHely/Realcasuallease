@@ -78,11 +78,12 @@ export default function Search() {
   const combinedSites = useMemo(() => {
     const sites = [];
     
-    // Add casual leasing sites
+    // Add sites from search results (respecting their existing assetType)
     if (data?.sites) {
       sites.push(...data.sites.map((site: any) => ({
         ...site,
-        assetType: "casual_leasing" as const
+        // Preserve existing assetType from API, default to casual_leasing only if not set
+        assetType: site.assetType || "casual_leasing" as const
       })));
     }
     
@@ -515,7 +516,8 @@ export default function Search() {
 
             {/* Calendar Heatmap - Casual Leasing Sites */}
             {(selectedAssetType === "casual_leasing" || selectedAssetType === "all") && data.centres.map((centre) => {
-              let centreSites = data.sites.filter((s) => s.centreId === centre.id);
+              // Filter to only include casual leasing sites (exclude VS and 3rdL from this section)
+              let centreSites = data.sites.filter((s) => s.centreId === centre.id && (!s.assetType || s.assetType === 'casual_leasing'));
               
               // Filter by selected category if one is chosen
               if (selectedCategoryId && data.siteCategories) {

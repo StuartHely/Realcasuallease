@@ -760,21 +760,23 @@ export const appRouter = router({
           const searchQuery = parsedQuery.centreName || input.query;
           const centres = await db.searchShoppingCentres(searchQuery);
           if (centres.length === 0) {
-            return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'vacant_shop' };
+            return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'vacant_shop', floorLevels: [] };
           }
           const allShops: any[] = [];
           for (const centre of centres) {
             const shops = await assetDb.getVacantShopsByCentre(centre.id);
             allShops.push(...shops.map((s: any) => ({ ...s, centreName: centre.name, assetType: 'vacant_shop' })));
           }
-          return { centres, sites: allShops, availability: [], matchedSiteIds: [], assetType: 'vacant_shop' };
+          // Fetch floor levels for the first centre to display floor plan map
+          const floorLevels = centres.length > 0 ? await db.getFloorLevelsByCentre(centres[0].id) : [];
+          return { centres, sites: allShops, availability: [], matchedSiteIds: [], assetType: 'vacant_shop', floorLevels };
         }
         
         if (parsedQuery.assetType === 'third_line') {
           const searchQuery = parsedQuery.centreName || input.query;
           const centres = await db.searchShoppingCentres(searchQuery);
           if (centres.length === 0) {
-            return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'third_line' };
+            return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'third_line', floorLevels: [] };
           }
           const allAssets: any[] = [];
           for (const centre of centres) {
@@ -784,7 +786,9 @@ export const appRouter = router({
               : assets;
             allAssets.push(...filtered.map((a: any) => ({ ...a, centreName: centre.name, assetType: 'third_line' })));
           }
-          return { centres, sites: allAssets, availability: [], matchedSiteIds: [], assetType: 'third_line' };
+          // Fetch floor levels for the first centre to display floor plan map
+          const floorLevels = centres.length > 0 ? await db.getFloorLevelsByCentre(centres[0].id) : [];
+          return { centres, sites: allAssets, availability: [], matchedSiteIds: [], assetType: 'third_line', floorLevels };
         }
         
         // First, search for sites using the full query to find any matches

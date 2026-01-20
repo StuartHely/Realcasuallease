@@ -2480,3 +2480,9 @@
 - [x] Fix: Only 1st VS showing in search results (Eastgate has 2) - confirmed both showing
 - [x] Fix: "Eastgate Vacant Shop" search opens CL tab instead of VS tab - added auto-select based on suggestedAssetType
 - [x] Fix: VS X1 image upload not persisting - confirmed working, was screenshot capture timing issue
+
+## Bug Fix - Search Results Map and Tab Issues (Jan 20, 2026)
+- [x] VS tab not showing centre map with VS marker locations from Asset Map Placement - added floorLevels to VS/3rdL search responses
+- [x] CL tab incorrectly showing VS images instead of CL-only sites - filtered centreSites by assetType
+- [x] Ensure each tab (CL, VS, 3rdL) shows only its own asset type with correct map markers
+- [x] "All Assets" tab shows all asset types on same map
