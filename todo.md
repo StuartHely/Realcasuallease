@@ -2489,3 +2489,6 @@
 
 ## Bug Fix - CL Tab Not Showing CL Sites (Jan 20, 2026)
 - [x] Fix: When searching "Eastgate Vacant Shop" and clicking CL tab, CL sites don't appear
+
+## Bug Fix - Vacant Shop Images Disappear on Save (Jan 20, 2026)
+- [x] Fix: Images disappear when saving Vacant Shop edits with multiple images

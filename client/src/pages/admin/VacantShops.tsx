@@ -238,7 +238,10 @@ export default function VacantShops() {
     }
 
     if (editingShop) {
-      updateMutation.mutate({ id: editingShop.id, ...formData });
+      // Exclude imageUrl fields from update - images are uploaded separately
+      // This prevents overwriting existing images with empty strings
+      const { imageUrl1, imageUrl2, ...updateData } = formData;
+      updateMutation.mutate({ id: editingShop.id, ...updateData });
     } else {
       createMutation.mutate({ centreId: selectedCentreId!, ...formData });
     }
