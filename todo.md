@@ -2486,3 +2486,6 @@
 - [x] CL tab incorrectly showing VS images instead of CL-only sites - filtered centreSites by assetType
 - [x] Ensure each tab (CL, VS, 3rdL) shows only its own asset type with correct map markers
 - [x] "All Assets" tab shows all asset types on same map
+
+## Bug Fix - CL Tab Not Showing CL Sites (Jan 20, 2026)
+- [x] Fix: When searching "Eastgate Vacant Shop" and clicking CL tab, CL sites don't appear

@@ -73,6 +73,13 @@ export default function Search() {
     { centreId: centreIds[0] || 0 },
     { enabled: centreIds.length > 0 && (selectedAssetType === "third_line" || selectedAssetType === "all") }
   );
+  
+  // Fetch CL sites when search was for VS/3rdL but user switches to CL tab
+  const needsCLSites = !!(data?.assetType && data.assetType !== 'casual' && (selectedAssetType === "casual_leasing" || selectedAssetType === "all"));
+  const { data: casualLeasingSites } = trpc.centres.getSites.useQuery(
+    { centreId: centreIds[0] || 0 },
+    { enabled: centreIds.length > 0 && needsCLSites }
+  );
 
   // Combine all asset types for the interactive map
   const combinedSites = useMemo(() => {
@@ -84,6 +91,14 @@ export default function Search() {
         ...site,
         // Preserve existing assetType from API, default to casual_leasing only if not set
         assetType: site.assetType || "casual_leasing" as const
+      })));
+    }
+    
+    // Add CL sites fetched separately (when search was for VS/3rdL)
+    if (casualLeasingSites) {
+      sites.push(...casualLeasingSites.map((site: any) => ({
+        ...site,
+        assetType: "casual_leasing" as const
       })));
     }
     
@@ -110,7 +125,7 @@ export default function Search() {
     }
     
     return sites;
-  }, [data?.sites, vacantShops, thirdLineIncome]);
+  }, [data?.sites, casualLeasingSites, vacantShops, thirdLineIncome]);
 
   // Determine if a site is matched by the search query
   const isMatchedSite = (siteId: number) => {
@@ -516,8 +531,9 @@ export default function Search() {
 
             {/* Calendar Heatmap - Casual Leasing Sites */}
             {(selectedAssetType === "casual_leasing" || selectedAssetType === "all") && data.centres.map((centre) => {
-              // Filter to only include casual leasing sites (exclude VS and 3rdL from this section)
-              let centreSites = data.sites.filter((s) => s.centreId === centre.id && (!s.assetType || s.assetType === 'casual_leasing'));
+              // Use casualLeasingSites if fetched (when search was for VS/3rdL), otherwise filter from data.sites
+              const sitesSource = casualLeasingSites || data.sites;
+              let centreSites = sitesSource.filter((s: any) => s.centreId === centre.id && (!s.assetType || s.assetType === 'casual_leasing'));
               
               // Filter by selected category if one is chosen
               if (selectedCategoryId && data.siteCategories) {
