@@ -91,10 +91,11 @@ export default function VacantShops() {
     isActive: true,
   });
 
+  const utils = trpc.useUtils();
   const { data: centres } = trpc.centres.list.useQuery();
-  const { data: shops, isLoading, refetch } = trpc.vacantShops.getByCentre.useQuery(
+  const { data: shops, isLoading } = trpc.vacantShops.getByCentre.useQuery(
     { centreId: selectedCentreId! },
-    { enabled: !!selectedCentreId }
+    { enabled: !!selectedCentreId, staleTime: 0, gcTime: 0 }
   );
   const { data: floorLevels } = trpc.admin.getFloorLevels.useQuery(
     { centreId: selectedCentreId! },
@@ -106,7 +107,7 @@ export default function VacantShops() {
       toast.success("Vacant shop created successfully");
       // Set editingShop to the newly created shop so user can upload images
       setEditingShop(newShop);
-      refetch();
+      utils.vacantShops.getByCentre.invalidate({ centreId: selectedCentreId! });
     },
     onError: (error) => toast.error(error.message),
   });
@@ -115,14 +116,14 @@ export default function VacantShops() {
       toast.success("Vacant shop updated successfully");
       setIsDialogOpen(false);
       resetForm();
-      refetch();
+      utils.vacantShops.getByCentre.invalidate({ centreId: selectedCentreId! });
     },
     onError: (error) => toast.error(error.message),
   });
   const deleteMutation = trpc.vacantShops.delete.useMutation({
     onSuccess: () => {
       toast.success("Vacant shop deleted successfully");
-      refetch();
+      utils.vacantShops.getByCentre.invalidate({ centreId: selectedCentreId! });
     },
     onError: (error) => toast.error(error.message),
   });
@@ -181,7 +182,7 @@ export default function VacantShops() {
       }));
 
       toast.success("Image uploaded successfully");
-      refetch();
+      utils.vacantShops.getByCentre.invalidate({ centreId: selectedCentreId! });
       setPreviewImage(null);
       setPreviewSlot(null);
     } catch (error: any) {
@@ -324,7 +325,16 @@ export default function VacantShops() {
                       <TableRow key={shop.id}>
                         <TableCell>
                           {shop.imageUrl1 ? (
-                            <img src={shop.imageUrl1} alt={`Shop ${shop.shopNumber}`} className="w-12 h-12 object-cover rounded" />
+                            <img 
+                              key={shop.imageUrl1} 
+                              src={shop.imageUrl1} 
+                              alt={`Shop ${shop.shopNumber}`} 
+                              className="w-12 h-12 object-cover rounded" 
+                              onError={(e) => {
+                                console.error('Image load error for shop', shop.shopNumber, shop.imageUrl1);
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
                           ) : (
                             <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
                               <Store className="h-5 w-5 text-muted-foreground" />
@@ -476,7 +486,7 @@ export default function VacantShops() {
                                       [`imageUrl${slot}`]: "",
                                     } as any);
                                     toast.success(`Image ${slot} removed`);
-                                    refetch();
+                                    utils.vacantShops.getByCentre.invalidate({ centreId: selectedCentreId! });
                                   } catch (error: any) {
                                     toast.error(error.message || "Failed to remove image");
                                   }

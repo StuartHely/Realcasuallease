@@ -2475,3 +2475,8 @@
 - [x] Add image thumbnails to 3rdL admin table
 - [x] Enable image upload during VS creation (not just edit)
 - [x] Enable image upload during 3rdL creation (not just edit)
+
+## Bug Fix - VS Display Issues (Jan 20, 2026)
+- [x] Fix: Only 1st VS showing in search results (Eastgate has 2) - confirmed both showing
+- [x] Fix: "Eastgate Vacant Shop" search opens CL tab instead of VS tab - added auto-select based on suggestedAssetType
+- [x] Fix: VS X1 image upload not persisting - confirmed working, was screenshot capture timing issue

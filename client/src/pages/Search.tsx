@@ -117,6 +117,17 @@ export default function Search() {
     return (data.matchedSiteIds as number[]).includes(siteId);
   };
 
+  // Auto-select asset type based on search response
+  useEffect(() => {
+    if (data?.assetType) {
+      if (data.assetType === 'vacant_shop') {
+        setSelectedAssetType('vacant_shops');
+      } else if (data.assetType === 'third_line') {
+        setSelectedAssetType('third_line');
+      }
+    }
+  }, [data?.assetType]);
+
   // Auto-scroll to matched site when data loads
   useEffect(() => {
     if (data && data.matchedSiteIds && data.matchedSiteIds.length > 0) {
