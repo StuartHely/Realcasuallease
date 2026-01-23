@@ -3470,6 +3470,45 @@ export const appRouter = router({
         const { getBookingAuditHistory } = await import('./adminBookingDb');
         return await getBookingAuditHistory(input.bookingId);
       }),
+
+    // Cancel booking
+    cancel: adminProcedure
+      .input(z.object({
+        bookingId: z.number(),
+        reason: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const booking = await db.getBookingById(input.bookingId);
+        if (!booking) throw new TRPCError({ code: 'NOT_FOUND', message: 'Booking not found' });
+
+        // Update booking status to cancelled
+        const { cancelAdminBooking } = await import('./adminBookingDb');
+        await cancelAdminBooking(input.bookingId, ctx.user.id, input.reason);
+
+        return { success: true, bookingNumber: booking.bookingNumber };
+      }),
+
+    // Get booking details for editing
+    getBookingDetails: adminProcedure
+      .input(z.object({ bookingId: z.number() }))
+      .query(async ({ input }) => {
+        const booking = await db.getBookingById(input.bookingId);
+        if (!booking) throw new TRPCError({ code: 'NOT_FOUND', message: 'Booking not found' });
+        
+        const customer = await db.getUserById(booking.customerId);
+        const profile = customer ? await db.getCustomerProfileByUserId(customer.id) : null;
+        const site = await db.getSiteById(booking.siteId);
+        const centre = site ? await db.getShoppingCentreById(site.centreId) : null;
+        
+        return {
+          ...booking,
+          customerName: customer?.name,
+          customerEmail: customer?.email,
+          companyName: profile?.companyName || null,
+          siteNumber: site?.siteNumber,
+          centreName: centre?.name,
+        };
+      }),
   }),
 });
 

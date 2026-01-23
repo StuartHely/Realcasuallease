@@ -220,8 +220,8 @@ export default function AdminLayout({
     : user.email?.[0]?.toUpperCase() || "U";
 
   return (
-    <SidebarProvider>
-      <Sidebar>
+    <SidebarProvider defaultOpen={true}>
+      <Sidebar collapsible="none">
         <SidebarHeader className="border-b px-6 py-4">
           <div className="flex items-center gap-2">
             <Building2 className="h-6 w-6 text-blue-600" />
@@ -285,7 +285,6 @@ export default function AdminLayout({
       </Sidebar>
       <SidebarInset>
         <header className="flex h-16 items-center gap-4 border-b bg-background px-6">
-          <SidebarTrigger />
           <div className="flex-1" />
         </header>
         <main className="flex-1 overflow-y-auto p-6">{children}</main>

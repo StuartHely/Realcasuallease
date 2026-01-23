@@ -2525,3 +2525,8 @@
 ## Admin Booking Bug Fixes (Jan 23, 2026)
 - [x] Fix: Sites not appearing in alphabetical order (Campbelltown shows wrong order) - Added natural sort
 - [x] Fix: Booking not showing on grid immediately after confirmation - Added invalidation
+
+## Admin Booking Enhancements (Jan 23, 2026)
+- [x] Add booking edit functionality - click existing bookings to modify dates, furniture, comments
+- [x] Add booking cancellation - cancel bookings from grid with confirmation dialog
+- [x] Fix admin menu to always appear in left column (not collapsible/hidden)

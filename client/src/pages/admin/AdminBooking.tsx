@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import { useLocation, useSearch } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,14 +14,30 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWithinInterval, addMonths, subMonths } from "date-fns";
-import { CalendarIcon, ChevronLeft, ChevronRight, Building2, User, DollarSign, Info, AlertTriangle } from "lucide-react";
+import { format, startOfMonth, endOfMonth, startOfDay, eachDayOfInterval, isSameDay, isWithinInterval, addMonths, subMonths } from "date-fns";
+import { CalendarIcon, ChevronLeft, ChevronRight, Building2, User, DollarSign, Info, AlertTriangle, Pencil, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AdminBooking() {
+  const [, setLocation] = useLocation();
+  const searchString = useSearch();
+  
+  // Parse month from URL
+  const initialMonth = useMemo(() => {
+    const params = new URLSearchParams(searchString);
+    const monthParam = params.get('month');
+    if (monthParam) {
+      const [year, month] = monthParam.split('-').map(Number);
+      if (year && month) {
+        return new Date(year, month - 1, 1);
+      }
+    }
+    return new Date();
+  }, []);
+  
   // State for form
   const [selectedCentreId, setSelectedCentreId] = useState<number | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [selectedMonth, setSelectedMonth] = useState(initialMonth);
   const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
   const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
   const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
@@ -32,6 +49,18 @@ export default function AdminBooking() {
   const [overrideAmount, setOverrideAmount] = useState<string>("");
   const [showAllDetails, setShowAllDetails] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  
+  // Edit/Cancel booking state
+  const [editingBookingId, setEditingBookingId] = useState<number | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [editFormData, setEditFormData] = useState({
+    tablesRequested: 0,
+    chairsRequested: 0,
+    totalAmount: "",
+    adminComments: "",
+  });
 
   // Queries
   const { data: centres } = trpc.centres.list.useQuery();
@@ -88,6 +117,31 @@ export default function AdminBooking() {
     },
   });
 
+  const updateBookingMutation = trpc.adminBooking.update.useMutation({
+    onSuccess: () => {
+      toast.success("Booking updated successfully!");
+      utils.adminBooking.getAvailabilityGrid.invalidate();
+      setShowEditDialog(false);
+      setEditingBookingId(null);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const cancelBookingMutation = trpc.adminBooking.cancel.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Booking ${data.bookingNumber} cancelled successfully!`);
+      utils.adminBooking.getAvailabilityGrid.invalidate();
+      setShowCancelDialog(false);
+      setEditingBookingId(null);
+      setCancelReason("");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
   // Sort centres alphabetically
   const sortedCentres = useMemo(() => {
     if (!centres) return [];
@@ -134,11 +188,15 @@ export default function AdminBooking() {
   // Check if a day is booked for a site
   const getBookingForDay = (siteId: number, day: Date) => {
     if (!availabilityData) return null;
-    return availabilityData.bookings.find(
-      (b) =>
-        b.siteId === siteId &&
-        isWithinInterval(day, { start: new Date(b.startDate), end: new Date(b.endDate) })
-    );
+    const dayStart = startOfDay(day);
+    const found = availabilityData.bookings.find((b) => {
+      if (b.siteId !== siteId) return false;
+      const bookingStart = startOfDay(new Date(b.startDate));
+      const bookingEnd = startOfDay(new Date(b.endDate));
+      // Check if day is within booking range (inclusive)
+      return dayStart >= bookingStart && dayStart <= bookingEnd;
+    });
+    return found;
   };
 
   // Check if day is in selected range
@@ -148,10 +206,26 @@ export default function AdminBooking() {
     return isWithinInterval(day, { start: selectedStartDate, end: selectedEndDate });
   };
 
+  // Handle booking click for edit/cancel
+  const handleBookingClick = (booking: NonNullable<typeof availabilityData>["bookings"][0]) => {
+    setEditingBookingId(booking.bookingId);
+    setEditFormData({
+      tablesRequested: booking.tablesRequested,
+      chairsRequested: booking.chairsRequested,
+      totalAmount: "", // Will be loaded from booking details
+      adminComments: "",
+    });
+    setShowEditDialog(true);
+  };
+
   // Handle day click for date selection
   const handleDayClick = (siteId: number, day: Date) => {
     const booking = getBookingForDay(siteId, day);
-    if (booking) return; // Can't select booked days
+    if (booking) {
+      // Click on booked day opens edit dialog
+      handleBookingClick(booking);
+      return;
+    }
 
     if (selectedSiteId !== siteId) {
       // Switching to a different site - start fresh
@@ -666,7 +740,213 @@ export default function AdminBooking() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Booking Dialog */}
+        <Dialog open={showEditDialog} onOpenChange={(open) => {
+          setShowEditDialog(open);
+          if (!open) setEditingBookingId(null);
+        }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Pencil className="h-5 w-5" />
+                Edit Booking
+              </DialogTitle>
+            </DialogHeader>
+            {editingBookingId && (
+              <EditBookingContent
+                bookingId={editingBookingId}
+                editFormData={editFormData}
+                setEditFormData={setEditFormData}
+                onSave={() => {
+                  updateBookingMutation.mutate({
+                    bookingId: editingBookingId,
+                    tablesRequested: editFormData.tablesRequested,
+                    chairsRequested: editFormData.chairsRequested,
+                    totalAmount: editFormData.totalAmount ? parseFloat(editFormData.totalAmount) : undefined,
+                    adminComments: editFormData.adminComments || undefined,
+                  });
+                }}
+                onCancel={() => {
+                  setShowEditDialog(false);
+                  setShowCancelDialog(true);
+                }}
+                isPending={updateBookingMutation.isPending}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Cancel Booking Dialog */}
+        <Dialog open={showCancelDialog} onOpenChange={(open) => {
+          setShowCancelDialog(open);
+          if (!open) {
+            setEditingBookingId(null);
+            setCancelReason("");
+          }
+        }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <Trash2 className="h-5 w-5" />
+                Cancel Booking
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Are you sure you want to cancel this booking? This action cannot be undone.
+              </p>
+              <div>
+                <Label>Cancellation Reason (optional)</Label>
+                <Textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Enter reason for cancellation..."
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
+                Keep Booking
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (editingBookingId) {
+                    cancelBookingMutation.mutate({
+                      bookingId: editingBookingId,
+                      reason: cancelReason || undefined,
+                    });
+                  }
+                }}
+                disabled={cancelBookingMutation.isPending}
+              >
+                {cancelBookingMutation.isPending ? "Cancelling..." : "Cancel Booking"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
+  );
+}
+
+// Separate component for edit booking content to handle data fetching
+function EditBookingContent({
+  bookingId,
+  editFormData,
+  setEditFormData,
+  onSave,
+  onCancel,
+  isPending,
+}: {
+  bookingId: number;
+  editFormData: { tablesRequested: number; chairsRequested: number; totalAmount: string; adminComments: string };
+  setEditFormData: React.Dispatch<React.SetStateAction<typeof editFormData>>;
+  onSave: () => void;
+  onCancel: () => void;
+  isPending: boolean;
+}) {
+  const { data: bookingDetails, isLoading } = trpc.adminBooking.getBookingDetails.useQuery({ bookingId });
+
+  // Initialize form data when booking details load
+  useEffect(() => {
+    if (bookingDetails) {
+      setEditFormData({
+        tablesRequested: bookingDetails.tablesRequested || 0,
+        chairsRequested: bookingDetails.chairsRequested || 0,
+        totalAmount: bookingDetails.totalAmount || "",
+        adminComments: bookingDetails.adminComments || "",
+      });
+    }
+  }, [bookingDetails, setEditFormData]);
+
+  if (isLoading) {
+    return <div className="py-8 text-center">Loading booking details...</div>;
+  }
+
+  if (!bookingDetails) {
+    return <div className="py-8 text-center text-red-500">Booking not found</div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Booking Info */}
+      <div className="p-4 bg-muted rounded-lg space-y-2 text-sm">
+        <div><strong>Booking #:</strong> {bookingDetails.bookingNumber}</div>
+        <div><strong>Centre:</strong> {bookingDetails.centreName}</div>
+        <div><strong>Site:</strong> {bookingDetails.siteNumber}</div>
+        <div>
+          <strong>Dates:</strong> {format(new Date(bookingDetails.startDate), "dd/MM/yyyy")} -{" "}
+          {format(new Date(bookingDetails.endDate), "dd/MM/yyyy")}
+        </div>
+        <div><strong>Customer:</strong> {bookingDetails.companyName || bookingDetails.customerName}</div>
+        <div><strong>Status:</strong> <span className={cn(
+          "px-2 py-0.5 rounded text-xs font-medium",
+          bookingDetails.status === "confirmed" && "bg-green-100 text-green-800",
+          bookingDetails.status === "cancelled" && "bg-red-100 text-red-800",
+          bookingDetails.status === "pending" && "bg-yellow-100 text-yellow-800"
+        )}>{bookingDetails.status}</span></div>
+      </div>
+
+      {/* Editable Fields */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Tables</Label>
+          <Input
+            type="number"
+            min={0}
+            value={editFormData.tablesRequested}
+            onChange={(e) => setEditFormData(prev => ({ ...prev, tablesRequested: parseInt(e.target.value) || 0 }))}
+          />
+        </div>
+        <div>
+          <Label>Chairs</Label>
+          <Input
+            type="number"
+            min={0}
+            value={editFormData.chairsRequested}
+            onChange={(e) => setEditFormData(prev => ({ ...prev, chairsRequested: parseInt(e.target.value) || 0 }))}
+          />
+        </div>
+      </div>
+
+      <div>
+        <Label>Total Amount ($)</Label>
+        <Input
+          type="number"
+          step="0.01"
+          min={0}
+          value={editFormData.totalAmount}
+          onChange={(e) => setEditFormData(prev => ({ ...prev, totalAmount: e.target.value }))}
+          placeholder={bookingDetails.totalAmount}
+        />
+        <p className="text-xs text-muted-foreground mt-1">Leave empty to keep current amount</p>
+      </div>
+
+      <div>
+        <Label>Admin Comments</Label>
+        <Textarea
+          value={editFormData.adminComments}
+          onChange={(e) => setEditFormData(prev => ({ ...prev, adminComments: e.target.value }))}
+          placeholder="Internal notes (not visible to customer)..."
+          rows={3}
+        />
+      </div>
+
+      <DialogFooter className="flex gap-2">
+        <Button variant="destructive" onClick={onCancel} className="mr-auto">
+          <Trash2 className="h-4 w-4 mr-2" />
+          Cancel Booking
+        </Button>
+        <Button variant="outline" onClick={() => setEditFormData(prev => ({ ...prev }))}>
+          Close
+        </Button>
+        <Button onClick={onSave} disabled={isPending}>
+          {isPending ? "Saving..." : "Save Changes"}
+        </Button>
+      </DialogFooter>
+    </div>
   );
 }

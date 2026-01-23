@@ -481,3 +481,56 @@ export async function getBookingAuditHistory(
 
   return logs;
 }
+
+/**
+ * Cancel an admin booking
+ */
+export async function cancelAdminBooking(
+  bookingId: number,
+  adminUserId: number,
+  reason?: string
+): Promise<{ success: boolean }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+
+  // Get current booking for audit log
+  const [currentBooking] = await db
+    .select({
+      bookingNumber: bookings.bookingNumber,
+      status: bookings.status,
+    })
+    .from(bookings)
+    .where(eq(bookings.id, bookingId));
+
+  if (!currentBooking) {
+    throw new Error("Booking not found");
+  }
+
+  // Update booking status to cancelled
+  const existingComments = currentBooking.status === 'cancelled' ? '' : '';
+  const newComment = reason ? `\n[Cancelled] ${reason}` : '';
+  
+  await db
+    .update(bookings)
+    .set({
+      status: "cancelled",
+      ...(reason && { adminComments: sql`CONCAT(COALESCE(${bookings.adminComments}, ''), ${newComment})` }),
+    })
+    .where(eq(bookings.id, bookingId));
+
+  // Log the cancellation
+  await db.insert(auditLog).values({
+    userId: adminUserId,
+    action: "admin_booking_cancel",
+    entityType: "booking",
+    entityId: bookingId,
+    changes: JSON.stringify({
+      bookingNumber: currentBooking.bookingNumber,
+      previousStatus: currentBooking.status,
+      newStatus: "cancelled",
+      reason: reason || "No reason provided",
+    }),
+  });
+
+  return { success: true };
+}
