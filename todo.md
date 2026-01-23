@@ -2492,3 +2492,10 @@
 
 ## Bug Fix - Vacant Shop Images Disappear on Save (Jan 20, 2026)
 - [x] Fix: Images disappear when saving Vacant Shop edits with multiple images
+
+## Bug Fix - VS Image 1 Shows as Image 2 in Search Results (Jan 20, 2026)
+- [x] Investigated: Vacant Shop Image 1 appears correctly - user uploaded to Shop X1, not Shop 1
+
+## Bug Fix - VS Image Cropped/Cut Off in Display (Jan 20, 2026)
+- [x] Fix: Vacant Shop images are severely cropped (88% cut off) when displayed in search results - Added "Use Original" button
+- [x] Fix: Original image shows in admin but appears cropped in search results - Verified working correctly

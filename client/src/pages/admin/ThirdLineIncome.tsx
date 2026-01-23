@@ -192,6 +192,37 @@ export default function ThirdLineIncome() {
     }
   };
 
+  // Upload original image without cropping
+  const handleUploadOriginal = async () => {
+    if (!previewImage || !editingAsset || previewSlot === null) {
+      toast.error("Missing required data for upload");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const result = await uploadImageMutation.mutateAsync({
+        assetId: editingAsset.id,
+        imageSlot: previewSlot,
+        base64Image: previewImage, // Use original image directly
+      });
+
+      setEditingAsset((prev: any) => ({
+        ...prev,
+        [`imageUrl${previewSlot}`]: result.url,
+      }));
+
+      toast.success("Image uploaded successfully");
+      refetch();
+      setPreviewImage(null);
+      setPreviewSlot(null);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       assetNumber: "",
@@ -600,11 +631,13 @@ export default function ThirdLineIncome() {
                     crop={crop}
                     zoom={zoom}
                     rotation={rotation}
-                    aspect={4 / 3}
+                    aspect={undefined}
+                    objectFit="contain"
                     onCropChange={setCrop}
                     onZoomChange={setZoom}
                     onRotationChange={setRotation}
                     onCropComplete={onCropComplete}
+                    showGrid={true}
                   />
                 )}
               </div>
@@ -650,10 +683,13 @@ export default function ThirdLineIncome() {
                 </div>
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="flex gap-2">
               <Button variant="outline" onClick={() => setPreviewImage(null)}>Cancel</Button>
+              <Button variant="secondary" onClick={handleUploadOriginal} disabled={uploadingImage}>
+                {uploadingImage ? "Uploading..." : "Use Original"}
+              </Button>
               <Button onClick={handleCropConfirm} disabled={uploadingImage}>
-                {uploadingImage ? "Uploading..." : "Upload Image"}
+                {uploadingImage ? "Uploading..." : "Upload Cropped"}
               </Button>
             </DialogFooter>
           </DialogContent>
