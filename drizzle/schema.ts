@@ -250,6 +250,9 @@ export const bookings = mysqlTable("bookings", {
   reminderEmailSent: boolean("reminderEmailSent").default(false).notNull(),
   completionEmailSent: boolean("completionEmailSent").default(false).notNull(),
   lastReminderSent: timestamp("lastReminderSent"),
+  adminComments: text("adminComments"), // Internal admin notes, never shown on invoices/emails
+  createdByAdmin: int("createdByAdmin").references(() => users.id), // If booking was created by admin on behalf of user
+  invoiceOverride: boolean("invoiceOverride").default(false).notNull(), // Override Stripe user to pay by invoice for this booking
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

@@ -2499,3 +2499,25 @@
 ## Bug Fix - VS Image Cropped/Cut Off in Display (Jan 20, 2026)
 - [x] Fix: Vacant Shop images are severely cropped (88% cut off) when displayed in search results - Added "Use Original" button
 - [x] Fix: Original image shows in admin but appears cropped in search results - Verified working correctly
+
+## Admin Booking Feature (Jan 23, 2026) - COMPLETE
+- [x] Database: Add admin_comments field to bookings table
+- [x] Database: Add audit_log table for booking changes (already exists)
+- [x] Backend: Create adminBooking.create procedure with validation
+- [x] Backend: Create adminBooking.update procedure with audit logging
+- [x] Backend: Add overlap validation for site/date conflicts
+- [x] Backend: Integrate email/invoice generation
+- [x] UI: Create Admin Booking page with centre dropdown (alphabetical)
+- [x] UI: Add date picker calendar (month navigation)
+- [x] UI: Build site availability grid with month view (days 1-31)
+- [x] UI: Show booking info in cells (company, category, contact, dates, furniture)
+- [x] UI: Implement tooltip hover for booking details
+- [x] UI: Add "Show all details" toggle button
+- [x] UI: User search/select dropdown (alphabetical)
+- [x] UI: Furniture selection (tables/chairs dropdowns)
+- [x] UI: Cost auto-calculation with override option
+- [x] UI: Invoice override checkbox for Stripe users
+- [x] UI: Internal comments field (admin-only, not on invoices)
+- [x] UI: Booking summary and confirm/send button
+- [x] Payment: Process invoice based on user settings (Stripe integration pending)
+- [x] Audit: Log all booking edits (who, when, what changed)

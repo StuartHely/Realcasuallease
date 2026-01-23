@@ -47,6 +47,7 @@ import ThirdLineBookings from "./pages/admin/ThirdLineBookings";
 import OwnerApprovals from "./pages/OwnerApprovals";
 import OwnerCentres from "./pages/OwnerCentres";
 import AdminEnquiries from "./pages/AdminEnquiries";
+import AdminBooking from "./pages/admin/AdminBooking";
 
 function Router() {
   return (
@@ -84,6 +85,7 @@ function Router() {
       <Route path="/admin/vs-bookings" component={VSBookings} />
       <Route path="/admin/third-line-bookings" component={ThirdLineBookings} />
       <Route path="/admin/enquiries" component={AdminEnquiries} />
+      <Route path="/admin/admin-booking" component={AdminBooking} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/payments" component={Payments} />
       <Route path="/admin/invoice-dashboard" component={InvoiceDashboard} />
