@@ -2521,3 +2521,7 @@
 - [x] UI: Booking summary and confirm/send button
 - [x] Payment: Process invoice based on user settings (Stripe integration pending)
 - [x] Audit: Log all booking edits (who, when, what changed)
+
+## Admin Booking Bug Fixes (Jan 23, 2026)
+- [x] Fix: Sites not appearing in alphabetical order (Campbelltown shows wrong order) - Added natural sort
+- [x] Fix: Booking not showing on grid immediately after confirmation - Added invalidation

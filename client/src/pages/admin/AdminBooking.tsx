@@ -64,9 +64,13 @@ export default function AdminBooking() {
     { enabled: !!selectedSiteId && !!selectedStartDate && !!selectedEndDate }
   );
 
+  const utils = trpc.useUtils();
+
   const createBookingMutation = trpc.adminBooking.create.useMutation({
     onSuccess: (data) => {
       toast.success(`Booking ${data.bookingNumber} created successfully!`);
+      // Invalidate availability grid to show new booking immediately
+      utils.adminBooking.getAvailabilityGrid.invalidate();
       // Reset form
       setSelectedSiteId(null);
       setSelectedStartDate(null);

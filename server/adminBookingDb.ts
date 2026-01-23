@@ -174,8 +174,22 @@ export async function getSiteAvailabilityGrid(
       maxTables: sites.maxTables,
     })
     .from(sites)
-    .where(and(eq(sites.centreId, centreId), eq(sites.isActive, true)))
-    .orderBy(asc(sites.siteNumber));
+    .where(and(eq(sites.centreId, centreId), eq(sites.isActive, true)));
+
+  // Sort sites using natural/alphanumeric ordering (1, 2, 3, ... 10, 11, 12, ... 9a, VK13)
+  sitesList.sort((a, b) => {
+    const aNum = parseInt(a.siteNumber.replace(/\D/g, '')) || 0;
+    const bNum = parseInt(b.siteNumber.replace(/\D/g, '')) || 0;
+    const aHasLetter = /[a-zA-Z]/.test(a.siteNumber);
+    const bHasLetter = /[a-zA-Z]/.test(b.siteNumber);
+    // Pure numbers come before alphanumeric
+    if (!aHasLetter && bHasLetter) return -1;
+    if (aHasLetter && !bHasLetter) return 1;
+    // Compare by extracted number first
+    if (aNum !== bNum) return aNum - bNum;
+    // If same number, compare full string
+    return a.siteNumber.localeCompare(b.siteNumber);
+  });
 
   // Calculate date range for the month
   const startOfMonth = new Date(year, month - 1, 1);
