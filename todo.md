@@ -2530,3 +2530,8 @@
 - [x] Add booking edit functionality - click existing bookings to modify dates, furniture, comments
 - [x] Add booking cancellation - cancel bookings from grid with confirmation dialog
 - [x] Fix admin menu to always appear in left column (not collapsible/hidden)
+
+## Query Parser Improvements (Jan 25, 2026)
+- [x] Improve location name recognition (e.g., "Bondi" → "Eastgate Bondi Junction")
+- [x] Add location matching priority over usage categories
+- [x] Test natural language search with location + usage combinations

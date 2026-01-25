@@ -12,6 +12,8 @@ export interface ParsedQuery {
   originalQuery: string;
   parsedDate?: string; // ISO format YYYY-MM-DD
   dateRangeEnd?: string; // ISO format YYYY-MM-DD for date ranges
+  matchedLocation?: string; // The location alias that was matched (e.g., "bondi")
+  matchedCentreName?: string; // The full centre name from alias (e.g., "eastgate bondi junction")
 }
 
 /**
@@ -155,10 +157,54 @@ function extractProductCategory(query: string): string | undefined {
 }
 
 /**
+ * Known location aliases that map to centre names
+ * These help recognize partial location names in natural language queries
+ */
+const locationAliases: Record<string, string[]> = {
+  'eastgate bondi junction': ['bondi', 'bondi junction', 'eastgate'],
+  'campbelltown mall': ['campbelltown', 'campbelltown mall'],
+  'carnes hill marketplace': ['carnes hill', 'carnes'],
+  'highlands marketplace': ['highlands', 'highland'],
+  'waverley gardens': ['waverley', 'waverly'],
+  'pacific square': ['pacific', 'maroubra'],
+  'macarthur square': ['macarthur'],
+  'westfield': ['westfield'],
+  'stockland': ['stockland'],
+};
+
+/**
+ * Extract location/centre name from query, recognizing aliases
+ * Returns both the extracted location and any matched alias
+ */
+export function extractLocationFromQuery(query: string): { location: string; matchedAlias?: string; matchedCentre?: string } {
+  const lowerQuery = query.toLowerCase();
+  
+  // Check for known location aliases first
+  for (const [centreName, aliases] of Object.entries(locationAliases)) {
+    for (const alias of aliases) {
+      // Use word boundary matching to avoid partial matches
+      const regex = new RegExp(`\\b${alias}\\b`, 'i');
+      if (regex.test(lowerQuery)) {
+        return { location: alias, matchedAlias: alias, matchedCentre: centreName };
+      }
+    }
+  }
+  
+  // No alias matched, extract centre name normally
+  return { location: extractCentreName(query) };
+}
+
+/**
  * Remove size, table, category, and asset type requirements from query to extract centre name
  */
 function extractCentreName(query: string): string {
   let centreName = query;
+  
+  // Remove common filler words that don't help with location matching
+  centreName = centreName.replace(/\b(i\s+want\s+to|want\s+to|looking\s+for|need\s+to|would\s+like\s+to|can\s+i|where\s+can\s+i|sell|buy|rent|lease|find|get|have|put|place|set\s+up|open|start)\b/gi, '');
+  
+  // Remove prepositions that don't help
+  centreName = centreName.replace(/\b(in|at|near|around|close\s+to|next\s+to|by|from|for|the|a|an|my|some)\b/gi, '');
 
   // Remove asset type patterns
   centreName = centreName.replace(/\b(vacant\s+shop|vs|vending\s+machine|vending|atm|car\s+wash|digital\s+signage|third\s+line|3rd\s+line|3rdl|casual\s+leasing|casual|pop\s*-?\s*up|popup|pop-up|installation|kiosk|phone\s+booth|mailbox|bike\s+rack|seating|water\s+fountain|bin|trash|recycling|charging\s+station|charger)\b/gi, '');
@@ -498,8 +544,14 @@ export function parseSearchQuery(query: string): ParsedQuery {
   // First extract date from query
   const { date: parsedDate, endDate, cleanedQuery } = parseDateFromQuery(trimmedQuery);
   
+  // Extract location with alias matching (prioritized)
+  const locationResult = extractLocationFromQuery(cleanedQuery);
+  
+  // Use matched centre name if available, otherwise use extracted location
+  const centreName = locationResult.matchedCentre || locationResult.location;
+  
   return {
-    centreName: extractCentreName(cleanedQuery),
+    centreName,
     minSizeM2: parseSizeRequirement(cleanedQuery),
     minTables: parseTableRequirement(cleanedQuery),
     productCategory: extractProductCategory(cleanedQuery),
@@ -508,6 +560,8 @@ export function parseSearchQuery(query: string): ParsedQuery {
     originalQuery: trimmedQuery,
     parsedDate,
     dateRangeEnd: endDate,
+    matchedLocation: locationResult.matchedAlias,
+    matchedCentreName: locationResult.matchedCentre,
   };
 }
 
