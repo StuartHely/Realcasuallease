@@ -157,6 +157,58 @@ function extractProductCategory(query: string): string | undefined {
 }
 
 /**
+ * Calculate Levenshtein distance between two strings
+ * Used for fuzzy matching to tolerate typos
+ */
+function levenshteinDistance(str1: string, str2: string): number {
+  const m = str1.length;
+  const n = str2.length;
+  
+  // Create a 2D array to store distances
+  const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+  
+  // Initialize base cases
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  
+  // Fill in the rest of the matrix
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (str1[i - 1] === str2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = 1 + Math.min(
+          dp[i - 1][j],     // deletion
+          dp[i][j - 1],     // insertion
+          dp[i - 1][j - 1]  // substitution
+        );
+      }
+    }
+  }
+  
+  return dp[m][n];
+}
+
+/**
+ * Check if two strings are similar enough (fuzzy match)
+ * Allows for typos based on string length
+ */
+function isFuzzyMatch(input: string, target: string, maxDistance?: number): boolean {
+  const inputLower = input.toLowerCase();
+  const targetLower = target.toLowerCase();
+  
+  // Exact match
+  if (inputLower === targetLower) return true;
+  
+  // Calculate max allowed distance based on target length
+  // Shorter words allow fewer typos
+  const allowedDistance = maxDistance ?? Math.max(1, Math.floor(targetLower.length / 4));
+  
+  const distance = levenshteinDistance(inputLower, targetLower);
+  return distance <= allowedDistance;
+}
+
+/**
  * Known location aliases that map to centre names
  * These help recognize partial location names in natural language queries
  */
@@ -173,21 +225,54 @@ const locationAliases: Record<string, string[]> = {
 };
 
 /**
- * Extract location/centre name from query, recognizing aliases
+ * Extract location/centre name from query, recognizing aliases with fuzzy matching
  * Returns both the extracted location and any matched alias
  */
 export function extractLocationFromQuery(query: string): { location: string; matchedAlias?: string; matchedCentre?: string } {
   const lowerQuery = query.toLowerCase();
   
-  // Check for known location aliases first
+  // Extract words from query for fuzzy matching
+  const queryWords = lowerQuery.split(/\s+/).filter(w => w.length > 2);
+  
+  // First pass: exact word boundary matching
   for (const [centreName, aliases] of Object.entries(locationAliases)) {
     for (const alias of aliases) {
-      // Use word boundary matching to avoid partial matches
       const regex = new RegExp(`\\b${alias}\\b`, 'i');
       if (regex.test(lowerQuery)) {
         return { location: alias, matchedAlias: alias, matchedCentre: centreName };
       }
     }
+  }
+  
+  // Second pass: fuzzy matching for typos
+  let bestMatch: { alias: string; centreName: string; distance: number } | null = null;
+  
+  for (const [centreName, aliases] of Object.entries(locationAliases)) {
+    for (const alias of aliases) {
+      // For multi-word aliases, check if query contains a fuzzy match
+      const aliasWords = alias.split(/\s+/);
+      
+      for (const queryWord of queryWords) {
+        for (const aliasWord of aliasWords) {
+          // Only fuzzy match words of similar length (within 2 chars)
+          if (Math.abs(queryWord.length - aliasWord.length) <= 2) {
+            const distance = levenshteinDistance(queryWord, aliasWord);
+            // Allow 1-2 typos depending on word length
+            const maxAllowed = aliasWord.length >= 8 ? 2 : 1;
+            
+            if (distance > 0 && distance <= maxAllowed) {
+              if (!bestMatch || distance < bestMatch.distance) {
+                bestMatch = { alias, centreName, distance };
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  if (bestMatch) {
+    return { location: bestMatch.alias, matchedAlias: bestMatch.alias, matchedCentre: bestMatch.centreName };
   }
   
   // No alias matched, extract centre name normally

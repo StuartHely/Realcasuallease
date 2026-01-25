@@ -2535,3 +2535,8 @@
 - [x] Improve location name recognition (e.g., "Bondi" → "Eastgate Bondi Junction")
 - [x] Add location matching priority over usage categories
 - [x] Test natural language search with location + usage combinations
+
+## Fuzzy Matching for Location Names (Jan 25, 2026)
+- [x] Implement Levenshtein distance algorithm for typo tolerance
+- [x] Add fuzzy matching to location alias lookup
+- [x] Test with typos like 'campbeltown', 'bondy', 'waverly'
