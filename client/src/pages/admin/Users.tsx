@@ -48,6 +48,7 @@ export default function AdminUsers() {
   const [checkingEditEmail, setCheckingEditEmail] = useState(false);
   
   const { data: users, isLoading, refetch } = trpc.users.list.useQuery();
+  const { data: usageCategories } = trpc.usageCategories.list.useQuery();
   const utils = trpc.useUtils();
   
   // Email validation helper
@@ -542,8 +543,18 @@ export default function AdminUsers() {
                 <Input id="companyWebsite" placeholder="https://" value={newUserData.companyWebsite} onChange={(e) => setNewUserData({ ...newUserData, companyWebsite: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <label htmlFor="productService" className="text-sm font-medium">Product/Service</label>
-                <Input id="productService" value={newUserData.productService} onChange={(e) => setNewUserData({ ...newUserData, productService: e.target.value })} />
+                <label htmlFor="productService" className="text-sm font-medium">Product/Service Category</label>
+                <select
+                  id="productService"
+                  value={newUserData.productService}
+                  onChange={(e) => setNewUserData({ ...newUserData, productService: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">Select a category</option>
+                  {usageCategories?.map((category) => (
+                    <option key={category.id} value={category.name}>{category.name}</option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-2">
                 <label htmlFor="address" className="text-sm font-medium">Address</label>
@@ -742,17 +753,9 @@ export default function AdminUsers() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="">Select a category</option>
-                  <option value="Fashion & Apparel">Fashion & Apparel</option>
-                  <option value="Food & Beverage">Food & Beverage</option>
-                  <option value="Health & Beauty">Health & Beauty</option>
-                  <option value="Electronics & Technology">Electronics & Technology</option>
-                  <option value="Home & Living">Home & Living</option>
-                  <option value="Sports & Fitness">Sports & Fitness</option>
-                  <option value="Books & Stationery">Books & Stationery</option>
-                  <option value="Toys & Games">Toys & Games</option>
-                  <option value="Automotive">Automotive</option>
-                  <option value="Services">Services</option>
-                  <option value="Other">Other</option>
+                  {usageCategories?.map((category) => (
+                    <option key={category.id} value={category.name}>{category.name}</option>
+                  ))}
                 </select>
               </div>
               <div className="space-y-2">

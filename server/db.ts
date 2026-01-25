@@ -119,11 +119,12 @@ export async function getAllUsers() {
   // Create a map of userId to profile
   const profileMap = new Map(allProfiles.map(p => [p.userId, p]));
   
-  // Map users with their profiles
+  // Map users with their profiles - nest profile data in a profile object
   return allUsers.map(user => {
     const profile = profileMap.get(user.id);
     return {
       ...user,
+      // Keep flat properties for backward compatibility
       companyName: profile?.companyName || null,
       website: profile?.website || null,
       abn: profile?.abn || null,
@@ -138,6 +139,23 @@ export async function getAllUsers() {
       insuranceAmount: profile?.insuranceAmount || null,
       insuranceExpiry: profile?.insuranceExpiry || null,
       insuranceDocumentUrl: profile?.insuranceDocumentUrl || null,
+      // Also include nested profile object for Edit User dialog
+      profile: profile ? {
+        companyName: profile.companyName,
+        website: profile.website,
+        abn: profile.abn,
+        streetAddress: profile.streetAddress,
+        city: profile.city,
+        state: profile.state,
+        postcode: profile.postcode,
+        productCategory: profile.productCategory,
+        productDetails: profile.productDetails,
+        insuranceCompany: profile.insuranceCompany,
+        insurancePolicyNo: profile.insurancePolicyNo,
+        insuranceAmount: profile.insuranceAmount,
+        insuranceExpiry: profile.insuranceExpiry,
+        insuranceDocumentUrl: profile.insuranceDocumentUrl,
+      } : null,
     };
   });
 }

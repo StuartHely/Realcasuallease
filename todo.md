@@ -2562,3 +2562,8 @@
 - [x] Fix Save Profile not saving all 3 sections together (fixed empty string handling for optional fields)
 - [x] Fix category dropdown to show Usage Categories from database (now shows 44 categories)
 - [ ] Rename "City" field to "Suburb"
+
+## Admin Users Page Bug Fixes (Jan 25, 2026)
+- [x] Fix Save button to work across all tabs - profile data now loaded correctly via nested profile object in getAllUsers
+- [x] Fix category dropdown to show Usage Categories from database (44 categories now available)
+- [x] Fix Register New User form to use category dropdown instead of text input
