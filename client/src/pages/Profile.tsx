@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, ArrowLeft, Save } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,6 +27,9 @@ export default function Profile() {
       toast.error("Failed to update profile: " + error.message);
     },
   });
+
+  // Fetch usage categories for the dropdown
+  const { data: usageCategories } = trpc.usageCategories.list.useQuery();
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -359,12 +363,21 @@ export default function Profile() {
                   </div>
                   <div>
                     <Label htmlFor="productCategory">Product Category/Service</Label>
-                    <Input
-                      id="productCategory"
-                      name="productCategory"
+                    <Select
                       value={formData.productCategory}
-                      onChange={handleChange}
-                    />
+                      onValueChange={(value) => setFormData({ ...formData, productCategory: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {usageCategories?.map((category) => (
+                          <SelectItem key={category.id} value={category.name}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="md:col-span-2">
                     <Label htmlFor="streetAddress">Street Address</Label>

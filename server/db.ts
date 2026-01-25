@@ -164,11 +164,15 @@ export async function getCustomerProfileByUserId(userId: number) {
   return profile || null;
 }
 
-export async function createCustomerProfile(profile: InsertCustomerProfile) {
+export async function createCustomerProfile(profile: Omit<InsertCustomerProfile, 'id'>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return await db.insert(customerProfiles).values(profile);
+  // Explicitly exclude id to let the database auto-generate it
+  const { ...profileWithoutId } = profile as any;
+  delete profileWithoutId.id;
+  
+  return await db.insert(customerProfiles).values(profileWithoutId);
 }
 
 export async function updateCustomerProfile(userId: number, updates: Partial<InsertCustomerProfile>) {

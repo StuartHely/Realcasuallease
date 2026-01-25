@@ -2557,3 +2557,8 @@
 - [x] Test "Fashion in VIC" returns only VIC centres
 - [x] Fixed trailing spaces in state values in database
 - [x] Fixed search fallback when no category-matching sites found in state
+
+## Profile Page Bug Fixes (Jan 25, 2026)
+- [x] Fix Save Profile not saving all 3 sections together (fixed empty string handling for optional fields)
+- [x] Fix category dropdown to show Usage Categories from database (now shows 44 categories)
+- [ ] Rename "City" field to "Suburb"

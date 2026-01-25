@@ -685,12 +685,39 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const existing = await db.getCustomerProfileByUserId(ctx.user.id);
         
+        // Clean up input - convert empty strings to null/undefined for optional fields
+        const cleanedInput: Record<string, any> = {};
+        for (const [key, value] of Object.entries(input)) {
+          if (value === '' || value === undefined) {
+            cleanedInput[key] = null;
+          } else {
+            cleanedInput[key] = value;
+          }
+        }
+        
         if (existing) {
-          await db.updateCustomerProfile(ctx.user.id, input);
+          // Update existing profile - exclude id from updates
+          await db.updateCustomerProfile(ctx.user.id, cleanedInput);
         } else {
+          // Create new profile - only include userId and input fields, let DB auto-generate id
           await db.createCustomerProfile({
             userId: ctx.user.id,
-            ...input,
+            firstName: input.firstName,
+            lastName: input.lastName,
+            phone: input.phone,
+            companyName: input.companyName,
+            website: input.website,
+            abn: input.abn,
+            streetAddress: input.streetAddress,
+            city: input.city,
+            state: input.state,
+            postcode: input.postcode,
+            productCategory: input.productCategory,
+            insuranceCompany: input.insuranceCompany,
+            insurancePolicyNo: input.insurancePolicyNo,
+            insuranceAmount: input.insuranceAmount,
+            insuranceExpiry: input.insuranceExpiry,
+            insuranceDocumentUrl: input.insuranceDocumentUrl,
           });
         }
         
