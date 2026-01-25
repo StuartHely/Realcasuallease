@@ -2540,3 +2540,7 @@
 - [x] Implement Levenshtein distance algorithm for typo tolerance
 - [x] Add fuzzy matching to location alias lookup
 - [x] Test with typos like 'campbeltown', 'bondy', 'waverly'
+
+## Usage Categories Management Fixes (Jan 25, 2026)
+- [x] Fix: New categories should appear alphabetically, not at the end
+- [x] Remove "Clothing" category from the list

@@ -10,7 +10,7 @@ export async function getAllUsageCategories() {
   if (!db) throw new Error("Database not available");
   return await db.select().from(usageCategories)
     .where(eq(usageCategories.isActive, true))
-    .orderBy(usageCategories.displayOrder);
+    .orderBy(usageCategories.name);
 }
 
 /**
