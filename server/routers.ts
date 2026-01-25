@@ -1961,6 +1961,11 @@ export const appRouter = router({
         const sitesUpdated = await applyApprovalsToAllSitesInCentre(input.centreId, input.categoryIds);
         return { success: true, sitesUpdated };
       }),
+    
+    getUsageStats: adminProcedure.query(async () => {
+      const { getCategoryUsageStats } = await import("./usageCategoriesDb");
+      return await getCategoryUsageStats();
+    }),
   }),
 
   // System Configuration

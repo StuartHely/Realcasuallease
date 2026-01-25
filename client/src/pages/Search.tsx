@@ -764,18 +764,36 @@ export default function Search() {
                               </th>
                               {dateRange.map((date, idx) => {
                                 const isSearchedDate = isSameDay(date, searchParams.date);
+                                const dayOfWeek = date.getDay();
+                                const isSaturday = dayOfWeek === 6;
+                                const isSunday = dayOfWeek === 0;
+                                const isWeekend = isSaturday || isSunday;
+                                // Check if previous/next day is also weekend for border styling
+                                const prevDate = idx > 0 ? dateRange[idx - 1] : null;
+                                const nextDate = idx < dateRange.length - 1 ? dateRange[idx + 1] : null;
+                                const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
+                                const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+                                
                                 return (
                                 <th 
                                   key={idx} 
-                                  className={`px-2 py-2 text-center text-xs font-medium border-b-2 min-w-[80px] ${
-                                    isSearchedDate ? 'bg-blue-50 border-l-4 border-r-4 border-blue-500' : ''
+                                  className={`px-2 py-2 text-center text-xs font-medium min-w-[80px] ${
+                                    isSearchedDate ? 'bg-blue-50' : isWeekend ? 'bg-gray-100' : ''
+                                  } ${
+                                    isWeekend ? 'border-t-2 border-b-2 border-gray-800' : 'border-b-2'
+                                  } ${
+                                    isWeekend && !isPrevWeekend ? 'border-l-2 border-l-gray-800' : ''
+                                  } ${
+                                    isWeekend && !isNextWeekend ? 'border-r-2 border-r-gray-800' : ''
+                                  } ${
+                                    isSearchedDate ? 'border-l-4 border-r-4 border-blue-500' : ''
                                   }`}
                                 >
                                   {isSearchedDate && (
                                     <div className="text-blue-600 font-bold text-[10px] mb-1">SEARCHED</div>
                                   )}
-                                  <div className={isSearchedDate ? 'font-bold text-blue-700' : ''}>{format(date, "dd/MM")}</div>
-                                  <div className={isSearchedDate ? 'text-blue-600' : 'text-gray-500'}>{format(date, "EEE")}</div>
+                                  <div className={isSearchedDate ? 'font-bold text-blue-700' : isWeekend ? 'font-semibold' : ''}>{format(date, "dd/MM")}</div>
+                                  <div className={isSearchedDate ? 'text-blue-600' : isWeekend ? 'text-gray-700 font-medium' : 'text-gray-500'}>{format(date, "EEE")}</div>
                                 </th>
                                 );
                               })}
@@ -820,6 +838,13 @@ export default function Search() {
                                   const isBooked = isBookedOnDate(site.id, date);
                                   const isSearchedDate = isSameDay(date, searchParams.date);
                                   const isFocused = focusedCell?.siteIndex === siteIdx && focusedCell?.dateIndex === dateIdx;
+                                  const dayOfWeek = date.getDay();
+                                  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                                  const prevDate = dateIdx > 0 ? dateRange[dateIdx - 1] : null;
+                                  const nextDate = dateIdx < dateRange.length - 1 ? dateRange[dateIdx + 1] : null;
+                                  const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
+                                  const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+                                  const isLastRow = siteIdx === centreSites.length - 1;
                                   return (
                                     <td 
                                       key={dateIdx}
@@ -828,6 +853,12 @@ export default function Search() {
                                         isSearchedDate ? 'border-l-4 border-r-4 border-blue-500' : ''
                                       } ${
                                         isFocused ? 'ring-4 ring-purple-500 ring-inset' : ''
+                                      } ${
+                                        isWeekend && !isPrevWeekend ? 'border-l-2 border-l-gray-800' : ''
+                                      } ${
+                                        isWeekend && !isNextWeekend ? 'border-r-2 border-r-gray-800' : ''
+                                      } ${
+                                        isWeekend && isLastRow ? 'border-b-2 border-b-gray-800' : ''
                                       }`}
                                       onClick={() => setFocusedCell({ siteIndex: siteIdx, dateIndex: dateIdx })}
                                     >

@@ -1,0 +1,85 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "audit_log"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "bookings"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "budgets"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "centre_budgets"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "customer_profiles"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "floor_levels"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "fy_percentages"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "imageAnalytics"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "owners"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "search_analytics"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "seasonalRates"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "shopping_centres"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "site_usage_categories"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "sites"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "system_config"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "third_line_bookings"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "third_line_categories"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "third_line_income"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "transactions"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "usage_categories"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "usage_types"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "users"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "vacant_shop_bookings"
+    },
+    {
+      "Tables_in_6yeAhZnHexQXKcGnnUhDLE": "vacant_shops"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_6yeAhZnHexQXKcGnnUhDLE\n__drizzle_migrations\naudit_log\nbookings\nbudgets\ncentre_budgets\ncustomer_profiles\nfloor_levels\nfy_percentages\nimageAnalytics\nowners\nsearch_analytics\nseasonalRates\nshopping_centres\nsite_usage_categories\nsites\nsystem_config\nthird_line_bookings\nthird_line_categories\nthird_line_income\ntransactions\nusage_categories\nusage_types\nusers\nvacant_shop_bookings\nvacant_shops\n",
+  "stderr": "",
+  "execution_time_ms": 1531
+}

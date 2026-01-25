@@ -1,0 +1,8 @@
+{
+  "query": "SELECT category_id, COUNT(DISTINCT site_id) as site_count FROM site_usage_categories GROUP BY category_id LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT category_id, COUNT(DISTINCT site_id) as site_count FROM site_usage_categories GROUP BY category_id LIMIT 5;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'category_id' in 'group statement'"
+  ]
+}

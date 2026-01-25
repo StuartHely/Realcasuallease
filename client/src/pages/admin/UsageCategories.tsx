@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, BarChart3 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -347,7 +347,90 @@ export default function UsageCategories() {
           )}
         </CardContent>
       </Card>
+      
+      {/* Category Usage Stats */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Category Usage Statistics
+          </CardTitle>
+          <CardDescription>
+            Shows how many sites allow each category and how many bookings have used each category.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CategoryUsageStats />
+        </CardContent>
+      </Card>
       </div>
     </AdminLayout>
+  );
+}
+
+// Separate component for usage stats to handle its own loading state
+function CategoryUsageStats() {
+  const { data: stats, isLoading } = trpc.usageCategories.getUsageStats.useQuery();
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  
+  if (!stats || stats.length === 0) {
+    return <p className="text-muted-foreground">No category data available.</p>;
+  }
+  
+  // Sort by booking count descending, then by site count
+  const sortedStats = [...stats].sort((a, b) => {
+    if (b.bookingCount !== a.bookingCount) return b.bookingCount - a.bookingCount;
+    return b.siteCount - a.siteCount;
+  });
+  
+  const maxBookings = Math.max(...stats.map(s => s.bookingCount), 1);
+  const maxSites = Math.max(...stats.map(s => s.siteCount), 1);
+  
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-4 text-sm font-medium text-muted-foreground border-b pb-2">
+        <div>Category</div>
+        <div className="text-center">Sites Allowing</div>
+        <div className="text-center">Total Bookings</div>
+      </div>
+      <div className="space-y-2 max-h-96 overflow-y-auto">
+        {sortedStats.map((cat) => (
+          <div key={cat.id} className="grid grid-cols-3 gap-4 items-center py-2 border-b border-gray-100">
+            <div className="text-sm">
+              {cat.name}
+              {cat.isFree && <span className="ml-1 text-green-600 text-xs">(FREE)</span>}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-gray-100 rounded-full h-2">
+                <div 
+                  className="bg-blue-500 h-2 rounded-full transition-all"
+                  style={{ width: `${(cat.siteCount / maxSites) * 100}%` }}
+                />
+              </div>
+              <span className="text-sm text-muted-foreground w-8 text-right">{cat.siteCount}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-gray-100 rounded-full h-2">
+                <div 
+                  className="bg-green-500 h-2 rounded-full transition-all"
+                  style={{ width: `${(cat.bookingCount / maxBookings) * 100}%` }}
+                />
+              </div>
+              <span className="text-sm text-muted-foreground w-8 text-right">{cat.bookingCount}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="pt-4 border-t text-sm text-muted-foreground">
+        <p>Total Categories: {stats.length} | Total Site Assignments: {stats.reduce((sum, s) => sum + s.siteCount, 0)} | Total Bookings: {stats.reduce((sum, s) => sum + s.bookingCount, 0)}</p>
+      </div>
+    </div>
   );
 }

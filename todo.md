@@ -2544,3 +2544,7 @@
 ## Usage Categories Management Fixes (Jan 25, 2026)
 - [x] Fix: New categories should appear alphabetically, not at the end
 - [x] Remove "Clothing" category from the list
+
+## Search Results & Category Stats (Jan 25, 2026)
+- [x] Add weekend border highlighting to search results calendar (box around Sat/Sun)
+- [x] Add category usage stats to Usage Categories Management page
