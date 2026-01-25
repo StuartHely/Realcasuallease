@@ -758,7 +758,7 @@ export const appRouter = router({
         // If asset type is specified (VS or 3rdL), search only that type
         if (parsedQuery.assetType === 'vacant_shop') {
           const searchQuery = parsedQuery.centreName || input.query;
-          const centres = await db.searchShoppingCentres(searchQuery);
+          const centres = await db.searchShoppingCentres(searchQuery, parsedQuery.stateFilter);
           if (centres.length === 0) {
             return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'vacant_shop', floorLevels: [] };
           }
@@ -774,7 +774,7 @@ export const appRouter = router({
         
         if (parsedQuery.assetType === 'third_line') {
           const searchQuery = parsedQuery.centreName || input.query;
-          const centres = await db.searchShoppingCentres(searchQuery);
+          const centres = await db.searchShoppingCentres(searchQuery, parsedQuery.stateFilter);
           if (centres.length === 0) {
             return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'third_line', floorLevels: [] };
           }
@@ -793,7 +793,7 @@ export const appRouter = router({
         
         // First, search for sites using the full query to find any matches
         // This allows description-based searches like "Waverley Outside Prouds" to work
-        const siteResults = await db.searchSitesWithCategory(input.query, parsedQuery.productCategory);
+        const siteResults = await db.searchSitesWithCategory(input.query, parsedQuery.productCategory, parsedQuery.stateFilter);
         
         // Determine if query has site-specific keywords beyond just centre name
         const lowerQuery = input.query.toLowerCase();
@@ -823,7 +823,8 @@ export const appRouter = router({
           hasSiteNumber || hasProductCategory || hasSizeRequirement || hasTableRequirement;
         
         // For centre search, use the extracted centre name if available
-        const searchQuery = parsedQuery.centreName || input.query;
+        // If centreName is empty string, keep it empty (don't fall back to original query)
+        const searchQuery = parsedQuery.centreName;
         
         // If we found specific sites with category filter, extract their centres
         let centres: any[] = [];
@@ -831,14 +832,20 @@ export const appRouter = router({
           const centresMap = new Map();
           for (const result of siteResults) {
             if (!centresMap.has(result.site.centreId) && result.centre) {
-              centresMap.set(result.site.centreId, result.centre);
+              // Apply state filter if specified
+              if (!parsedQuery.stateFilter || result.centre.state === parsedQuery.stateFilter) {
+                centresMap.set(result.site.centreId, result.centre);
+              }
             }
           }
           
           centres = Array.from(centresMap.values());
-        } else {
-          // Continue with regular search logic using the parsed centre name
-          centres = await db.searchShoppingCentres(searchQuery);
+        }
+        
+        // If no centres found from category search, fall back to centre-only search
+        // This handles cases like "Fashion in VIC" where VIC centres may not have fashion-approved sites
+        if (centres.length === 0) {
+          centres = await db.searchShoppingCentres(searchQuery, parsedQuery.stateFilter);
         }
         
         if (centres.length === 0) {

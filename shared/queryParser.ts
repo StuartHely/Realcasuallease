@@ -14,6 +14,7 @@ export interface ParsedQuery {
   dateRangeEnd?: string; // ISO format YYYY-MM-DD for date ranges
   matchedLocation?: string; // The location alias that was matched (e.g., "bondi")
   matchedCentreName?: string; // The full centre name from alias (e.g., "eastgate bondi junction")
+  stateFilter?: string; // Australian state code (NSW, VIC, QLD, SA, WA, TAS, NT, ACT)
 }
 
 /**
@@ -157,6 +158,41 @@ function extractProductCategory(query: string): string | undefined {
 }
 
 /**
+ * Australian state codes and their variations
+ */
+const australianStates: Record<string, string[]> = {
+  'NSW': ['nsw', 'new south wales'],
+  'VIC': ['vic', 'victoria'],
+  'QLD': ['qld', 'queensland'],
+  'SA': ['sa', 'south australia'],
+  'WA': ['wa', 'western australia'],
+  'TAS': ['tas', 'tasmania'],
+  'NT': ['nt', 'northern territory'],
+  'ACT': ['act', 'australian capital territory', 'canberra'],
+};
+
+/**
+ * Extract Australian state from query
+ * Supports state codes (NSW, VIC) and full names (New South Wales, Victoria)
+ */
+function extractStateFilter(query: string): string | undefined {
+  const lowerQuery = query.toLowerCase();
+  
+  for (const [stateCode, variations] of Object.entries(australianStates)) {
+    for (const variation of variations) {
+      // Match state with word boundaries to avoid false positives
+      // e.g., "in NSW" or "NSW centres" but not "news"
+      const regex = new RegExp(`\\b${variation}\\b`, 'i');
+      if (regex.test(lowerQuery)) {
+        return stateCode;
+      }
+    }
+  }
+  
+  return undefined;
+}
+
+/**
  * Calculate Levenshtein distance between two strings
  * Used for fuzzy matching to tolerate typos
  */
@@ -293,6 +329,9 @@ function extractCentreName(query: string): string {
 
   // Remove asset type patterns
   centreName = centreName.replace(/\b(vacant\s+shop|vs|vending\s+machine|vending|atm|car\s+wash|digital\s+signage|third\s+line|3rd\s+line|3rdl|casual\s+leasing|casual|pop\s*-?\s*up|popup|pop-up|installation|kiosk|phone\s+booth|mailbox|bike\s+rack|seating|water\s+fountain|bin|trash|recycling|charging\s+station|charger)\b/gi, '');
+  
+  // Remove Australian state codes and names
+  centreName = centreName.replace(/\b(nsw|new\s+south\s+wales|vic|victoria|qld|queensland|sa|south\s+australia|wa|western\s+australia|tas|tasmania|nt|northern\s+territory|act|australian\s+capital\s+territory|canberra)\b/gi, '');
   
   // Remove dimension patterns (handles "3x4m", "3 x 4m", "3m x 4m", "3x3", "3 by 4", "3by4")
   centreName = centreName.replace(/\d+\.?\d*\s*m?\s*(?:[xX×]|by)\s*\d+\.?\d*\s*m?/gi, '');
@@ -647,6 +686,7 @@ export function parseSearchQuery(query: string): ParsedQuery {
     dateRangeEnd: endDate,
     matchedLocation: locationResult.matchedAlias,
     matchedCentreName: locationResult.matchedCentre,
+    stateFilter: extractStateFilter(cleanedQuery),
   };
 }
 

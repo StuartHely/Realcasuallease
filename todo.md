@@ -2548,3 +2548,12 @@
 ## Search Results & Category Stats (Jan 25, 2026)
 - [x] Add weekend border highlighting to search results calendar (box around Sat/Sun)
 - [x] Add category usage stats to Usage Categories Management page
+
+## State-Based Search (Jan 25, 2026)
+- [x] Add state extraction to queryParser (detect NSW, VIC, QLD, etc.)
+- [x] Update ParsedQuery interface to include stateFilter field
+- [x] Update search router to filter centres by state when specified
+- [x] Test "Fashion in NSW" returns only NSW centres
+- [x] Test "Fashion in VIC" returns only VIC centres
+- [x] Fixed trailing spaces in state values in database
+- [x] Fixed search fallback when no category-matching sites found in state

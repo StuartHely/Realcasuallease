@@ -257,7 +257,7 @@ export async function getNearbyCentres(centreId: number, radiusKm: number = 10) 
   return nearby;
 }
 
-export async function searchShoppingCentres(query: string) {
+export async function searchShoppingCentres(query: string, stateFilter?: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
@@ -268,8 +268,13 @@ export async function searchShoppingCentres(query: string) {
   // Remove site number from query for centre matching
   const centreQuery = siteMatch ? query.replace(sitePattern, "").trim() : query;
   
-  // Get all centres
-  const allCentres = await db.select().from(shoppingCentres);
+  // Get all centres, optionally filtered by state
+  let allCentres;
+  if (stateFilter) {
+    allCentres = await db.select().from(shoppingCentres).where(eq(shoppingCentres.state, stateFilter));
+  } else {
+    allCentres = await db.select().from(shoppingCentres);
+  }
   
   // Word-by-word matching - checks if significant words from query appear in target
   const wordMatch = (query: string, target: string): { matches: boolean; score: number } => {
@@ -291,6 +296,11 @@ export async function searchShoppingCentres(query: string) {
     // and prioritize by how many words match
     return { matches: matchCount > 0, score };
   };
+  
+  // If query is empty but state filter is set, return all centres in that state
+  if (!centreQuery.trim() && stateFilter) {
+    return allCentres.filter(centre => centre.includeInMainSite);
+  }
   
   // Filter and score centres using word matching
   const scoredCentres = allCentres
@@ -379,7 +389,7 @@ export async function getSites() {
   return await db.select().from(sites);
 }
 
-export async function searchSitesWithCategory(query: string, categoryKeyword?: string) {
+export async function searchSitesWithCategory(query: string, categoryKeyword?: string, stateFilter?: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
@@ -396,6 +406,10 @@ export async function searchSitesWithCategory(query: string, categoryKeyword?: s
   
   // Get all sites with their centre information and approved categories
   // Filter out sites from test centres (where includeInMainSite = 0)
+  // Optionally filter by state
+  const baseCondition = eq(shoppingCentres.includeInMainSite, true);
+  const stateCondition = stateFilter ? and(baseCondition, eq(shoppingCentres.state, stateFilter)) : baseCondition;
+  
   const allSites = await db
     .select({
       site: sites,
@@ -407,7 +421,7 @@ export async function searchSitesWithCategory(query: string, categoryKeyword?: s
     .leftJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
     .leftJoin(siteUsageCategories, eq(sites.id, siteUsageCategories.siteId))
     .leftJoin(usageCategories, eq(siteUsageCategories.categoryId, usageCategories.id))
-    .where(eq(shoppingCentres.includeInMainSite, true));
+    .where(stateCondition);
   
   const lowerQuery = query.toLowerCase();
   const queryWords = lowerQuery.split(/\s+/).filter(w => w.length > 0);
