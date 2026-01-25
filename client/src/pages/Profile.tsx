@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, ArrowLeft, Save } from "lucide-react";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { toast } from "sonner";
 
 export default function Profile() {
@@ -81,6 +82,23 @@ export default function Profile() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleAddressSelect = (components: {
+    streetAddress: string;
+    suburb: string;
+    state: string;
+    postcode: string;
+    latitude?: number;
+    longitude?: number;
+  }) => {
+    setFormData(prev => ({
+      ...prev,
+      streetAddress: components.streetAddress,
+      city: components.suburb,
+      state: components.state,
+      postcode: components.postcode,
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -381,15 +399,17 @@ export default function Profile() {
                   </div>
                   <div className="md:col-span-2">
                     <Label htmlFor="streetAddress">Street Address</Label>
-                    <Input
+                    <AddressAutocomplete
                       id="streetAddress"
-                      name="streetAddress"
                       value={formData.streetAddress}
-                      onChange={handleChange}
+                      onChange={(value) => setFormData(prev => ({ ...prev, streetAddress: value }))}
+                      onAddressSelect={handleAddressSelect}
+                      placeholder="Start typing an address..."
                     />
+                    <p className="text-xs text-muted-foreground mt-1">Type to search and auto-fill address fields</p>
                   </div>
                   <div>
-                    <Label htmlFor="city">City</Label>
+                    <Label htmlFor="city">Suburb</Label>
                     <Input
                       id="city"
                       name="city"

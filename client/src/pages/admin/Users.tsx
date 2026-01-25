@@ -192,20 +192,20 @@ export default function AdminUsers() {
       role: editingFullUser.role,
       assignedState: editingFullUser.assignedState,
       canPayByInvoice: editingFullUser.canPayByInvoice,
-      companyName: editingFullUser.profile?.companyName,
-      website: editingFullUser.profile?.website,
-      abn: editingFullUser.profile?.abn,
-      streetAddress: editingFullUser.profile?.streetAddress,
-      city: editingFullUser.profile?.city,
-      state: editingFullUser.profile?.state,
-      postcode: editingFullUser.profile?.postcode,
-      productCategory: editingFullUser.profile?.productCategory,
-      productDetails: editingFullUser.profile?.productDetails,
-      insuranceCompany: editingFullUser.profile?.insuranceCompany,
-      insurancePolicyNo: editingFullUser.profile?.insurancePolicyNo,
-      insuranceAmount: editingFullUser.profile?.insuranceAmount,
-      insuranceExpiry: editingFullUser.profile?.insuranceExpiry,
-      insuranceDocumentUrl: editingFullUser.profile?.insuranceDocumentUrl,
+      companyName: editingFullUser.profile?.companyName || '',
+      website: editingFullUser.profile?.website || '',
+      abn: editingFullUser.profile?.abn || '',
+      streetAddress: editingFullUser.profile?.streetAddress || '',
+      city: editingFullUser.profile?.city || '',
+      state: editingFullUser.profile?.state || '',
+      postcode: editingFullUser.profile?.postcode || '',
+      productCategory: editingFullUser.profile?.productCategory || '',
+      productDetails: editingFullUser.profile?.productDetails || '',
+      insuranceCompany: editingFullUser.profile?.insuranceCompany || '',
+      insurancePolicyNo: editingFullUser.profile?.insurancePolicyNo || '',
+      insuranceAmount: editingFullUser.profile?.insuranceAmount || '',
+      insuranceExpiry: editingFullUser.profile?.insuranceExpiry || '',
+      insuranceDocumentUrl: editingFullUser.profile?.insuranceDocumentUrl || '',
     });
   };
 
@@ -562,7 +562,7 @@ export default function AdminUsers() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="city" className="text-sm font-medium">City</label>
+                  <label htmlFor="city" className="text-sm font-medium">Suburb</label>
                   <Input id="city" value={newUserData.city} onChange={(e) => setNewUserData({ ...newUserData, city: e.target.value })} />
                 </div>
                 <div className="space-y-2">
@@ -772,7 +772,7 @@ export default function AdminUsers() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">City</label>
+                  <label className="text-sm font-medium">Suburb</label>
                   <Input value={editingFullUser.profile?.city || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, city: e.target.value } })} />
                 </div>
                 <div className="space-y-2">
