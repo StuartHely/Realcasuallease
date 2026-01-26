@@ -300,7 +300,9 @@ export default function AdminUsers() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Company Name</TableHead>
                     <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Pay by Invoice</TableHead>
@@ -311,7 +313,9 @@ export default function AdminUsers() {
                 <TableBody>
                   {filteredUsers.map((user) => (
                     <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.profile?.companyName || "—"}</TableCell>
                       <TableCell className="font-medium">{user.name || "—"}</TableCell>
+                      <TableCell>{user.profile?.productCategory || "—"}</TableCell>
                       <TableCell>{user.email || "—"}</TableCell>
                       <TableCell>
                         <Badge className={getRoleBadgeColor(user.role)} variant="secondary">

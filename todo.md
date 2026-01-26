@@ -2630,3 +2630,8 @@
 - [x] Ensure all calendars have solid borders (no rounded corners or gaps)
 - [x] Ensure weekend columns (Sat/Sun) have 3px solid green borders
 - [x] Ensure consistent legend (Available/Booked/Weekend) across all calendars
+
+## Admin User Management Table Enhancements (Jan 26, 2026)
+- [x] Add Company Name as first column in Admin Users table
+- [x] Add Category as third column in Admin Users table
+- [x] Keep existing User Name column (now second column)
