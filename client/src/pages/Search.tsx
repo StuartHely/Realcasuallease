@@ -756,7 +756,7 @@ export default function Search() {
                     </div>
                     <div className="overflow-x-auto">
                       <div className="inline-block min-w-full">
-                        <table className="w-full border-collapse">
+                        <table className="w-full border-separate border-spacing-0">
                           <thead>
                             <tr>
                               <th className="sticky left-0 bg-white z-10 px-3 py-2 text-left text-sm font-semibold border-b-2 border-r-2">
@@ -777,14 +777,14 @@ export default function Search() {
                                 return (
                                 <th 
                                   key={idx} 
-                                  className={`px-2 py-2 text-center text-xs font-medium min-w-[80px] ${
+                                  className={`px-2 py-2 text-center text-xs font-medium min-w-[80px] border border-gray-200 ${
                                     isSearchedDate ? 'bg-blue-50' : isWeekend ? 'bg-gray-100' : ''
                                   } ${
-                                    isWeekend ? 'border-t-2 border-t-gray-800' : 'border-b-2'
+                                    isWeekend ? '!border-t-[3px] !border-t-green-700 !border-solid' : 'border-b-2'
                                   } ${
-                                    isWeekend && !isPrevWeekend ? 'border-l-2 border-l-gray-800' : ''
+                                    isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
                                   } ${
-                                    isWeekend && !isNextWeekend ? 'border-r-2 border-r-gray-800' : ''
+                                    isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
                                   } ${
                                     isSearchedDate ? 'border-l-4 border-r-4 border-blue-500' : ''
                                   }`}
@@ -849,16 +849,16 @@ export default function Search() {
                                     <td 
                                       key={dateIdx}
                                       id={`cell-${siteIdx}-${dateIdx}`}
-                                      className={`border border-gray-200 p-0 ${
+                                      className={`border border-gray-200 border-solid p-0 ${
                                         isSearchedDate ? 'border-l-4 border-r-4 border-blue-500' : ''
                                       } ${
                                         isFocused ? 'ring-4 ring-purple-500 ring-inset' : ''
                                       } ${
-                                        isWeekend && !isPrevWeekend ? 'border-l-2 border-l-gray-800' : ''
+                                        isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
                                       } ${
-                                        isWeekend && !isNextWeekend ? 'border-r-2 border-r-gray-800' : ''
+                                        isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
                                       } ${
-                                        isWeekend && isLastRow ? 'border-b-2 border-b-gray-800' : ''
+                                        isWeekend && isLastRow ? '!border-b-[3px] !border-b-green-700 !border-solid' : ''
                                       } ${
                                         isWeekend ? 'bg-gray-50' : ''
                                       }`}

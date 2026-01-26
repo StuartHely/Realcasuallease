@@ -2608,3 +2608,10 @@
 - [x] Test with Corio Village Site 16 to verify ordering
 - [x] Added natural sorting to dbOptimized.ts for search results
 - [x] Verified: Corio Village now shows sites in order 1, 2, 3, 4, 5, 8, 11, 12, 15, 16, 19
+
+## Weekend Border Bug Fix (Jan 26, 2026 - Part 2)
+- [x] Investigate why weekend border is not showing on search results
+- [x] Fix weekend border styling to fully enclose Saturday and Sunday columns
+- [x] Changed to border-separate table with 3px solid green-700 borders
+- [x] Verified via console: all borders (top, left, right, bottom) correctly applied
+- [x] Note: Red dashed lines in screenshots are browser element annotations, not actual borders
