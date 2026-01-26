@@ -780,7 +780,7 @@ export default function Search() {
                                   className={`px-2 py-2 text-center text-xs font-medium min-w-[80px] ${
                                     isSearchedDate ? 'bg-blue-50' : isWeekend ? 'bg-gray-100' : ''
                                   } ${
-                                    isWeekend ? 'border-t-2 border-b-2 border-gray-800' : 'border-b-2'
+                                    isWeekend ? 'border-t-2 border-t-gray-800' : 'border-b-2'
                                   } ${
                                     isWeekend && !isPrevWeekend ? 'border-l-2 border-l-gray-800' : ''
                                   } ${
@@ -859,6 +859,8 @@ export default function Search() {
                                         isWeekend && !isNextWeekend ? 'border-r-2 border-r-gray-800' : ''
                                       } ${
                                         isWeekend && isLastRow ? 'border-b-2 border-b-gray-800' : ''
+                                      } ${
+                                        isWeekend ? 'bg-gray-50' : ''
                                       }`}
                                       onClick={() => setFocusedCell({ siteIndex: siteIdx, dateIndex: dateIdx })}
                                     >

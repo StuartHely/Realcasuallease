@@ -2584,3 +2584,11 @@
 - [x] Budget rail with donut gauges and progress bars (Annual + YTD)
 - [x] Pending Approvals quick action card with badge
 - [x] Responsive: tablet 2-column, mobile stacked
+
+## Weekend Border Fix (Jan 26, 2026)
+- [x] Fix weekend border to fully enclose Saturday and Sunday columns
+  - Added top border on header row for weekend columns
+  - Added left border on Saturday (first weekend column)
+  - Added right border on Sunday (last weekend column)
+  - Added bottom border on last data row to close the box
+  - Added light gray background to weekend cells for visual distinction
