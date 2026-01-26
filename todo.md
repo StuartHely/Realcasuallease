@@ -2574,3 +2574,13 @@
 - [x] Rename "City" field to "Suburb" on Admin Users page
 - [x] Add Google Places Autocomplete for address parsing (auto-fills Suburb, State, Postcode)
 - [ ] Store lat/lng coordinates for future "near me" searches (schema update needed)
+
+## Portfolio Dashboard Visual Redesign (Jan 26, 2026)
+- [x] Restructure layout: 60% KPI grid top, 40% Budget rail bottom
+- [x] Apply new card styling (white, 8px radius, border #E1E5EC, soft shadow)
+- [x] Row 1: YTD priority cards (All Centres $, Booked Days, Top Site $)
+- [x] Row 2: This Month cards (Month All Centres $, Booked Days, Top Site $, Top Site Days)
+- [x] Row 3: Last Year cards (lighter styling)
+- [x] Budget rail with donut gauges and progress bars (Annual + YTD)
+- [x] Pending Approvals quick action card with badge
+- [x] Responsive: tablet 2-column, mobile stacked
