@@ -2615,3 +2615,18 @@
 - [x] Changed to border-separate table with 3px solid green-700 borders
 - [x] Verified via console: all borders (top, left, right, bottom) correctly applied
 - [x] Note: Red dashed lines in screenshots are browser element annotations, not actual borders
+
+## Centre Page Calendar Styling Fix (Jan 26, 2026)
+- [ ] Update centre page Site Availability calendars to match search results solid style
+- [ ] Add weekend border (green box around Saturday/Sunday columns)
+- [ ] Remove rounded corners and gaps between cells
+- [ ] Apply consistent styling to CL, VS, and TLI calendars
+
+## Calendar Styling Standardization (Jan 26, 2026)
+- [x] Create reusable AvailabilityCalendar component with consistent styling
+- [x] Update Casual Leasing calendar on CentreDetail page to use new component
+- [x] Update Vacant Shops calendar on CentreDetail page to use new component
+- [x] Update Third Line Income calendar on CentreDetail page to use new component
+- [x] Ensure all calendars have solid borders (no rounded corners or gaps)
+- [x] Ensure weekend columns (Sat/Sun) have 3px solid green borders
+- [x] Ensure consistent legend (Available/Booked/Weekend) across all calendars
