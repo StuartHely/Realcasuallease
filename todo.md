@@ -2601,3 +2601,10 @@
 - [x] Tested: Casual Leasing at Campbelltown Mall (13 sites with availability grid)
 - [x] Tested: Vacant Shops at Albany Plaza (6 shops with availability grid)
 - [x] Tested: Third Line Income at Albany Plaza (6 assets with availability grid)
+
+## Site Ordering Bug Fix (Jan 26, 2026)
+- [x] Fix site ordering in Admin to show sites in numerical order (Site 1, 2, ... 16)
+- [x] Fix site ordering in Search results to show sites in numerical order
+- [x] Test with Corio Village Site 16 to verify ordering
+- [x] Added natural sorting to dbOptimized.ts for search results
+- [x] Verified: Corio Village now shows sites in order 1, 2, 3, 4, 5, 8, 11, 12, 15, 16, 19

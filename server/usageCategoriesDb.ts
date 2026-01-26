@@ -76,8 +76,22 @@ export async function getSitesWithCategoriesForCentre(centreId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const centreSites = await db.select().from(sites)
-    .where(eq(sites.centreId, centreId))
-    .orderBy(sites.siteNumber);
+    .where(eq(sites.centreId, centreId));
+  
+  // Sort sites using natural/alphanumeric ordering (1, 2, 3, ... 10, 11, 12, ... 9a, VK13)
+  centreSites.sort((a, b) => {
+    const aNum = parseInt(a.siteNumber.replace(/\D/g, '')) || 0;
+    const bNum = parseInt(b.siteNumber.replace(/\D/g, '')) || 0;
+    const aHasLetter = /[a-zA-Z]/.test(a.siteNumber);
+    const bHasLetter = /[a-zA-Z]/.test(b.siteNumber);
+    // Pure numbers come before alphanumeric
+    if (!aHasLetter && bHasLetter) return -1;
+    if (aHasLetter && !bHasLetter) return 1;
+    // Compare by extracted number first
+    if (aNum !== bNum) return aNum - bNum;
+    // If same number, compare full string
+    return a.siteNumber.localeCompare(b.siteNumber);
+  });
   
   const sitesWithCategories = await Promise.all(
     centreSites.map(async (site: any) => {

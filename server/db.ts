@@ -546,6 +546,21 @@ export async function searchSitesWithCategory(query: string, categoryKeyword?: s
     );
   });
   
+  // Sort matches by site number using natural/alphanumeric ordering
+  matches.sort((a, b) => {
+    const aNum = parseInt(a.site.siteNumber.replace(/\D/g, '')) || 0;
+    const bNum = parseInt(b.site.siteNumber.replace(/\D/g, '')) || 0;
+    const aHasLetter = /[a-zA-Z]/.test(a.site.siteNumber);
+    const bHasLetter = /[a-zA-Z]/.test(b.site.siteNumber);
+    // Pure numbers come before alphanumeric
+    if (!aHasLetter && bHasLetter) return -1;
+    if (aHasLetter && !bHasLetter) return 1;
+    // Compare by extracted number first
+    if (aNum !== bNum) return aNum - bNum;
+    // If same number, compare full string
+    return a.site.siteNumber.localeCompare(b.site.siteNumber);
+  });
+  
   // Return in the same format as searchSites
   return matches.map(({ site, centre }) => ({ site, centre }));
 }
@@ -562,7 +577,24 @@ export async function getSitesByCentreId(centreId: number) {
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(sites).where(eq(sites.centreId, centreId));
+  const sitesList = await db.select().from(sites).where(eq(sites.centreId, centreId));
+  
+  // Sort sites using natural/alphanumeric ordering (1, 2, 3, ... 10, 11, 12, ... 9a, VK13)
+  sitesList.sort((a, b) => {
+    const aNum = parseInt(a.siteNumber.replace(/\D/g, '')) || 0;
+    const bNum = parseInt(b.siteNumber.replace(/\D/g, '')) || 0;
+    const aHasLetter = /[a-zA-Z]/.test(a.siteNumber);
+    const bHasLetter = /[a-zA-Z]/.test(b.siteNumber);
+    // Pure numbers come before alphanumeric
+    if (!aHasLetter && bHasLetter) return -1;
+    if (aHasLetter && !bHasLetter) return 1;
+    // Compare by extracted number first
+    if (aNum !== bNum) return aNum - bNum;
+    // If same number, compare full string
+    return a.siteNumber.localeCompare(b.siteNumber);
+  });
+  
+  return sitesList;
 }
 
 export async function createSite(site: InsertSite) {

@@ -290,6 +290,21 @@ export async function getAllAssetsByCentre(centreId: number, assetType: AssetTyp
       .from(sites)
       .leftJoin(floorLevels, eq(sites.floorLevelId, floorLevels.id))
       .where(and(eq(sites.centreId, centreId), eq(sites.isActive, true)));
+    
+    // Sort sites using natural/alphanumeric ordering (1, 2, 3, ... 10, 11, 12, ... 9a, VK13)
+    results.casualLeasing.sort((a, b) => {
+      const aNum = parseInt(a.siteNumber.replace(/\D/g, '')) || 0;
+      const bNum = parseInt(b.siteNumber.replace(/\D/g, '')) || 0;
+      const aHasLetter = /[a-zA-Z]/.test(a.siteNumber);
+      const bHasLetter = /[a-zA-Z]/.test(b.siteNumber);
+      // Pure numbers come before alphanumeric
+      if (!aHasLetter && bHasLetter) return -1;
+      if (aHasLetter && !bHasLetter) return 1;
+      // Compare by extracted number first
+      if (aNum !== bNum) return aNum - bNum;
+      // If same number, compare full string
+      return a.siteNumber.localeCompare(b.siteNumber);
+    });
   }
 
   if (assetType === "all" || assetType === "vacant_shops") {
