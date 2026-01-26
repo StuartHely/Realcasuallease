@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Building2, ArrowLeft, Calendar, DollarSign, Ruler, Zap, Store, Layers } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { MapPin, Building2, ArrowLeft, Calendar, DollarSign, Ruler, Zap, Store, Layers, ChevronLeft, ChevronRight, CheckCircle, XCircle, Info } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { format, addMonths, startOfWeek } from "date-fns";
+import { format, addMonths, startOfWeek, addDays, isSameDay, getDaysInMonth, startOfMonth, getDay } from "date-fns";
 import InteractiveMap from "@/components/InteractiveMap";
 import { NearbyCentresMap } from "@/components/NearbyCentresMap";
 import { AssetBookingCalendar } from "@/components/AssetBookingCalendar";
@@ -23,6 +24,12 @@ export default function CentreDetail() {
   const [selectedVSId, setSelectedVSId] = useState<number | null>(null);
   const [selected3rdLId, setSelected3rdLId] = useState<number | null>(null);
   const { user } = useAuth();
+  
+  // Calendar month state
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  });
   
   // Date range for calendar queries (3 months ahead)
   const calendarStartDate = useMemo(() => startOfWeek(new Date(), { weekStartsOn: 1 }), []);
@@ -49,6 +56,28 @@ export default function CentreDetail() {
   const { data: thirdLineAssets = [], isLoading: thirdLineLoading } = trpc.thirdLineIncome.getActiveByCentre.useQuery(
     { centreId },
     { enabled: centreId > 0 }
+  );
+
+  // Availability grid for casual leasing sites
+  const { data: availabilityGrid } = trpc.adminBooking.getAvailabilityGrid.useQuery(
+    { centreId, year: calendarMonth.year, month: calendarMonth.month },
+    { enabled: centreId > 0 && (assetType === "casual_leasing" || assetType === "all") }
+  );
+
+  // Calculate month date range for VS and TLI queries
+  const monthStartDate = useMemo(() => new Date(calendarMonth.year, calendarMonth.month - 1, 1), [calendarMonth]);
+  const monthEndDate = useMemo(() => new Date(calendarMonth.year, calendarMonth.month, 0), [calendarMonth]);
+
+  // Vacant shop bookings for the month
+  const { data: vsMonthlyBookings = [] } = trpc.vacantShopBookings.getByCentre.useQuery(
+    { centreId, startDate: monthStartDate, endDate: monthEndDate },
+    { enabled: centreId > 0 && (assetType === "vacant_shops" || assetType === "all") }
+  );
+
+  // Third line bookings for the month
+  const { data: tliMonthlyBookings = [] } = trpc.thirdLineBookings.getByCentre.useQuery(
+    { centreId, startDate: monthStartDate, endDate: monthEndDate },
+    { enabled: centreId > 0 && (assetType === "third_line" || assetType === "all") }
   );
 
   const isLoading = centreLoading || sitesLoading || vacantShopsLoading || thirdLineLoading;
@@ -481,6 +510,157 @@ export default function CentreDetail() {
                   </Card>
                 ))}
               </div>
+              
+              {/* Casual Leasing Availability Calendar */}
+              {availabilityGrid && availabilityGrid.sites.length > 0 && (
+                <Card className="mt-8 shadow-lg">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-xl text-blue-900 flex items-center gap-2">
+                        <Calendar className="h-5 w-5" />
+                        Site Availability - {format(monthStartDate, "MMMM yyyy")}
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const prev = new Date(calendarMonth.year, calendarMonth.month - 2, 1);
+                            setCalendarMonth({ year: prev.getFullYear(), month: prev.getMonth() + 1 });
+                          }}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          Prev
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const next = new Date(calendarMonth.year, calendarMonth.month, 1);
+                            setCalendarMonth({ year: next.getFullYear(), month: next.getMonth() + 1 });
+                          }}
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <CardDescription>
+                      View availability for all casual leasing sites at this centre
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse min-w-max">
+                        <thead>
+                          <tr>
+                            <th className="sticky left-0 bg-white z-10 px-3 py-2 text-left text-sm font-semibold border-b-2 border-r-2 min-w-[100px]">
+                              Site
+                            </th>
+                            {Array.from({ length: getDaysInMonth(monthStartDate) }, (_, i) => {
+                              const date = new Date(calendarMonth.year, calendarMonth.month - 1, i + 1);
+                              const dayOfWeek = getDay(date);
+                              const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                              const isToday = isSameDay(date, new Date());
+                              return (
+                                <th
+                                  key={i}
+                                  className={`px-1 py-2 text-center text-xs font-medium min-w-[40px] border-b ${
+                                    isWeekend ? 'bg-gray-100' : ''
+                                  } ${isToday ? 'bg-blue-50 border-blue-500 border-2' : ''}`}
+                                >
+                                  <div className={isWeekend ? 'font-semibold' : ''}>{i + 1}</div>
+                                  <div className={`text-[10px] ${isWeekend ? 'text-gray-700' : 'text-gray-500'}`}>
+                                    {format(date, 'EEE')}
+                                  </div>
+                                </th>
+                              );
+                            })}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {availabilityGrid.sites.map((site) => {
+                            const siteBookings = availabilityGrid.bookings.filter(b => b.siteId === site.id);
+                            return (
+                              <tr key={site.id} className="hover:bg-gray-50">
+                                <td className="sticky left-0 bg-white z-10 px-3 py-2 font-medium border-r-2 border-b">
+                                  <Button
+                                    variant="link"
+                                    className="p-0 h-auto text-blue-600 hover:text-blue-800"
+                                    onClick={() => setLocation(`/site/${site.id}`)}
+                                  >
+                                    {site.siteNumber}
+                                  </Button>
+                                </td>
+                                {Array.from({ length: getDaysInMonth(monthStartDate) }, (_, i) => {
+                                  const date = new Date(calendarMonth.year, calendarMonth.month - 1, i + 1);
+                                  const dayOfWeek = getDay(date);
+                                  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                                  const booking = siteBookings.find(b => {
+                                    const start = new Date(b.startDate);
+                                    const end = new Date(b.endDate);
+                                    start.setHours(0, 0, 0, 0);
+                                    end.setHours(0, 0, 0, 0);
+                                    date.setHours(0, 0, 0, 0);
+                                    return date >= start && date <= end;
+                                  });
+                                  const isBooked = !!booking;
+                                  return (
+                                    <TooltipProvider key={i}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <td
+                                            className={`px-1 py-2 text-center border-b cursor-pointer ${
+                                              isBooked
+                                                ? 'bg-red-100 hover:bg-red-200'
+                                                : isWeekend
+                                                ? 'bg-gray-50 hover:bg-gray-100'
+                                                : 'bg-green-50 hover:bg-green-100'
+                                            }`}
+                                          >
+                                            {isBooked ? (
+                                              <XCircle className="h-4 w-4 mx-auto text-red-500" />
+                                            ) : (
+                                              <CheckCircle className="h-4 w-4 mx-auto text-green-500" />
+                                            )}
+                                          </td>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          {isBooked ? (
+                                            <div className="text-sm">
+                                              <p className="font-semibold">Booked</p>
+                                              <p>{booking.companyName || booking.customerName}</p>
+                                              <p className="text-xs text-gray-500">
+                                                {format(new Date(booking.startDate), 'dd/MM')} - {format(new Date(booking.endDate), 'dd/MM')}
+                                              </p>
+                                            </div>
+                                          ) : (
+                                            <p>Available</p>
+                                          )}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  );
+                                })}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="mt-4 flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span>Available</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <XCircle className="h-4 w-4 text-red-500" />
+                        <span>Booked</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
 
@@ -583,6 +763,152 @@ export default function CentreDetail() {
                   </Card>
                 ))}
               </div>
+              
+              {/* Vacant Shops Availability Calendar */}
+              {vsMonthlyBookings && vacantShops.length > 0 && (
+                <Card className="mt-8 shadow-lg">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-xl text-green-900 flex items-center gap-2">
+                        <Calendar className="h-5 w-5" />
+                        Vacant Shop Availability - {format(monthStartDate, "MMMM yyyy")}
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const prev = new Date(calendarMonth.year, calendarMonth.month - 2, 1);
+                            setCalendarMonth({ year: prev.getFullYear(), month: prev.getMonth() + 1 });
+                          }}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          Prev
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const next = new Date(calendarMonth.year, calendarMonth.month, 1);
+                            setCalendarMonth({ year: next.getFullYear(), month: next.getMonth() + 1 });
+                          }}
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <CardDescription>
+                      View availability for all vacant shops at this centre
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse min-w-max">
+                        <thead>
+                          <tr>
+                            <th className="sticky left-0 bg-white z-10 px-3 py-2 text-left text-sm font-semibold border-b-2 border-r-2 min-w-[100px]">
+                              Shop
+                            </th>
+                            {Array.from({ length: getDaysInMonth(monthStartDate) }, (_, i) => {
+                              const date = new Date(calendarMonth.year, calendarMonth.month - 1, i + 1);
+                              const dayOfWeek = getDay(date);
+                              const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                              const isToday = isSameDay(date, new Date());
+                              return (
+                                <th
+                                  key={i}
+                                  className={`px-1 py-2 text-center text-xs font-medium min-w-[40px] border-b ${
+                                    isWeekend ? 'bg-gray-100' : ''
+                                  } ${isToday ? 'bg-green-50 border-green-500 border-2' : ''}`}
+                                >
+                                  <div className={isWeekend ? 'font-semibold' : ''}>{i + 1}</div>
+                                  <div className={`text-[10px] ${isWeekend ? 'text-gray-700' : 'text-gray-500'}`}>
+                                    {format(date, 'EEE')}
+                                  </div>
+                                </th>
+                              );
+                            })}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {vacantShops.map((shop: any) => {
+                            const shopBookings = vsMonthlyBookings.filter((b: any) => b.vacantShopId === shop.id);
+                            return (
+                              <tr key={shop.id} className="hover:bg-gray-50">
+                                <td className="sticky left-0 bg-white z-10 px-3 py-2 font-medium border-r-2 border-b">
+                                  <span className="text-green-600">{shop.shopNumber}</span>
+                                </td>
+                                {Array.from({ length: getDaysInMonth(monthStartDate) }, (_, i) => {
+                                  const date = new Date(calendarMonth.year, calendarMonth.month - 1, i + 1);
+                                  const dayOfWeek = getDay(date);
+                                  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                                  const booking = shopBookings.find((b: any) => {
+                                    const start = new Date(b.startDate);
+                                    const end = new Date(b.endDate);
+                                    start.setHours(0, 0, 0, 0);
+                                    end.setHours(0, 0, 0, 0);
+                                    const checkDate = new Date(date);
+                                    checkDate.setHours(0, 0, 0, 0);
+                                    return checkDate >= start && checkDate <= end;
+                                  });
+                                  const isBooked = !!booking;
+                                  return (
+                                    <TooltipProvider key={i}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <td
+                                            className={`px-1 py-2 text-center border-b cursor-pointer ${
+                                              isBooked
+                                                ? 'bg-red-100 hover:bg-red-200'
+                                                : isWeekend
+                                                ? 'bg-gray-50 hover:bg-gray-100'
+                                                : 'bg-green-50 hover:bg-green-100'
+                                            }`}
+                                          >
+                                            {isBooked ? (
+                                              <XCircle className="h-4 w-4 mx-auto text-red-500" />
+                                            ) : (
+                                              <CheckCircle className="h-4 w-4 mx-auto text-green-500" />
+                                            )}
+                                          </td>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          {isBooked ? (
+                                            <div className="text-sm">
+                                              <p className="font-semibold">Booked</p>
+                                              <p>Ref: {booking.bookingNumber}</p>
+                                              <p className="text-xs text-gray-500">
+                                                {format(new Date(booking.startDate), 'dd/MM')} - {format(new Date(booking.endDate), 'dd/MM')}
+                                              </p>
+                                            </div>
+                                          ) : (
+                                            <p>Available</p>
+                                          )}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  );
+                                })}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="mt-4 flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span>Available</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <XCircle className="h-4 w-4 text-red-500" />
+                        <span>Booked</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
 
@@ -681,6 +1007,152 @@ export default function CentreDetail() {
                   </Card>
                 ))}
               </div>
+              
+              {/* Third Line Income Availability Calendar */}
+              {tliMonthlyBookings && thirdLineAssets.length > 0 && (
+                <Card className="mt-8 shadow-lg">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-xl text-purple-900 flex items-center gap-2">
+                        <Calendar className="h-5 w-5" />
+                        Third Line Availability - {format(monthStartDate, "MMMM yyyy")}
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const prev = new Date(calendarMonth.year, calendarMonth.month - 2, 1);
+                            setCalendarMonth({ year: prev.getFullYear(), month: prev.getMonth() + 1 });
+                          }}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          Prev
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const next = new Date(calendarMonth.year, calendarMonth.month, 1);
+                            setCalendarMonth({ year: next.getFullYear(), month: next.getMonth() + 1 });
+                          }}
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <CardDescription>
+                      View availability for all third line income assets at this centre
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse min-w-max">
+                        <thead>
+                          <tr>
+                            <th className="sticky left-0 bg-white z-10 px-3 py-2 text-left text-sm font-semibold border-b-2 border-r-2 min-w-[100px]">
+                              Asset
+                            </th>
+                            {Array.from({ length: getDaysInMonth(monthStartDate) }, (_, i) => {
+                              const date = new Date(calendarMonth.year, calendarMonth.month - 1, i + 1);
+                              const dayOfWeek = getDay(date);
+                              const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                              const isToday = isSameDay(date, new Date());
+                              return (
+                                <th
+                                  key={i}
+                                  className={`px-1 py-2 text-center text-xs font-medium min-w-[40px] border-b ${
+                                    isWeekend ? 'bg-gray-100' : ''
+                                  } ${isToday ? 'bg-purple-50 border-purple-500 border-2' : ''}`}
+                                >
+                                  <div className={isWeekend ? 'font-semibold' : ''}>{i + 1}</div>
+                                  <div className={`text-[10px] ${isWeekend ? 'text-gray-700' : 'text-gray-500'}`}>
+                                    {format(date, 'EEE')}
+                                  </div>
+                                </th>
+                              );
+                            })}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {thirdLineAssets.map((asset: any) => {
+                            const assetBookings = tliMonthlyBookings.filter((b: any) => b.thirdLineIncomeId === asset.id);
+                            return (
+                              <tr key={asset.id} className="hover:bg-gray-50">
+                                <td className="sticky left-0 bg-white z-10 px-3 py-2 font-medium border-r-2 border-b">
+                                  <span className="text-purple-600">{asset.assetNumber}</span>
+                                </td>
+                                {Array.from({ length: getDaysInMonth(monthStartDate) }, (_, i) => {
+                                  const date = new Date(calendarMonth.year, calendarMonth.month - 1, i + 1);
+                                  const dayOfWeek = getDay(date);
+                                  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                                  const booking = assetBookings.find((b: any) => {
+                                    const start = new Date(b.startDate);
+                                    const end = new Date(b.endDate);
+                                    start.setHours(0, 0, 0, 0);
+                                    end.setHours(0, 0, 0, 0);
+                                    const checkDate = new Date(date);
+                                    checkDate.setHours(0, 0, 0, 0);
+                                    return checkDate >= start && checkDate <= end;
+                                  });
+                                  const isBooked = !!booking;
+                                  return (
+                                    <TooltipProvider key={i}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <td
+                                            className={`px-1 py-2 text-center border-b cursor-pointer ${
+                                              isBooked
+                                                ? 'bg-red-100 hover:bg-red-200'
+                                                : isWeekend
+                                                ? 'bg-gray-50 hover:bg-gray-100'
+                                                : 'bg-purple-50 hover:bg-purple-100'
+                                            }`}
+                                          >
+                                            {isBooked ? (
+                                              <XCircle className="h-4 w-4 mx-auto text-red-500" />
+                                            ) : (
+                                              <CheckCircle className="h-4 w-4 mx-auto text-purple-500" />
+                                            )}
+                                          </td>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          {isBooked ? (
+                                            <div className="text-sm">
+                                              <p className="font-semibold">Booked</p>
+                                              <p>Ref: {booking.bookingNumber}</p>
+                                              <p className="text-xs text-gray-500">
+                                                {format(new Date(booking.startDate), 'dd/MM')} - {format(new Date(booking.endDate), 'dd/MM')}
+                                              </p>
+                                            </div>
+                                          ) : (
+                                            <p>Available</p>
+                                          )}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  );
+                                })}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="mt-4 flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <CheckCircle className="h-4 w-4 text-purple-500" />
+                        <span>Available</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <XCircle className="h-4 w-4 text-red-500" />
+                        <span>Booked</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
 

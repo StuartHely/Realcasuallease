@@ -2592,3 +2592,12 @@
   - Added right border on Sunday (last weekend column)
   - Added bottom border on last data row to close the box
   - Added light gray background to weekend cells for visual distinction
+
+## Centre Page Availability Calendar (Jan 26, 2026)
+- [x] Add site availability calendar under site details on centre page
+- [x] Add asset type dropdown (Casual Leasing, Vacant Shops, Third Line Income, All Assets)
+- [x] Filter calendar results based on selected asset type
+- [x] Show current month availability by default
+- [x] Tested: Casual Leasing at Campbelltown Mall (13 sites with availability grid)
+- [x] Tested: Vacant Shops at Albany Plaza (6 shops with availability grid)
+- [x] Tested: Third Line Income at Albany Plaza (6 assets with availability grid)
