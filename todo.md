@@ -2749,3 +2749,10 @@
 - [x] Status tab shows full results for selected status, ignoring any previous search query
 - [x] Search field text is cleared when status tab is clicked
 - [x] Search only filters when user submits/presses enter (already implemented)
+
+## Bug Fix: Edit Button Not Loading Booking Details (Jan 28, 2026)
+- [x] Edit button in Booking Management navigates to Admin Booking but doesn't load booking details
+- [x] Admin Booking page shows blank "Select Centre" instead of pre-populated booking data
+- [x] Need to fix the navigation to pass booking ID and load existing booking for editing
+- [x] Added URL parameter parsing for centreId and bookingId
+- [x] Auto-load centre and open edit dialog when navigating from Booking Management

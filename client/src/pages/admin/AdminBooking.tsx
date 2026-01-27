@@ -22,18 +22,26 @@ export default function AdminBooking() {
   const [, setLocation] = useLocation();
   const searchString = useSearch();
   
+  // Parse URL parameters
+  const urlParams = useMemo(() => {
+    const params = new URLSearchParams(searchString);
+    return {
+      month: params.get('month'),
+      centreId: params.get('centreId'),
+      bookingId: params.get('bookingId'),
+    };
+  }, [searchString]);
+
   // Parse month from URL
   const initialMonth = useMemo(() => {
-    const params = new URLSearchParams(searchString);
-    const monthParam = params.get('month');
-    if (monthParam) {
-      const [year, month] = monthParam.split('-').map(Number);
+    if (urlParams.month) {
+      const [year, month] = urlParams.month.split('-').map(Number);
       if (year && month) {
         return new Date(year, month - 1, 1);
       }
     }
     return new Date();
-  }, []);
+  }, [urlParams.month]);
   
   // State for form
   const [selectedCentreId, setSelectedCentreId] = useState<number | null>(null);
@@ -141,6 +149,26 @@ export default function AdminBooking() {
       toast.error(error.message);
     },
   });
+
+  // Auto-load centre and booking from URL parameters (for editing from Booking Management)
+  useEffect(() => {
+    if (urlParams.centreId && centres) {
+      const centreId = parseInt(urlParams.centreId, 10);
+      if (!isNaN(centreId) && centres.some(c => c.id === centreId)) {
+        setSelectedCentreId(centreId);
+      }
+    }
+  }, [urlParams.centreId, centres]);
+
+  useEffect(() => {
+    if (urlParams.bookingId && selectedCentreId) {
+      const bookingId = parseInt(urlParams.bookingId, 10);
+      if (!isNaN(bookingId)) {
+        setEditingBookingId(bookingId);
+        setShowEditDialog(true);
+      }
+    }
+  }, [urlParams.bookingId, selectedCentreId]);
 
   // Sort centres alphabetically
   const sortedCentres = useMemo(() => {
