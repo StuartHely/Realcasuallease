@@ -2716,3 +2716,9 @@
 - [x] Ensure rejected bookings appear under the Rejected tab
 - [x] Fix search to find rejected bookings by booking number (now searches across ALL statuses)
 - [x] Add Trading Name field to Edit User page (Company Details section)
+
+## Booking Audit Trail & User Registration (Jan 27, 2026)
+- [x] Create booking_status_history table to track status changes
+- [x] Record status changes when booking is created, approved, rejected, cancelled
+- [x] Display booking history timeline in admin booking detail view
+- [x] Add Trading Name field to Register New User form

@@ -849,6 +849,7 @@ function EditBookingContent({
   isPending: boolean;
 }) {
   const { data: bookingDetails, isLoading } = trpc.adminBooking.getBookingDetails.useQuery({ bookingId });
+  const { data: statusHistory } = trpc.adminBooking.getStatusHistory.useQuery({ bookingId });
 
   // Initialize form data when booking details load
   useEffect(() => {
@@ -889,6 +890,56 @@ function EditBookingContent({
           bookingDetails.status === "pending" && "bg-yellow-100 text-yellow-800"
         )}>{bookingDetails.status}</span></div>
       </div>
+
+      {/* Status History Timeline */}
+      {statusHistory && statusHistory.length > 0 && (
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Status History
+          </h4>
+          <div className="space-y-2">
+            {statusHistory.map((entry, idx) => (
+              <div key={entry.id} className="flex items-start gap-3 text-xs">
+                <div className="flex flex-col items-center">
+                  <div className={cn(
+                    "w-2.5 h-2.5 rounded-full",
+                    entry.newStatus === "confirmed" && "bg-green-500",
+                    entry.newStatus === "rejected" && "bg-red-500",
+                    entry.newStatus === "cancelled" && "bg-gray-500",
+                    entry.newStatus === "pending" && "bg-yellow-500",
+                    entry.newStatus === "completed" && "bg-blue-500"
+                  )} />
+                  {idx < statusHistory.length - 1 && <div className="w-0.5 h-8 bg-gray-300" />}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "px-1.5 py-0.5 rounded text-xs font-medium",
+                      entry.newStatus === "confirmed" && "bg-green-100 text-green-800",
+                      entry.newStatus === "rejected" && "bg-red-100 text-red-800",
+                      entry.newStatus === "cancelled" && "bg-gray-100 text-gray-800",
+                      entry.newStatus === "pending" && "bg-yellow-100 text-yellow-800",
+                      entry.newStatus === "completed" && "bg-blue-100 text-blue-800"
+                    )}>
+                      {entry.previousStatus ? `${entry.previousStatus} → ` : ""}{entry.newStatus}
+                    </span>
+                    <span className="text-gray-500">
+                      {format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm")}
+                    </span>
+                  </div>
+                  <div className="text-gray-600 mt-0.5">
+                    {entry.changedByName && <span>by {entry.changedByName}</span>}
+                    {entry.reason && <span className="ml-1">- {entry.reason}</span>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Editable Fields */}
       <div className="grid grid-cols-2 gap-4">

@@ -28,6 +28,7 @@ export default function AdminUsers() {
     canPayByInvoice: false,
     // Company details
     companyName: "",
+    tradingName: "",
     companyWebsite: "",
     abn: "",
     address: "",
@@ -148,6 +149,7 @@ export default function AdminUsers() {
         role: "customer",
         canPayByInvoice: false,
         companyName: "",
+        tradingName: "",
         companyWebsite: "",
         abn: "",
         address: "",
@@ -540,6 +542,12 @@ export default function AdminUsers() {
                   <label htmlFor="companyName" className="text-sm font-medium">Company Name</label>
                   <Input id="companyName" value={newUserData.companyName} onChange={(e) => setNewUserData({ ...newUserData, companyName: e.target.value })} />
                 </div>
+                <div className="space-y-2">
+                  <label htmlFor="tradingName" className="text-sm font-medium">Trading Name</label>
+                  <Input id="tradingName" placeholder="If different from company name" value={newUserData.tradingName} onChange={(e) => setNewUserData({ ...newUserData, tradingName: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label htmlFor="abn" className="text-sm font-medium">ABN</label>
                   <Input id="abn" value={newUserData.abn} onChange={(e) => setNewUserData({ ...newUserData, abn: e.target.value })} />

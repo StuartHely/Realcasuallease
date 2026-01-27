@@ -266,6 +266,23 @@ export const bookings = mysqlTable("bookings", {
 }));
 
 /**
+ * Booking status history for audit trail
+ */
+export const bookingStatusHistory = mysqlTable("booking_status_history", {
+  id: int("id").autoincrement().primaryKey(),
+  bookingId: int("bookingId").notNull().references(() => bookings.id, { onDelete: "cascade" }),
+  previousStatus: mysqlEnum("previousStatus", ["pending", "confirmed", "cancelled", "completed", "rejected"]),
+  newStatus: mysqlEnum("newStatus", ["pending", "confirmed", "cancelled", "completed", "rejected"]).notNull(),
+  changedBy: int("changedBy").references(() => users.id),
+  changedByName: varchar("changedByName", { length: 255 }),
+  reason: text("reason"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  bookingIdIdx: index("booking_status_bookingId_idx").on(table.bookingId),
+  createdAtIdx: index("booking_status_createdAt_idx").on(table.createdAt),
+}));
+
+/**
  * Financial transactions (including reversals for cancellations)
  */
 export const transactions = mysqlTable("transactions", {

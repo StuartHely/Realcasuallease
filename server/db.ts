@@ -12,6 +12,7 @@ import {
   usageCategories,
   siteUsageCategories,
   bookings, InsertBooking,
+  bookingStatusHistory,
   transactions, InsertTransaction,
   systemConfig, InsertSystemConfig,
   auditLog, InsertAuditLog,
@@ -861,7 +862,7 @@ export async function getUnpaidInvoiceBookings() {
     .orderBy(desc(bookings.createdAt));
 }
 
-export async function approveBooking(bookingId: number, approvedBy: number) {
+export async function approveBooking(bookingId: number, approvedBy: number, approvedByName?: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
@@ -871,21 +872,47 @@ export async function approveBooking(bookingId: number, approvedBy: number) {
     throw new Error("Booking not found");
   }
 
-  return await db.update(bookings).set({
+  const previousStatus = booking.status;
+  
+  await db.update(bookings).set({
     status: "confirmed",
     approvedBy,
     approvedAt: new Date(),
   }).where(eq(bookings.id, bookingId));
+  
+  // Record status history
+  await db.insert(bookingStatusHistory).values({
+    bookingId,
+    previousStatus: previousStatus as "pending" | "confirmed" | "cancelled" | "completed" | "rejected",
+    newStatus: "confirmed",
+    changedBy: approvedBy,
+    changedByName: approvedByName || null,
+    reason: "Booking approved",
+  });
 }
 
-export async function rejectBooking(bookingId: number, reason: string) {
+export async function rejectBooking(bookingId: number, reason: string, rejectedBy?: number, rejectedByName?: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  
+  // Get booking to record previous status
+  const booking = await getBookingById(bookingId);
+  const previousStatus = booking?.status;
 
-  return await db.update(bookings).set({
+  await db.update(bookings).set({
     status: "rejected",
     rejectionReason: reason,
   }).where(eq(bookings.id, bookingId));
+  
+  // Record status history
+  await db.insert(bookingStatusHistory).values({
+    bookingId,
+    previousStatus: previousStatus as "pending" | "confirmed" | "cancelled" | "completed" | "rejected" | undefined,
+    newStatus: "rejected",
+    changedBy: rejectedBy || null,
+    changedByName: rejectedByName || null,
+    reason,
+  });
 }
 
 export async function updateUserInvoiceFlag(userId: number, canPayByInvoice: boolean) {
@@ -1383,4 +1410,44 @@ export async function bulkImportBudgets(budgetData: Array<{
     skipped,
     errors,
   };
+}
+
+/**
+ * Get booking status history for audit trail
+ */
+export async function getBookingStatusHistory(bookingId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db
+    .select({
+      id: bookingStatusHistory.id,
+      bookingId: bookingStatusHistory.bookingId,
+      previousStatus: bookingStatusHistory.previousStatus,
+      newStatus: bookingStatusHistory.newStatus,
+      changedBy: bookingStatusHistory.changedBy,
+      changedByName: bookingStatusHistory.changedByName,
+      reason: bookingStatusHistory.reason,
+      createdAt: bookingStatusHistory.createdAt,
+    })
+    .from(bookingStatusHistory)
+    .where(eq(bookingStatusHistory.bookingId, bookingId))
+    .orderBy(desc(bookingStatusHistory.createdAt));
+}
+
+/**
+ * Record initial booking creation in status history
+ */
+export async function recordBookingCreated(bookingId: number, status: "pending" | "confirmed", createdBy?: number, createdByName?: string) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.insert(bookingStatusHistory).values({
+    bookingId,
+    previousStatus: null,
+    newStatus: status,
+    changedBy: createdBy || null,
+    changedByName: createdByName || "System",
+    reason: status === "confirmed" ? "Instant booking confirmed" : "Booking created - pending approval",
+  });
 }

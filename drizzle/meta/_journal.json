@@ -246,6 +246,13 @@
       "when": 1769488188079,
       "tag": "0034_faulty_cable",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "5",
+      "when": 1769511877146,
+      "tag": "0035_thick_scarlet_witch",
+      "breakpoints": true
     }
   ]
 }

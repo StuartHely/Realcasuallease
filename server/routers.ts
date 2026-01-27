@@ -442,9 +442,14 @@ export const appRouter = router({
           tablesRequested: input.tablesRequested || 0,
           chairsRequested: input.chairsRequested || 0,
         });
+        
+        // Record initial status in history
+        const bookingId = Number(result[0].insertId);
+        const initialStatus = requiresApproval ? "pending" : (site.instantBooking ? "confirmed" : "pending");
+        await db.recordBookingCreated(bookingId, initialStatus as "pending" | "confirmed", ctx.user.id, ctx.user.name || undefined);
 
         return {
-          bookingId: Number(result[0].insertId),
+          bookingId,
           bookingNumber,
           totalAmount,
           requiresApproval,
@@ -538,7 +543,7 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending bookings can be approved" });
         }
 
-        await db.approveBooking(input.bookingId, ctx.user.id);
+        await db.approveBooking(input.bookingId, ctx.user.id, ctx.user.name || undefined);
         
         // Send confirmation email to customer
         const site = await db.getSiteById(booking.siteId);
@@ -577,7 +582,7 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending bookings can be rejected" });
         }
 
-        await db.rejectBooking(input.bookingId, input.reason);
+        await db.rejectBooking(input.bookingId, input.reason, ctx.user.id, ctx.user.name || undefined);
         
         // Send rejection email to customer with reason
         const site = await db.getSiteById(booking.siteId);
@@ -1638,7 +1643,7 @@ export const appRouter = router({
     approveBooking: adminProcedure
       .input(z.object({ bookingId: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        await db.approveBooking(input.bookingId, ctx.user.id);
+        await db.approveBooking(input.bookingId, ctx.user.id, ctx.user.name || undefined);
         
         // Get booking details for notification
         const booking = await db.getBookingById(input.bookingId);
@@ -1788,6 +1793,7 @@ export const appRouter = router({
         canPayByInvoice: z.boolean().default(false),
         // Company details
         companyName: z.string().optional(),
+        tradingName: z.string().optional(),
         companyWebsite: z.string().optional(),
         abn: z.string().optional(),
         address: z.string().optional(),
@@ -1837,6 +1843,7 @@ export const appRouter = router({
           await dbInstance.insert(customerProfiles).values({
             userId: newUser.insertId,
             companyName: input.companyName || null,
+            tradingName: input.tradingName || null,
             website: input.companyWebsite || null,
             abn: input.abn || null,
             streetAddress: input.address || null,
@@ -3555,6 +3562,13 @@ export const appRouter = router({
           siteNumber: site?.siteNumber,
           centreName: centre?.name,
         };
+      }),
+    
+    // Get booking status history for audit trail
+    getStatusHistory: adminProcedure
+      .input(z.object({ bookingId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getBookingStatusHistory(input.bookingId);
       }),
   }),
 });
