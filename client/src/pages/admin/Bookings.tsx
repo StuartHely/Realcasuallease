@@ -60,20 +60,35 @@ export default function AdminBookings() {
     };
   }, [allBookings]);
 
-  // Filter bookings based on search query
+  // Filter and sort bookings based on search query
   const filteredBookings = useMemo(() => {
     if (!bookings) return [];
-    if (!searchQuery.trim()) return bookings;
+    
+    const query = searchQuery.trim();
+    if (!query) return bookings;
 
-    const query = searchQuery.toLowerCase().trim();
-    return bookings.filter((booking) => {
-      const bookingNumber = booking.bookingNumber?.toLowerCase() || "";
-      const customerName = booking.customerName?.toLowerCase() || "";
-      const customerEmail = booking.customerEmail?.toLowerCase() || "";
-      
-      return bookingNumber.includes(query) || 
-             customerName.includes(query) ||
-             customerEmail.includes(query);
+    // Check if query looks like a booking number (exact match)
+    const isBookingNumberSearch = /^[A-Z]{4}-\d{8}-\d+$/i.test(query);
+    
+    if (isBookingNumberSearch) {
+      // Exact match for booking number
+      return bookings.filter((booking) => 
+        booking.bookingNumber?.toUpperCase() === query.toUpperCase()
+      );
+    }
+    
+    // Company name search (partial, case-insensitive)
+    const lowerQuery = query.toLowerCase();
+    const matchedBookings = bookings.filter((booking) => {
+      const companyName = booking.companyName?.toLowerCase() || "";
+      return companyName.includes(lowerQuery);
+    });
+    
+    // Sort by centre name alphabetically for company name searches
+    return matchedBookings.sort((a, b) => {
+      const centreA = a.centreName?.toLowerCase() || "";
+      const centreB = b.centreName?.toLowerCase() || "";
+      return centreA.localeCompare(centreB);
     });
   }, [bookings, searchQuery]);
 
@@ -160,7 +175,7 @@ export default function AdminBookings() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search by booking number or customer name..."
+            placeholder="Search by booking number or company name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-10 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
@@ -235,13 +250,14 @@ export default function AdminBookings() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Booking #</TableHead>
-                        <TableHead>Customer</TableHead>
+                        <TableHead>Booking Number</TableHead>
+                        <TableHead>Company Name</TableHead>
+                        <TableHead>Contact Name</TableHead>
+                        <TableHead>Category</TableHead>
                         <TableHead>Site</TableHead>
                         <TableHead>Dates</TableHead>
                         <TableHead>Amount</TableHead>
                         <TableHead>Status</TableHead>
-                        {selectedStatus === "unpaid" && <TableHead>Due Date</TableHead>}
                         <TableHead>Created</TableHead>
                         {selectedStatus === "pending" && <TableHead>Actions</TableHead>}
                       </TableRow>
@@ -251,39 +267,34 @@ export default function AdminBookings() {
                         <TableRow key={booking.id}>
                           <TableCell className="font-medium">{booking.bookingNumber}</TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <div>
-                                <div className="font-medium">{booking.customerName}</div>
-                                <div className="text-sm text-muted-foreground">{booking.customerEmail}</div>
+                            <div className="font-medium">{booking.companyName || "—"}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{booking.customerName}</div>
+                              <div className="text-sm text-muted-foreground">{booking.customerEmail}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">{booking.productCategory || "—"}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{booking.siteNumber || "—"}</div>
+                              <div className="text-sm text-muted-foreground">{booking.siteName}</div>
+                              <div className="text-xs text-muted-foreground">{booking.centreName}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <div>{format(new Date(booking.startDate), "MMM d, yyyy")}</div>
+                              <div className="text-muted-foreground">
+                                to {format(new Date(booking.endDate), "MMM d, yyyy")}
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4 text-muted-foreground" />
-                              <div>
-                                <div className="font-medium">{booking.siteName}</div>
-                                <div className="text-sm text-muted-foreground">{booking.centreName}</div>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <div className="text-sm">
-                                <div>{format(new Date(booking.startDate), "MMM d, yyyy")}</div>
-                                <div className="text-muted-foreground">
-                                  to {format(new Date(booking.endDate), "MMM d, yyyy")}
-                                </div>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <DollarSign className="h-4 w-4 text-muted-foreground" />
-                              <div className="font-medium">${booking.totalAmount}</div>
-                            </div>
+                            <div className="font-medium">${booking.totalAmount}</div>
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col gap-1">
@@ -296,33 +307,6 @@ export default function AdminBookings() {
                               )}
                             </div>
                           </TableCell>
-                          {selectedStatus === "unpaid" && (
-                            <TableCell>
-                              {booking.paymentDueDate ? (
-                                <div className="text-sm">
-                                  {(() => {
-                                    const dueDate = new Date(booking.paymentDueDate);
-                                    const today = new Date();
-                                    const isOverdue = dueDate < today;
-                                    const daysOverdue = isOverdue ? Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-                                    
-                                    return (
-                                      <div className={isOverdue ? "text-red-600 font-semibold" : "text-muted-foreground"}>
-                                        <div>{format(dueDate, "MMM d, yyyy")}</div>
-                                        {isOverdue && (
-                                          <div className="text-xs mt-0.5">
-                                            {daysOverdue} day{daysOverdue !== 1 ? 's' : ''} overdue
-                                          </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })()}
-                                </div>
-                              ) : (
-                                <span className="text-sm text-muted-foreground">-</span>
-                              )}
-                            </TableCell>
-                          )}
                           <TableCell className="text-sm text-muted-foreground">
                             {format(new Date(booking.createdAt), "MMM d, yyyy")}
                           </TableCell>
@@ -407,7 +391,7 @@ export default function AdminBookings() {
             </Button>
             <Button 
               variant="destructive" 
-              onClick={confirmReject} 
+              onClick={confirmReject}
               disabled={rejectMutation.isPending}
             >
               {rejectMutation.isPending ? "Rejecting..." : "Reject Booking"}

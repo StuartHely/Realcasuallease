@@ -761,7 +761,10 @@ export async function getBookingsByStatus(status?: "pending" | "confirmed" | "ca
       customerId: bookings.customerId,
       customerName: users.name,
       customerEmail: users.email,
+      companyName: customerProfiles.companyName,
+      productCategory: customerProfiles.productCategory,
       siteName: sites.description,
+      siteNumber: sites.siteNumber,
       centreName: shoppingCentres.name,
       startDate: bookings.startDate,
       endDate: bookings.endDate,
@@ -786,6 +789,7 @@ export async function getBookingsByStatus(status?: "pending" | "confirmed" | "ca
     })
     .from(bookings)
     .innerJoin(users, eq(bookings.customerId, users.id))
+    .leftJoin(customerProfiles, eq(users.id, customerProfiles.userId))
     .innerJoin(sites, eq(bookings.siteId, sites.id))
     .innerJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
     .orderBy(desc(bookings.createdAt));
@@ -810,7 +814,10 @@ export async function getUnpaidInvoiceBookings() {
       customerId: bookings.customerId,
       customerName: users.name,
       customerEmail: users.email,
+      companyName: customerProfiles.companyName,
+      productCategory: customerProfiles.productCategory,
       siteName: sites.description,
+      siteNumber: sites.siteNumber,
       centreName: shoppingCentres.name,
       startDate: bookings.startDate,
       endDate: bookings.endDate,
@@ -835,6 +842,7 @@ export async function getUnpaidInvoiceBookings() {
     })
     .from(bookings)
     .innerJoin(users, eq(bookings.customerId, users.id))
+    .leftJoin(customerProfiles, eq(users.id, customerProfiles.userId))
     .innerJoin(sites, eq(bookings.siteId, sites.id))
     .innerJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
     .where(

@@ -2641,3 +2641,10 @@
 - [x] Show confirmation dialog: "This site can take a maximum of X tables. Would you like to proceed with X tables?"
 - [x] Yes option: proceed with maximum allowed tables
 - [x] No option: return to centre calendar on originally requested date
+
+## Admin Bookings Page Redesign (Jan 27, 2026)
+- [x] Update table columns: Booking Number, Company Name, Contact Name, Category, Site Number (with Description), Dates, Amount, Status, Created
+- [x] Add search field in top right for Booking Number or Company Name
+- [x] Search by booking number: exact match, show single booking
+- [x] Search by company name: partial match, show all bookings grouped by centre alphabetically
+- [x] Case-insensitive search for company names
