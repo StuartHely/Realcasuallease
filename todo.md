@@ -2689,3 +2689,9 @@
 - [x] Auto-open site tile when dates selected on calendar
 - [x] Pre-fill start/end date fields with selected dates
 - [x] Display all site details in tile for booking completion
+
+## Booking Summary Enhancements (Jan 27, 2026)
+- [x] Add estimated total price calculation to Search.tsx booking summary
+- [x] Show weekday/weekend rate breakdown in booking summary
+- [x] Implement calendar date selection on CentreDetail.tsx page (state/centre navigation)
+- [x] Ensure consistent booking flow from both search and centre detail pages

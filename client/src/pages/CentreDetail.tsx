@@ -12,6 +12,7 @@ import InteractiveMap from "@/components/InteractiveMap";
 import { NearbyCentresMap } from "@/components/NearbyCentresMap";
 import { AssetBookingCalendar } from "@/components/AssetBookingCalendar";
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
+import { AvailabilityCalendarSelectable } from "@/components/AvailabilityCalendarSelectable";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -512,13 +513,18 @@ export default function CentreDetail() {
                 ))}
               </div>
               
-              {/* Casual Leasing Availability Calendar */}
+              {/* Casual Leasing Availability Calendar with Date Selection */}
               {availabilityGrid && availabilityGrid.sites.length > 0 && (
-                <AvailabilityCalendar
+                <AvailabilityCalendarSelectable
                   title="Site Availability"
                   titleColor="text-blue-900"
-                  description="View availability for all casual leasing sites at this centre"
-                  assets={availabilityGrid.sites.map((site: any) => ({ id: site.id, siteNumber: site.siteNumber }))}
+                  description="Click on available dates to select your booking period, or click a site number to view details"
+                  assets={availabilityGrid.sites.map((site: any) => ({
+                    id: site.id,
+                    siteNumber: site.siteNumber,
+                    pricePerDay: site.pricePerDay,
+                    weekendRate: site.weekendPricePerDay,
+                  }))}
                   bookings={availabilityGrid.bookings}
                   getAssetBookings={(siteId) => availabilityGrid.bookings.filter((b: any) => b.siteId === siteId)}
                   getAssetLabel={(asset) => asset.siteNumber || ''}
@@ -529,8 +535,8 @@ export default function CentreDetail() {
                   calendarMonth={calendarMonth}
                   onMonthChange={setCalendarMonth}
                   onAssetClick={(siteId) => setLocation(`/site/${siteId}`)}
-                />
-              )}
+                  enableDateSelection={true}
+                />)}
             </div>
           )}
 

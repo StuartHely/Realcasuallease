@@ -1109,12 +1109,41 @@ export default function Search() {
                                         <h5 className="font-semibold text-gray-900 mb-2">Booking Summary</h5>
                                         <div className="space-y-1 text-sm">
                                           <p><span className="text-gray-600">Site:</span> {site.siteNumber}</p>
-                                          <p><span className="text-gray-600">Duration:</span> {(() => {
-                                            if (!dateSelection.startDate || !dateSelection.endDate) return '—';
-                                            const days = Math.ceil((dateSelection.endDate.getTime() - dateSelection.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-                                            return `${days} day${days > 1 ? 's' : ''}`;
-                                          })()}</p>
-                                          <p><span className="text-gray-600">Rate:</span> ${site.pricePerDay}/day</p>
+                                          {(() => {
+                                            if (!dateSelection.startDate || !dateSelection.endDate) return <p><span className="text-gray-600">Duration:</span> —</p>;
+                                            const start = dateSelection.startDate;
+                                            const end = dateSelection.endDate;
+                                            let weekdays = 0;
+                                            let weekends = 0;
+                                            const current = new Date(start);
+                                            while (current <= end) {
+                                              const day = current.getDay();
+                                              if (day === 0 || day === 6) {
+                                                weekends++;
+                                              } else {
+                                                weekdays++;
+                                              }
+                                              current.setDate(current.getDate() + 1);
+                                            }
+                                            const totalDays = weekdays + weekends;
+                                            const weekdayRate = site.pricePerDay || 0;
+                                            const weekendRate = site.weekendRate || weekdayRate;
+                                            const subtotal = (weekdays * weekdayRate) + (weekends * weekendRate);
+                                            const gst = subtotal * 0.1;
+                                            const total = subtotal + gst;
+                                            return (
+                                              <>
+                                                <p><span className="text-gray-600">Duration:</span> {totalDays} day{totalDays > 1 ? 's' : ''}</p>
+                                                {weekdays > 0 && <p><span className="text-gray-600">Weekdays:</span> {weekdays} × ${weekdayRate.toFixed(2)} = ${(weekdays * weekdayRate).toFixed(2)}</p>}
+                                                {weekends > 0 && <p><span className="text-gray-600">Weekends:</span> {weekends} × ${weekendRate.toFixed(2)} = ${(weekends * weekendRate).toFixed(2)}</p>}
+                                                <div className="border-t border-gray-200 mt-2 pt-2">
+                                                  <p><span className="text-gray-600">Subtotal:</span> ${subtotal.toFixed(2)}</p>
+                                                  <p><span className="text-gray-600">GST (10%):</span> ${gst.toFixed(2)}</p>
+                                                  <p className="font-semibold text-blue-700"><span className="text-gray-700">Total:</span> ${total.toFixed(2)}</p>
+                                                </div>
+                                              </>
+                                            );
+                                          })()}
                                         </div>
                                       </div>
                                       <div className="flex gap-3">
