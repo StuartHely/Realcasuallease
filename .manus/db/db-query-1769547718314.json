@@ -1,0 +1,31 @@
+{
+  "query": "SELECT id, bookingNumber, status, paidAt, paymentMethod FROM bookings WHERE status = 'rejected' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, bookingNumber, status, paidAt, paymentMethod FROM bookings WHERE status = 'rejected' LIMIT 10;",
+  "rows": [
+    {
+      "id": "120019",
+      "bookingNumber": "BK1767680295557XDHWE",
+      "status": "rejected",
+      "paidAt": "NULL",
+      "paymentMethod": "stripe"
+    },
+    {
+      "id": "120021",
+      "bookingNumber": "BK1767680301044TUWHT",
+      "status": "rejected",
+      "paidAt": "NULL",
+      "paymentMethod": "stripe"
+    },
+    {
+      "id": "120022",
+      "bookingNumber": "BK17676803036625QH9L",
+      "status": "rejected",
+      "paidAt": "NULL",
+      "paymentMethod": "stripe"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbookingNumber\tstatus\tpaidAt\tpaymentMethod\n120019\tBK1767680295557XDHWE\trejected\tNULL\tstripe\n120021\tBK1767680301044TUWHT\trejected\tNULL\tstripe\n120022\tBK17676803036625QH9L\trejected\tNULL\tstripe\n",
+  "stderr": "",
+  "execution_time_ms": 1541
+}

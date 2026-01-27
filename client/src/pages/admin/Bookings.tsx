@@ -58,7 +58,8 @@ export default function AdminBookings() {
       confirmed: allBookings.filter(b => b.status === 'confirmed').length,
       rejected: allBookings.filter(b => b.status === 'rejected').length,
       completed: allBookings.filter(b => b.status === 'completed').length,
-      unpaid: allBookings.filter(b => b.paymentMethod === 'invoice' && !b.paidAt).length,
+      // Unpaid should exclude rejected bookings - rejected bookings are not eligible for payment
+      unpaid: allBookings.filter(b => b.paymentMethod === 'invoice' && !b.paidAt && b.status !== 'rejected').length,
     };
   }, [allBookings]);
 
@@ -95,7 +96,7 @@ export default function AdminBookings() {
       const centreB = b.centreName?.toLowerCase() || "";
       return centreA.localeCompare(centreB);
     });
-  }, [bookings, searchQuery]);
+  }, [bookings, searchQuery, allBookings]);
 
   const approveMutation = trpc.bookings.approve.useMutation({
     onSuccess: () => {
@@ -151,6 +152,7 @@ export default function AdminBookings() {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", icon: any, label: string }> = {
       pending: { variant: "secondary" as const, icon: Clock, label: "Pending" },
       confirmed: { variant: "default" as const, icon: CheckCircle, label: "Confirmed" },
+      rejected: { variant: "destructive" as const, icon: XCircle, label: "Rejected" },
       cancelled: { variant: "destructive" as const, icon: XCircle, label: "Rejected" },
       completed: { variant: "outline" as const, icon: CheckCircle, label: "Completed" },
     };
@@ -238,6 +240,10 @@ export default function AdminBookings() {
       // Add data rows
       filteredBookings.forEach((booking) => {
         const subtotal = Number(booking.totalAmount || 0) - Number(booking.gstAmount || 0);
+        // For rejected bookings, show "R" instead of Y/N for paid status
+        const isRejected = booking.status === 'rejected';
+        const paidValue = isRejected ? 'R' : (booking.paidAt ? 'Y' : 'N');
+        
         worksheet.addRow({
           bookingNumber: booking.bookingNumber || '',
           companyName: booking.companyName || '',
@@ -253,7 +259,7 @@ export default function AdminBookings() {
           amount: `$${subtotal.toFixed(2)}`,
           gst: `$${Number(booking.gstAmount || 0).toFixed(2)}`,
           total: `$${Number(booking.totalAmount || 0).toFixed(2)}`,
-          paid: booking.paidAt ? 'Y' : 'N',
+          paid: paidValue,
           status: booking.status || '',
         });
       });
@@ -278,6 +284,27 @@ export default function AdminBookings() {
     } finally {
       setIsExporting(false);
     }
+  };
+
+  // Get the payment status badge for a booking
+  const getPaymentBadge = (booking: { status: string; paidAt: Date | string | null; paymentMethod: string | null }) => {
+    // Rejected bookings show black "R" badge - they are not eligible for payment
+    if (booking.status === 'rejected') {
+      return (
+        <Badge variant="outline" className="bg-gray-900 text-white border-gray-900 font-bold">R</Badge>
+      );
+    }
+    
+    // For non-rejected bookings, show Y (paid) or N (unpaid)
+    const isPaid = !!booking.paidAt || booking.paymentMethod === 'stripe';
+    if (isPaid) {
+      return (
+        <Badge variant="default" className="bg-green-600">Y</Badge>
+      );
+    }
+    return (
+      <Badge variant="destructive">N</Badge>
+    );
   };
 
   return (
@@ -404,7 +431,6 @@ export default function AdminBookings() {
                         const gst = parseFloat(booking.gstAmount?.toString() || "0");
                         const total = amount + gst;
                         const amended = isAmended(booking.createdAt, booking.updatedAt);
-                        const isPaid = !!booking.paidAt || booking.paymentMethod === 'stripe';
                         
                         return (
                           <TableRow key={booking.id}>
@@ -439,11 +465,7 @@ export default function AdminBookings() {
                             <TableCell className="text-right whitespace-nowrap">${gst.toFixed(2)}</TableCell>
                             <TableCell className="text-right whitespace-nowrap font-medium">${total.toFixed(2)}</TableCell>
                             <TableCell>
-                              {isPaid ? (
-                                <Badge variant="default" className="bg-green-600">Y</Badge>
-                              ) : (
-                                <Badge variant="destructive">N</Badge>
-                              )}
+                              {getPaymentBadge(booking)}
                             </TableCell>
                             <TableCell>
                               <Button

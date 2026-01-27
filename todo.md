@@ -2727,3 +2727,13 @@
 - [x] Fix rejected booking appearing under all tabs (was using 'cancelled' status value instead of 'rejected')
 - [x] Fix rejected booking incorrectly marked as paid (was a display issue - rejected bookings now properly filtered)
 - [x] Fix Rejected tab count not updating after rejection (updated statusCounts to use 'rejected' status)
+
+## Rejected Booking Display Enhancements (Jan 28, 2026)
+- [x] Rejected bookings only appear under Rejected and All Bookings views
+- [x] Rejected bookings must not appear under Pending, Confirmed, or Paid views
+- [x] Rejected bookings must not display as paid (no Y icon)
+- [x] Add new black "R" icon for rejected bookings in Paid column
+- [x] Verify booking BK17676802239922HZBI shows correctly with R icon only in Rejected/All views
+- [x] Unpaid tab count excludes rejected bookings
+- [x] Excel export shows "R" for rejected bookings in Paid column
+- [x] Unit tests for rejected booking display logic (16 tests passing)
