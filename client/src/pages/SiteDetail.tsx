@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { ArrowLeft, MapPin, Calendar, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { ArrowLeft, MapPin, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { PriceCalculator } from "@/components/PriceCalculator";
 
@@ -37,6 +37,16 @@ export default function SiteDetail() {
   const [chairsRequested, setChairsRequested] = useState<string>("0");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [showTableLimitDialog, setShowTableLimitDialog] = useState(false);
+  const [pendingBookingData, setPendingBookingData] = useState<{
+    siteId: number;
+    startDate: Date;
+    endDate: Date;
+    usageCategoryId: number;
+    additionalCategoryText?: string;
+    tablesRequested: number;
+    chairsRequested: number;
+  } | null>(null);
   
   const trackViewMutation = trpc.admin.trackImageView.useMutation();
   const trackClickMutation = trpc.admin.trackImageClick.useMutation();
@@ -103,15 +113,53 @@ export default function SiteDetail() {
       toast.error("Please select a usage category");
       return;
     }
+
+    const requestedTables = parseInt(tablesRequested) || 0;
+    const maxTables = site?.maxTables || 0;
+
+    // Check if requested tables exceed site maximum
+    if (requestedTables > maxTables && maxTables > 0) {
+      // Store the booking data with the max tables value for potential confirmation
+      setPendingBookingData({
+        siteId,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        usageCategoryId: parseInt(usageCategoryId),
+        additionalCategoryText: additionalCategoryText || undefined,
+        tablesRequested: maxTables, // Will be adjusted to max if user confirms
+        chairsRequested: parseInt(chairsRequested) || 0,
+      });
+      setShowTableLimitDialog(true);
+      return;
+    }
+
+    // Proceed with booking if tables are within limit
     createBookingMutation.mutate({
       siteId,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
       usageCategoryId: parseInt(usageCategoryId),
       additionalCategoryText: additionalCategoryText || undefined,
-      tablesRequested: parseInt(tablesRequested) || 0,
+      tablesRequested: requestedTables,
       chairsRequested: parseInt(chairsRequested) || 0,
     });
+  };
+
+  const handleTableLimitConfirm = () => {
+    if (pendingBookingData) {
+      createBookingMutation.mutate(pendingBookingData);
+      setShowTableLimitDialog(false);
+      setPendingBookingData(null);
+    }
+  };
+
+  const handleTableLimitCancel = () => {
+    setShowTableLimitDialog(false);
+    setPendingBookingData(null);
+    // Navigate back to centre calendar on the originally requested date
+    if (site?.centreId && startDate) {
+      setLocation(`/centre/${site.centreId}?date=${startDate}`);
+    }
   };
 
   if (isLoading) {
@@ -474,6 +522,39 @@ export default function SiteDetail() {
           </div>
         </div>
       </main>
+
+      {/* Table Limit Confirmation Dialog */}
+      <Dialog open={showTableLimitDialog} onOpenChange={setShowTableLimitDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Table Limit Exceeded
+            </DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              This site can take a maximum of <span className="font-semibold text-foreground">{site?.maxTables || 0} tables</span>.
+              <br /><br />
+              Would you like to proceed with {site?.maxTables || 0} tables?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={handleTableLimitCancel}
+              className="flex-1 sm:flex-none"
+            >
+              No
+            </Button>
+            <Button
+              onClick={handleTableLimitConfirm}
+              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700"
+              disabled={createBookingMutation.isPending}
+            >
+              {createBookingMutation.isPending ? "Processing..." : "Yes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

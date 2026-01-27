@@ -2635,3 +2635,9 @@
 - [x] Add Company Name as first column in Admin Users table
 - [x] Add Category as third column in Admin Users table
 - [x] Keep existing User Name column (now second column)
+
+## Table Limit Validation During Booking (Jan 27, 2026)
+- [x] Add validation to check if requested tables exceed site maximum
+- [x] Show confirmation dialog: "This site can take a maximum of X tables. Would you like to proceed with X tables?"
+- [x] Yes option: proceed with maximum allowed tables
+- [x] No option: return to centre calendar on originally requested date
