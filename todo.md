@@ -2737,3 +2737,15 @@
 - [x] Unpaid tab count excludes rejected bookings
 - [x] Excel export shows "R" for rejected bookings in Paid column
 - [x] Unit tests for rejected booking display logic (16 tests passing)
+
+## Bug Fix: Booking CAMA-20260104-542 Not Appearing in List (Jan 28, 2026)
+- [x] Investigate why booking CAMA-20260104-542 doesn't appear in Booking Management without search
+- [x] Booking exists in database and appears when searched - CONFIRMED working
+- [x] Booking appears in All Bookings tab at the top of the list (sorted by createdAt DESC)
+- [x] Issue was likely due to user viewing Pending tab while booking was in Confirmed status, or page not refreshed
+
+## Search Behavior Enhancement (Jan 28, 2026)
+- [x] Clicking status tabs (Pending, Confirmed, Rejected, Completed, Unpaid, All Bookings) clears search filter
+- [x] Status tab shows full results for selected status, ignoring any previous search query
+- [x] Search field text is cleared when status tab is clicked
+- [x] Search only filters when user submits/presses enter (already implemented)

@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, bookingNumber, status, companyName, tradingName, centreId, siteId, startDate, endDate, createdAt FROM bookings WHERE bookingNumber = 'CAMA-20260104-542';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT id, bookingNumber, status, companyName, tradingName, centreId, siteId, startDate, endDate, createdAt FROM bookings WHERE bookingNumber = 'CAMA-20260104-542';",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'companyname' in 'field list'"
+  ]
+}

@@ -347,7 +347,10 @@ export default function AdminBookings() {
         </div>
       </div>
 
-      <Tabs value={selectedStatus} onValueChange={(v) => setSelectedStatus(v as BookingStatus)}>
+      <Tabs value={selectedStatus} onValueChange={(v) => {
+          setSearchQuery(""); // Clear search when switching tabs
+          setSelectedStatus(v as BookingStatus);
+        }}>
         <TabsList>
           <TabsTrigger value="pending">
             <Clock className="h-4 w-4 mr-2" />

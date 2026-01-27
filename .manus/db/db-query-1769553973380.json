@@ -1,0 +1,24 @@
+{
+  "query": "SELECT \n  b.id, b.bookingNumber, b.customerId, b.siteId, b.status,\n  u.id as userId, u.name as userName,\n  cp.id as profileId, cp.companyName, cp.tradingName,\n  s.id as siteId, s.centreId,\n  sc.id as centreId, sc.name as centreName\nFROM bookings b\nINNER JOIN users u ON b.customerId = u.id\nLEFT JOIN customer_profiles cp ON u.id = cp.userId\nINNER JOIN sites s ON b.siteId = s.id\nINNER JOIN shopping_centres sc ON s.centreId = sc.id\nWHERE b.bookingNumber = 'CAMA-20260104-542';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT \n  b.id, b.bookingNumber, b.customerId, b.siteId, b.status,\n  u.id as userId, u.name as userName,\n  cp.id as profileId, cp.companyName, cp.tradingName,\n  s.id as siteId, s.centreId,\n  sc.id as centreId, sc.name as centreName\nFROM bookings b\nINNER JOIN users u ON b.customerId = u.id\nLEFT JOIN customer_profiles cp ON u.id = cp.userId\nINNER JOIN sites s ON b.siteId = s.id\nINNER JOIN shopping_centres sc ON s.centreId = sc.id\nWHERE b.bookingNumber = 'CAMA-20260104-542';",
+  "rows": [
+    {
+      "id": "390001",
+      "bookingNumber": "CAMA-20260104-542",
+      "customerId": "2130046",
+      "siteId": "60029",
+      "status": "confirmed",
+      "userId": "2130046",
+      "userName": "Stuart C Hely",
+      "profileId": "30001",
+      "companyName": "Stuart Co",
+      "tradingName": "NULL",
+      "centreId": "60004",
+      "centreName": "Campbelltown Mall"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbookingNumber\tcustomerId\tsiteId\tstatus\tuserId\tuserName\tprofileId\tcompanyName\ttradingName\tsiteId\tcentreId\tcentreId\tcentreName\n390001\tCAMA-20260104-542\t2130046\t60029\tconfirmed\t2130046\tStuart C Hely\t30001\tStuart Co\tNULL\t60029\t60004\t60004\tCampbelltown Mall\n",
+  "stderr": "",
+  "execution_time_ms": 1521
+}
