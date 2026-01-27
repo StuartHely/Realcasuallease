@@ -786,6 +786,8 @@ export async function getBookingsByStatus(status?: "pending" | "confirmed" | "ca
       remindersSent: bookings.remindersSent,
       lastReminderSent: bookings.lastReminderSent,
       createdAt: bookings.createdAt,
+      updatedAt: bookings.updatedAt,
+      centreId: shoppingCentres.id,
     })
     .from(bookings)
     .innerJoin(users, eq(bookings.customerId, users.id))
@@ -839,6 +841,8 @@ export async function getUnpaidInvoiceBookings() {
       remindersSent: bookings.remindersSent,
       lastReminderSent: bookings.lastReminderSent,
       createdAt: bookings.createdAt,
+      updatedAt: bookings.updatedAt,
+      centreId: shoppingCentres.id,
     })
     .from(bookings)
     .innerJoin(users, eq(bookings.customerId, users.id))

@@ -23,13 +23,15 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Clock, Calendar, DollarSign, User, MapPin, Search, X } from "lucide-react";
+import { CheckCircle, XCircle, Clock, DollarSign, Search, X, FileText, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 
 type BookingStatus = "all" | "pending" | "confirmed" | "cancelled" | "completed" | "unpaid";
 
 export default function AdminBookings() {
+  const [, setLocation] = useLocation();
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus>("pending");
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -151,6 +153,7 @@ export default function AdminBookings() {
     };
 
     const config = variants[status];
+    if (!config) return null;
     const Icon = config.icon;
 
     return (
@@ -159,6 +162,30 @@ export default function AdminBookings() {
         {config.label}
       </Badge>
     );
+  };
+
+  // Check if booking has been amended (updatedAt differs from createdAt by more than 1 minute)
+  const isAmended = (createdAt: Date | string, updatedAt: Date | string | null | undefined) => {
+    if (!updatedAt) return false;
+    const created = new Date(createdAt).getTime();
+    const updated = new Date(updatedAt).getTime();
+    return (updated - created) > 60000; // More than 1 minute difference
+  };
+
+  // Handle Invoice PDF button click
+  const handleInvoicePDF = (bookingId: number) => {
+    // Open invoice in new tab
+    window.open(`/api/invoice/${bookingId}`, '_blank');
+  };
+
+  // Handle Edit button click
+  const handleEdit = (bookingId: number, centreId: number | undefined) => {
+    // Navigate to admin booking page with the booking selected
+    if (centreId) {
+      setLocation(`/admin/admin-booking?centreId=${centreId}&bookingId=${bookingId}`);
+    } else {
+      toast.error("Cannot edit: Centre information not available");
+    }
   };
 
   return (
@@ -252,89 +279,118 @@ export default function AdminBookings() {
                       <TableRow>
                         <TableHead>Booking Number</TableHead>
                         <TableHead>Company Name</TableHead>
-                        <TableHead>Contact Name</TableHead>
+                        <TableHead>Trading Name</TableHead>
+                        <TableHead>Centre Name</TableHead>
                         <TableHead>Category</TableHead>
-                        <TableHead>Site</TableHead>
-                        <TableHead>Dates</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Created</TableHead>
+                        <TableHead>Site Number</TableHead>
+                        <TableHead>Start Date</TableHead>
+                        <TableHead>End Date</TableHead>
+                        <TableHead>Date Entered</TableHead>
+                        <TableHead>Amended</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead className="text-right">GST</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead>Paid?</TableHead>
+                        <TableHead>Invoice PDF</TableHead>
+                        <TableHead>Edit</TableHead>
                         {selectedStatus === "pending" && <TableHead>Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredBookings.map((booking) => (
-                        <TableRow key={booking.id}>
-                          <TableCell className="font-medium">{booking.bookingNumber}</TableCell>
-                          <TableCell>
-                            <div className="font-medium">{booking.companyName || "—"}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{booking.customerName}</div>
-                              <div className="text-sm text-muted-foreground">{booking.customerEmail}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">{booking.productCategory || "—"}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{booking.siteNumber || "—"}</div>
-                              <div className="text-sm text-muted-foreground">{booking.siteName}</div>
-                              <div className="text-xs text-muted-foreground">{booking.centreName}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              <div>{format(new Date(booking.startDate), "MMM d, yyyy")}</div>
-                              <div className="text-muted-foreground">
-                                to {format(new Date(booking.endDate), "MMM d, yyyy")}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium">${booking.totalAmount}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-1">
-                              {getStatusBadge(booking.status as BookingStatus)}
-                              {booking.paymentMethod === 'invoice' && !booking.paidAt && (
-                                <Badge variant="outline" className="text-orange-600 border-orange-600 w-fit">
-                                  <DollarSign className="h-3 w-3 mr-1" />
-                                  Unpaid Invoice
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {format(new Date(booking.createdAt), "MMM d, yyyy")}
-                          </TableCell>
-                          {selectedStatus === "pending" && (
+                      {filteredBookings.map((booking) => {
+                        const amount = parseFloat(booking.totalAmount?.toString() || "0");
+                        const gst = parseFloat(booking.gstAmount?.toString() || "0");
+                        const total = amount + gst;
+                        const amended = isAmended(booking.createdAt, booking.updatedAt);
+                        const isPaid = !!booking.paidAt || booking.paymentMethod === 'stripe';
+                        
+                        return (
+                          <TableRow key={booking.id}>
+                            <TableCell className="font-medium whitespace-nowrap">{booking.bookingNumber}</TableCell>
+                            <TableCell>{booking.companyName || "—"}</TableCell>
+                            <TableCell>{booking.companyName || "—"}</TableCell>
+                            <TableCell>{booking.centreName || "—"}</TableCell>
+                            <TableCell>{booking.productCategory || "—"}</TableCell>
                             <TableCell>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleApprove(booking.id)}
-                                  className="gap-1"
-                                >
-                                  <CheckCircle className="h-3 w-3" />
-                                  Approve
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleReject(booking.id)}
-                                  className="gap-1"
-                                >
-                                  <XCircle className="h-3 w-3" />
-                                  Reject
-                                </Button>
+                              <div>
+                                <div className="font-medium">{booking.siteNumber || "—"}</div>
+                                <div className="text-sm text-muted-foreground">{booking.siteName}</div>
                               </div>
                             </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
+                            <TableCell className="whitespace-nowrap">
+                              {format(new Date(booking.startDate), "dd/MM/yy")}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {format(new Date(booking.endDate), "dd/MM/yy")}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {format(new Date(booking.createdAt), "dd/MM/yy")}
+                            </TableCell>
+                            <TableCell>
+                              {amended ? (
+                                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">Y</Badge>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right whitespace-nowrap">${amount.toFixed(2)}</TableCell>
+                            <TableCell className="text-right whitespace-nowrap">${gst.toFixed(2)}</TableCell>
+                            <TableCell className="text-right whitespace-nowrap font-medium">${total.toFixed(2)}</TableCell>
+                            <TableCell>
+                              {isPaid ? (
+                                <Badge variant="default" className="bg-green-600">Y</Badge>
+                              ) : (
+                                <Badge variant="destructive">N</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleInvoicePDF(booking.id)}
+                                className="gap-1"
+                              >
+                                <FileText className="h-3 w-3" />
+                                Invoice PDF
+                              </Button>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEdit(booking.id, booking.centreId)}
+                                className="gap-1"
+                              >
+                                <Pencil className="h-3 w-3" />
+                                Edit
+                              </Button>
+                            </TableCell>
+                            {selectedStatus === "pending" && (
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleApprove(booking.id)}
+                                    className="gap-1"
+                                  >
+                                    <CheckCircle className="h-3 w-3" />
+                                    Approve
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => handleReject(booking.id)}
+                                    className="gap-1"
+                                  >
+                                    <XCircle className="h-3 w-3" />
+                                    Reject
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>

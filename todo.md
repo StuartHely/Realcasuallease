@@ -2648,3 +2648,13 @@
 - [x] Search by booking number: exact match, show single booking
 - [x] Search by company name: partial match, show all bookings grouped by centre alphabetically
 - [x] Case-insensitive search for company names
+
+## Admin Bookings Page - Updated Headings & Buttons (Jan 27, 2026)
+- [x] Update table columns to match CSV: Booking Number, Company Name, Trading Name, Centre Name, Category, Site Number (Description under), Start Date, End Date, Date Entered, Amended, Amount, GST, Total, Paid?, Invoice PDF button, Edit button
+- [x] Add "Invoice PDF" button column - opens copy of invoice
+- [x] Add "Edit" button column - opens booking for amendment
+- [x] Add "Amended" column showing Y if booking has been modified
+- [x] Split Amount into Amount, GST, Total columns
+- [x] Add Paid? column showing Y/N status
+- [x] Add Trading Name column (using Company Name as fallback - no separate field in DB)
+- [x] Add Centre Name as separate column
