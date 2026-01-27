@@ -27,13 +27,16 @@ export default function Search() {
   
   // State for calendar date selection and expanded site tile
   const [dateSelection, setDateSelection] = useState<{
-    siteId: number;
+    siteId: number | string;
+    assetType: "casual_leasing" | "vacant_shops" | "third_line";
     startDate: Date | null;
     endDate: Date | null;
     isSelecting: boolean;
   } | null>(null);
-  const [expandedSiteId, setExpandedSiteId] = useState<number | null>(null);
+  const [expandedSiteId, setExpandedSiteId] = useState<number | string | null>(null);
   const expandedSiteRef = useRef<HTMLDivElement>(null);
+  const expandedVSRef = useRef<HTMLDivElement>(null);
+  const expandedTLIRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -81,6 +84,24 @@ export default function Search() {
   );
   const { data: thirdLineIncome } = trpc.thirdLineIncome.getByCentre.useQuery(
     { centreId: centreIds[0] || 0 },
+    { enabled: centreIds.length > 0 && (selectedAssetType === "third_line" || selectedAssetType === "all") }
+  );
+  
+  // Fetch availability calendars for VS and TLI
+  const { data: vsAvailability } = trpc.vacantShopBookings.getAvailabilityCalendar.useQuery(
+    { 
+      centreId: centreIds[0] || 0,
+      startDate: searchParams?.date || new Date(),
+      endDate: addDays(searchParams?.date || new Date(), calendarDays - 1)
+    },
+    { enabled: centreIds.length > 0 && (selectedAssetType === "vacant_shops" || selectedAssetType === "all") }
+  );
+  const { data: tliAvailability } = trpc.thirdLineBookings.getAvailabilityCalendar.useQuery(
+    { 
+      centreId: centreIds[0] || 0,
+      startDate: searchParams?.date || new Date(),
+      endDate: addDays(searchParams?.date || new Date(), calendarDays - 1)
+    },
     { enabled: centreIds.length > 0 && (selectedAssetType === "third_line" || selectedAssetType === "all") }
   );
   
@@ -431,8 +452,8 @@ export default function Search() {
 
         {data && data.centres.length > 0 && (
           <div className="space-y-8">
-            {/* Vacant Shops Section */}
-            {(selectedAssetType === "vacant_shops" || selectedAssetType === "all") && vacantShops && vacantShops.length > 0 && (
+            {/* Vacant Shops Section with Calendar */}
+            {(selectedAssetType === "vacant_shops" || selectedAssetType === "all") && vsAvailability && vsAvailability.length > 0 && (
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-2xl mb-1 flex items-center gap-2">
@@ -440,52 +461,370 @@ export default function Search() {
                     Vacant Shops at {data.centres[0]?.name}
                   </CardTitle>
                   <CardDescription>
-                    Short-term vacant shop tenancies available for weekly or monthly booking
+                    Short-term vacant shop tenancies available for weekly or monthly booking. Click on calendar dates to select your booking period.
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {vacantShops.filter((shop: any) => shop.isActive).map((shop: any) => (
-                      <Card key={`vs-${shop.id}`} className="border-green-200 bg-green-50/50">
-                        {(shop.imageUrl1 || shop.imageUrl2) && (
-                          <div className="relative h-40 overflow-hidden rounded-t-lg">
-                            <img
-                              src={shop.imageUrl1 || shop.imageUrl2}
-                              alt={`Shop ${shop.shopNumber}`}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            <Store className="h-4 w-4 text-green-600" />
-                            Shop {shop.shopNumber}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2 text-sm">
-                          {shop.totalSizeM2 && <p><span className="font-medium">Size:</span> {shop.totalSizeM2}m²</p>}
-                          {shop.dimensions && <p><span className="font-medium">Dimensions:</span> {shop.dimensions}</p>}
-                          <p><span className="font-medium">Powered:</span> {shop.powered ? "Yes" : "No"}</p>
-                          {shop.pricePerWeek && <p><span className="font-medium">Price:</span> ${shop.pricePerWeek}/week</p>}
-                          {shop.pricePerMonth && <p className="text-muted-foreground">${shop.pricePerMonth}/month</p>}
-                          {shop.description && <p className="text-muted-foreground text-xs mt-2">{shop.description}</p>}
-                          <Button
-                            size="sm"
-                            className="w-full mt-3 bg-green-600 hover:bg-green-700"
-                            onClick={() => setLocation(`/vacant-shop/${shop.id}`)}
-                          >
-                            View Details
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ))}
+                <CardContent className="pt-1">
+                  {/* Legend */}
+                  <div className="flex items-center gap-6 mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-green-500 rounded"></div>
+                      <span className="text-sm font-medium">Available</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-red-500 rounded"></div>
+                      <span className="text-sm font-medium">Booked</span>
+                    </div>
+                  </div>
+                  
+                  {/* Calendar Heatmap */}
+                  <div className="overflow-x-auto">
+                    <div className="inline-block min-w-full">
+                      <table className="w-full border-separate border-spacing-0">
+                        <thead>
+                          <tr>
+                            <th className="sticky left-0 bg-white z-10 px-3 py-2 text-left text-sm font-semibold border-b-2 border-r-2">
+                              Shop
+                            </th>
+                            {dateRange.map((date, idx) => {
+                              const isSearchedDate = searchParams && isSameDay(date, searchParams.date);
+                              const dayOfWeek = date.getDay();
+                              const isSaturday = dayOfWeek === 6;
+                              const isSunday = dayOfWeek === 0;
+                              const isWeekend = isSaturday || isSunday;
+                              const prevDate = idx > 0 ? dateRange[idx - 1] : null;
+                              const nextDate = idx < dateRange.length - 1 ? dateRange[idx + 1] : null;
+                              const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
+                              const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+                              
+                              return (
+                              <th 
+                                key={idx} 
+                                className={`px-2 py-2 text-center text-xs font-medium min-w-[80px] border border-gray-200 ${
+                                  isSearchedDate ? 'bg-blue-50' : isWeekend ? 'bg-gray-100' : ''
+                                } ${
+                                  isWeekend ? '!border-t-[3px] !border-t-green-700 !border-solid' : 'border-b-2'
+                                } ${
+                                  isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
+                                } ${
+                                  isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
+                                }`}
+                              >
+                                <div className={isWeekend ? 'font-semibold' : ''}>{format(date, "dd/MM")}</div>
+                                <div className={isWeekend ? 'text-gray-700 font-medium' : 'text-gray-500'}>{format(date, "EEE")}</div>
+                              </th>
+                              );
+                            })}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {vsAvailability.map((shop: any, shopIdx: number) => {
+                            const shopId = `vs-${shop.id}`;
+                            return (
+                            <tr key={shopId} className="hover:bg-gray-50">
+                              <td className="sticky left-0 bg-white z-10 px-3 py-2 font-medium border-r-2 border-b">
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-2">
+                                    <Store className="h-4 w-4 text-green-600" />
+                                    <span className="text-sm font-semibold">Shop {shop.shopNumber}</span>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 px-2 text-xs"
+                                      onClick={() => setLocation(`/vacant-shop/${shop.id}`)}
+                                    >
+                                      View
+                                    </Button>
+                                  </div>
+                                  <div className="flex gap-2 text-xs text-gray-600">
+                                    {shop.totalSizeM2 && <span>{shop.totalSizeM2}m²</span>}
+                                    {shop.pricePerWeek && <span>• ${shop.pricePerWeek}/week</span>}
+                                  </div>
+                                </div>
+                              </td>
+                              {dateRange.map((date, dateIdx) => {
+                                const checkDate = new Date(date);
+                                checkDate.setHours(0, 0, 0, 0);
+                                const isBooked = shop.bookings?.some((b: any) => {
+                                  const bookingStart = new Date(b.startDate);
+                                  bookingStart.setHours(0, 0, 0, 0);
+                                  const bookingEnd = new Date(b.endDate);
+                                  bookingEnd.setHours(0, 0, 0, 0);
+                                  return checkDate >= bookingStart && checkDate <= bookingEnd;
+                                });
+                                const dayOfWeek = date.getDay();
+                                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                                const prevDate = dateIdx > 0 ? dateRange[dateIdx - 1] : null;
+                                const nextDate = dateIdx < dateRange.length - 1 ? dateRange[dateIdx + 1] : null;
+                                const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
+                                const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+                                const isLastRow = shopIdx === vsAvailability.length - 1;
+                                
+                                // Check if this cell is part of the current selection
+                                const isStartDate = dateSelection?.siteId === shopId && dateSelection?.startDate && isSameDay(date, dateSelection.startDate);
+                                const isEndDate = dateSelection?.siteId === shopId && dateSelection?.endDate && isSameDay(date, dateSelection.endDate);
+                                const isInRange = dateSelection?.siteId === shopId && dateSelection?.startDate && dateSelection?.endDate &&
+                                  date >= dateSelection.startDate && date <= dateSelection.endDate;
+                                const isSelectingStart = dateSelection?.siteId === shopId && dateSelection?.isSelecting && dateSelection?.startDate && isSameDay(date, dateSelection.startDate);
+                                
+                                return (
+                                  <td 
+                                    key={dateIdx}
+                                    className={`p-0 border border-gray-200 ${
+                                      isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
+                                    } ${
+                                      isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
+                                    } ${
+                                      isWeekend && isLastRow ? '!border-b-[3px] !border-b-green-700 !border-solid' : ''
+                                    }`}
+                                    onClick={() => {
+                                      if (!isBooked) {
+                                        if (!dateSelection || dateSelection.siteId !== shopId || !dateSelection.isSelecting) {
+                                          setDateSelection({
+                                            siteId: shopId,
+                                            assetType: "vacant_shops",
+                                            startDate: date,
+                                            endDate: null,
+                                            isSelecting: true
+                                          });
+                                        } else if (dateSelection.isSelecting && dateSelection.startDate) {
+                                          const start = dateSelection.startDate;
+                                          const end = date;
+                                          const finalStart = start <= end ? start : end;
+                                          const finalEnd = start <= end ? end : start;
+                                          setDateSelection({
+                                            siteId: shopId,
+                                            assetType: "vacant_shops",
+                                            startDate: finalStart,
+                                            endDate: finalEnd,
+                                            isSelecting: false
+                                          });
+                                          setExpandedSiteId(shopId);
+                                          setTimeout(() => {
+                                            expandedVSRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                          }, 100);
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    <div 
+                                      className={`h-12 w-full relative ${
+                                        isBooked 
+                                          ? 'bg-red-500 hover:bg-red-600' 
+                                          : isInRange || isSelectingStart
+                                            ? 'bg-blue-500 hover:bg-blue-600'
+                                            : 'bg-green-500 hover:bg-green-600'
+                                      } transition-colors cursor-pointer`}
+                                      title={`Shop ${shop.shopNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : 'Available - Click to select'}`}
+                                    >
+                                      {(isStartDate || isEndDate) && (
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                          <span className="text-white text-xs font-bold">
+                                            {isStartDate && isEndDate ? 'START/END' : isStartDate ? 'START' : 'END'}
+                                          </span>
+                                        </div>
+                                      )}
+                                      {isSelectingStart && !isEndDate && (
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                          <span className="text-white text-xs font-bold">START</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  
+                  {/* Site Details Below Heatmap */}
+                  <div className="mt-8 space-y-4">
+                    <h3 className="text-lg font-semibold">Shop Details</h3>
+                    {/* Date selection instruction */}
+                    {dateSelection?.assetType === "vacant_shops" && dateSelection?.isSelecting && (
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-blue-800 font-medium flex items-center gap-2">
+                          <Calendar className="h-5 w-5" />
+                          Click on another date in the calendar above to set your end date
+                        </p>
+                      </div>
+                    )}
+                    {vsAvailability.map((shop: any) => {
+                      const shopId = `vs-${shop.id}`;
+                      const isExpanded = expandedSiteId === shopId;
+                      const hasSelectedDates = dateSelection?.siteId === shopId && dateSelection?.startDate && dateSelection?.endDate;
+                      
+                      return (
+                        <Card 
+                          key={`shop-detail-${shop.id}`} 
+                          ref={isExpanded ? expandedVSRef : null}
+                          className={`border-l-4 transition-all duration-300 ${
+                            isExpanded 
+                              ? 'border-l-blue-600 ring-2 ring-blue-300 shadow-xl' 
+                              : 'border-l-green-500'
+                          }`}
+                        >
+                          <CardHeader>
+                            <div className="flex items-start justify-between gap-4">
+                              {/* Shop Image */}
+                              <div className="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                                {shop.imageUrl1 ? (
+                                  <img
+                                    src={shop.imageUrl1}
+                                    alt={`Shop ${shop.shopNumber}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 text-center p-2">
+                                    Image coming soon
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <CardTitle className="text-lg flex items-center gap-2">
+                                    <Store className="h-5 w-5 text-green-600" />
+                                    Shop {shop.shopNumber}
+                                  </CardTitle>
+                                  {hasSelectedDates && (
+                                    <Badge className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1">
+                                      <Calendar className="h-3 w-3" />
+                                      Dates Selected
+                                    </Badge>
+                                  )}
+                                </div>
+                                <CardDescription className="mt-2">
+                                  {shop.description}
+                                </CardDescription>
+                              </div>
+                              <Button
+                                onClick={() => setLocation(`/vacant-shop/${shop.id}`)}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                View Details
+                              </Button>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <p className="text-sm">
+                                  <span className="font-semibold">Size:</span> {shop.totalSizeM2 ? `${shop.totalSizeM2}m²` : 'N/A'}
+                                </p>
+                                <p className="text-sm">
+                                  <span className="font-semibold">Dimensions:</span> {shop.dimensions || 'N/A'}
+                                </p>
+                                <p className="text-sm">
+                                  <span className="font-semibold">Powered:</span> {shop.powered ? 'Yes' : 'No'}
+                                </p>
+                              </div>
+                              <div className="space-y-2">
+                                <p className="text-sm">
+                                  <span className="font-semibold">Price:</span> ${shop.pricePerWeek}/week or ${shop.pricePerMonth}/month
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {/* Expanded Booking Section */}
+                            {hasSelectedDates && isExpanded && (
+                              <div className="mt-6 pt-6 border-t border-green-200 bg-green-50 -mx-6 -mb-6 px-6 pb-6 rounded-b-lg">
+                                <h4 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2">
+                                  <Calendar className="h-5 w-5" />
+                                  Complete Your Booking
+                                </h4>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                  <div className="space-y-3">
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-sm font-medium text-gray-700 w-24">Start Date:</span>
+                                      <span className="text-sm font-semibold text-green-800">
+                                        {dateSelection.startDate && format(dateSelection.startDate, "dd/MM/yyyy (EEE)")}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-sm font-medium text-gray-700 w-24">End Date:</span>
+                                      <span className="text-sm font-semibold text-green-800">
+                                        {dateSelection.endDate && format(dateSelection.endDate, "dd/MM/yyyy (EEE)")}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-sm font-medium text-gray-700 w-24">Duration:</span>
+                                      <span className="text-sm font-semibold text-green-800">
+                                        {dateSelection.startDate && dateSelection.endDate && 
+                                          `${Math.ceil((dateSelection.endDate.getTime() - dateSelection.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1} days`
+                                        }
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="space-y-3">
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-sm font-medium text-gray-700 w-24">Weekly Rate:</span>
+                                      <span className="text-sm font-semibold">${shop.pricePerWeek}/week</span>
+                                    </div>
+                                    {(() => {
+                                      if (!dateSelection.startDate || !dateSelection.endDate) return null;
+                                      const days = Math.ceil((dateSelection.endDate.getTime() - dateSelection.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                                      const weeks = Math.ceil(days / 7);
+                                      const subtotal = weeks * (shop.pricePerWeek || 0);
+                                      const gst = subtotal * 0.1;
+                                      const total = subtotal + gst;
+                                      return (
+                                        <>
+                                          <div className="flex items-center gap-3">
+                                            <span className="text-sm font-medium text-gray-700 w-24">Subtotal:</span>
+                                            <span className="text-sm">${subtotal.toFixed(2)} ({weeks} week{weeks > 1 ? 's' : ''})</span>
+                                          </div>
+                                          <div className="flex items-center gap-3">
+                                            <span className="text-sm font-medium text-gray-700 w-24">GST (10%):</span>
+                                            <span className="text-sm">${gst.toFixed(2)}</span>
+                                          </div>
+                                          <div className="flex items-center gap-3 pt-2 border-t border-green-300">
+                                            <span className="text-sm font-bold text-gray-700 w-24">Total:</span>
+                                            <span className="text-lg font-bold text-green-700">${total.toFixed(2)}</span>
+                                          </div>
+                                        </>
+                                      );
+                                    })()}
+                                  </div>
+                                </div>
+                                <div className="mt-6 flex gap-3">
+                                  <Button
+                                    onClick={() => {
+                                      const params = new URLSearchParams();
+                                      if (dateSelection.startDate) params.set('startDate', format(dateSelection.startDate, 'yyyy-MM-dd'));
+                                      if (dateSelection.endDate) params.set('endDate', format(dateSelection.endDate, 'yyyy-MM-dd'));
+                                      setLocation(`/vacant-shop/${shop.id}?${params.toString()}`);
+                                    }}
+                                    className="flex-1 bg-green-600 hover:bg-green-700"
+                                  >
+                                    Proceed to Book
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                      setDateSelection(null);
+                                      setExpandedSiteId(null);
+                                    }}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Third Line Income Section */}
-            {(selectedAssetType === "third_line" || selectedAssetType === "all") && thirdLineIncome && thirdLineIncome.length > 0 && (
+            {/* Third Line Income Section with Calendar */}
+            {(selectedAssetType === "third_line" || selectedAssetType === "all") && tliAvailability && tliAvailability.length > 0 && (
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-2xl mb-1 flex items-center gap-2">
@@ -493,47 +832,363 @@ export default function Search() {
                     Third Line Income at {data.centres[0]?.name}
                   </CardTitle>
                   <CardDescription>
-                    Non-tenancy assets such as vending machines, signage, and installations
+                    Non-tenancy assets such as vending machines, signage, and installations. Click on calendar dates to select your booking period.
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {thirdLineIncome.filter((asset: any) => asset.isActive).map((asset: any) => (
-                      <Card key={`3rdl-${asset.id}`} className="border-purple-200 bg-purple-50/50">
-                        {(asset.imageUrl1 || asset.imageUrl2) && (
-                          <div className="relative h-40 overflow-hidden rounded-t-lg">
-                            <img
-                              src={asset.imageUrl1 || asset.imageUrl2}
-                              alt={asset.assetNumber}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            <Zap className="h-4 w-4 text-purple-600" />
-                            {asset.assetNumber}
-                          </CardTitle>
-                          {asset.categoryName && (
-                            <Badge variant="secondary" className="w-fit">{asset.categoryName}</Badge>
-                          )}
-                        </CardHeader>
-                        <CardContent className="space-y-2 text-sm">
-                          {asset.dimensions && <p><span className="font-medium">Dimensions:</span> {asset.dimensions}</p>}
-                          <p><span className="font-medium">Powered:</span> {asset.powered ? "Yes" : "No"}</p>
-                          {asset.pricePerWeek && <p><span className="font-medium">Price:</span> ${asset.pricePerWeek}/week</p>}
-                          {asset.pricePerMonth && <p className="text-muted-foreground">${asset.pricePerMonth}/month</p>}
-                          {asset.description && <p className="text-muted-foreground text-xs mt-2">{asset.description}</p>}
-                          <Button
-                            size="sm"
-                            className="w-full mt-3 bg-purple-600 hover:bg-purple-700"
-                            onClick={() => setLocation(`/third-line/${asset.id}`)}
-                          >
-                            View Details
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ))}
+                <CardContent className="pt-1">
+                  {/* Legend */}
+                  <div className="flex items-center gap-6 mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-green-500 rounded"></div>
+                      <span className="text-sm font-medium">Available</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-red-500 rounded"></div>
+                      <span className="text-sm font-medium">Booked</span>
+                    </div>
+                  </div>
+                  
+                  {/* Calendar Heatmap */}
+                  <div className="overflow-x-auto">
+                    <div className="inline-block min-w-full">
+                      <table className="w-full border-separate border-spacing-0">
+                        <thead>
+                          <tr>
+                            <th className="sticky left-0 bg-white z-10 px-3 py-2 text-left text-sm font-semibold border-b-2 border-r-2">
+                              Asset
+                            </th>
+                            {dateRange.map((date, idx) => {
+                              const isSearchedDate = searchParams && isSameDay(date, searchParams.date);
+                              const dayOfWeek = date.getDay();
+                              const isSaturday = dayOfWeek === 6;
+                              const isSunday = dayOfWeek === 0;
+                              const isWeekend = isSaturday || isSunday;
+                              const prevDate = idx > 0 ? dateRange[idx - 1] : null;
+                              const nextDate = idx < dateRange.length - 1 ? dateRange[idx + 1] : null;
+                              const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
+                              const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+                              
+                              return (
+                              <th 
+                                key={idx} 
+                                className={`px-2 py-2 text-center text-xs font-medium min-w-[80px] border border-gray-200 ${
+                                  isSearchedDate ? 'bg-blue-50' : isWeekend ? 'bg-gray-100' : ''
+                                } ${
+                                  isWeekend ? '!border-t-[3px] !border-t-purple-700 !border-solid' : 'border-b-2'
+                                } ${
+                                  isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-purple-700 !border-solid' : ''
+                                } ${
+                                  isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-purple-700 !border-solid' : ''
+                                }`}
+                              >
+                                <div className={isWeekend ? 'font-semibold' : ''}>{format(date, "dd/MM")}</div>
+                                <div className={isWeekend ? 'text-gray-700 font-medium' : 'text-gray-500'}>{format(date, "EEE")}</div>
+                              </th>
+                              );
+                            })}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {tliAvailability.map((asset: any, assetIdx: number) => {
+                            const assetId = `tli-${asset.id}`;
+                            return (
+                            <tr key={assetId} className="hover:bg-gray-50">
+                              <td className="sticky left-0 bg-white z-10 px-3 py-2 font-medium border-r-2 border-b">
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-2">
+                                    <Zap className="h-4 w-4 text-purple-600" />
+                                    <span className="text-sm font-semibold">{asset.assetNumber}</span>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 px-2 text-xs"
+                                      onClick={() => setLocation(`/third-line/${asset.id}`)}
+                                    >
+                                      View
+                                    </Button>
+                                  </div>
+                                  <div className="flex gap-2 text-xs text-gray-600">
+                                    {asset.categoryName && <span>{asset.categoryName}</span>}
+                                    {asset.pricePerWeek && <span>• ${asset.pricePerWeek}/week</span>}
+                                  </div>
+                                </div>
+                              </td>
+                              {dateRange.map((date, dateIdx) => {
+                                const checkDate = new Date(date);
+                                checkDate.setHours(0, 0, 0, 0);
+                                const isBooked = asset.bookings?.some((b: any) => {
+                                  const bookingStart = new Date(b.startDate);
+                                  bookingStart.setHours(0, 0, 0, 0);
+                                  const bookingEnd = new Date(b.endDate);
+                                  bookingEnd.setHours(0, 0, 0, 0);
+                                  return checkDate >= bookingStart && checkDate <= bookingEnd;
+                                });
+                                const dayOfWeek = date.getDay();
+                                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                                const prevDate = dateIdx > 0 ? dateRange[dateIdx - 1] : null;
+                                const nextDate = dateIdx < dateRange.length - 1 ? dateRange[dateIdx + 1] : null;
+                                const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
+                                const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+                                const isLastRow = assetIdx === tliAvailability.length - 1;
+                                
+                                // Check if this cell is part of the current selection
+                                const isStartDate = dateSelection?.siteId === assetId && dateSelection?.startDate && isSameDay(date, dateSelection.startDate);
+                                const isEndDate = dateSelection?.siteId === assetId && dateSelection?.endDate && isSameDay(date, dateSelection.endDate);
+                                const isInRange = dateSelection?.siteId === assetId && dateSelection?.startDate && dateSelection?.endDate &&
+                                  date >= dateSelection.startDate && date <= dateSelection.endDate;
+                                const isSelectingStart = dateSelection?.siteId === assetId && dateSelection?.isSelecting && dateSelection?.startDate && isSameDay(date, dateSelection.startDate);
+                                
+                                return (
+                                  <td 
+                                    key={dateIdx}
+                                    className={`p-0 border border-gray-200 ${
+                                      isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-purple-700 !border-solid' : ''
+                                    } ${
+                                      isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-purple-700 !border-solid' : ''
+                                    } ${
+                                      isWeekend && isLastRow ? '!border-b-[3px] !border-b-purple-700 !border-solid' : ''
+                                    }`}
+                                    onClick={() => {
+                                      if (!isBooked) {
+                                        if (!dateSelection || dateSelection.siteId !== assetId || !dateSelection.isSelecting) {
+                                          setDateSelection({
+                                            siteId: assetId,
+                                            assetType: "third_line",
+                                            startDate: date,
+                                            endDate: null,
+                                            isSelecting: true
+                                          });
+                                        } else if (dateSelection.isSelecting && dateSelection.startDate) {
+                                          const start = dateSelection.startDate;
+                                          const end = date;
+                                          const finalStart = start <= end ? start : end;
+                                          const finalEnd = start <= end ? end : start;
+                                          setDateSelection({
+                                            siteId: assetId,
+                                            assetType: "third_line",
+                                            startDate: finalStart,
+                                            endDate: finalEnd,
+                                            isSelecting: false
+                                          });
+                                          setExpandedSiteId(assetId);
+                                          setTimeout(() => {
+                                            expandedTLIRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                          }, 100);
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    <div 
+                                      className={`h-12 w-full relative ${
+                                        isBooked 
+                                          ? 'bg-red-500 hover:bg-red-600' 
+                                          : isInRange || isSelectingStart
+                                            ? 'bg-purple-500 hover:bg-purple-600'
+                                            : 'bg-green-500 hover:bg-green-600'
+                                      } transition-colors cursor-pointer`}
+                                      title={`${asset.assetNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : 'Available - Click to select'}`}
+                                    >
+                                      {(isStartDate || isEndDate) && (
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                          <span className="text-white text-xs font-bold">
+                                            {isStartDate && isEndDate ? 'START/END' : isStartDate ? 'START' : 'END'}
+                                          </span>
+                                        </div>
+                                      )}
+                                      {isSelectingStart && !isEndDate && (
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                          <span className="text-white text-xs font-bold">START</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  
+                  {/* Asset Details Below Heatmap */}
+                  <div className="mt-8 space-y-4">
+                    <h3 className="text-lg font-semibold">Asset Details</h3>
+                    {/* Date selection instruction */}
+                    {dateSelection?.assetType === "third_line" && dateSelection?.isSelecting && (
+                      <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                        <p className="text-purple-800 font-medium flex items-center gap-2">
+                          <Calendar className="h-5 w-5" />
+                          Click on another date in the calendar above to set your end date
+                        </p>
+                      </div>
+                    )}
+                    {tliAvailability.map((asset: any) => {
+                      const assetId = `tli-${asset.id}`;
+                      const isExpanded = expandedSiteId === assetId;
+                      const hasSelectedDates = dateSelection?.siteId === assetId && dateSelection?.startDate && dateSelection?.endDate;
+                      
+                      return (
+                        <Card 
+                          key={`asset-detail-${asset.id}`} 
+                          ref={isExpanded ? expandedTLIRef : null}
+                          className={`border-l-4 transition-all duration-300 ${
+                            isExpanded 
+                              ? 'border-l-purple-600 ring-2 ring-purple-300 shadow-xl' 
+                              : 'border-l-purple-500'
+                          }`}
+                        >
+                          <CardHeader>
+                            <div className="flex items-start justify-between gap-4">
+                              {/* Asset Image */}
+                              <div className="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                                {asset.imageUrl1 ? (
+                                  <img
+                                    src={asset.imageUrl1}
+                                    alt={asset.assetNumber}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 text-center p-2">
+                                    Image coming soon
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <CardTitle className="text-lg flex items-center gap-2">
+                                    <Zap className="h-5 w-5 text-purple-600" />
+                                    {asset.assetNumber}
+                                  </CardTitle>
+                                  {asset.categoryName && (
+                                    <Badge variant="secondary">{asset.categoryName}</Badge>
+                                  )}
+                                  {hasSelectedDates && (
+                                    <Badge className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-1">
+                                      <Calendar className="h-3 w-3" />
+                                      Dates Selected
+                                    </Badge>
+                                  )}
+                                </div>
+                                <CardDescription className="mt-2">
+                                  {asset.description}
+                                </CardDescription>
+                              </div>
+                              <Button
+                                onClick={() => setLocation(`/third-line/${asset.id}`)}
+                                className="bg-purple-600 hover:bg-purple-700"
+                              >
+                                View Details
+                              </Button>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <p className="text-sm">
+                                  <span className="font-semibold">Dimensions:</span> {asset.dimensions || 'N/A'}
+                                </p>
+                                <p className="text-sm">
+                                  <span className="font-semibold">Powered:</span> {asset.powered ? 'Yes' : 'No'}
+                                </p>
+                              </div>
+                              <div className="space-y-2">
+                                <p className="text-sm">
+                                  <span className="font-semibold">Price:</span> ${asset.pricePerWeek}/week or ${asset.pricePerMonth}/month
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {/* Expanded Booking Section */}
+                            {hasSelectedDates && isExpanded && (
+                              <div className="mt-6 pt-6 border-t border-purple-200 bg-purple-50 -mx-6 -mb-6 px-6 pb-6 rounded-b-lg">
+                                <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2">
+                                  <Calendar className="h-5 w-5" />
+                                  Complete Your Booking
+                                </h4>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                  <div className="space-y-3">
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-sm font-medium text-gray-700 w-24">Start Date:</span>
+                                      <span className="text-sm font-semibold text-purple-800">
+                                        {dateSelection.startDate && format(dateSelection.startDate, "dd/MM/yyyy (EEE)")}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-sm font-medium text-gray-700 w-24">End Date:</span>
+                                      <span className="text-sm font-semibold text-purple-800">
+                                        {dateSelection.endDate && format(dateSelection.endDate, "dd/MM/yyyy (EEE)")}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-sm font-medium text-gray-700 w-24">Duration:</span>
+                                      <span className="text-sm font-semibold text-purple-800">
+                                        {dateSelection.startDate && dateSelection.endDate && 
+                                          `${Math.ceil((dateSelection.endDate.getTime() - dateSelection.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1} days`
+                                        }
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="space-y-3">
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-sm font-medium text-gray-700 w-24">Weekly Rate:</span>
+                                      <span className="text-sm font-semibold">${asset.pricePerWeek}/week</span>
+                                    </div>
+                                    {(() => {
+                                      if (!dateSelection.startDate || !dateSelection.endDate) return null;
+                                      const days = Math.ceil((dateSelection.endDate.getTime() - dateSelection.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                                      const weeks = Math.ceil(days / 7);
+                                      const subtotal = weeks * (asset.pricePerWeek || 0);
+                                      const gst = subtotal * 0.1;
+                                      const total = subtotal + gst;
+                                      return (
+                                        <>
+                                          <div className="flex items-center gap-3">
+                                            <span className="text-sm font-medium text-gray-700 w-24">Subtotal:</span>
+                                            <span className="text-sm">${subtotal.toFixed(2)} ({weeks} week{weeks > 1 ? 's' : ''})</span>
+                                          </div>
+                                          <div className="flex items-center gap-3">
+                                            <span className="text-sm font-medium text-gray-700 w-24">GST (10%):</span>
+                                            <span className="text-sm">${gst.toFixed(2)}</span>
+                                          </div>
+                                          <div className="flex items-center gap-3 pt-2 border-t border-purple-300">
+                                            <span className="text-sm font-bold text-gray-700 w-24">Total:</span>
+                                            <span className="text-lg font-bold text-purple-700">${total.toFixed(2)}</span>
+                                          </div>
+                                        </>
+                                      );
+                                    })()}
+                                  </div>
+                                </div>
+                                <div className="mt-6 flex gap-3">
+                                  <Button
+                                    onClick={() => {
+                                      const params = new URLSearchParams();
+                                      if (dateSelection.startDate) params.set('startDate', format(dateSelection.startDate, 'yyyy-MM-dd'));
+                                      if (dateSelection.endDate) params.set('endDate', format(dateSelection.endDate, 'yyyy-MM-dd'));
+                                      setLocation(`/third-line/${asset.id}?${params.toString()}`);
+                                    }}
+                                    className="flex-1 bg-purple-600 hover:bg-purple-700"
+                                  >
+                                    Proceed to Book
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                      setDateSelection(null);
+                                      setExpandedSiteId(null);
+                                    }}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
@@ -880,6 +1535,7 @@ export default function Search() {
                                             // Start new selection - set start date
                                             setDateSelection({
                                               siteId: site.id,
+                                              assetType: "casual_leasing",
                                               startDate: date,
                                               endDate: null,
                                               isSelecting: true
@@ -893,6 +1549,7 @@ export default function Search() {
                                             const finalEnd = start <= end ? end : start;
                                             setDateSelection({
                                               siteId: site.id,
+                                              assetType: "casual_leasing",
                                               startDate: finalStart,
                                               endDate: finalEnd,
                                               isSelecting: false

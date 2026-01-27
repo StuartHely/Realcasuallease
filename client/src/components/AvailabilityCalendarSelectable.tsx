@@ -33,6 +33,7 @@ interface DateSelection {
 interface AvailabilityCalendarSelectableProps {
   title: string;
   titleColor?: string;
+  accentColor?: 'blue' | 'green' | 'purple';
   description?: string;
   assets: Asset[];
   bookings: Booking[];
@@ -44,11 +45,13 @@ interface AvailabilityCalendarSelectableProps {
   onAssetClick?: (assetId: number) => void;
   onDateSelect?: (assetId: number, startDate: Date, endDate: Date) => void;
   enableDateSelection?: boolean;
+  assetType?: 'casual_leasing' | 'vacant_shop' | 'third_line';
 }
 
 export function AvailabilityCalendarSelectable({
   title,
   titleColor = "text-blue-900",
+  accentColor = "blue",
   description,
   assets,
   bookings,
@@ -60,7 +63,33 @@ export function AvailabilityCalendarSelectable({
   onAssetClick,
   onDateSelect,
   enableDateSelection = false,
+  assetType = "casual_leasing",
 }: AvailabilityCalendarSelectableProps) {
+  // Color classes based on accent color
+  const colorClasses = {
+    blue: {
+      selected: 'bg-blue-500 hover:bg-blue-600',
+      border: 'border-blue-300 ring-blue-200',
+      text: 'text-blue-800',
+      bg: 'bg-blue-50',
+      button: 'bg-blue-600 hover:bg-blue-700',
+    },
+    green: {
+      selected: 'bg-green-500 hover:bg-green-600',
+      border: 'border-green-300 ring-green-200',
+      text: 'text-green-800',
+      bg: 'bg-green-50',
+      button: 'bg-green-600 hover:bg-green-700',
+    },
+    purple: {
+      selected: 'bg-purple-500 hover:bg-purple-600',
+      border: 'border-purple-300 ring-purple-200',
+      text: 'text-purple-800',
+      bg: 'bg-purple-50',
+      button: 'bg-purple-600 hover:bg-purple-700',
+    },
+  };
+  const colors = colorClasses[accentColor];
   const [dateSelection, setDateSelection] = useState<DateSelection | null>(null);
   
   const monthStartDate = useMemo(
@@ -323,13 +352,13 @@ export function AvailabilityCalendarSelectable({
                       {onAssetClick ? (
                         <Button
                           variant="link"
-                          className="p-0 h-auto text-blue-600 hover:text-blue-800"
+                          className={`p-0 h-auto ${accentColor === 'green' ? 'text-green-600 hover:text-green-800' : accentColor === 'purple' ? 'text-purple-600 hover:text-purple-800' : 'text-blue-600 hover:text-blue-800'}`}
                           onClick={() => onAssetClick(asset.id)}
                         >
                           {getAssetLabel(asset)}
                         </Button>
                       ) : (
-                        <span className="text-blue-600">{getAssetLabel(asset)}</span>
+                        <span className={accentColor === 'green' ? 'text-green-600' : accentColor === 'purple' ? 'text-purple-600' : 'text-blue-600'}>{getAssetLabel(asset)}</span>
                       )}
                     </td>
                     {Array.from({ length: daysInMonth }, (_, i) => {
@@ -368,7 +397,7 @@ export function AvailabilityCalendarSelectable({
                                     isBooked
                                       ? "bg-red-500 hover:bg-red-600 cursor-not-allowed"
                                       : selectionState
-                                      ? "bg-blue-500 hover:bg-blue-600"
+                                      ? colors.selected
                                       : "bg-green-500 hover:bg-green-600"
                                   }`}
                                   title={`${getAssetLabel(asset)} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? "Booked" : "Available"}`}
@@ -422,7 +451,7 @@ export function AvailabilityCalendarSelectable({
             <span>Booked</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-4 bg-blue-500 rounded" />
+            <div className={`w-6 h-4 rounded ${colors.selected.split(' ')[0]}`} />
             <span>Selected</span>
           </div>
           <div className="flex items-center gap-2">
@@ -433,14 +462,14 @@ export function AvailabilityCalendarSelectable({
 
         {/* Booking Summary Panel */}
         {enableDateSelection && dateSelection?.startDate && dateSelection?.endDate && selectedAsset && estimate && (
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
+          <div className={`mt-6 p-4 rounded-lg border ${colors.bg} ${colors.border}`}>
+            <h4 className={`text-lg font-semibold ${colors.text} mb-4 flex items-center gap-2`}>
               <Calendar className="h-5 w-5" />
               Booking Summary
             </h4>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <p><span className="text-gray-600 font-medium">Site:</span> {getAssetLabel(selectedAsset)}</p>
+                <p><span className="text-gray-600 font-medium">{assetType === 'casual_leasing' ? 'Site' : assetType === 'vacant_shop' ? 'Shop' : 'Asset'}:</span> {getAssetLabel(selectedAsset)}</p>
                 <p><span className="text-gray-600 font-medium">Start Date:</span> {format(dateSelection.startDate, 'EEEE, d MMMM yyyy')}</p>
                 <p><span className="text-gray-600 font-medium">End Date:</span> {format(dateSelection.endDate, 'EEEE, d MMMM yyyy')}</p>
                 <p><span className="text-gray-600 font-medium">Duration:</span> {estimate.totalDays} day{estimate.totalDays > 1 ? 's' : ''}</p>
@@ -452,25 +481,28 @@ export function AvailabilityCalendarSelectable({
                 {estimate.weekends > 0 && (
                   <p><span className="text-gray-600">Weekends:</span> {estimate.weekends} × ${estimate.weekendRate.toFixed(2)} = ${(estimate.weekends * estimate.weekendRate).toFixed(2)}</p>
                 )}
-                <div className="border-t border-blue-200 pt-2 mt-2">
+                <div className={`border-t pt-2 mt-2 ${colors.border}`}>
                   <p><span className="text-gray-600">Subtotal:</span> ${estimate.subtotal.toFixed(2)}</p>
                   <p><span className="text-gray-600">GST (10%):</span> ${estimate.gst.toFixed(2)}</p>
-                  <p className="font-semibold text-blue-700 text-base"><span className="text-gray-700">Total:</span> ${estimate.total.toFixed(2)}</p>
+                  <p className={`font-semibold text-base ${colors.text}`}><span className="text-gray-700">Total:</span> ${estimate.total.toFixed(2)}</p>
                 </div>
               </div>
             </div>
             <div className="mt-4 flex gap-3">
               <Button
                 onClick={() => {
-                  if (onAssetClick && dateSelection.startDate && dateSelection.endDate) {
-                    // Navigate to site detail with dates
+                  if (dateSelection.startDate && dateSelection.endDate) {
+                    // Navigate to asset detail with dates based on asset type
                     const params = new URLSearchParams();
                     params.set('startDate', format(dateSelection.startDate, 'yyyy-MM-dd'));
                     params.set('endDate', format(dateSelection.endDate, 'yyyy-MM-dd'));
-                    window.location.href = `/site/${selectedAsset.id}?${params.toString()}`;
+                    const path = assetType === 'vacant_shop' ? `/vacant-shop/${selectedAsset.id}` 
+                      : assetType === 'third_line' ? `/third-line/${selectedAsset.id}` 
+                      : `/site/${selectedAsset.id}`;
+                    window.location.href = `${path}?${params.toString()}`;
                   }
                 }}
-                className="bg-blue-600 hover:bg-blue-700"
+                className={colors.button}
               >
                 Proceed to Book
               </Button>

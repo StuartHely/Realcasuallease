@@ -2695,3 +2695,11 @@
 - [x] Show weekday/weekend rate breakdown in booking summary
 - [x] Implement calendar date selection on CentreDetail.tsx page (state/centre navigation)
 - [x] Ensure consistent booking flow from both search and centre detail pages
+
+## Vacant Shops & Third Line Income Calendar (Jan 27, 2026)
+- [x] Add Vacant Shops availability calendar to Search.tsx results
+- [x] Add Third Line Income availability calendar to Search.tsx results
+- [x] Enable calendar date selection for Vacant Shops bookings
+- [x] Enable calendar date selection for Third Line Income bookings
+- [x] Update CentreDetail.tsx to use selectable calendars for VS and TLI
+- [x] Ensure consistent booking flow across all asset types

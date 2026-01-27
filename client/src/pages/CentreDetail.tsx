@@ -640,22 +640,32 @@ export default function CentreDetail() {
                 ))}
               </div>
               
-              {/* Vacant Shops Availability Calendar */}
+              {/* Vacant Shops Availability Calendar with Date Selection */}
               {vsMonthlyBookings && vacantShops.length > 0 && (
-                <AvailabilityCalendar
+                <AvailabilityCalendarSelectable
                   title="Vacant Shop Availability"
                   titleColor="text-green-900"
-                  description="View availability for all vacant shops at this centre"
-                  assets={vacantShops.map((shop: any) => ({ id: shop.id, shopNumber: shop.shopNumber }))}
+                  accentColor="green"
+                  description="Click on available dates to select your booking period, or click a shop number to view details"
+                  assets={vacantShops.map((shop: any) => ({
+                    id: shop.id,
+                    siteNumber: shop.shopNumber,
+                    pricePerDay: shop.pricePerWeek ? Number(shop.pricePerWeek) / 7 : 0,
+                    weekendRate: shop.pricePerWeek ? Number(shop.pricePerWeek) / 7 : 0,
+                    pricePerWeek: shop.pricePerWeek ? Number(shop.pricePerWeek) : 0,
+                  }))}
                   bookings={vsMonthlyBookings}
                   getAssetBookings={(shopId) => vsMonthlyBookings.filter((b: any) => b.vacantShopId === shopId)}
-                  getAssetLabel={(asset) => asset.shopNumber || ''}
+                  getAssetLabel={(asset) => asset.siteNumber || ''}
                   getBookingTooltip={(booking: any) => ({
                     title: 'Booked',
                     subtitle: `Ref: ${booking.bookingNumber}`,
                   })}
                   calendarMonth={calendarMonth}
                   onMonthChange={setCalendarMonth}
+                  onAssetClick={(shopId) => setLocation(`/vacant-shop/${shopId}`)}
+                  enableDateSelection={true}
+                  assetType="vacant_shop"
                 />
               )}
             </div>
@@ -757,22 +767,32 @@ export default function CentreDetail() {
                 ))}
               </div>
               
-              {/* Third Line Income Availability Calendar */}
+              {/* Third Line Income Availability Calendar with Date Selection */}
               {tliMonthlyBookings && thirdLineAssets.length > 0 && (
-                <AvailabilityCalendar
+                <AvailabilityCalendarSelectable
                   title="Third Line Availability"
                   titleColor="text-purple-900"
-                  description="View availability for all third line income assets at this centre"
-                  assets={thirdLineAssets.map((asset: any) => ({ id: asset.id, assetName: asset.assetNumber }))}
+                  accentColor="purple"
+                  description="Click on available dates to select your booking period, or click an asset number to view details"
+                  assets={thirdLineAssets.map((asset: any) => ({
+                    id: asset.id,
+                    siteNumber: asset.assetNumber,
+                    pricePerDay: asset.pricePerWeek ? Number(asset.pricePerWeek) / 7 : 0,
+                    weekendRate: asset.pricePerWeek ? Number(asset.pricePerWeek) / 7 : 0,
+                    pricePerWeek: asset.pricePerWeek ? Number(asset.pricePerWeek) : 0,
+                  }))}
                   bookings={tliMonthlyBookings}
                   getAssetBookings={(assetId) => tliMonthlyBookings.filter((b: any) => b.thirdLineIncomeId === assetId)}
-                  getAssetLabel={(asset) => asset.assetName || ''}
+                  getAssetLabel={(asset) => asset.siteNumber || ''}
                   getBookingTooltip={(booking: any) => ({
                     title: 'Booked',
                     subtitle: `Ref: ${booking.bookingNumber}`,
                   })}
                   calendarMonth={calendarMonth}
                   onMonthChange={setCalendarMonth}
+                  onAssetClick={(assetId) => setLocation(`/third-line/${assetId}`)}
+                  enableDateSelection={true}
+                  assetType="third_line"
                 />
               )}
             </div>
