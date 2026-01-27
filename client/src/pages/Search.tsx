@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,16 @@ export default function Search() {
   const [showOnlyAutoApproved, setShowOnlyAutoApproved] = useState(false);
   const [selectedAssetType, setSelectedAssetType] = useState<"casual_leasing" | "vacant_shops" | "third_line" | "all">("casual_leasing");
   const calendarDays = 14; // Fixed 14-day view
+  
+  // State for calendar date selection and expanded site tile
+  const [dateSelection, setDateSelection] = useState<{
+    siteId: number;
+    startDate: Date | null;
+    endDate: Date | null;
+    isSelecting: boolean;
+  } | null>(null);
+  const [expandedSiteId, setExpandedSiteId] = useState<number | null>(null);
+  const expandedSiteRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -862,22 +872,83 @@ export default function Search() {
                                       } ${
                                         isWeekend ? 'bg-gray-50' : ''
                                       }`}
-                                      onClick={() => setFocusedCell({ siteIndex: siteIdx, dateIndex: dateIdx })}
+                                      onClick={() => {
+                                        setFocusedCell({ siteIndex: siteIdx, dateIndex: dateIdx });
+                                        // Handle date selection for booking
+                                        if (!isBooked) {
+                                          if (!dateSelection || dateSelection.siteId !== site.id || !dateSelection.isSelecting) {
+                                            // Start new selection - set start date
+                                            setDateSelection({
+                                              siteId: site.id,
+                                              startDate: date,
+                                              endDate: null,
+                                              isSelecting: true
+                                            });
+                                          } else if (dateSelection.isSelecting && dateSelection.startDate) {
+                                            // Complete selection - set end date
+                                            const start = dateSelection.startDate;
+                                            const end = date;
+                                            // Ensure start is before end
+                                            const finalStart = start <= end ? start : end;
+                                            const finalEnd = start <= end ? end : start;
+                                            setDateSelection({
+                                              siteId: site.id,
+                                              startDate: finalStart,
+                                              endDate: finalEnd,
+                                              isSelecting: false
+                                            });
+                                            // Expand the site tile and scroll to it
+                                            setExpandedSiteId(site.id);
+                                            setTimeout(() => {
+                                              expandedSiteRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            }, 100);
+                                          }
+                                        }
+                                      }}
                                     >
-                                      <div 
-                                        className={`h-12 w-full ${
-                                          isBooked 
-                                            ? 'bg-red-500 hover:bg-red-600' 
-                                            : 'bg-green-500 hover:bg-green-600'
-                                        } transition-colors cursor-pointer`}
-                                        title={(() => {
-                                          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                                          const rate = isWeekend && site.weekendPricePerDay 
-                                            ? `$${site.weekendPricePerDay}` 
-                                            : `$${site.pricePerDay}`;
-                                          return `Site ${site.siteNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : 'Available'} - ${rate}/day`;
-                                        })()}
-                                      />
+                                      {(() => {
+                                        // Check if this cell is part of the current selection
+                                        const isStartDate = dateSelection?.siteId === site.id && dateSelection?.startDate && isSameDay(date, dateSelection.startDate);
+                                        const isEndDate = dateSelection?.siteId === site.id && dateSelection?.endDate && isSameDay(date, dateSelection.endDate);
+                                        const isInRange = dateSelection?.siteId === site.id && dateSelection?.startDate && dateSelection?.endDate &&
+                                          date >= dateSelection.startDate && date <= dateSelection.endDate;
+                                        const isSelectingStart = dateSelection?.siteId === site.id && dateSelection?.isSelecting && dateSelection?.startDate && isSameDay(date, dateSelection.startDate);
+                                        
+                                        return (
+                                          <div 
+                                            className={`h-12 w-full relative ${
+                                              isBooked 
+                                                ? 'bg-red-500 hover:bg-red-600' 
+                                                : isInRange || isSelectingStart
+                                                  ? 'bg-blue-500 hover:bg-blue-600'
+                                                  : 'bg-green-500 hover:bg-green-600'
+                                            } transition-colors cursor-pointer`}
+                                            title={(() => {
+                                              const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                                              const rate = isWeekend && site.weekendPricePerDay 
+                                                ? `$${site.weekendPricePerDay}` 
+                                                : `$${site.pricePerDay}`;
+                                              if (isSelectingStart) {
+                                                return `Start date selected - Click another date to set end date`;
+                                              }
+                                              return `Site ${site.siteNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : 'Available - Click to select'} - ${rate}/day`;
+                                            })()}
+                                          >
+                                            {(isStartDate || isEndDate) && (
+                                              <div className="absolute inset-0 flex items-center justify-center">
+                                                <span className="text-white text-xs font-bold">
+                                                  {isStartDate && isEndDate ? 'START/END' : isStartDate ? 'START' : 'END'}
+                                                </span>
+                                              </div>
+                                            )}
+                                            {isSelectingStart && !isEndDate && (
+                                              <div className="absolute inset-0 flex items-center justify-center">
+                                                <span className="text-white text-xs font-bold">START</span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })()}
                                     </td>
                                   );
                                 })}
@@ -892,16 +963,30 @@ export default function Search() {
                     {/* Site Details Below Heatmap */}
                     <div className="mt-8 space-y-4">
                       <h3 className="text-lg font-semibold">Site Details</h3>
+                      {/* Date selection instruction */}
+                      {dateSelection?.isSelecting && (
+                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <p className="text-blue-800 font-medium flex items-center gap-2">
+                            <Calendar className="h-5 w-5" />
+                            Click on another date in the calendar above to set your end date
+                          </p>
+                        </div>
+                      )}
                       {centreSites.map((site) => {
                         const availability = data.availability.find((a) => a.siteId === site.id);
+                        const isExpanded = expandedSiteId === site.id;
+                        const hasSelectedDates = dateSelection?.siteId === site.id && dateSelection?.startDate && dateSelection?.endDate;
                         
                         return (
                           <Card 
                             key={`site-detail-casual-${centre.id}-${site.id}`} 
-                            className={`border-l-4 ${
-                              isMatchedSite(site.id) 
-                                ? 'border-l-yellow-500 bg-yellow-50 shadow-lg' 
-                                : 'border-l-blue-500'
+                            ref={isExpanded ? expandedSiteRef : null}
+                            className={`border-l-4 transition-all duration-300 ${
+                              isExpanded 
+                                ? 'border-l-blue-600 ring-2 ring-blue-300 shadow-xl' 
+                                : isMatchedSite(site.id) 
+                                  ? 'border-l-yellow-500 bg-yellow-50 shadow-lg' 
+                                  : 'border-l-blue-500'
                             }`}
                           >
                             <CardHeader>
@@ -923,6 +1008,13 @@ export default function Search() {
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <CardTitle className="text-lg">Site {site.siteNumber}</CardTitle>
+                                    {/* Show selected dates badge */}
+                                    {hasSelectedDates && (
+                                      <Badge className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1">
+                                        <Calendar className="h-3 w-3" />
+                                        Dates Selected
+                                      </Badge>
+                                    )}
                                     {/* Show size match badge */}
                                     {site.sizeMatch === 'perfect' && (
                                       <Badge className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-1">
@@ -959,7 +1051,7 @@ export default function Search() {
                                   onClick={() => setLocation(`/site/${site.id}`)}
                                   className="bg-blue-600 hover:bg-blue-700"
                                 >
-                                  View Details & Book
+                                  View Details
                                 </Button>
                               </div>
                             </CardHeader>
@@ -989,6 +1081,69 @@ export default function Search() {
                                   )}
                                 </div>
                               </div>
+                              
+                              {/* Expanded Booking Section - shows when dates are selected from calendar */}
+                              {hasSelectedDates && isExpanded && (
+                                <div className="mt-6 pt-6 border-t border-blue-200 bg-blue-50 -mx-6 -mb-6 px-6 pb-6 rounded-b-lg">
+                                  <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
+                                    <Calendar className="h-5 w-5" />
+                                    Complete Your Booking
+                                  </h4>
+                                  <div className="grid md:grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                                        <div className="px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-900 font-medium">
+                                          {dateSelection.startDate ? format(dateSelection.startDate, 'EEEE, d MMMM yyyy') : '—'}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                                        <div className="px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-900 font-medium">
+                                          {dateSelection.endDate ? format(dateSelection.endDate, 'EEEE, d MMMM yyyy') : '—'}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                      <div className="p-4 bg-white rounded-lg border border-gray-200">
+                                        <h5 className="font-semibold text-gray-900 mb-2">Booking Summary</h5>
+                                        <div className="space-y-1 text-sm">
+                                          <p><span className="text-gray-600">Site:</span> {site.siteNumber}</p>
+                                          <p><span className="text-gray-600">Duration:</span> {(() => {
+                                            if (!dateSelection.startDate || !dateSelection.endDate) return '—';
+                                            const days = Math.ceil((dateSelection.endDate.getTime() - dateSelection.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                                            return `${days} day${days > 1 ? 's' : ''}`;
+                                          })()}</p>
+                                          <p><span className="text-gray-600">Rate:</span> ${site.pricePerDay}/day</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-3">
+                                        <Button
+                                          onClick={() => {
+                                            // Navigate to site detail page with pre-filled dates
+                                            const params = new URLSearchParams();
+                                            if (dateSelection.startDate) params.set('startDate', format(dateSelection.startDate, 'yyyy-MM-dd'));
+                                            if (dateSelection.endDate) params.set('endDate', format(dateSelection.endDate, 'yyyy-MM-dd'));
+                                            setLocation(`/site/${site.id}?${params.toString()}`);
+                                          }}
+                                          className="flex-1 bg-blue-600 hover:bg-blue-700"
+                                        >
+                                          Proceed to Book
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          onClick={() => {
+                                            setDateSelection(null);
+                                            setExpandedSiteId(null);
+                                          }}
+                                        >
+                                          Cancel
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </CardContent>
                           </Card>
                         );

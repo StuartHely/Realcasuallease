@@ -30,6 +30,15 @@ export default function SiteDetail() {
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  
+  // Read pre-filled dates from URL parameters (from calendar selection)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const prefillStart = urlParams.get('startDate');
+    const prefillEnd = urlParams.get('endDate');
+    if (prefillStart) setStartDate(prefillStart);
+    if (prefillEnd) setEndDate(prefillEnd);
+  }, []);
   const [usageCategoryId, setUsageCategoryId] = useState<string>("");
   const [additionalCategoryText, setAdditionalCategoryText] = useState("");
   const [customUsage, setCustomUsage] = useState("");

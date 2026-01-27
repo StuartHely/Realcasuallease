@@ -2681,3 +2681,11 @@
 ## Trading Name & Export Enhancements (Jan 27, 2026)
 - [x] Add Trading Name to booking receipts (payment confirmation)
 - [x] Implement bulk export (.xlsx) for Admin Bookings page with all columns
+
+## Calendar Date Selection in Search Results (Jan 27, 2026)
+- [x] Display site tiles below calendar with View Details button
+- [x] Allow booking via View Details with manual date entry
+- [x] Allow booking via calendar click to select start/end dates
+- [x] Auto-open site tile when dates selected on calendar
+- [x] Pre-fill start/end date fields with selected dates
+- [x] Display all site details in tile for booking completion
