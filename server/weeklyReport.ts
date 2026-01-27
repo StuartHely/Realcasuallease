@@ -132,7 +132,8 @@ export async function generateWeeklyBookingReport(centreId: number, weekCommenci
           const customer = b.customer;
           const booking = b.booking;
           
-          const companyName = customer?.companyName || 'N/A';
+          // Use Trading Name if available, otherwise Company Name
+          const businessName = customer?.tradingName || customer?.companyName || 'N/A';
           const productCategory = customer?.productCategory || 'N/A';
           const contactName = customer ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim() : 'N/A';
           const contactPhone = customer?.phone || 'N/A';
@@ -144,7 +145,7 @@ export async function generateWeeklyBookingReport(centreId: number, weekCommenci
           
           const tablesChairs = `${booking?.tablesRequested || 0} tables, ${booking?.chairsRequested || 0} chairs`;
           
-          return `${companyName}\n${productCategory}\n${contactName}\n${contactPhone}\n${contactEmail}\n${bookedDates}\n${tablesChairs}`;
+          return `${businessName}\n${productCategory}\n${contactName}\n${contactPhone}\n${contactEmail}\n${bookedDates}\n${tablesChairs}`;
         }).join('\n\n');
         
         row.push(bookingDetails);

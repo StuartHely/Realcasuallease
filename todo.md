@@ -2672,3 +2672,8 @@
 - [x] Add Trading Name column to Admin Users page
 - [x] Add Trading Name to booking confirmation emails
 - [x] Add Trading Name to bookings search functionality
+
+## Trading Name & Bug Fixes (Jan 27, 2026)
+- [x] Fix insurance expiry date type error in Admin User Management (expected string, received Date)
+- [x] Add Trading Name to invoice PDFs
+- [x] Add Trading Name to booking reports/CSV exports (weekly reports)

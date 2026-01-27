@@ -204,7 +204,7 @@ export default function AdminUsers() {
       insuranceCompany: editingFullUser.profile?.insuranceCompany || '',
       insurancePolicyNo: editingFullUser.profile?.insurancePolicyNo || '',
       insuranceAmount: editingFullUser.profile?.insuranceAmount || '',
-      insuranceExpiry: editingFullUser.profile?.insuranceExpiry || '',
+      insuranceExpiry: editingFullUser.profile?.insuranceExpiry ? (editingFullUser.profile.insuranceExpiry instanceof Date ? editingFullUser.profile.insuranceExpiry.toISOString().split('T')[0] : String(editingFullUser.profile.insuranceExpiry)) : '',
       insuranceDocumentUrl: editingFullUser.profile?.insuranceDocumentUrl || '',
     });
   };

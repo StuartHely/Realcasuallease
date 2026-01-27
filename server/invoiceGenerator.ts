@@ -60,9 +60,20 @@ export async function generateInvoicePDF(bookingId: number): Promise<string> {
   doc.setFontSize(10);
   
   let yPos = 58;
-  if (profile?.companyName) {
-    doc.text(profile.companyName, 20, yPos);
+  // Show Trading Name if available, otherwise Company Name
+  const businessName = profile?.tradingName || profile?.companyName;
+  if (businessName) {
+    doc.text(businessName, 20, yPos);
     yPos += 7;
+    // If trading name is different from company name, show company name in smaller text
+    if (profile?.tradingName && profile?.companyName && profile.tradingName !== profile.companyName) {
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`(${profile.companyName})`, 20, yPos);
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      yPos += 7;
+    }
   }
   if (customer.name) {
     doc.text(customer.name, 20, yPos);
