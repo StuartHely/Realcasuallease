@@ -523,7 +523,7 @@ export const appRouter = router({
 
     list: adminProcedure
       .input(z.object({
-        status: z.enum(["pending", "confirmed", "cancelled", "completed", "unpaid"]).optional(),
+        status: z.enum(["pending", "confirmed", "cancelled", "completed", "unpaid", "rejected"]).optional(),
       }))
       .query(async ({ input }) => {
         // Handle "unpaid" status specially - it's not a database status

@@ -751,7 +751,7 @@ export async function getBookingsByCustomerId(customerId: number) {
 }
 
 // Booking management
-export async function getBookingsByStatus(status?: "pending" | "confirmed" | "cancelled" | "completed") {
+export async function getBookingsByStatus(status?: "pending" | "confirmed" | "cancelled" | "completed" | "rejected") {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   

@@ -2722,3 +2722,8 @@
 - [x] Record status changes when booking is created, approved, rejected, cancelled
 - [x] Display booking history timeline in admin booking detail view
 - [x] Add Trading Name field to Register New User form
+
+## Bug Fix: Rejected Booking Issues (Jan 27, 2026)
+- [x] Fix rejected booking appearing under all tabs (was using 'cancelled' status value instead of 'rejected')
+- [x] Fix rejected booking incorrectly marked as paid (was a display issue - rejected bookings now properly filtered)
+- [x] Fix Rejected tab count not updating after rejection (updated statusCounts to use 'rejected' status)
