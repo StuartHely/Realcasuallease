@@ -2703,3 +2703,10 @@
 - [x] Enable calendar date selection for Third Line Income bookings
 - [x] Update CentreDetail.tsx to use selectable calendars for VS and TLI
 - [x] Ensure consistent booking flow across all asset types
+
+## Bug Fix: 404 Error on Calendar Date Selection (Jan 27, 2026)
+- [x] Fix 404 error when selecting start/end dates on calendar from search results (Bass Hill)
+- [x] Verify navigation URL is correct for site detail page
+- [x] Fixed: TypeError with weekdayRate.toFixed - ensured rates are converted to numbers
+- [x] Fixed: Date selection now restricted to same site row to prevent cross-site selection
+- [x] Tested: Calendar date selection works correctly and navigates to site detail with pre-filled dates

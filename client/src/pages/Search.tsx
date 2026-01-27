@@ -579,7 +579,8 @@ export default function Search() {
                                     }`}
                                     onClick={() => {
                                       if (!isBooked) {
-                                        if (!dateSelection || dateSelection.siteId !== shopId || !dateSelection.isSelecting) {
+                                        if (!dateSelection || dateSelection.siteId !== shopId || !dateSelection.isSelecting || dateSelection.assetType !== "vacant_shops") {
+                                          // Start new selection (or restart if different site/asset type)
                                           setDateSelection({
                                             siteId: shopId,
                                             assetType: "vacant_shops",
@@ -587,7 +588,8 @@ export default function Search() {
                                             endDate: null,
                                             isSelecting: true
                                           });
-                                        } else if (dateSelection.isSelecting && dateSelection.startDate) {
+                                        } else if (dateSelection.isSelecting && dateSelection.startDate && dateSelection.siteId === shopId) {
+                                          // Complete selection (only if same site)
                                           const start = dateSelection.startDate;
                                           const end = date;
                                           const finalStart = start <= end ? start : end;
@@ -950,7 +952,8 @@ export default function Search() {
                                     }`}
                                     onClick={() => {
                                       if (!isBooked) {
-                                        if (!dateSelection || dateSelection.siteId !== assetId || !dateSelection.isSelecting) {
+                                        if (!dateSelection || dateSelection.siteId !== assetId || !dateSelection.isSelecting || dateSelection.assetType !== "third_line") {
+                                          // Start new selection (or restart if different site/asset type)
                                           setDateSelection({
                                             siteId: assetId,
                                             assetType: "third_line",
@@ -958,7 +961,8 @@ export default function Search() {
                                             endDate: null,
                                             isSelecting: true
                                           });
-                                        } else if (dateSelection.isSelecting && dateSelection.startDate) {
+                                        } else if (dateSelection.isSelecting && dateSelection.startDate && dateSelection.siteId === assetId) {
+                                          // Complete selection (only if same site)
                                           const start = dateSelection.startDate;
                                           const end = date;
                                           const finalStart = start <= end ? start : end;
@@ -1531,8 +1535,8 @@ export default function Search() {
                                         setFocusedCell({ siteIndex: siteIdx, dateIndex: dateIdx });
                                         // Handle date selection for booking
                                         if (!isBooked) {
-                                          if (!dateSelection || dateSelection.siteId !== site.id || !dateSelection.isSelecting) {
-                                            // Start new selection - set start date
+                                          if (!dateSelection || dateSelection.siteId !== site.id || !dateSelection.isSelecting || dateSelection.assetType !== "casual_leasing") {
+                                            // Start new selection - set start date (or restart if different site/asset type)
                                             setDateSelection({
                                               siteId: site.id,
                                               assetType: "casual_leasing",
@@ -1540,8 +1544,8 @@ export default function Search() {
                                               endDate: null,
                                               isSelecting: true
                                             });
-                                          } else if (dateSelection.isSelecting && dateSelection.startDate) {
-                                            // Complete selection - set end date
+                                          } else if (dateSelection.isSelecting && dateSelection.startDate && dateSelection.siteId === site.id) {
+                                            // Complete selection - set end date (only if same site)
                                             const start = dateSelection.startDate;
                                             const end = date;
                                             // Ensure start is before end
@@ -1783,8 +1787,8 @@ export default function Search() {
                                               current.setDate(current.getDate() + 1);
                                             }
                                             const totalDays = weekdays + weekends;
-                                            const weekdayRate = site.pricePerDay || 0;
-                                            const weekendRate = site.weekendRate || weekdayRate;
+                                            const weekdayRate = Number(site.pricePerDay) || 0;
+                                            const weekendRate = Number(site.weekendRate) || weekdayRate;
                                             const subtotal = (weekdays * weekdayRate) + (weekends * weekendRate);
                                             const gst = subtotal * 0.1;
                                             const total = subtotal + gst;
