@@ -544,6 +544,7 @@ export const appRouter = router({
         const site = await db.getSiteById(booking.siteId);
         const centre = site ? await db.getShoppingCentreById(site.centreId) : null;
         const customer = await db.getUserById(booking.customerId);
+        const customerProfile = customer ? await db.getCustomerProfileByUserId(customer.id) : null;
         
         if (customer && site && centre) {
           await sendBookingConfirmationEmail({
@@ -555,6 +556,8 @@ export const appRouter = router({
             startDate: booking.startDate,
             endDate: booking.endDate,
             totalAmount: booking.totalAmount,
+            companyName: customerProfile?.companyName || undefined,
+            tradingName: customerProfile?.tradingName || undefined,
           });
         }
         
@@ -3405,6 +3408,7 @@ export const appRouter = router({
         // Send confirmation email
         try {
           if (customer.email) {
+            const customerProfile = await db.getCustomerProfileByUserId(customer.id);
             await sendBookingConfirmationEmail({
               bookingNumber,
               customerName: customer.name || 'Customer',
@@ -3414,6 +3418,8 @@ export const appRouter = router({
               startDate: input.startDate,
               endDate: input.endDate,
               totalAmount: input.totalAmount,
+              companyName: customerProfile?.companyName || undefined,
+              tradingName: customerProfile?.tradingName || undefined,
             });
           }
         } catch (emailError) {

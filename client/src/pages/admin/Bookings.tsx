@@ -79,11 +79,12 @@ export default function AdminBookings() {
       );
     }
     
-    // Company name search (partial, case-insensitive)
+    // Company name or trading name search (partial, case-insensitive)
     const lowerQuery = query.toLowerCase();
     const matchedBookings = bookings.filter((booking) => {
       const companyName = booking.companyName?.toLowerCase() || "";
-      return companyName.includes(lowerQuery);
+      const tradingName = booking.tradingName?.toLowerCase() || "";
+      return companyName.includes(lowerQuery) || tradingName.includes(lowerQuery);
     });
     
     // Sort by centre name alphabetically for company name searches
@@ -202,7 +203,7 @@ export default function AdminBookings() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search by booking number or company name..."
+            placeholder="Search by booking number, company name, or trading name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-10 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"

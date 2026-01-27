@@ -22,6 +22,8 @@ describe("Booking Notification System", () => {
     endDate: new Date("2026-06-07"),
     totalAmount: 1500.00,
     categoryName: "Food and Beverage",
+    companyName: "Doe Enterprises",
+    tradingName: "Doe's Delights",
   };
 
   describe("sendBookingConfirmationEmail", () => {
@@ -59,6 +61,29 @@ describe("Booking Notification System", () => {
     it("should handle missing category gracefully", async () => {
       const bookingWithoutCategory = { ...mockBooking, categoryName: undefined };
       const result = await sendBookingConfirmationEmail(bookingWithoutCategory);
+
+      expect(result).toBe(true);
+      expect(notification.notifyOwner).toHaveBeenCalledTimes(1);
+    });
+
+    it("should include trading name when provided", async () => {
+      await sendBookingConfirmationEmail(mockBooking);
+
+      const call = vi.mocked(notification.notifyOwner).mock.calls[0][0];
+      expect(call.content).toContain("Doe's Delights");
+    });
+
+    it("should fall back to company name when trading name is not provided", async () => {
+      const bookingWithoutTradingName = { ...mockBooking, tradingName: undefined };
+      await sendBookingConfirmationEmail(bookingWithoutTradingName);
+
+      const call = vi.mocked(notification.notifyOwner).mock.calls[0][0];
+      expect(call.content).toContain("Doe Enterprises");
+    });
+
+    it("should handle missing both company and trading name gracefully", async () => {
+      const bookingWithoutBusiness = { ...mockBooking, companyName: undefined, tradingName: undefined };
+      const result = await sendBookingConfirmationEmail(bookingWithoutBusiness);
 
       expect(result).toBe(true);
       expect(notification.notifyOwner).toHaveBeenCalledTimes(1);

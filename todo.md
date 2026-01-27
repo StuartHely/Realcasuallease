@@ -2667,3 +2667,8 @@
 - [ ] Update Admin Users page to show Trading Name field (optional - not requested)
 - [x] Update Admin Bookings page to display tradingName instead of companyName fallback
 - [x] Test complete flow
+
+## Trading Name Enhancements (Jan 27, 2026)
+- [x] Add Trading Name column to Admin Users page
+- [x] Add Trading Name to booking confirmation emails
+- [x] Add Trading Name to bookings search functionality

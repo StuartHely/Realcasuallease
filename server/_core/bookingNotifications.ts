@@ -15,6 +15,8 @@ interface BookingDetails {
   endDate: Date;
   totalAmount: string | number;
   categoryName?: string;
+  companyName?: string;
+  tradingName?: string;
 }
 
 /**
@@ -36,6 +38,9 @@ export async function sendBookingConfirmationEmail(booking: BookingDetails): Pro
       day: "numeric",
     });
 
+    // Use trading name if available, otherwise company name
+    const businessName = booking.tradingName || booking.companyName;
+    
     const emailContent = `
 Dear ${booking.customerName},
 
@@ -43,6 +48,7 @@ Great news! Your booking has been approved and confirmed.
 
 **Booking Details:**
 - Booking Number: ${booking.bookingNumber}
+${businessName ? `- Business: ${businessName}` : ""}
 - Location: ${booking.centreName} - Site ${booking.siteNumber}
 - Dates: ${startDateStr} to ${endDateStr}
 ${booking.categoryName ? `- Business Category: ${booking.categoryName}` : ""}
@@ -92,6 +98,9 @@ export async function sendBookingRejectionEmail(
       day: "numeric",
     });
 
+    // Use trading name if available, otherwise company name
+    const businessName = booking.tradingName || booking.companyName;
+    
     const emailContent = `
 Dear ${booking.customerName},
 
@@ -99,6 +108,7 @@ We regret to inform you that your booking request has been declined.
 
 **Booking Details:**
 - Booking Number: ${booking.bookingNumber}
+${businessName ? `- Business: ${businessName}` : ""}
 - Location: ${booking.centreName} - Site ${booking.siteNumber}
 - Dates: ${startDateStr} to ${endDateStr}
 ${booking.categoryName ? `- Business Category: ${booking.categoryName}` : ""}
@@ -143,12 +153,16 @@ export async function sendNewBookingNotificationToOwner(booking: BookingDetails)
       day: "numeric",
     });
 
+    // Use trading name if available, otherwise company name
+    const businessName = booking.tradingName || booking.companyName;
+    
     await notifyOwner({
       title: `New Booking Requires Approval: ${booking.bookingNumber}`,
       content: `
 A new booking is pending your approval:
 
 **Customer:** ${booking.customerName} (${booking.customerEmail})
+${businessName ? `**Business:** ${businessName}` : ""}
 **Location:** ${booking.centreName} - Site ${booking.siteNumber}
 **Dates:** ${startDateStr} to ${endDateStr}
 ${booking.categoryName ? `**Category:** ${booking.categoryName}` : ""}

@@ -142,6 +142,7 @@ export async function getAllUsers() {
       // Also include nested profile object for Edit User dialog
       profile: profile ? {
         companyName: profile.companyName,
+        tradingName: profile.tradingName,
         website: profile.website,
         abn: profile.abn,
         streetAddress: profile.streetAddress,
