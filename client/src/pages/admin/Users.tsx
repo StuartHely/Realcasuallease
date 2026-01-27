@@ -193,6 +193,7 @@ export default function AdminUsers() {
       assignedState: editingFullUser.assignedState,
       canPayByInvoice: editingFullUser.canPayByInvoice,
       companyName: editingFullUser.profile?.companyName || '',
+      tradingName: editingFullUser.profile?.tradingName || '',
       website: editingFullUser.profile?.website || '',
       abn: editingFullUser.profile?.abn || '',
       streetAddress: editingFullUser.profile?.streetAddress || '',
@@ -743,9 +744,13 @@ export default function AdminUsers() {
                   <Input value={editingFullUser.profile?.companyName || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, companyName: e.target.value } })} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">ABN</label>
-                  <Input value={editingFullUser.profile?.abn || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, abn: e.target.value } })} />
+                  <label className="text-sm font-medium">Trading Name</label>
+                  <Input placeholder="If different from company name" value={editingFullUser.profile?.tradingName || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, tradingName: e.target.value } })} />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">ABN</label>
+                <Input value={editingFullUser.profile?.abn || ""} onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, abn: e.target.value } })} />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Company Website</label>

@@ -64,24 +64,26 @@ export default function AdminBookings() {
 
   // Filter and sort bookings based on search query
   const filteredBookings = useMemo(() => {
-    if (!bookings) return [];
-    
+    // For booking number search, search across ALL bookings regardless of current tab
     const query = searchQuery.trim();
-    if (!query) return bookings;
-
-    // Check if query looks like a booking number (exact match)
-    const isBookingNumberSearch = /^[A-Z]{4}-\d{8}-\d+$/i.test(query);
+    const isBookingNumberSearch = /^[A-Z0-9]+-\d{8,}-[A-Z0-9]+$/i.test(query) || /^BK\d+[A-Z]+$/i.test(query);
     
+    // Use allBookings for booking number search to find across all statuses
+    const searchSource = isBookingNumberSearch && allBookings ? allBookings : (bookings || []);
+    
+    if (!searchSource || searchSource.length === 0) return [];
+    if (!query) return bookings || [];
+
     if (isBookingNumberSearch) {
-      // Exact match for booking number
-      return bookings.filter((booking) => 
-        booking.bookingNumber?.toUpperCase() === query.toUpperCase()
+      // Search for booking number across ALL bookings (all statuses)
+      return searchSource.filter((booking) => 
+        booking.bookingNumber?.toUpperCase().includes(query.toUpperCase())
       );
     }
     
     // Company name or trading name search (partial, case-insensitive)
     const lowerQuery = query.toLowerCase();
-    const matchedBookings = bookings.filter((booking) => {
+    const matchedBookings = (bookings || []).filter((booking) => {
       const companyName = booking.companyName?.toLowerCase() || "";
       const tradingName = booking.tradingName?.toLowerCase() || "";
       return companyName.includes(lowerQuery) || tradingName.includes(lowerQuery);
@@ -149,7 +151,7 @@ export default function AdminBookings() {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", icon: any, label: string }> = {
       pending: { variant: "secondary" as const, icon: Clock, label: "Pending" },
       confirmed: { variant: "default" as const, icon: CheckCircle, label: "Confirmed" },
-      cancelled: { variant: "destructive" as const, icon: XCircle, label: "Cancelled" },
+      cancelled: { variant: "destructive" as const, icon: XCircle, label: "Rejected" },
       completed: { variant: "outline" as const, icon: CheckCircle, label: "Completed" },
     };
 
@@ -332,7 +334,7 @@ export default function AdminBookings() {
           </TabsTrigger>
           <TabsTrigger value="cancelled">
             <XCircle className="h-4 w-4 mr-2" />
-            Cancelled
+            Rejected
             <span className="ml-1.5 text-xs opacity-70">({statusCounts.cancelled})</span>
           </TabsTrigger>
           <TabsTrigger value="completed">

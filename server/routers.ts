@@ -1874,6 +1874,7 @@ export const appRouter = router({
         canPayByInvoice: z.boolean().optional(),
         // Company details
         companyName: z.string().optional(),
+        tradingName: z.string().optional(),
         website: z.string().optional(),
         abn: z.string().optional(),
         streetAddress: z.string().optional(),
@@ -1914,6 +1915,7 @@ export const appRouter = router({
         // Update or create customer profile
         const profileUpdates: any = {};
         if (input.companyName !== undefined) profileUpdates.companyName = input.companyName || null;
+        if (input.tradingName !== undefined) profileUpdates.tradingName = input.tradingName || null;
         if (input.website !== undefined) profileUpdates.website = input.website || null;
         if (input.abn !== undefined) profileUpdates.abn = input.abn || null;
         if (input.streetAddress !== undefined) profileUpdates.streetAddress = input.streetAddress || null;

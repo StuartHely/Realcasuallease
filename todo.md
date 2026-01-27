@@ -2710,3 +2710,9 @@
 - [x] Fixed: TypeError with weekdayRate.toFixed - ensured rates are converted to numbers
 - [x] Fixed: Date selection now restricted to same site row to prevent cross-site selection
 - [x] Tested: Calendar date selection works correctly and navigates to site detail with pre-filled dates
+
+## Admin Bookings & User Enhancements (Jan 27, 2026)
+- [x] Rename "Cancelled" tab/heading to "Rejected" in Admin Bookings
+- [x] Ensure rejected bookings appear under the Rejected tab
+- [x] Fix search to find rejected bookings by booking number (now searches across ALL statuses)
+- [x] Add Trading Name field to Edit User page (Company Details section)
