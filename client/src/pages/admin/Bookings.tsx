@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Clock, DollarSign, Search, X, FileText, Pencil } from "lucide-react";
+import { CheckCircle, XCircle, Clock, DollarSign, Search, X, FileText, Pencil, Download } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -189,6 +189,95 @@ export default function AdminBookings() {
     }
   };
 
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Handle export to Excel
+  const handleExportExcel = async () => {
+    if (!filteredBookings || filteredBookings.length === 0) {
+      toast.error("No bookings to export");
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      // Dynamically import ExcelJS
+      const ExcelJS = (await import('exceljs')).default;
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Bookings');
+
+      // Define columns matching the table
+      worksheet.columns = [
+        { header: 'Booking Number', key: 'bookingNumber', width: 25 },
+        { header: 'Company Name', key: 'companyName', width: 25 },
+        { header: 'Trading Name', key: 'tradingName', width: 25 },
+        { header: 'Centre Name', key: 'centreName', width: 25 },
+        { header: 'Category', key: 'category', width: 20 },
+        { header: 'Site Number', key: 'siteNumber', width: 15 },
+        { header: 'Site Description', key: 'siteDescription', width: 30 },
+        { header: 'Start Date', key: 'startDate', width: 15 },
+        { header: 'End Date', key: 'endDate', width: 15 },
+        { header: 'Date Entered', key: 'dateEntered', width: 15 },
+        { header: 'Amended', key: 'amended', width: 10 },
+        { header: 'Amount', key: 'amount', width: 12 },
+        { header: 'GST', key: 'gst', width: 12 },
+        { header: 'Total', key: 'total', width: 12 },
+        { header: 'Paid?', key: 'paid', width: 8 },
+        { header: 'Status', key: 'status', width: 12 },
+      ];
+
+      // Style header row
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' },
+      };
+
+      // Add data rows
+      filteredBookings.forEach((booking) => {
+        const subtotal = Number(booking.totalAmount || 0) - Number(booking.gstAmount || 0);
+        worksheet.addRow({
+          bookingNumber: booking.bookingNumber || '',
+          companyName: booking.companyName || '',
+          tradingName: booking.tradingName || booking.companyName || '',
+          centreName: booking.centreName || '',
+          category: booking.productCategory || '',
+          siteNumber: booking.siteNumber || '',
+          siteDescription: booking.siteName || '',
+          startDate: booking.startDate ? format(new Date(booking.startDate), 'dd/MM/yy') : '',
+          endDate: booking.endDate ? format(new Date(booking.endDate), 'dd/MM/yy') : '',
+          dateEntered: booking.createdAt ? format(new Date(booking.createdAt), 'dd/MM/yy') : '',
+          amended: isAmended(booking.createdAt, booking.updatedAt) ? 'Y' : '',
+          amount: `$${subtotal.toFixed(2)}`,
+          gst: `$${Number(booking.gstAmount || 0).toFixed(2)}`,
+          total: `$${Number(booking.totalAmount || 0).toFixed(2)}`,
+          paid: booking.paidAt ? 'Y' : 'N',
+          status: booking.status || '',
+        });
+      });
+
+      // Generate and download file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const dateStr = format(new Date(), 'yyyy-MM-dd');
+      link.download = `bookings-export-${dateStr}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Exported ${filteredBookings.length} bookings to Excel`);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export bookings');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -199,23 +288,33 @@ export default function AdminBookings() {
             Review and manage booking requests from customers
           </p>
         </div>
-        <div className="relative w-80">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search by booking number, company name, or trading name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+        <div className="flex items-center gap-3">
+          <div className="relative w-80">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search by booking number, company name, or trading name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-10 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <Button
+            variant="outline"
+            onClick={handleExportExcel}
+            disabled={isExporting || !filteredBookings || filteredBookings.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {isExporting ? 'Exporting...' : 'Export Excel'}
+          </Button>
         </div>
       </div>
 

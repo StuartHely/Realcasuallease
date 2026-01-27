@@ -2677,3 +2677,7 @@
 - [x] Fix insurance expiry date type error in Admin User Management (expected string, received Date)
 - [x] Add Trading Name to invoice PDFs
 - [x] Add Trading Name to booking reports/CSV exports (weekly reports)
+
+## Trading Name & Export Enhancements (Jan 27, 2026)
+- [x] Add Trading Name to booking receipts (payment confirmation)
+- [x] Implement bulk export (.xlsx) for Admin Bookings page with all columns

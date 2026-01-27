@@ -1162,6 +1162,32 @@ export async function recordPayment(bookingId: number, recordedBy: string) {
     createdAt: new Date(),
   });
   
+  // Send payment receipt email
+  try {
+    const customer = await getUserById(booking.customerId);
+    const customerProfile = customer ? await getCustomerProfileByUserId(customer.id) : null;
+    
+    if (customer && customer.email) {
+      const { sendPaymentReceiptEmail } = await import('./_core/bookingNotifications');
+      await sendPaymentReceiptEmail({
+        bookingNumber: booking.bookingNumber,
+        customerName: customer.name || 'Customer',
+        customerEmail: customer.email,
+        centreName: centre.name,
+        siteNumber: site.siteNumber,
+        startDate: booking.startDate,
+        endDate: booking.endDate,
+        totalAmount: booking.totalAmount,
+        companyName: customerProfile?.companyName || undefined,
+        tradingName: customerProfile?.tradingName || undefined,
+        paidAt: new Date(),
+      });
+    }
+  } catch (emailError) {
+    console.error('[recordPayment] Failed to send receipt email:', emailError);
+    // Don't fail the payment recording if email fails
+  }
+  
   return { success: true };
 }
 

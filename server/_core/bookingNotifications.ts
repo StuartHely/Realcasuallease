@@ -362,6 +362,83 @@ Real Casual Leasing Team
 }
 
 /**
+ * Send payment receipt email to customer after payment is recorded
+ */
+export async function sendPaymentReceiptEmail(booking: {
+  bookingNumber: string;
+  customerName: string;
+  customerEmail: string;
+  centreName: string;
+  siteNumber: string;
+  startDate: Date;
+  endDate: Date;
+  totalAmount: string | number;
+  companyName?: string;
+  tradingName?: string;
+  paidAt: Date;
+}): Promise<boolean> {
+  try {
+    const startDateStr = new Date(booking.startDate).toLocaleDateString("en-AU", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    
+    const endDateStr = new Date(booking.endDate).toLocaleDateString("en-AU", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    const paidAtStr = new Date(booking.paidAt).toLocaleDateString("en-AU", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    // Use trading name if available, otherwise company name
+    const businessName = booking.tradingName || booking.companyName;
+    
+    const emailContent = `
+Dear ${booking.customerName},
+
+Thank you for your payment. This is your receipt for the completed transaction.
+
+**Payment Receipt**
+- Receipt Number: ${booking.bookingNumber}
+- Payment Date: ${paidAtStr}
+- Amount Paid: $${Number(booking.totalAmount).toFixed(2)}
+
+**Booking Details:**
+- Booking Number: ${booking.bookingNumber}
+${businessName ? `- Business: ${businessName}` : ""}
+- Location: ${booking.centreName} - Site ${booking.siteNumber}
+- Dates: ${startDateStr} to ${endDateStr}
+
+Your payment has been successfully processed. Please keep this receipt for your records.
+
+If you have any questions, please contact us.
+
+Best regards,
+Casual Lease Team
+    `.trim();
+
+    await notifyOwner({
+      title: `Payment Receipt: ${booking.bookingNumber}`,
+      content: `Customer: ${booking.customerEmail}\n\n${emailContent}`,
+    });
+
+    return true;
+  } catch (error) {
+    console.error("[BookingNotifications] Failed to send payment receipt email:", error);
+    return false;
+  }
+}
+
+/**
  * Send VS/3rdL booking rejection email
  */
 export async function sendVSThirdLineRejectionEmail(
