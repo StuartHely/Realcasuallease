@@ -37,6 +37,7 @@ export default function Profile() {
     lastName: "",
     phone: "",
     companyName: "",
+    tradingName: "",
     website: "",
     abn: "",
     streetAddress: "",
@@ -62,6 +63,7 @@ export default function Profile() {
         lastName: profile.lastName || "",
         phone: profile.phone || "",
         companyName: profile.companyName || "",
+        tradingName: profile.tradingName || "",
         website: profile.website || "",
         abn: profile.abn || "",
         streetAddress: profile.streetAddress || "",
@@ -358,6 +360,16 @@ export default function Profile() {
                       name="companyName"
                       value={formData.companyName}
                       onChange={handleChange}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="tradingName">Trading Name</Label>
+                    <Input
+                      id="tradingName"
+                      name="tradingName"
+                      value={formData.tradingName}
+                      onChange={handleChange}
+                      placeholder="If different from company name"
                     />
                   </div>
                   <div>

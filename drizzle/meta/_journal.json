@@ -239,6 +239,13 @@
       "when": 1769134288602,
       "tag": "0033_cheerful_gauntlet",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "5",
+      "when": 1769488188079,
+      "tag": "0034_faulty_cable",
+      "breakpoints": true
     }
   ]
 }

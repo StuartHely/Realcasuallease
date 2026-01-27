@@ -2658,3 +2658,12 @@
 - [x] Add Paid? column showing Y/N status
 - [x] Add Trading Name column (using Company Name as fallback - no separate field in DB)
 - [x] Add Centre Name as separate column
+
+## Trading Name Field Addition (Jan 27, 2026)
+- [x] Add tradingName field to customer_profiles table schema
+- [x] Run database migration
+- [x] Update getBookingsByStatus to include tradingName
+- [x] Update Profile page to show Trading Name field
+- [ ] Update Admin Users page to show Trading Name field (optional - not requested)
+- [x] Update Admin Bookings page to display tradingName instead of companyName fallback
+- [x] Test complete flow

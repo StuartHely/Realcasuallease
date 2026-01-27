@@ -37,6 +37,7 @@ export const customerProfiles = mysqlTable("customer_profiles", {
   lastName: varchar("lastName", { length: 100 }),
   phone: varchar("phone", { length: 20 }),
   companyName: varchar("companyName", { length: 255 }),
+  tradingName: varchar("tradingName", { length: 255 }),
   website: varchar("website", { length: 255 }),
   abn: varchar("abn", { length: 11 }),
   streetAddress: text("streetAddress"),

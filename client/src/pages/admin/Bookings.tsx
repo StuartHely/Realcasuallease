@@ -308,7 +308,7 @@ export default function AdminBookings() {
                           <TableRow key={booking.id}>
                             <TableCell className="font-medium whitespace-nowrap">{booking.bookingNumber}</TableCell>
                             <TableCell>{booking.companyName || "—"}</TableCell>
-                            <TableCell>{booking.companyName || "—"}</TableCell>
+                            <TableCell>{booking.tradingName || booking.companyName || "—"}</TableCell>
                             <TableCell>{booking.centreName || "—"}</TableCell>
                             <TableCell>{booking.productCategory || "—"}</TableCell>
                             <TableCell>
