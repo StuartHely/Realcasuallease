@@ -68,6 +68,8 @@ export default function AdminBooking() {
     chairsRequested: 0,
     totalAmount: "",
     adminComments: "",
+    startDate: null as Date | null,
+    endDate: null as Date | null,
   });
 
   // Queries
@@ -242,6 +244,8 @@ export default function AdminBooking() {
       chairsRequested: booking.chairsRequested,
       totalAmount: "", // Will be loaded from booking details
       adminComments: "",
+      startDate: new Date(booking.startDate),
+      endDate: new Date(booking.endDate),
     });
     setShowEditDialog(true);
   };
@@ -789,6 +793,8 @@ export default function AdminBooking() {
                 onSave={() => {
                   updateBookingMutation.mutate({
                     bookingId: editingBookingId,
+                    startDate: editFormData.startDate || undefined,
+                    endDate: editFormData.endDate || undefined,
                     tablesRequested: editFormData.tablesRequested,
                     chairsRequested: editFormData.chairsRequested,
                     totalAmount: editFormData.totalAmount ? parseFloat(editFormData.totalAmount) : undefined,
@@ -870,7 +876,7 @@ function EditBookingContent({
   isPending,
 }: {
   bookingId: number;
-  editFormData: { tablesRequested: number; chairsRequested: number; totalAmount: string; adminComments: string };
+  editFormData: { tablesRequested: number; chairsRequested: number; totalAmount: string; adminComments: string; startDate: Date | null; endDate: Date | null };
   setEditFormData: React.Dispatch<React.SetStateAction<typeof editFormData>>;
   onSave: () => void;
   onCancel: () => void;
@@ -887,6 +893,8 @@ function EditBookingContent({
         chairsRequested: bookingDetails.chairsRequested || 0,
         totalAmount: bookingDetails.totalAmount || "",
         adminComments: bookingDetails.adminComments || "",
+        startDate: new Date(bookingDetails.startDate),
+        endDate: new Date(bookingDetails.endDate),
       });
     }
   }, [bookingDetails, setEditFormData]);
@@ -906,10 +914,6 @@ function EditBookingContent({
         <div><strong>Booking #:</strong> {bookingDetails.bookingNumber}</div>
         <div><strong>Centre:</strong> {bookingDetails.centreName}</div>
         <div><strong>Site:</strong> {bookingDetails.siteNumber}</div>
-        <div>
-          <strong>Dates:</strong> {format(new Date(bookingDetails.startDate), "dd/MM/yyyy")} -{" "}
-          {format(new Date(bookingDetails.endDate), "dd/MM/yyyy")}
-        </div>
         <div><strong>Customer:</strong> {bookingDetails.companyName || bookingDetails.customerName}</div>
         <div><strong>Status:</strong> <span className={cn(
           "px-2 py-0.5 rounded text-xs font-medium",
@@ -917,6 +921,79 @@ function EditBookingContent({
           bookingDetails.status === "cancelled" && "bg-red-100 text-red-800",
           bookingDetails.status === "pending" && "bg-yellow-100 text-yellow-800"
         )}>{bookingDetails.status}</span></div>
+      </div>
+
+      {/* Editable Dates */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Start Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !editFormData.startDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {editFormData.startDate ? format(editFormData.startDate, "dd/MM/yyyy") : "Select date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={editFormData.startDate || undefined}
+                onSelect={(date) => {
+                  if (date) {
+                    setEditFormData(prev => ({
+                      ...prev,
+                      startDate: date,
+                      // If end date is before new start date, update it
+                      endDate: prev.endDate && prev.endDate < date ? date : prev.endDate
+                    }));
+                  }
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div>
+          <Label>End Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !editFormData.endDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {editFormData.endDate ? format(editFormData.endDate, "dd/MM/yyyy") : "Select date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={editFormData.endDate || undefined}
+                onSelect={(date) => {
+                  if (date) {
+                    setEditFormData(prev => ({
+                      ...prev,
+                      endDate: date,
+                      // If start date is after new end date, update it
+                      startDate: prev.startDate && prev.startDate > date ? date : prev.startDate
+                    }));
+                  }
+                }}
+                disabled={(date) => editFormData.startDate ? date < editFormData.startDate : false}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       {/* Status History Timeline */}

@@ -2756,3 +2756,11 @@
 - [x] Need to fix the navigation to pass booking ID and load existing booking for editing
 - [x] Added URL parameter parsing for centreId and bookingId
 - [x] Auto-load centre and open edit dialog when navigating from Booking Management
+
+## Edit Booking Dates Feature (Jan 28, 2026)
+- [x] Add start date picker to Edit Booking dialog
+- [x] Add end date picker to Edit Booking dialog
+- [x] Update backend adminBooking.update mutation to accept startDate and endDate (already supported)
+- [x] Validate date changes (end date must be after start date) - UI prevents invalid selection
+- [x] Check for booking conflicts when dates are changed (backend already checks)
+- [x] Recalculate booking cost when dates change (admin can manually adjust total amount)
