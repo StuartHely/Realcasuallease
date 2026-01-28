@@ -3570,6 +3570,51 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.getBookingStatusHistory(input.bookingId);
       }),
+
+    // Calculate price for a site and date range
+    calculatePrice: adminProcedure
+      .input(z.object({
+        siteId: z.number(),
+        startDate: z.string(), // YYYY-MM-DD format
+        endDate: z.string(),   // YYYY-MM-DD format
+      }))
+      .query(async ({ input }) => {
+        const site = await db.getSiteById(input.siteId);
+        if (!site) throw new TRPCError({ code: 'NOT_FOUND', message: 'Site not found' });
+
+        const { calculateBookingCost } = await import('./bookingCalculation');
+        const startDate = new Date(input.startDate + 'T00:00:00Z');
+        const endDate = new Date(input.endDate + 'T00:00:00Z');
+        
+        const result = await calculateBookingCost(site, startDate, endDate);
+        
+        // Get GST rate from config
+        const gstValue = await getConfigValue('gst_percentage');
+        const gstRate = gstValue ? Number(gstValue) / 100 : 0.1;
+        const gstAmount = result.totalAmount * gstRate;
+        const totalWithGst = result.totalAmount + gstAmount;
+        
+        // Calculate total days
+        const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const weeks = Math.floor(totalDays / 7);
+        const remainingDays = totalDays % 7;
+        
+        return {
+          baseAmount: result.totalAmount,
+          gstAmount,
+          gstRate: gstRate * 100,
+          totalWithGst,
+          totalDays,
+          weeks,
+          remainingDays,
+          weekdayCount: result.weekdayCount,
+          weekendCount: result.weekendCount,
+          dailyRate: site.pricePerDay,
+          weeklyRate: site.pricePerWeek,
+          weekendRate: site.weekendPricePerDay,
+          seasonalDays: result.seasonalDays,
+        };
+      }),
   }),
 });
 

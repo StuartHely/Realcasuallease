@@ -2764,3 +2764,11 @@
 - [x] Validate date changes (end date must be after start date) - UI prevents invalid selection
 - [x] Check for booking conflicts when dates are changed (backend already checks)
 - [x] Recalculate booking cost when dates change (admin can manually adjust total amount)
+
+## Auto-Recalculate Pricing on Date Change (Jan 28, 2026)
+- [x] Create backend endpoint to calculate pricing based on site rates and date range
+- [x] Include daily rate, weekly rate, and seasonal pricing in calculation
+- [x] Apply GST to calculated amount
+- [x] Update EditBookingContent to call pricing endpoint when dates change
+- [x] Display calculated price with breakdown (days, weeks, rate applied)
+- [x] Allow admin to override calculated price if needed

@@ -882,8 +882,22 @@ function EditBookingContent({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const [showPriceBreakdown, setShowPriceBreakdown] = useState(false);
+  const [datesChanged, setDatesChanged] = useState(false);
   const { data: bookingDetails, isLoading } = trpc.adminBooking.getBookingDetails.useQuery({ bookingId });
   const { data: statusHistory } = trpc.adminBooking.getStatusHistory.useQuery({ bookingId });
+  
+  // Calculate price when dates change
+  const { data: calculatedPrice, isLoading: isPriceLoading } = trpc.adminBooking.calculatePrice.useQuery(
+    {
+      siteId: bookingDetails?.siteId || 0,
+      startDate: editFormData.startDate ? format(editFormData.startDate, "yyyy-MM-dd") : "",
+      endDate: editFormData.endDate ? format(editFormData.endDate, "yyyy-MM-dd") : "",
+    },
+    {
+      enabled: !!bookingDetails?.siteId && !!editFormData.startDate && !!editFormData.endDate && datesChanged,
+    }
+  );
 
   // Initialize form data when booking details load
   useEffect(() => {
@@ -952,6 +966,7 @@ function EditBookingContent({
                       // If end date is before new start date, update it
                       endDate: prev.endDate && prev.endDate < date ? date : prev.endDate
                     }));
+                    setDatesChanged(true);
                   }
                 }}
                 initialFocus
@@ -986,6 +1001,7 @@ function EditBookingContent({
                       // If start date is after new end date, update it
                       startDate: prev.startDate && prev.startDate > date ? date : prev.startDate
                     }));
+                    setDatesChanged(true);
                   }
                 }}
                 disabled={(date) => editFormData.startDate ? date < editFormData.startDate : false}
@@ -1068,8 +1084,68 @@ function EditBookingContent({
         </div>
       </div>
 
-      <div>
-        <Label>Total Amount ($)</Label>
+      {/* Price Calculation */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label>Total Amount ($)</Label>
+          {datesChanged && calculatedPrice && (
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              className="h-auto p-0 text-xs"
+              onClick={() => setShowPriceBreakdown(!showPriceBreakdown)}
+            >
+              {showPriceBreakdown ? "Hide breakdown" : "Show breakdown"}
+            </Button>
+          )}
+        </div>
+        
+        {/* Show calculated price when dates changed */}
+        {datesChanged && calculatedPrice && (
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-blue-800">Calculated Price:</span>
+              <span className="font-bold text-blue-900">${calculatedPrice.baseAmount.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between text-blue-700">
+              <span>+ GST ({calculatedPrice.gstRate}%):</span>
+              <span>${calculatedPrice.gstAmount.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between border-t border-blue-200 pt-2">
+              <span className="font-semibold text-blue-900">Total (inc. GST):</span>
+              <span className="font-bold text-blue-900">${calculatedPrice.totalWithGst.toFixed(2)}</span>
+            </div>
+            
+            {showPriceBreakdown && (
+              <div className="mt-2 pt-2 border-t border-blue-200 text-xs text-blue-700 space-y-1">
+                <div><strong>Duration:</strong> {calculatedPrice.totalDays} days ({calculatedPrice.weekdayCount} weekdays, {calculatedPrice.weekendCount} weekend days)</div>
+                {calculatedPrice.weeks > 0 && (
+                  <div><strong>Weekly rate applied:</strong> {calculatedPrice.weeks} week(s) + {calculatedPrice.remainingDays} day(s)</div>
+                )}
+                <div><strong>Site rates:</strong> ${calculatedPrice.dailyRate}/day, ${calculatedPrice.weeklyRate}/week</div>
+                {calculatedPrice.weekendRate && <div><strong>Weekend rate:</strong> ${calculatedPrice.weekendRate}/day</div>}
+              </div>
+            )}
+            
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full mt-2"
+              onClick={() => setEditFormData(prev => ({ ...prev, totalAmount: calculatedPrice.baseAmount.toFixed(2) }))}
+            >
+              Apply calculated price (${calculatedPrice.baseAmount.toFixed(2)})
+            </Button>
+          </div>
+        )}
+        
+        {isPriceLoading && datesChanged && (
+          <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+            Calculating price...
+          </div>
+        )}
+        
         <Input
           type="number"
           step="0.01"
@@ -1078,7 +1154,11 @@ function EditBookingContent({
           onChange={(e) => setEditFormData(prev => ({ ...prev, totalAmount: e.target.value }))}
           placeholder={bookingDetails.totalAmount}
         />
-        <p className="text-xs text-muted-foreground mt-1">Leave empty to keep current amount</p>
+        <p className="text-xs text-muted-foreground">
+          {datesChanged 
+            ? "Enter amount manually or click 'Apply calculated price' above" 
+            : "Leave empty to keep current amount"}
+        </p>
       </div>
 
       <div>
