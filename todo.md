@@ -2792,3 +2792,9 @@
 - [x] Show toast notification indicating booking was amended successfully
 - [x] Add standard admin menu (DashboardLayout) to Admin Booking page (already has DashboardLayout)
 - [x] Ensure consistent navigation across all admin pages
+
+## Admin Booking Page - Full Standard Menu (Jan 29, 2026)
+- [x] Admin Booking page should have the same full menu as other admin pages
+- [x] Include Operations section with Bookings, Admin Booking links
+- [x] Include all standard admin menu items (Users, Settings, etc.)
+- [x] Changed from DashboardLayout to AdminLayout for full menu support
