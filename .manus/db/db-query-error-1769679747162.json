@@ -1,0 +1,8 @@
+{
+  "query": "SELECT s.id, s.site_number, s.description, sc.name as centre_name, uc.name as category_name\nFROM sites s\nLEFT JOIN shopping_centres sc ON s.centre_id = sc.id\nLEFT JOIN site_usage_categories suc ON s.id = suc.site_id\nLEFT JOIN usage_categories uc ON suc.category_id = uc.id\nWHERE sc.name LIKE '%Eastgate%' AND s.site_number = '2'\nORDER BY s.id, uc.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT s.id, s.site_number, s.description, sc.name as centre_name, uc.name as category_name\nFROM sites s\nLEFT JOIN shopping_centres sc ON s.centre_id = sc.id\nLEFT JOIN site_usage_categories suc ON s.id = suc.site_id\nLEFT JOIN usage_categories uc ON suc.category_id = uc.id\nWHERE sc.name LIKE '%Eastgate%' AND s.site_number = '2'\nORDER BY s.id, uc.name;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 's.centre_id' in 'on clause'"
+  ]
+}

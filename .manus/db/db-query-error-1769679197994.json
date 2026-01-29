@@ -1,0 +1,8 @@
+{
+  "query": "SELECT s.id, s.site_number, s.description, sc.name as centreName, \n       GROUP_CONCAT(uc.name SEPARATOR ', ') as permittedCategories\nFROM sites s\nJOIN shopping_centres sc ON s.centreId = sc.id\nLEFT JOIN site_usage_categories suc ON s.id = suc.siteId\nLEFT JOIN usage_categories uc ON suc.categoryId = uc.id\nWHERE sc.name LIKE '%Eastgate%' AND s.site_number = '2'\nGROUP BY s.id, s.site_number, s.description, sc.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT s.id, s.site_number, s.description, sc.name as centreName, \n       GROUP_CONCAT(uc.name SEPARATOR ', ') as permittedCategories\nFROM sites s\nJOIN shopping_centres sc ON s.centreId = sc.id\nLEFT JOIN site_usage_categories suc ON s.id = suc.siteId\nLEFT JOIN usage_categories uc ON suc.categoryId = uc.id\nWHERE sc.name LIKE '%Eastgate%' AND s.site_number = '2'\nGROUP BY s.id, s.site_number, s.description, sc.name;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 's.site_number' in 'group statement'"
+  ]
+}

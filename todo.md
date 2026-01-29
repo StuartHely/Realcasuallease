@@ -2772,3 +2772,17 @@
 - [x] Update EditBookingContent to call pricing endpoint when dates change
 - [x] Display calculated price with breakdown (days, weeks, rate applied)
 - [x] Allow admin to override calculated price if needed
+
+## Bug Fix: Search Results Showing Sites That Don't Permit Category (Jan 29, 2026)
+- [ ] Search for "Charity Bondi" returns Site 2 at Eastgate which doesn't permit charities
+- [ ] Search should filter out sites that don't allow the searched category
+- [ ] Investigate AI search query parsing and category filtering logic
+- [ ] Update search to check site's permitted categories before including in results
+
+## Bug Fix: "Charity at Bondi" Search Not Filtering by Category (Jan 29, 2026)
+- [x] Search query "charity at bondi" shows Site 2 which doesn't permit charities
+- [x] Add charity/charities synonym mapping to categorySynonyms.ts (already added)
+- [x] Ensure "charity" is recognized as equivalent to "charities" category (already working)
+- [x] Filter out sites that don't have the charities category permitted (already working)
+- [x] Fixed: prepositions like "at", "in", "on" are now ignored in category searches
+- [x] Fixed: word-by-word matching instead of exact phrase matching for centre names

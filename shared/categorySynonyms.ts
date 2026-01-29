@@ -53,6 +53,10 @@ export const CATEGORY_SYNONYMS: Record<string, string[]> = {
   // Home & Garden variations
   "home": ["homeware", "homewares", "household"],
   "garden": ["gardening", "plants", "nursery"],
+  
+  // Charity variations
+  "charity": ["charities", "non-profit", "nonprofit", "fundraising", "community"],
+  "charities": ["charity", "non-profit", "nonprofit", "fundraising", "community"],
 };
 
 /**

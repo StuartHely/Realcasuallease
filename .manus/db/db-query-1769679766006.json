@@ -1,0 +1,290 @@
+{
+  "query": "SELECT s.id, s.siteNumber, s.description, sc.name as centre_name, uc.name as category_name\nFROM sites s\nLEFT JOIN shopping_centres sc ON s.centreId = sc.id\nLEFT JOIN site_usage_categories suc ON s.id = suc.siteId\nLEFT JOIN usage_categories uc ON suc.categoryId = uc.id\nWHERE sc.name LIKE '%Eastgate%' AND s.siteNumber = '2'\nORDER BY s.id, uc.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT s.id, s.siteNumber, s.description, sc.name as centre_name, uc.name as category_name\nFROM sites s\nLEFT JOIN shopping_centres sc ON s.centreId = sc.id\nLEFT JOIN site_usage_categories suc ON s.id = suc.siteId\nLEFT JOIN usage_categories uc ON suc.categoryId = uc.id\nWHERE sc.name LIKE '%Eastgate%' AND s.siteNumber = '2'\nORDER BY s.id, uc.name;",
+  "rows": [
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Art & Craft"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Automotive"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Baby & Toddler"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Beauty and Cosmetics"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Bedding and Furniture"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Boating and Marine"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Books"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Calendars"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Candles"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Clothing"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Discount Variety"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Education / Recruitment / Training"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Entertainment"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Financial and Insurance Services"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Fitness / Sporting Goods"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Florist"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Food and Beverage"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Gardening"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Health and Well-Being"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Home Improvements"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Homewares"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Household Goods"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Internal - Marketing and Centre Management"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Jewellery (Fashion) and Accessories"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Jewellery (Fine)"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Music"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "News and Stationery"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Pet Products"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Pharmaceuticals"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Photography"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Real Estate / Property Developers"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Renewable Energy"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Shoes / Footwear"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Technology and Telecommunications"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Tools"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Toys"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Travel"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Ugg Boots"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Utilities"
+    },
+    {
+      "id": "120001",
+      "siteNumber": "2",
+      "description": "Between Coles and Tender Gourmet Butchery",
+      "centre_name": "Eastgate Bondi Junction",
+      "category_name": "Wellness"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsiteNumber\tdescription\tcentre_name\tcategory_name\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tArt & Craft\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tAutomotive\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tBaby & Toddler\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tBeauty and Cosmetics\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tBedding and Furniture\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tBoating and Marine\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tBooks\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tCalendars\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tCandles\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tClothing\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tDiscount Variety\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tEducation / Recruitment / Training\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tEntertainment\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tFinancial and Insurance Services\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tFitness / Sporting Goods\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tFlorist\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tFood and Beverage\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tGardening\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tHealth and Well-Being\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tHome Improvements\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tHomewares\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tHousehold Goods\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tInternal - Marketing and Centre Management\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tJewellery (Fashion) and Accessories\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tJewellery (Fine)\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tMusic\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tNews and Stationery\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tPet Products\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tPharmaceuticals\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tPhotography\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tReal Estate / Property Developers\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tRenewable Energy\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tShoes / Footwear\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tTechnology and Telecommunications\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tTools\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tToys\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tTravel\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tUgg Boots\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tUtilities\n120001\t2\tBetween Coles and Tender Gourmet Butchery\tEastgate Bondi Junction\tWellness\n",
+  "stderr": "",
+  "execution_time_ms": 1504
+}
