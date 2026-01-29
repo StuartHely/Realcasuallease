@@ -129,10 +129,14 @@ export default function AdminBooking() {
 
   const updateBookingMutation = trpc.adminBooking.update.useMutation({
     onSuccess: () => {
-      toast.success("Booking updated successfully!");
+      toast.success("Booking amended successfully!");
       utils.adminBooking.getAvailabilityGrid.invalidate();
       setShowEditDialog(false);
       setEditingBookingId(null);
+      // If we came from Booking Management (via URL params), redirect back
+      if (urlParams.bookingId) {
+        setLocation('/admin/bookings');
+      }
     },
     onError: (error) => {
       toast.error(error.message);

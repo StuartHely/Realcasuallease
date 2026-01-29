@@ -2786,3 +2786,9 @@
 - [x] Filter out sites that don't have the charities category permitted (already working)
 - [x] Fixed: prepositions like "at", "in", "on" are now ignored in category searches
 - [x] Fixed: word-by-word matching instead of exact phrase matching for centre names
+
+## Admin Booking Page Fixes (Jan 29, 2026)
+- [x] After saving amended booking, redirect back to Booking Management page
+- [x] Show toast notification indicating booking was amended successfully
+- [x] Add standard admin menu (DashboardLayout) to Admin Booking page (already has DashboardLayout)
+- [x] Ensure consistent navigation across all admin pages
