@@ -2798,3 +2798,9 @@
 - [x] Include Operations section with Bookings, Admin Booking links
 - [x] Include all standard admin menu items (Users, Settings, etc.)
 - [x] Changed from DashboardLayout to AdminLayout for full menu support
+
+## Homepage Styling Improvements (Jan 29, 2026)
+- [x] Make "Describe the space you need..." line blue (same as heading above)
+- [x] Increase "Describe" line font size by 2 to make it stand out better (text-xl md:text-2xl)
+- [x] Make search placeholder text ("Eg. 15-20sqm...") 2 font sizes larger (text-xl)
+- [x] Make search placeholder text darker for easier reading (text-gray-700)

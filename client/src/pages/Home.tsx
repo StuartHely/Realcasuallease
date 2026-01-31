@@ -202,7 +202,7 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-blue-900 mb-4 md:mb-6 leading-tight">
               The Easiest Way to Book Casual Leasing in Shopping Centres
             </h2>
-            <p className="text-lg md:text-xl text-gray-600 mb-8 md:mb-12 max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-blue-900 font-semibold mb-8 md:mb-12 max-w-3xl mx-auto">
               Describe the space you need in any order. We'll handle the rest.
             </p>
 
@@ -224,7 +224,7 @@ export default function Home() {
                             setShowSuggestions(true);
                           }
                         }}
-                        className="h-14 text-lg pl-12"
+                        className="h-14 text-xl pl-12 placeholder:text-gray-700 placeholder:text-xl"
                         autoComplete="off"
                       />
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
