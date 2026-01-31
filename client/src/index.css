@@ -174,4 +174,22 @@
       max-width: 1280px; /* Standard content width */
     }
   }
+
+  /* Fade-in animation for homepage description */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.8s ease-out forwards;
+    animation-delay: 0.2s;
+    opacity: 0;
+  }
 }

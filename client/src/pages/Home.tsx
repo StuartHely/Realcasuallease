@@ -202,7 +202,7 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-blue-900 mb-4 md:mb-6 leading-tight">
               The Easiest Way to Book Casual Leasing in Shopping Centres
             </h2>
-            <p className="text-xl md:text-2xl text-blue-900 font-semibold mb-8 md:mb-12 max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-blue-900 font-semibold mb-8 md:mb-12 max-w-3xl mx-auto animate-fade-in">
               Describe the space you need in any order. We'll handle the rest.
             </p>
 

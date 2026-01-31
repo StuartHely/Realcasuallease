@@ -2804,3 +2804,9 @@
 - [x] Increase "Describe" line font size by 2 to make it stand out better (text-xl md:text-2xl)
 - [x] Make search placeholder text ("Eg. 15-20sqm...") 2 font sizes larger (text-xl)
 - [x] Make search placeholder text darker for easier reading (text-gray-700)
+
+## Homepage Description Line Animation (Jan 31, 2026)
+- [x] Add subtle fade-in animation to "Describe the space you need..." line
+- [x] Animation should trigger on page load (0.2s delay, 0.8s duration)
+- [x] Use smooth, professional animation timing (ease-out with subtle translateY)
+- [x] Ensure animation doesn't interfere with page performance (CSS-only animation)
