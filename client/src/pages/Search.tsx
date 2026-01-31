@@ -643,6 +643,13 @@ export default function Search() {
                     </div>
                   </div>
                   
+                  {/* Scroll Down Instruction */}
+                  <div className="mt-8 mb-6 text-center">
+                    <p className="text-lg font-semibold text-blue-900">
+                      Scroll Down for Site Details and Centre Map
+                    </p>
+                  </div>
+
                   {/* Site Details Below Heatmap */}
                   <div className="mt-8 space-y-4">
                     <h3 className="text-lg font-semibold">Shop Details</h3>
@@ -1016,6 +1023,13 @@ export default function Search() {
                     </div>
                   </div>
                   
+                  {/* Scroll Down Instruction */}
+                  <div className="mt-8 mb-6 text-center">
+                    <p className="text-lg font-semibold text-blue-900">
+                      Scroll Down for Site Details and Centre Map
+                    </p>
+                  </div>
+
                   {/* Asset Details Below Heatmap */}
                   <div className="mt-8 space-y-4">
                     <h3 className="text-lg font-semibold">Asset Details</h3>
@@ -1619,6 +1633,13 @@ export default function Search() {
                           </tbody>
                         </table>
                       </div>
+                    </div>
+
+                    {/* Scroll Down Instruction */}
+                    <div className="mt-8 mb-6 text-center">
+                      <p className="text-lg font-semibold text-blue-900">
+                        Scroll Down for Site Details and Centre Map
+                      </p>
                     </div>
 
                     {/* Site Details Below Heatmap */}

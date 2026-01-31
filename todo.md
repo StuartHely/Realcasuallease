@@ -2810,3 +2810,10 @@
 - [x] Animation should trigger on page load (0.2s delay, 0.8s duration)
 - [x] Use smooth, professional animation timing (ease-out with subtle translateY)
 - [x] Ensure animation doesn't interfere with page performance (CSS-only animation)
+
+## Search Results - Scroll Down Instruction (Jan 31, 2026)
+- [x] Add "Scroll Down for Site Details and Centre Map" text to search results page
+- [x] Position text between site availability section and site details section
+- [x] Center the text horizontally on the page
+- [x] Make text prominent and easy to read (text-lg font-semibold text-blue-900)
+- [x] Implement for all three brands: CL, Vac Shops, and 3rdL
