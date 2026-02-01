@@ -2817,3 +2817,12 @@
 - [x] Center the text horizontally on the page
 - [x] Make text prominent and easy to read (text-lg font-semibold text-blue-900)
 - [x] Implement for all three brands: CL, Vac Shops, and 3rdL
+
+## Search Results Page Styling Improvements (Jan 31, 2026)
+- [x] Double font size for "Your requested size is..." text (text-2xl)
+- [x] Double font size for "Sites below meet your stated USAGE requirement" text (text-2xl)
+- [x] Center "Show me all sized sites in this centre" button horizontally on the page
+- [x] Bold the "Major Stores:" line in centre details
+- [x] Move "Previous Week" button to left side of navigation row
+- [x] Move "Next Week" button to right side of navigation row
+- [x] Center "New Date" and "Today" buttons between Previous/Next Week buttons

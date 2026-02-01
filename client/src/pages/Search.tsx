@@ -400,7 +400,7 @@ export default function Search() {
           {/* Show generic message if no close matches */}
           {data?.sizeNotAvailable && !data?.closestMatch && (
             <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-amber-800 font-medium">
+              <p className="text-amber-800 font-medium text-2xl">
                 Your requested size is not available. Let me show you the other sites.
               </p>
             </div>
@@ -1248,7 +1248,7 @@ export default function Search() {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-2xl mb-1">{centre.name}</CardTitle>
                     <CardDescription>
-                      {centre.majors && <span key={`${centre.id}-majors`} className="block">Major Stores: {centre.majors}</span>}
+                      {centre.majors && <span key={`${centre.id}-majors`} className="block"><strong>Major Stores:</strong> {centre.majors}</span>}
                       {centre.numberOfSpecialties && (
                         <span key={`${centre.id}-specialties`} className="block">Specialty Stores: {centre.numberOfSpecialties}</span>
                       )}
@@ -1302,17 +1302,19 @@ export default function Search() {
                       
                       return (
                         <div className="mb-4 space-y-2">
-                          <div className="text-base text-red-600 italic">
+                          <div className="text-2xl text-red-600 italic font-semibold">
                             {noticeText}
                           </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleShowAllSites}
-                            className="text-blue-600 hover:text-blue-700"
-                          >
-                            Show me all sized sites in this centre
-                          </Button>
+                          <div className="flex justify-center">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handleShowAllSites}
+                              className="text-blue-600 hover:text-blue-700"
+                            >
+                              Show me all sized sites in this centre
+                            </Button>
+                          </div>
                         </div>
                       );
                     })()}
@@ -1328,7 +1330,7 @@ export default function Search() {
                     )}
                     {/* Calendar Navigation */}
                     <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
+                      {/* Previous Week - Left Side */}
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -1358,6 +1360,52 @@ export default function Search() {
                           )}
                         </Tooltip>
                       </TooltipProvider>
+
+                      {/* Center buttons - New Date and Today */}
+                      <div className="flex items-center gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-1"
+                            >
+                              <Calendar className="h-4 w-4" />
+                              New Date
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={searchParams?.date}
+                              onSelect={(date) => {
+                                if (date && searchParams) {
+                                  const params = new URLSearchParams(window.location.search);
+                                  params.set('date', format(date, 'yyyy-MM-dd'));
+                                  window.location.search = params.toString();
+                                }
+                              }}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (!searchParams) return;
+                            const params = new URLSearchParams(window.location.search);
+                            params.set('date', format(new Date(), 'yyyy-MM-dd'));
+                            window.location.search = params.toString();
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          <CalendarDays className="h-4 w-4" />
+                          Today
+                        </Button>
+                      </div>
+
+                      {/* Next Week - Right Side */}
                       <Button
                         variant="outline"
                         size="sm"
@@ -1373,47 +1421,6 @@ export default function Search() {
                         Next Week
                         <ChevronRight className="h-4 w-4" />
                       </Button>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-1"
-                          >
-                            <Calendar className="h-4 w-4" />
-                            New Date
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <CalendarComponent
-                            mode="single"
-                            selected={searchParams?.date}
-                            onSelect={(date) => {
-                              if (date && searchParams) {
-                                const params = new URLSearchParams(window.location.search);
-                                params.set('date', format(date, 'yyyy-MM-dd'));
-                                window.location.search = params.toString();
-                              }
-                            }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          if (!searchParams) return;
-                          const params = new URLSearchParams(window.location.search);
-                          params.set('date', format(new Date(), 'yyyy-MM-dd'));
-                          window.location.search = params.toString();
-                        }}
-                        className="flex items-center gap-1"
-                      >
-                        <CalendarDays className="h-4 w-4" />
-                        Today
-                      </Button>
-                      </div>
                     </div>
                     {/* Top scrollbar */}
                     <div 
