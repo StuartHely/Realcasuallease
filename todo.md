@@ -2846,3 +2846,13 @@
 - [x] Create SVG placeholder image generator endpoint
 - [x] Update ImageWithFallback to use placeholder generator
 - [x] Create placeholder for floor plan maps
+
+## Bug Fix - Uploaded Images Not Appearing (Feb 1, 2026)
+- [ ] Investigate why 8 uploaded site images for Campbelltown Mall are not appearing
+- [ ] Fix image display in Admin-Sites and live Search
+
+## Bug Fix - Uploaded Images Not Appearing (Feb 1, 2026)
+- [x] Investigate why 8 uploaded site images for Campbelltown Mall are not appearing
+- [x] Root cause: S3/CloudFront returning HTTP 403 Forbidden for all images (platform-level issue)
+- [x] Fix image display in Admin-Sites using ImageWithFallback component with placeholder fallback
+- [x] Placeholder images now show site number, size, and power status when real images fail to load

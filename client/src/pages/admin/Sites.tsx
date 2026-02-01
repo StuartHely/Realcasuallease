@@ -28,6 +28,7 @@ import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import BulkImageImport from "@/components/BulkImageImport";
 import { ManageSiteCategoriesDialog } from "@/components/ManageSiteCategoriesDialog";
+import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
@@ -542,13 +543,15 @@ export default function AdminSites() {
                   <CardDescription>{site.description || "No description"}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {site.imageUrl1 && (
-                    <img
+                  <div className="w-full h-32 rounded-md overflow-hidden bg-gray-100">
+                    <ImageWithFallback
                       src={site.imageUrl1}
                       alt={`Site ${site.siteNumber}`}
-                      className="w-full h-32 object-contain rounded-md bg-gray-100"
+                      className="w-full h-full object-contain"
+                      containerClassName="w-full h-full"
+                      placeholder={{ type: "site", number: site.siteNumber || "", size: site.size || "", powered: site.powerAvailable === "Powered Site" || site.powerAvailable === "Power Available" }}
                     />
-                  )}
+                  </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <span className="text-muted-foreground">Size:</span>
@@ -720,10 +723,12 @@ export default function AdminSites() {
                         <div className="text-sm font-medium mb-2">Image {slot}</div>
                         {imageUrl ? (
                           <div className="relative">
-                            <img
+                            <ImageWithFallback
                               src={imageUrl}
                               alt={`Site image ${slot}`}
-                              className="w-full h-32 object-contain rounded-md bg-gray-100"
+                              className="w-full h-32 object-contain rounded-md"
+                              containerClassName="w-full h-32 bg-gray-100 rounded-md"
+                              placeholder={{ type: "site", number: selectedSite?.siteNumber || "", size: selectedSite?.size || "" }}
                             />
                             <Button
                               type="button"
