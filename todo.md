@@ -2826,3 +2826,8 @@
 - [x] Move "Previous Week" button to left side of navigation row
 - [x] Move "Next Week" button to right side of navigation row
 - [x] Center "New Date" and "Today" buttons between Previous/Next Week buttons
+
+## UI Fixes (Feb 1, 2026)
+- [x] Fix Major Stores text styling - entire line now bold (not just label)
+- [x] Reposition Previous Week button - now above first date column in table header row
+- [x] Verify Campbelltown search - working correctly with all 13 sites displayed
