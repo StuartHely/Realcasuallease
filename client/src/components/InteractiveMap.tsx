@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { MapPin, DollarSign, Ruler, Store, Layers } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
+import { useImageWithFallback } from "@/components/ImageWithFallback";
 
 type AssetType = "casual_leasing" | "vacant_shops" | "third_line" | "all";
 
@@ -68,7 +69,12 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
   const currentFloor = isMultiLevel && selectedFloorId 
     ? floorLevels.find((fl: any) => fl.id === selectedFloorId)
     : null;
-  const displayMapUrl = currentFloor?.mapImageUrl || mapUrl;
+  const rawMapUrl = currentFloor?.mapImageUrl || mapUrl;
+  const levelName = currentFloor?.levelName || "Floor Plan";
+  const { url: displayMapUrl, isLoading: mapLoading, hasError: mapError } = useImageWithFallback(
+    rawMapUrl,
+    { type: "map", label: levelName }
+  );
 
   // Filter sites for current floor (or all sites if single-level) and by asset type
   const sitesWithMarkers = sites.filter((site: Site) => {
@@ -133,7 +139,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
     }
   };
 
-  if (!displayMapUrl) {
+  if (!rawMapUrl || mapError) {
     return (
       <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
         <p className="text-gray-600">Map Coming Shortly</p>
@@ -151,12 +157,18 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
         className="relative inline-block"
         onMouseLeave={handleMarkerLeave}
       >
-        <img
-          src={displayMapUrl}
-          alt={`${centreName} floor plan`}
-          className="max-w-full h-auto"
-          draggable={false}
-        />
+        {mapLoading ? (
+          <div className="w-full h-64 flex items-center justify-center bg-gray-100">
+            <p className="text-gray-500">Loading map...</p>
+          </div>
+        ) : (
+          <img
+            src={displayMapUrl || ""}
+            alt={`${centreName} floor plan`}
+            className="max-w-full h-auto"
+            draggable={false}
+          />
+        )}
         
         {/* Site Markers */}
         {sitesWithMarkers.map((site: Site) => {

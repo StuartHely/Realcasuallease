@@ -15,6 +15,7 @@ import InteractiveMap from "@/components/InteractiveMap";
 import { NearbyCentresMap } from "@/components/NearbyCentresMap";
 import { SearchSkeleton } from "@/components/SearchSkeleton";
 import { parseSearchQuery } from "@/../../shared/queryParser";
+import { ImageWithFallback } from "@/components/ImageWithFallback";
 
 export default function Search() {
   const [, setLocation] = useLocation();
@@ -681,17 +682,13 @@ export default function Search() {
                             <div className="flex items-start justify-between gap-4">
                               {/* Shop Image */}
                               <div className="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                                {shop.imageUrl1 ? (
-                                  <img
-                                    src={shop.imageUrl1}
-                                    alt={`Shop ${shop.shopNumber}`}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 text-center p-2">
-                                    Image coming soon
-                                  </div>
-                                )}
+                                <ImageWithFallback
+                                  src={shop.imageUrl1}
+                                  alt={`Shop ${shop.shopNumber}`}
+                                  className="w-full h-full object-cover"
+                                  containerClassName="w-full h-full"
+                                  placeholder={{ type: "shop", number: shop.shopNumber || "", size: shop.totalSizeM2 || "" }}
+                                />
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">
@@ -1061,17 +1058,13 @@ export default function Search() {
                             <div className="flex items-start justify-between gap-4">
                               {/* Asset Image */}
                               <div className="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                                {asset.imageUrl1 ? (
-                                  <img
-                                    src={asset.imageUrl1}
-                                    alt={asset.assetNumber}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 text-center p-2">
-                                    Image coming soon
-                                  </div>
-                                )}
+                                <ImageWithFallback
+                                  src={asset.imageUrl1}
+                                  alt={asset.assetNumber}
+                                  className="w-full h-full object-cover"
+                                  containerClassName="w-full h-full"
+                                  placeholder={{ type: "asset", number: asset.assetNumber || "", label: asset.categoryName || "" }}
+                                />
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">
@@ -1689,17 +1682,13 @@ export default function Search() {
                               <div className="flex items-start justify-between gap-4">
                                 {/* Site Image */}
                                 <div className="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                                  {site.imageUrl1 ? (
-                                    <img
-                                      src={site.imageUrl1}
-                                      alt={`Site ${site.siteNumber}`}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 text-center p-2">
-                                      Image coming soon
-                                    </div>
-                                  )}
+                                  <ImageWithFallback
+                                    src={site.imageUrl1}
+                                    alt={`Site ${site.siteNumber}`}
+                                    className="w-full h-full object-cover"
+                                    containerClassName="w-full h-full"
+                                    placeholder={{ type: "site", number: site.siteNumber || "", size: site.size || "", powered: site.powered }}
+                                  />
                                 </div>
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 flex-wrap">

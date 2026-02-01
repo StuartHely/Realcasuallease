@@ -2831,3 +2831,18 @@
 - [x] Fix Major Stores text styling - entire line now bold (not just label)
 - [x] Reposition Previous Week button - now above first date column in table header row
 - [x] Verify Campbelltown search - working correctly with all 13 sites displayed
+
+## Bug Fixes (Feb 1, 2026 - Part 2)
+- [ ] Fix site images not appearing on search results page
+- [ ] Fix interactive map not appearing on search results page
+
+## Image Fallback Solution (Feb 1, 2026)
+- [ ] Create server-side image proxy endpoint
+- [ ] Create frontend ImageWithFallback component
+- [ ] Update Search.tsx to use ImageWithFallback for site images
+- [ ] Update InteractiveMap to use ImageWithFallback for floor plans
+
+## Placeholder Images (Feb 1, 2026)
+- [x] Create SVG placeholder image generator endpoint
+- [x] Update ImageWithFallback to use placeholder generator
+- [x] Create placeholder for floor plan maps
