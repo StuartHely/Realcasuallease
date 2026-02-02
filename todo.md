@@ -2863,3 +2863,14 @@
 
 ## Admin Enhancement - Image Analytics Centre Name (Feb 2, 2026)
 - [x] Add centre name to Image Analytics page for each image
+
+## Shopping Centre Enhancement - Rich Text & PDF Upload (Feb 2, 2026)
+- [ ] Add database columns for PDF URLs and display names (up to 3 PDFs)
+- [ ] Implement rich text editor for Description field in Edit Shopping Centre
+- [ ] Add PDF upload functionality with display name fields
+- [ ] Display PDF links in search results under About section
+
+## Shopping Centre Enhancements (Feb 2, 2026)
+- [x] Rich text editor for Description field (bold, italic, underline formatting)
+- [x] PDF upload capability (up to 3 files) with display names
+- [x] Display PDF links in search results under About section

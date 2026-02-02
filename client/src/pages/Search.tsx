@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays, Store, Zap, Layers } from "lucide-react";
+import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays, Store, Zap, Layers, FileText } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, parse, addDays, isSameDay, subDays, isBefore, startOfDay } from "date-fns";
@@ -1928,9 +1928,45 @@ export default function Search() {
                   {data.centres[0]?.description && (
                     <div className="mt-6 pt-6 border-t border-gray-200">
                       <h3 className="text-lg font-semibold text-gray-900 mb-3">About {data.centres[0].name}</h3>
-                      <p className="text-gray-600 whitespace-pre-line leading-relaxed">
-                        {data.centres[0].description}
-                      </p>
+                      <div className="text-gray-600 whitespace-pre-line leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: data.centres[0].description }} />
+                      {/* PDF Document Links */}
+                      {(data.centres[0].pdfUrl1 || data.centres[0].pdfUrl2 || data.centres[0].pdfUrl3) && (
+                        <div className="mt-4 flex flex-wrap gap-3">
+                          {data.centres[0].pdfUrl1 && (
+                            <a
+                              href={data.centres[0].pdfUrl1}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              <FileText className="h-4 w-4" />
+                              {data.centres[0].pdfName1 || 'Document 1'}
+                            </a>
+                          )}
+                          {data.centres[0].pdfUrl2 && (
+                            <a
+                              href={data.centres[0].pdfUrl2}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              <FileText className="h-4 w-4" />
+                              {data.centres[0].pdfName2 || 'Document 2'}
+                            </a>
+                          )}
+                          {data.centres[0].pdfUrl3 && (
+                            <a
+                              href={data.centres[0].pdfUrl3}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              <FileText className="h-4 w-4" />
+                              {data.centres[0].pdfName3 || 'Document 3'}
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -1944,9 +1980,45 @@ export default function Search() {
                   <CardTitle>About {data.centres[0].name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 whitespace-pre-line leading-relaxed">
-                    {data.centres[0].description}
-                  </p>
+                  <div className="text-gray-600 whitespace-pre-line leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: data.centres[0].description }} />
+                  {/* PDF Document Links */}
+                  {(data.centres[0].pdfUrl1 || data.centres[0].pdfUrl2 || data.centres[0].pdfUrl3) && (
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      {data.centres[0].pdfUrl1 && (
+                        <a
+                          href={data.centres[0].pdfUrl1}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          <FileText className="h-4 w-4" />
+                          {data.centres[0].pdfName1 || 'Document 1'}
+                        </a>
+                      )}
+                      {data.centres[0].pdfUrl2 && (
+                        <a
+                          href={data.centres[0].pdfUrl2}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          <FileText className="h-4 w-4" />
+                          {data.centres[0].pdfName2 || 'Document 2'}
+                        </a>
+                      )}
+                      {data.centres[0].pdfUrl3 && (
+                        <a
+                          href={data.centres[0].pdfUrl3}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          <FileText className="h-4 w-4" />
+                          {data.centres[0].pdfName3 || 'Document 3'}
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}

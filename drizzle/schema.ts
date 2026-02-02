@@ -139,6 +139,13 @@ export const shoppingCentres = mysqlTable("shopping_centres", {
   contactEmail: varchar("contactEmail", { length: 320 }),
   operatingHours: text("operatingHours"),
   policies: text("policies"),
+  // PDF attachments with display names
+  pdfUrl1: text("pdfUrl1"),
+  pdfName1: varchar("pdfName1", { length: 255 }),
+  pdfUrl2: text("pdfUrl2"),
+  pdfName2: varchar("pdfName2", { length: 255 }),
+  pdfUrl3: text("pdfUrl3"),
+  pdfName3: varchar("pdfName3", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

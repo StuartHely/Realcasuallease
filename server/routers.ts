@@ -134,6 +134,12 @@ export const appRouter = router({
         contactEmail: z.string().email().optional(),
         operatingHours: z.string().optional(),
         policies: z.string().optional(),
+        pdfUrl1: z.string().optional(),
+        pdfName1: z.string().optional(),
+        pdfUrl2: z.string().optional(),
+        pdfName2: z.string().optional(),
+        pdfUrl3: z.string().optional(),
+        pdfName3: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const centre = await db.getShoppingCentreById(input.id);
@@ -145,6 +151,32 @@ export const appRouter = router({
         await db.updateShoppingCentre(input.id, input);
         
         return { success: true, message: "Centre updated successfully" };
+      }),
+    
+    uploadPdf: adminProcedure
+      .input(z.object({
+        centreId: z.number(),
+        slot: z.number().min(1).max(3),
+        base64Pdf: z.string(),
+        originalName: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { storagePut } = await import('./storage');
+        
+        // Extract base64 data
+        const base64Data = input.base64Pdf.replace(/^data:application\/pdf;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        
+        // Generate unique filename
+        const timestamp = Date.now();
+        const randomSuffix = Math.random().toString(36).substring(2, 8);
+        const safeOriginalName = input.originalName.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const fileKey = `centres/${input.centreId}/pdfs/pdf${input.slot}-${timestamp}-${randomSuffix}-${safeOriginalName}`;
+        
+        // Upload to S3
+        const { url } = await storagePut(fileKey, buffer, 'application/pdf');
+        
+        return { url, originalName: input.originalName };
       }),
     
     updateWeeklyReportSettings: protectedProcedure
