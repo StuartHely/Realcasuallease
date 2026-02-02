@@ -652,8 +652,9 @@ export default function Search() {
                   </div>
 
                   {/* Site Details Below Heatmap */}
-                  <div className="mt-8 space-y-4">
-                    <h3 className="text-lg font-semibold">Shop Details</h3>
+                  <div className="mt-8">
+                    <h3 className="text-lg font-semibold mb-4">Shop Details</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
                     {/* Date selection instruction */}
                     {dateSelection?.assetType === "vacant_shops" && dateSelection?.isSelecting && (
                       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -824,6 +825,7 @@ export default function Search() {
                         </Card>
                       );
                     })}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -1650,8 +1652,9 @@ export default function Search() {
                     </div>
 
                     {/* Site Details Below Heatmap */}
-                    <div className="mt-8 space-y-4">
-                      <h3 className="text-lg font-semibold">Site Details</h3>
+                    <div className="mt-8">
+                      <h3 className="text-lg font-semibold mb-4">Site Details</h3>
+                      <div className="grid md:grid-cols-2 gap-4">
                       {/* Date selection instruction */}
                       {dateSelection?.isSelecting && (
                         <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -1862,6 +1865,7 @@ export default function Search() {
                           </Card>
                         );
                       })}
+                      </div>
                       
                       {/* Show "Show me all sized sites" link if size filter is active and results are filtered */}
                       {(() => {

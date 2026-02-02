@@ -2856,3 +2856,7 @@
 - [x] Root cause: S3/CloudFront returning HTTP 403 Forbidden for all images (platform-level issue)
 - [x] Fix image display in Admin-Sites using ImageWithFallback component with placeholder fallback
 - [x] Placeholder images now show site number, size, and power status when real images fail to load
+
+## UI Enhancement - Two-Column Site Details (Feb 2, 2026)
+- [x] Change Search Results site details from full-width to two-column layout
+- [x] Display two site cards side by side in site order
