@@ -1,5 +1,5 @@
 import { getDb } from "./db";
-import { imageAnalytics, sites } from "../drizzle/schema";
+import { imageAnalytics, sites, shoppingCentres } from "../drizzle/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 
 export async function trackImageView(siteId: number, imageSlot: number): Promise<void> {
@@ -63,6 +63,7 @@ export async function trackImageClick(siteId: number, imageSlot: number): Promis
 export interface ImageAnalyticsData {
   siteId: number;
   siteName: string;
+  centreName: string;
   imageSlot: number;
   imageUrl: string | null;
   viewCount: number;
@@ -102,6 +103,13 @@ export async function getTopPerformingImages(limit: number = 10): Promise<ImageA
     const site = siteResults[0];
 
     if (site) {
+      // Fetch centre name
+      const centreResults = await db.select().from(shoppingCentres)
+        .where(eq(shoppingCentres.id, site.centreId))
+        .limit(1);
+      const centre = centreResults[0];
+      const centreName = centre?.name || 'Unknown Centre';
+
       const imageUrl = row.imageSlot === 1 ? site.imageUrl1 :
                       row.imageSlot === 2 ? site.imageUrl2 :
                       row.imageSlot === 3 ? site.imageUrl3 :
@@ -116,6 +124,7 @@ export async function getTopPerformingImages(limit: number = 10): Promise<ImageA
       enriched.push({
         siteId: row.siteId,
         siteName: site.siteNumber,
+        centreName,
         imageSlot: row.imageSlot,
         imageUrl,
         viewCount: row.viewCount,
@@ -146,6 +155,13 @@ export async function getImageAnalyticsBySite(siteId: number): Promise<ImageAnal
 
   if (!site) return [];
 
+  // Fetch centre name
+  const centreResults = await db.select().from(shoppingCentres)
+    .where(eq(shoppingCentres.id, site.centreId))
+    .limit(1);
+  const centre = centreResults[0];
+  const centreName = centre?.name || 'Unknown Centre';
+
   // Get booking count for this site
   const { bookings } = await import("../drizzle/schema");
   const bookingResults = await db.select()
@@ -162,6 +178,7 @@ export async function getImageAnalyticsBySite(siteId: number): Promise<ImageAnal
     return {
       siteId: row.siteId,
       siteName: site.siteNumber,
+      centreName,
       imageSlot: row.imageSlot,
       imageUrl,
       viewCount: row.viewCount,

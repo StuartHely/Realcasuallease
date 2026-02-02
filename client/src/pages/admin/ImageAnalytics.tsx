@@ -105,6 +105,7 @@ export default function ImageAnalytics() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Rank</TableHead>
+                      <TableHead>Centre</TableHead>
                       <TableHead>Site</TableHead>
                       <TableHead>Image</TableHead>
                       <TableHead className="text-right">Views</TableHead>
@@ -119,6 +120,7 @@ export default function ImageAnalytics() {
                     {topImages.map((image, index) => (
                       <TableRow key={`${image.siteId}-${image.imageSlot}`}>
                         <TableCell className="font-medium">#{index + 1}</TableCell>
+                        <TableCell className="font-medium">{image.centreName}</TableCell>
                         <TableCell>{image.siteName}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">

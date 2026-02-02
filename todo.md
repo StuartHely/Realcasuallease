@@ -2860,3 +2860,6 @@
 ## UI Enhancement - Two-Column Site Details (Feb 2, 2026)
 - [x] Change Search Results site details from full-width to two-column layout
 - [x] Display two site cards side by side in site order
+
+## Admin Enhancement - Image Analytics Centre Name (Feb 2, 2026)
+- [x] Add centre name to Image Analytics page for each image
