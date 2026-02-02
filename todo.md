@@ -2874,3 +2874,7 @@
 - [x] Rich text editor for Description field (bold, italic, underline formatting)
 - [x] PDF upload capability (up to 3 files) with display names
 - [x] Display PDF links in search results under About section
+
+## Site Description Rich Text (Feb 2, 2026)
+- [x] Add RichTextEditor to Admin Sites page for site description field
+- [x] Test rich text formatting in site descriptions

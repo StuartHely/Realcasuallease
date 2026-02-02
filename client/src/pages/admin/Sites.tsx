@@ -29,6 +29,7 @@ import type { Area } from "react-easy-crop";
 import BulkImageImport from "@/components/BulkImageImport";
 import { ManageSiteCategoriesDialog } from "@/components/ManageSiteCategoriesDialog";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
@@ -378,13 +379,15 @@ export default function AdminSites() {
                     </div>
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
+                    <Label>Description</Label>
+                    <RichTextEditor
                       value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      rows={2}
+                      onChange={(value) => setFormData({ ...formData, description: value })}
+                      placeholder="Enter site description..."
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Select text and click Bold, Italic, or Underline to format
+                    </p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
@@ -632,13 +635,15 @@ export default function AdminSites() {
                 </div>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-description">Description</Label>
-                <Textarea
-                  id="edit-description"
+                <Label>Description</Label>
+                <RichTextEditor
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={2}
+                  onChange={(value) => setFormData({ ...formData, description: value })}
+                  placeholder="Enter site description..."
                 />
+                <p className="text-xs text-muted-foreground">
+                  Select text and click Bold, Italic, or Underline to format
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
