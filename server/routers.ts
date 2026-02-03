@@ -1395,8 +1395,8 @@ export const appRouter = router({
         centreId: z.number(),
         markers: z.array(z.object({
           siteId: z.number(),
-          x: z.number().min(0).max(100),
-          y: z.number().min(0).max(100),
+          x: z.coerce.number().min(0).max(100),
+          y: z.coerce.number().min(0).max(100),
         })),
       }))
       .mutation(async ({ input }) => {

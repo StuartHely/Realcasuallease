@@ -2895,3 +2895,6 @@
 - [ ] Investigate floor level assignments for all 5 sites
 - [ ] Verify site IDs and database consistency
 - [x] Fix marker coordinate data type from int to decimal(5,2) for proper percentage storage
+
+## Bug Fixes (Feb 3, 2025 - Marker Saving)
+- [x] Fix saveSiteMarkers Zod validation to use z.coerce.number() for x and y coordinates
