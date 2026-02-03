@@ -2905,3 +2905,8 @@
 
 ## Bug Fixes (Feb 3, 2025 - Centre Description HTML)
 - [x] Fix centre description showing raw HTML tags instead of rendering properly (e.g., Eastgate)
+
+## Bug Fixes (Feb 3, 2025 - Tab Visibility)
+- [x] Fix inconsistency where state browse shows only CL tab while search shows all 4 asset type tabs
+- [x] Add conditional rendering to show only asset types with available items
+- [x] Add auto-select logic to choose first available asset type when data loads

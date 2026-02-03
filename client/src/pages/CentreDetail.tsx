@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -236,6 +236,25 @@ export default function CentreDetail() {
     all: sites.length + vacantShops.length + thirdLineAssets.length,
   };
 
+  // Auto-select the first available asset type when data loads
+  useEffect(() => {
+    // Only run when data has loaded (not loading)
+    if (!sitesLoading && !vacantShopsLoading && !thirdLineLoading) {
+      // Check if current selection is valid (has items)
+      const currentCount = assetCounts[assetType];
+      if (currentCount === 0 || (assetType === 'all' && assetCounts.all === 0)) {
+        // Find the first available asset type
+        if (assetCounts.casual_leasing > 0) {
+          setAssetType('casual_leasing');
+        } else if (assetCounts.vacant_shops > 0) {
+          setAssetType('vacant_shops');
+        } else if (assetCounts.third_line > 0) {
+          setAssetType('third_line');
+        }
+      }
+    }
+  }, [sitesLoading, vacantShopsLoading, thirdLineLoading, sites.length, vacantShops.length, thirdLineAssets.length]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
@@ -342,34 +361,43 @@ export default function CentreDetail() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="casual_leasing">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-blue-600" />
-                      <span>Casual Leasing</span>
-                      <Badge variant="secondary" className="ml-2">{assetCounts.casual_leasing}</Badge>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="vacant_shops">
-                    <div className="flex items-center gap-2">
-                      <Store className="h-4 w-4 text-green-600" />
-                      <span>Vacant Shops</span>
-                      <Badge variant="secondary" className="ml-2">{assetCounts.vacant_shops}</Badge>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="third_line">
-                    <div className="flex items-center gap-2">
-                      <Layers className="h-4 w-4 text-purple-600" />
-                      <span>Third Line Income</span>
-                      <Badge variant="secondary" className="ml-2">{assetCounts.third_line}</Badge>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="all">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-gray-600" />
-                      <span>All Assets</span>
-                      <Badge variant="secondary" className="ml-2">{assetCounts.all}</Badge>
-                    </div>
-                  </SelectItem>
+                  {assetCounts.casual_leasing > 0 && (
+                    <SelectItem value="casual_leasing">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-blue-600" />
+                        <span>Casual Leasing</span>
+                        <Badge variant="secondary" className="ml-2">{assetCounts.casual_leasing}</Badge>
+                      </div>
+                    </SelectItem>
+                  )}
+                  {assetCounts.vacant_shops > 0 && (
+                    <SelectItem value="vacant_shops">
+                      <div className="flex items-center gap-2">
+                        <Store className="h-4 w-4 text-green-600" />
+                        <span>Vacant Shops</span>
+                        <Badge variant="secondary" className="ml-2">{assetCounts.vacant_shops}</Badge>
+                      </div>
+                    </SelectItem>
+                  )}
+                  {assetCounts.third_line > 0 && (
+                    <SelectItem value="third_line">
+                      <div className="flex items-center gap-2">
+                        <Layers className="h-4 w-4 text-purple-600" />
+                        <span>Third Line Income</span>
+                        <Badge variant="secondary" className="ml-2">{assetCounts.third_line}</Badge>
+                      </div>
+                    </SelectItem>
+                  )}
+                  {/* Show All Assets only if there are multiple asset types available */}
+                  {((assetCounts.casual_leasing > 0 ? 1 : 0) + (assetCounts.vacant_shops > 0 ? 1 : 0) + (assetCounts.third_line > 0 ? 1 : 0)) > 1 && (
+                    <SelectItem value="all">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-gray-600" />
+                        <span>All Assets</span>
+                        <Badge variant="secondary" className="ml-2">{assetCounts.all}</Badge>
+                      </div>
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
