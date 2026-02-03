@@ -81,11 +81,11 @@ export default function Search() {
   const centreIds = data?.centres?.map((c: any) => c.id) || [];
   const { data: vacantShops } = trpc.vacantShops.getByCentre.useQuery(
     { centreId: centreIds[0] || 0 },
-    { enabled: centreIds.length > 0 && (selectedAssetType === "vacant_shops" || selectedAssetType === "all") }
+    { enabled: centreIds.length > 0 }
   );
   const { data: thirdLineIncome } = trpc.thirdLineIncome.getByCentre.useQuery(
     { centreId: centreIds[0] || 0 },
-    { enabled: centreIds.length > 0 && (selectedAssetType === "third_line" || selectedAssetType === "all") }
+    { enabled: centreIds.length > 0 }
   );
   
   // Fetch availability calendars for VS and TLI
