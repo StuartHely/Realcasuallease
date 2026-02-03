@@ -1,47 +1,613 @@
+import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Building2, Plus, Pencil, Trash2, Mail, DollarSign, Users, Search, Building } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
+import { WeeklyReportSettingsDialog } from "@/components/WeeklyReportSettingsDialog";
+
+interface Owner {
+  id: number;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  bankName: string | null;
+  bankAccountName: string | null;
+  bankBsb: string | null;
+  bankAccountNumber: string | null;
+  monthlyFee: string;
+  commissionPercentage: string;
+  remittanceType: "per_booking" | "monthly";
+  invoiceEmail1: string | null;
+  invoiceEmail2: string | null;
+  invoiceEmail3: string | null;
+  remittanceEmail1: string | null;
+  remittanceEmail2: string | null;
+  remittanceEmail3: string | null;
+  remittanceEmail4: string | null;
+  remittanceEmail5: string | null;
+}
 
 export default function AdminOwners() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedOwner, setSelectedOwner] = useState<Owner | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedCentreForReport, setSelectedCentreForReport] = useState<any>(null);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  
+  const [formData, setFormData] = useState<Partial<Owner>>({
+    name: "",
+    email: "",
+    phone: "",
+    bankName: "",
+    bankAccountName: "",
+    bankBsb: "",
+    bankAccountNumber: "",
+    monthlyFee: "0.00",
+    commissionPercentage: "0.00",
+    remittanceType: "monthly",
+    invoiceEmail1: "",
+    invoiceEmail2: "",
+    invoiceEmail3: "",
+    remittanceEmail1: "",
+    remittanceEmail2: "",
+    remittanceEmail3: "",
+    remittanceEmail4: "",
+    remittanceEmail5: "",
+  });
+
+  const { data: owners, isLoading: ownersLoading, refetch: refetchOwners } = trpc.owners.list.useQuery();
+  const { data: centres } = trpc.centres.list.useQuery();
+  
+  const createOwnerMutation = trpc.owners.create.useMutation({
+    onSuccess: () => {
+      toast.success("Owner created successfully");
+      refetchOwners();
+      setIsAddDialogOpen(false);
+      resetForm();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const updateOwnerMutation = trpc.owners.update.useMutation({
+    onSuccess: () => {
+      toast.success("Owner updated successfully");
+      refetchOwners();
+      setIsEditDialogOpen(false);
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const deleteOwnerMutation = trpc.owners.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Owner deleted successfully");
+      refetchOwners();
+      setIsDeleteDialogOpen(false);
+      setSelectedOwner(null);
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+      bankName: "",
+      bankAccountName: "",
+      bankBsb: "",
+      bankAccountNumber: "",
+      monthlyFee: "0.00",
+      commissionPercentage: "0.00",
+      remittanceType: "monthly",
+      invoiceEmail1: "",
+      invoiceEmail2: "",
+      invoiceEmail3: "",
+      remittanceEmail1: "",
+      remittanceEmail2: "",
+      remittanceEmail3: "",
+      remittanceEmail4: "",
+      remittanceEmail5: "",
+    });
+  };
+
+  const handleEdit = (owner: Owner) => {
+    setSelectedOwner(owner);
+    setFormData(owner);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (owner: Owner) => {
+    setSelectedOwner(owner);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleSubmitCreate = () => {
+    if (!formData.name) {
+      toast.error("Owner name is required");
+      return;
+    }
+    createOwnerMutation.mutate({
+      name: formData.name,
+      email: formData.email || null,
+      phone: formData.phone || null,
+      bankName: formData.bankName || null,
+      bankAccountName: formData.bankAccountName || null,
+      bankBsb: formData.bankBsb || null,
+      bankAccountNumber: formData.bankAccountNumber || null,
+      monthlyFee: formData.monthlyFee || "0.00",
+      commissionPercentage: formData.commissionPercentage || "0.00",
+      remittanceType: formData.remittanceType || "monthly",
+      invoiceEmail1: formData.invoiceEmail1 || null,
+      invoiceEmail2: formData.invoiceEmail2 || null,
+      invoiceEmail3: formData.invoiceEmail3 || null,
+      remittanceEmail1: formData.remittanceEmail1 || null,
+      remittanceEmail2: formData.remittanceEmail2 || null,
+      remittanceEmail3: formData.remittanceEmail3 || null,
+      remittanceEmail4: formData.remittanceEmail4 || null,
+      remittanceEmail5: formData.remittanceEmail5 || null,
+    });
+  };
+
+  const handleSubmitUpdate = () => {
+    if (!selectedOwner || !formData.name) return;
+    updateOwnerMutation.mutate({
+      id: selectedOwner.id,
+      name: formData.name,
+      email: formData.email || null,
+      phone: formData.phone || null,
+      bankName: formData.bankName || null,
+      bankAccountName: formData.bankAccountName || null,
+      bankBsb: formData.bankBsb || null,
+      bankAccountNumber: formData.bankAccountNumber || null,
+      monthlyFee: formData.monthlyFee || "0.00",
+      commissionPercentage: formData.commissionPercentage || "0.00",
+      remittanceType: formData.remittanceType || "monthly",
+      invoiceEmail1: formData.invoiceEmail1 || null,
+      invoiceEmail2: formData.invoiceEmail2 || null,
+      invoiceEmail3: formData.invoiceEmail3 || null,
+      remittanceEmail1: formData.remittanceEmail1 || null,
+      remittanceEmail2: formData.remittanceEmail2 || null,
+      remittanceEmail3: formData.remittanceEmail3 || null,
+      remittanceEmail4: formData.remittanceEmail4 || null,
+      remittanceEmail5: formData.remittanceEmail5 || null,
+    });
+  };
+
+  const filteredOwners = owners?.filter((owner: Owner) =>
+    owner.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    owner.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
+  const getCentresForOwner = (ownerId: number) => {
+    return centres?.filter((c: any) => c.ownerId === ownerId) || [];
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Owners & Managers</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage shopping centre owners and property managers
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Owners & Managers</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage shopping centre owners, bank details, and weekly report settings
+            </p>
+          </div>
+          <Button onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Owner
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search owners by name or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Owners ({filteredOwners.length})
+            </CardTitle>
+            <CardDescription>
+              View and manage shopping centre owners with their bank details and commission settings
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {ownersLoading ? (
+              <div className="text-center py-8 text-muted-foreground">Loading owners...</div>
+            ) : filteredOwners.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                {searchQuery ? "No owners found matching your search" : "No owners found. Add your first owner."}
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Owner Name</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Bank Details</TableHead>
+                    <TableHead>Commission</TableHead>
+                    <TableHead>Centres</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOwners.map((owner: Owner) => {
+                    const ownerCentres = getCentresForOwner(owner.id);
+                    return (
+                      <TableRow key={owner.id}>
+                        <TableCell className="font-medium">{owner.name}</TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {owner.email && <div>{owner.email}</div>}
+                            {owner.phone && <div className="text-muted-foreground">{owner.phone}</div>}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {owner.bankName ? (
+                            <div className="text-sm">
+                              <div>{owner.bankName}</div>
+                              <div className="text-muted-foreground">
+                                BSB: {owner.bankBsb || "—"} | Acc: {owner.bankAccountNumber || "—"}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">Not configured</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div>{owner.commissionPercentage}%</div>
+                            <div className="text-muted-foreground">
+                              Fee: ${owner.monthlyFee}/mo
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {ownerCentres.length > 0 ? (
+                              ownerCentres.slice(0, 3).map((centre: any) => (
+                                <Badge key={centre.id} variant="secondary" className="text-xs">
+                                  {centre.name.length > 15 ? centre.name.slice(0, 15) + "..." : centre.name}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-muted-foreground text-sm">No centres</span>
+                            )}
+                            {ownerCentres.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{ownerCentres.length - 3} more
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" size="sm" onClick={() => handleEdit(owner)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleDelete(owner)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Weekly Report Settings by Centre */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Weekly Report Email Settings
+            </CardTitle>
+            <CardDescription>
+              Configure automated Friday 3pm booking reports for each centre
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Centre</TableHead>
+                  <TableHead>Owner</TableHead>
+                  <TableHead>Report Recipients</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {centres?.sort((a: any, b: any) => a.name.localeCompare(b.name)).map((centre: any) => {
+                  const owner = owners?.find((o: Owner) => o.id === centre.ownerId);
+                  const emailCount = [
+                    centre.weeklyReportEmail1, centre.weeklyReportEmail2, centre.weeklyReportEmail3,
+                    centre.weeklyReportEmail4, centre.weeklyReportEmail5, centre.weeklyReportEmail6,
+                    centre.weeklyReportEmail7, centre.weeklyReportEmail8, centre.weeklyReportEmail9,
+                    centre.weeklyReportEmail10
+                  ].filter(Boolean).length;
+                  
+                  return (
+                    <TableRow key={centre.id}>
+                      <TableCell className="font-medium">{centre.name}</TableCell>
+                      <TableCell>{owner?.name || "—"}</TableCell>
+                      <TableCell>
+                        {emailCount > 0 ? (
+                          <Badge variant="secondary">{emailCount} recipient{emailCount > 1 ? "s" : ""}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">Not configured</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedCentreForReport(centre);
+                            setIsReportDialogOpen(true);
+                          }}
+                        >
+                          <Mail className="h-4 w-4 mr-2" />
+                          Configure
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-purple-100 p-3">
-              <Building2 className="h-6 w-6 text-purple-600" />
-            </div>
-            <div>
-              <CardTitle>Owners & Managers Management</CardTitle>
-              <CardDescription>
-                This feature is coming soon
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            The owners and managers interface will allow you to:
-          </p>
-          <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-            <li>• View and manage shopping centre owners</li>
-            <li>• Assign managers to centres and regions</li>
-            <li>• Configure bank account details for payments</li>
-            <li>• Set commission rates and monthly fees</li>
-            <li>• Manage email notification preferences</li>
-            <li>• View ownership hierarchy and access levels</li>
-          </ul>
-        </CardContent>
-      </Card>
-      </div>
+      {/* Add Owner Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Owner</DialogTitle>
+            <DialogDescription>Create a new shopping centre owner with bank and commission details</DialogDescription>
+          </DialogHeader>
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              <TabsTrigger value="bank">Bank Details</TabsTrigger>
+              <TabsTrigger value="emails">Email Settings</TabsTrigger>
+            </TabsList>
+            <TabsContent value="basic" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Owner Name *</Label>
+                  <Input id="name" value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" value={formData.email || ""} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input id="phone" value={formData.phone || ""} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="commission">Commission %</Label>
+                  <Input id="commission" type="number" step="0.01" value={formData.commissionPercentage || "0.00"} onChange={(e) => setFormData({ ...formData, commissionPercentage: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="monthlyFee">Monthly Fee ($)</Label>
+                  <Input id="monthlyFee" type="number" step="0.01" value={formData.monthlyFee || "0.00"} onChange={(e) => setFormData({ ...formData, monthlyFee: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="remittanceType">Remittance Type</Label>
+                  <Select value={formData.remittanceType} onValueChange={(v: "per_booking" | "monthly") => setFormData({ ...formData, remittanceType: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="per_booking">Per Booking</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
+            <TabsContent value="bank" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bankName">Bank Name</Label>
+                  <Input id="bankName" value={formData.bankName || ""} onChange={(e) => setFormData({ ...formData, bankName: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bankAccountName">Account Name</Label>
+                  <Input id="bankAccountName" value={formData.bankAccountName || ""} onChange={(e) => setFormData({ ...formData, bankAccountName: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bankBsb">BSB</Label>
+                  <Input id="bankBsb" value={formData.bankBsb || ""} onChange={(e) => setFormData({ ...formData, bankBsb: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bankAccountNumber">Account Number</Label>
+                  <Input id="bankAccountNumber" value={formData.bankAccountNumber || ""} onChange={(e) => setFormData({ ...formData, bankAccountNumber: e.target.value })} />
+                </div>
+              </div>
+            </TabsContent>
+            <TabsContent value="emails" className="space-y-4 mt-4">
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-base font-semibold">Invoice Emails</Label>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    <Input placeholder="Email 1" value={formData.invoiceEmail1 || ""} onChange={(e) => setFormData({ ...formData, invoiceEmail1: e.target.value })} />
+                    <Input placeholder="Email 2" value={formData.invoiceEmail2 || ""} onChange={(e) => setFormData({ ...formData, invoiceEmail2: e.target.value })} />
+                    <Input placeholder="Email 3" value={formData.invoiceEmail3 || ""} onChange={(e) => setFormData({ ...formData, invoiceEmail3: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-base font-semibold">Remittance Emails</Label>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    <Input placeholder="Email 1" value={formData.remittanceEmail1 || ""} onChange={(e) => setFormData({ ...formData, remittanceEmail1: e.target.value })} />
+                    <Input placeholder="Email 2" value={formData.remittanceEmail2 || ""} onChange={(e) => setFormData({ ...formData, remittanceEmail2: e.target.value })} />
+                    <Input placeholder="Email 3" value={formData.remittanceEmail3 || ""} onChange={(e) => setFormData({ ...formData, remittanceEmail3: e.target.value })} />
+                    <Input placeholder="Email 4" value={formData.remittanceEmail4 || ""} onChange={(e) => setFormData({ ...formData, remittanceEmail4: e.target.value })} />
+                    <Input placeholder="Email 5" value={formData.remittanceEmail5 || ""} onChange={(e) => setFormData({ ...formData, remittanceEmail5: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSubmitCreate} disabled={createOwnerMutation.isPending}>
+              {createOwnerMutation.isPending ? "Creating..." : "Create Owner"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Owner Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Owner</DialogTitle>
+            <DialogDescription>Update owner details, bank information, and email settings</DialogDescription>
+          </DialogHeader>
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              <TabsTrigger value="bank">Bank Details</TabsTrigger>
+              <TabsTrigger value="emails">Email Settings</TabsTrigger>
+            </TabsList>
+            <TabsContent value="basic" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Owner Name *</Label>
+                  <Input id="edit-name" value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email">Email</Label>
+                  <Input id="edit-email" type="email" value={formData.email || ""} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-phone">Phone</Label>
+                  <Input id="edit-phone" value={formData.phone || ""} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-commission">Commission %</Label>
+                  <Input id="edit-commission" type="number" step="0.01" value={formData.commissionPercentage || "0.00"} onChange={(e) => setFormData({ ...formData, commissionPercentage: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-monthlyFee">Monthly Fee ($)</Label>
+                  <Input id="edit-monthlyFee" type="number" step="0.01" value={formData.monthlyFee || "0.00"} onChange={(e) => setFormData({ ...formData, monthlyFee: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-remittanceType">Remittance Type</Label>
+                  <Select value={formData.remittanceType} onValueChange={(v: "per_booking" | "monthly") => setFormData({ ...formData, remittanceType: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="per_booking">Per Booking</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
+            <TabsContent value="bank" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-bankName">Bank Name</Label>
+                  <Input id="edit-bankName" value={formData.bankName || ""} onChange={(e) => setFormData({ ...formData, bankName: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-bankAccountName">Account Name</Label>
+                  <Input id="edit-bankAccountName" value={formData.bankAccountName || ""} onChange={(e) => setFormData({ ...formData, bankAccountName: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-bankBsb">BSB</Label>
+                  <Input id="edit-bankBsb" value={formData.bankBsb || ""} onChange={(e) => setFormData({ ...formData, bankBsb: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-bankAccountNumber">Account Number</Label>
+                  <Input id="edit-bankAccountNumber" value={formData.bankAccountNumber || ""} onChange={(e) => setFormData({ ...formData, bankAccountNumber: e.target.value })} />
+                </div>
+              </div>
+            </TabsContent>
+            <TabsContent value="emails" className="space-y-4 mt-4">
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-base font-semibold">Invoice Emails</Label>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    <Input placeholder="Email 1" value={formData.invoiceEmail1 || ""} onChange={(e) => setFormData({ ...formData, invoiceEmail1: e.target.value })} />
+                    <Input placeholder="Email 2" value={formData.invoiceEmail2 || ""} onChange={(e) => setFormData({ ...formData, invoiceEmail2: e.target.value })} />
+                    <Input placeholder="Email 3" value={formData.invoiceEmail3 || ""} onChange={(e) => setFormData({ ...formData, invoiceEmail3: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-base font-semibold">Remittance Emails</Label>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    <Input placeholder="Email 1" value={formData.remittanceEmail1 || ""} onChange={(e) => setFormData({ ...formData, remittanceEmail1: e.target.value })} />
+                    <Input placeholder="Email 2" value={formData.remittanceEmail2 || ""} onChange={(e) => setFormData({ ...formData, remittanceEmail2: e.target.value })} />
+                    <Input placeholder="Email 3" value={formData.remittanceEmail3 || ""} onChange={(e) => setFormData({ ...formData, remittanceEmail3: e.target.value })} />
+                    <Input placeholder="Email 4" value={formData.remittanceEmail4 || ""} onChange={(e) => setFormData({ ...formData, remittanceEmail4: e.target.value })} />
+                    <Input placeholder="Email 5" value={formData.remittanceEmail5 || ""} onChange={(e) => setFormData({ ...formData, remittanceEmail5: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSubmitUpdate} disabled={updateOwnerMutation.isPending}>
+              {updateOwnerMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Owner</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{selectedOwner?.name}"? This action cannot be undone.
+              All associated centres will need to be reassigned to a different owner.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={() => selectedOwner && deleteOwnerMutation.mutate({ id: selectedOwner.id })} disabled={deleteOwnerMutation.isPending}>
+              {deleteOwnerMutation.isPending ? "Deleting..." : "Delete Owner"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Weekly Report Settings Dialog */}
+      {selectedCentreForReport && (
+        <WeeklyReportSettingsDialog
+          centre={selectedCentreForReport}
+          open={isReportDialogOpen}
+          onOpenChange={setIsReportDialogOpen}
+        />
+      )}
     </AdminLayout>
   );
 }

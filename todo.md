@@ -2916,3 +2916,13 @@
 
 ## UI Change (Feb 3, 2025)
 - [x] Replace dropdown with buttons for asset type selection on CentreDetail page
+
+## Feature Implementation (Feb 3, 2025)
+- [x] Implement Owners & Managers admin page with centre assignment and weekly report settings
+  - Added owners.list, owners.getById, owners.create, owners.update, owners.delete tRPC procedures
+  - Added updateOwner and deleteOwner database helpers
+  - Full CRUD interface with tabbed dialogs (Basic Info, Bank Details, Email Settings)
+  - Weekly Report Email Settings section with Configure buttons for each centre
+  - Integration with existing WeeklyReportSettingsDialog component
+  - Search functionality for filtering owners by name or email
+  - Shows associated centres for each owner

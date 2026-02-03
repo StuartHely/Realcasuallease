@@ -223,6 +223,18 @@ export async function getOwnerById(id: number) {
   return owner || null;
 }
 
+export async function updateOwner(id: number, data: Partial<InsertOwner>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.update(owners).set(data).where(eq(owners.id, id));
+}
+
+export async function deleteOwner(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.delete(owners).where(eq(owners.id, id));
+}
+
 export async function getShoppingCentres() {
   const db = await getDb();
   if (!db) return [];
