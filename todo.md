@@ -2902,3 +2902,6 @@
 ## UI Improvements (Feb 3, 2025 - Centre Detail Page)
 - [x] Replace "Available Casual Leasing" with "Scroll Down for Site Details and Centre Map" on centre detail page
 - [x] Add "About xxx" description of the centre under Site Availability section
+
+## Bug Fixes (Feb 3, 2025 - Centre Description HTML)
+- [x] Fix centre description showing raw HTML tags instead of rendering properly (e.g., Eastgate)

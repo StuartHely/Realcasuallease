@@ -433,7 +433,10 @@ export default function CentreDetail() {
               <CardTitle className="text-xl text-blue-900">About {centre.name}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line">{centre.description}</p>
+              <div 
+                className="text-gray-700 leading-relaxed prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: centre.description }}
+              />
             </CardContent>
           </Card>
         )}
