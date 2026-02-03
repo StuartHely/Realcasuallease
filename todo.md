@@ -2910,3 +2910,9 @@
 - [x] Fix inconsistency where state browse shows only CL tab while search shows all 4 asset type tabs
 - [x] Add conditional rendering to show only asset types with available items
 - [x] Add auto-select logic to choose first available asset type when data loads
+
+## Bug Fixes (Feb 3, 2025 - CentreDetail Tabs)
+- [ ] Fix CentreDetail to show all available asset type tabs when accessing via state browse
+
+## UI Change (Feb 3, 2025)
+- [x] Replace dropdown with buttons for asset type selection on CentreDetail page

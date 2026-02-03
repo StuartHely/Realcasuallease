@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// Select imports removed - using buttons instead
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MapPin, Building2, ArrowLeft, Calendar, DollarSign, Ruler, Zap, Store, Layers, ChevronLeft, ChevronRight, CheckCircle, XCircle, Info } from "lucide-react";
@@ -353,53 +353,60 @@ export default function CentreDetail() {
             </div>
           </CardHeader>
           <CardContent>
-            {/* Asset Type Selector */}
-            <div className="mb-6 flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-700">View:</span>
-              <Select value={assetType} onValueChange={(value: AssetType) => setAssetType(value)}>
-                <SelectTrigger className="w-64">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {assetCounts.casual_leasing > 0 && (
-                    <SelectItem value="casual_leasing">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-blue-600" />
-                        <span>Casual Leasing</span>
-                        <Badge variant="secondary" className="ml-2">{assetCounts.casual_leasing}</Badge>
-                      </div>
-                    </SelectItem>
-                  )}
-                  {assetCounts.vacant_shops > 0 && (
-                    <SelectItem value="vacant_shops">
-                      <div className="flex items-center gap-2">
-                        <Store className="h-4 w-4 text-green-600" />
-                        <span>Vacant Shops</span>
-                        <Badge variant="secondary" className="ml-2">{assetCounts.vacant_shops}</Badge>
-                      </div>
-                    </SelectItem>
-                  )}
-                  {assetCounts.third_line > 0 && (
-                    <SelectItem value="third_line">
-                      <div className="flex items-center gap-2">
-                        <Layers className="h-4 w-4 text-purple-600" />
-                        <span>Third Line Income</span>
-                        <Badge variant="secondary" className="ml-2">{assetCounts.third_line}</Badge>
-                      </div>
-                    </SelectItem>
-                  )}
-                  {/* Show All Assets only if there are multiple asset types available */}
-                  {((assetCounts.casual_leasing > 0 ? 1 : 0) + (assetCounts.vacant_shops > 0 ? 1 : 0) + (assetCounts.third_line > 0 ? 1 : 0)) > 1 && (
-                    <SelectItem value="all">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-gray-600" />
-                        <span>All Assets</span>
-                        <Badge variant="secondary" className="ml-2">{assetCounts.all}</Badge>
-                      </div>
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
+            {/* Asset Type Selector - Buttons */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-medium text-gray-700 mr-2">Asset Type:</span>
+                {assetCounts.casual_leasing > 0 && (
+                  <Button
+                    variant={assetType === "casual_leasing" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setAssetType("casual_leasing")}
+                    className="flex items-center gap-2"
+                  >
+                    <MapPin className="h-4 w-4" />
+                    Casual Leasing
+                    <Badge variant="secondary" className="ml-1">{assetCounts.casual_leasing}</Badge>
+                  </Button>
+                )}
+                {assetCounts.vacant_shops > 0 && (
+                  <Button
+                    variant={assetType === "vacant_shops" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setAssetType("vacant_shops")}
+                    className="flex items-center gap-2"
+                  >
+                    <Store className="h-4 w-4" />
+                    Vacant Shops
+                    <Badge variant="secondary" className="ml-1">{assetCounts.vacant_shops}</Badge>
+                  </Button>
+                )}
+                {assetCounts.third_line > 0 && (
+                  <Button
+                    variant={assetType === "third_line" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setAssetType("third_line")}
+                    className="flex items-center gap-2"
+                  >
+                    <Layers className="h-4 w-4" />
+                    Third Line Income
+                    <Badge variant="secondary" className="ml-1">{assetCounts.third_line}</Badge>
+                  </Button>
+                )}
+                {/* Show All Assets only if there are multiple asset types available */}
+                {((assetCounts.casual_leasing > 0 ? 1 : 0) + (assetCounts.vacant_shops > 0 ? 1 : 0) + (assetCounts.third_line > 0 ? 1 : 0)) > 1 && (
+                  <Button
+                    variant={assetType === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setAssetType("all")}
+                    className="flex items-center gap-2"
+                  >
+                    <Building2 className="h-4 w-4" />
+                    All Assets
+                    <Badge variant="secondary" className="ml-1">{assetCounts.all}</Badge>
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="bg-gray-50 rounded-lg p-6 mb-6">
