@@ -2884,3 +2884,7 @@
 - [x] Only show Third Line Income button when third line income sites are available
 - [x] Hide entire Asset Type section if no sites are available for any category
 - [x] Show All Assets button only when multiple asset types have sites
+
+## Bug Fixes (Feb 2, 2025 - Marker Visibility)
+- [x] Fix missing site markers on map when positioned outside image bounds - added overflow-visible to InteractiveMap container
+- [x] Highlands Marketplace showing 5 sites but only 3 markers visible - CSS overflow was clipping markers positioned at edge/outside image

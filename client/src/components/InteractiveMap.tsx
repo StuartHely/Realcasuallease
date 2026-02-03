@@ -151,10 +151,10 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
   }
 
   const MapContent = () => (
-    <div className="bg-white rounded-lg border-2 border-gray-200">
+    <div className="bg-white rounded-lg border-2 border-gray-200 overflow-visible">
       <div 
         ref={mapContainerRef} 
-        className="relative inline-block"
+        className="relative inline-block overflow-visible"
         onMouseLeave={handleMarkerLeave}
       >
         {mapLoading ? (
