@@ -426,10 +426,22 @@ export default function CentreDetail() {
           </CardContent>
         </Card>
 
-        {/* Available Assets based on selected type */}
+        {/* About Centre Description */}
+        {centre.description && (
+          <Card className="mb-8 shadow-lg bg-blue-50 border-blue-200">
+            <CardHeader>
+              <CardTitle className="text-xl text-blue-900">About {centre.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-line">{centre.description}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Site Details and Centre Map Section */}
         <div>
           <h2 className="text-2xl font-bold text-blue-900 mb-6">
-            {assetType === "all" ? "All Available Assets" : `Available ${getAssetTypeLabel(assetType)}`}
+            Scroll Down for Site Details and Centre Map
           </h2>
           
           {/* Casual Leasing Sites */}

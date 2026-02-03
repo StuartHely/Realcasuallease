@@ -2898,3 +2898,7 @@
 
 ## Bug Fixes (Feb 3, 2025 - Marker Saving)
 - [x] Fix saveSiteMarkers Zod validation to use z.coerce.number() for x and y coordinates
+
+## UI Improvements (Feb 3, 2025 - Centre Detail Page)
+- [x] Replace "Available Casual Leasing" with "Scroll Down for Site Details and Centre Map" on centre detail page
+- [x] Add "About xxx" description of the centre under Site Availability section
