@@ -2731,8 +2731,8 @@ export const appRouter = router({
         pricePerWeek: z.string().optional(),
         pricePerMonth: z.string().optional(),
         floorLevelId: z.number().nullable().optional(),
-        mapMarkerX: z.number().nullable().optional(),
-        mapMarkerY: z.number().nullable().optional(),
+        mapMarkerX: z.string().nullable().optional(),
+        mapMarkerY: z.string().nullable().optional(),
         isActive: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
@@ -2753,8 +2753,8 @@ export const appRouter = router({
         pricePerWeek: z.string().optional(),
         pricePerMonth: z.string().optional(),
         floorLevelId: z.number().nullable().optional(),
-        mapMarkerX: z.number().nullable().optional(),
-        mapMarkerY: z.number().nullable().optional(),
+        mapMarkerX: z.string().nullable().optional(),
+        mapMarkerY: z.string().nullable().optional(),
         isActive: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
@@ -2826,8 +2826,8 @@ export const appRouter = router({
         pricePerWeek: z.string().optional(),
         pricePerMonth: z.string().optional(),
         floorLevelId: z.number().nullable().optional(),
-        mapMarkerX: z.number().nullable().optional(),
-        mapMarkerY: z.number().nullable().optional(),
+        mapMarkerX: z.string().nullable().optional(),
+        mapMarkerY: z.string().nullable().optional(),
         isActive: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
@@ -2848,8 +2848,8 @@ export const appRouter = router({
         pricePerWeek: z.string().optional(),
         pricePerMonth: z.string().optional(),
         floorLevelId: z.number().nullable().optional(),
-        mapMarkerX: z.number().nullable().optional(),
-        mapMarkerY: z.number().nullable().optional(),
+        mapMarkerX: z.string().nullable().optional(),
+        mapMarkerY: z.string().nullable().optional(),
         isActive: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {

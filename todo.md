@@ -2888,3 +2888,10 @@
 ## Bug Fixes (Feb 2, 2025 - Marker Visibility)
 - [x] Fix missing site markers on map when positioned outside image bounds - added overflow-visible to InteractiveMap container
 - [x] Highlands Marketplace showing 5 sites but only 3 markers visible - CSS overflow was clipping markers positioned at edge/outside image
+
+## Bug Report (Feb 3, 2025 - Site Display Issue)
+- [ ] Sites 3, 5, 7 missing from Highlands Marketplace in admin maps and search results
+- [ ] Only sites 1, 7, 8 appearing (duplicate 7?)
+- [ ] Investigate floor level assignments for all 5 sites
+- [ ] Verify site IDs and database consistency
+- [x] Fix marker coordinate data type from int to decimal(5,2) for proper percentage storage

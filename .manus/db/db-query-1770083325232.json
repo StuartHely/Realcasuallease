@@ -1,0 +1,40 @@
+{
+  "query": "SELECT siteNumber, mapMarkerX, mapMarkerY, floorLevelId FROM sites WHERE centreId = (SELECT id FROM shopping_centres WHERE name = 'Highlands Marketplace') ORDER BY siteNumber",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT siteNumber, mapMarkerX, mapMarkerY, floorLevelId FROM sites WHERE centreId = (SELECT id FROM shopping_centres WHERE name = 'Highlands Marketplace') ORDER BY siteNumber",
+  "rows": [
+    {
+      "siteNumber": "1",
+      "mapMarkerX": "50",
+      "mapMarkerY": "100",
+      "floorLevelId": "210001"
+    },
+    {
+      "siteNumber": "3",
+      "mapMarkerX": "200",
+      "mapMarkerY": "150",
+      "floorLevelId": "210001"
+    },
+    {
+      "siteNumber": "5",
+      "mapMarkerX": "350",
+      "mapMarkerY": "200",
+      "floorLevelId": "210001"
+    },
+    {
+      "siteNumber": "7",
+      "mapMarkerX": "59",
+      "mapMarkerY": "60",
+      "floorLevelId": "210001"
+    },
+    {
+      "siteNumber": "8",
+      "mapMarkerX": "38",
+      "mapMarkerY": "58",
+      "floorLevelId": "210001"
+    }
+  ],
+  "messages": [],
+  "stdout": "siteNumber\tmapMarkerX\tmapMarkerY\tfloorLevelId\n1\t50\t100\t210001\n3\t200\t150\t210001\n5\t350\t200\t210001\n7\t59\t60\t210001\n8\t38\t58\t210001\n",
+  "stderr": "",
+  "execution_time_ms": 1526
+}

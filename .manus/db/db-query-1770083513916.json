@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE sites SET mapMarkerX = 25.00, mapMarkerY = 35.00 WHERE siteNumber = '3' AND centreId = (SELECT id FROM shopping_centres WHERE name = 'Highlands Marketplace'); UPDATE sites SET mapMarkerX = 35.00, mapMarkerY = 50.00 WHERE siteNumber = '5' AND centreId = (SELECT id FROM shopping_centres WHERE name = 'Highlands Marketplace');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute UPDATE sites SET mapMarkerX = 25.00, mapMarkerY = 35.00 WHERE siteNumber = '3' AND centreId = (SELECT id FROM shopping_centres WHERE name = 'Highlands Marketplace'); UPDATE sites SET mapMarkerX = 35.00, mapMarkerY = 50.00 WHERE siteNumber = '5' AND centreId = (SELECT id FROM shopping_centres WHERE name = 'Highlands Marketplace');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1747
+}

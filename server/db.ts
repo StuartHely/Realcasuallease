@@ -1077,8 +1077,8 @@ export async function saveSiteMarkers(markers: Array<{ siteId: number; x: number
   for (const marker of markers) {
     await db.update(sites)
       .set({
-        mapMarkerX: marker.x,
-        mapMarkerY: marker.y,
+        mapMarkerX: String(marker.x),
+        mapMarkerY: String(marker.y),
       })
       .where(eq(sites.id, marker.siteId));
   }
