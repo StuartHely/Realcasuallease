@@ -2878,3 +2878,9 @@
 ## Site Description Rich Text (Feb 2, 2026)
 - [x] Add RichTextEditor to Admin Sites page for site description field
 - [x] Test rich text formatting in site descriptions
+## Search Results Filter Buttons (Feb 3, 2026)
+- [x] Only show Casual Leasing button when casual leasing sites are available
+- [x] Only show Vacant Shops button when vacant shop sites are available
+- [x] Only show Third Line Income button when third line income sites are available
+- [x] Hide entire Asset Type section if no sites are available for any category
+- [x] Show All Assets button only when multiple asset types have sites

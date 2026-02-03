@@ -206,6 +206,16 @@ export default function Search() {
   // Parse query to check if filters are applied
   const parsedQuery = searchParams?.query ? parseSearchQuery(searchParams.query) : { minSizeM2: undefined, productCategory: undefined };
 
+  // Count available sites by type
+  const casualLeasingCount = useMemo(() => {
+    const clSites = data?.sites?.filter((s: any) => s.assetType === 'casual_leasing' || !s.assetType) || [];
+    const fetchedCLSites = casualLeasingSites || [];
+    return clSites.length + fetchedCLSites.length;
+  }, [data?.sites, casualLeasingSites]);
+
+  const vacantShopsCount = vacantShops?.length || 0;
+  const thirdLineCount = thirdLineIncome?.length || 0;
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -345,10 +355,12 @@ export default function Search() {
             return null;
           })()}
           
-          {/* Asset Type Filter */}
+          {/* Asset Type Filter - only show if there are sites available */}
+          {(casualLeasingCount > 0 || vacantShopsCount > 0 || thirdLineCount > 0) && (
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <span className="text-sm font-medium text-gray-700">Asset Type:</span>
             <div className="flex flex-wrap gap-2">
+              {casualLeasingCount > 0 && (
               <Button
                 variant={selectedAssetType === "casual_leasing" ? "default" : "outline"}
                 size="sm"
@@ -358,6 +370,8 @@ export default function Search() {
                 <MapPin className="h-4 w-4" />
                 Casual Leasing
               </Button>
+              )}
+              {vacantShopsCount > 0 && (
               <Button
                 variant={selectedAssetType === "vacant_shops" ? "default" : "outline"}
                 size="sm"
@@ -367,6 +381,8 @@ export default function Search() {
                 <Store className="h-4 w-4" />
                 Vacant Shops
               </Button>
+              )}
+              {thirdLineCount > 0 && (
               <Button
                 variant={selectedAssetType === "third_line" ? "default" : "outline"}
                 size="sm"
@@ -376,6 +392,8 @@ export default function Search() {
                 <Zap className="h-4 w-4" />
                 Third Line Income
               </Button>
+              )}
+              {(casualLeasingCount > 0 && vacantShopsCount > 0) || (casualLeasingCount > 0 && thirdLineCount > 0) || (vacantShopsCount > 0 && thirdLineCount > 0) ? (
               <Button
                 variant={selectedAssetType === "all" ? "default" : "outline"}
                 size="sm"
@@ -385,8 +403,10 @@ export default function Search() {
                 <Layers className="h-4 w-4" />
                 All Assets
               </Button>
+              ) : null}
             </div>
           </div>
+          )}
           
           {/* Show smart size suggestion if exact match not available */}
           {data?.sizeNotAvailable && data?.closestMatch && (
