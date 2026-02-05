@@ -2970,3 +2970,8 @@
   - Added users.getById tRPC procedure to fetch user, profile, and bookings
   - Made customer name clickable in PendingApprovals page
   - Made Company Name clickable in Bookings page
+
+## Feature (Feb 5, 2025 - Users Search)
+- [x] Add search box on Users page to filter by name, email, or company
+  - Extended existing search to include companyName and tradingName from user profile
+  - Updated placeholder text to indicate searchable fields

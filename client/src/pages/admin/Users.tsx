@@ -230,7 +230,9 @@ export default function AdminUsers() {
     return (
       user.name?.toLowerCase().includes(query) ||
       user.email?.toLowerCase().includes(query) ||
-      user.role.toLowerCase().includes(query)
+      user.role.toLowerCase().includes(query) ||
+      user.profile?.companyName?.toLowerCase().includes(query) ||
+      user.profile?.tradingName?.toLowerCase().includes(query)
     );
   });
 
@@ -280,10 +282,10 @@ export default function AdminUsers() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search users..."
+                    placeholder="Search by name, email, or company..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 w-64"
+                    className="pl-9 w-72"
                   />
                 </div>
               </div>
