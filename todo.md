@@ -2992,3 +2992,10 @@
 - [x] Fix hover tooltip not working on floor plan markers
   - Reverted to tab-based layout (removed side-by-side)
   - Changed tooltip to fixed positioning with clientX/clientY coordinates
+
+## Feature (Feb 5, 2025 - Side-by-Side Floor Plans)
+- [x] Re-implement side-by-side floor plan layout while preserving working tooltip
+  - Floors display in 2-column grid on desktop, stacked on mobile
+  - Each floor has header with level name and marker count
+  - Tooltip uses fixed positioning at component root level to avoid re-render issues
+  - Shared legend at bottom for all floors

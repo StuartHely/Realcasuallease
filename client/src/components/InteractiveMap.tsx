@@ -362,24 +362,218 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
     </div>
   );
 
-  // Multi-level centre with tabs
+  // Multi-level centre with side-by-side layout (2 per row)
   if (isMultiLevel && floorLevels.length > 0) {
+    // Get floors with their maps and sites
+    const floorsWithMaps = floorLevels.map((floor: any) => {
+      const floorSites = sites.filter((site: Site) => {
+        const hasMarkers = site.mapMarkerX !== null && site.mapMarkerY !== null;
+        const siteAssetType = site.assetType || "casual_leasing";
+        if (assetTypeFilter !== "all" && siteAssetType !== assetTypeFilter) return false;
+        return hasMarkers && site.floorLevelId === floor.id;
+      });
+      return { ...floor, sites: floorSites };
+    });
+
     return (
       <div className="space-y-4">
-        <Tabs value={selectedFloorId?.toString() || ""} onValueChange={(val) => setSelectedFloorId(parseInt(val))}>
-          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${floorLevels.length}, 1fr)` }}>
-            {floorLevels.map((floor: any) => (
-              <TabsTrigger key={floor.id} value={floor.id.toString()}>
-                {floor.levelName}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {floorLevels.map((floor: any) => (
-            <TabsContent key={floor.id} value={floor.id.toString()}>
-              <MapContent />
-            </TabsContent>
+        {/* Side-by-side floor maps grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {floorsWithMaps.map((floor: any) => (
+            <div key={floor.id} className="bg-white rounded-lg border-2 border-gray-200 overflow-visible">
+              {/* Floor header */}
+              <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
+                <h4 className="font-semibold text-gray-800">{floor.levelName}</h4>
+                <span className="text-xs text-gray-500">{floor.sites.length} markers</span>
+              </div>
+              {/* Map container */}
+              <div 
+                className="relative inline-block overflow-visible"
+                onMouseLeave={handleMarkerLeave}
+              >
+                <img
+                  src={floor.mapImageUrl || ""}
+                  alt={`${centreName} - ${floor.levelName}`}
+                  className="max-w-full h-auto"
+                  draggable={false}
+                />
+                {/* Site Markers for this floor */}
+                {floor.sites.map((site: Site) => {
+                  const colors = getMarkerColor(site);
+                  const label = getMarkerLabel(site);
+                  return (
+                    <div
+                      key={site.id}
+                      className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform z-10"
+                      style={{
+                        left: `${site.mapMarkerX}%`,
+                        top: `${site.mapMarkerY}%`,
+                      }}
+                      onMouseEnter={(e) => handleMarkerHover(site, e)}
+                      onMouseLeave={() => setHoveredSite(null)}
+                      onClick={() => handleMarkerClick(site)}
+                    >
+                      <div 
+                        className="min-w-8 h-8 px-2 rounded-full flex items-center justify-center text-xs font-bold shadow-lg border-2"
+                        style={{ 
+                          backgroundColor: colors.bg, 
+                          color: colors.text,
+                          borderColor: colors.border,
+                        }}
+                      >
+                        {label.length > 4 ? label.substring(0, 4) : label}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           ))}
-        </Tabs>
+        </div>
+
+        {/* Shared Legend */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+          <div className="flex items-center justify-between text-sm flex-wrap gap-2">
+            <div className="flex items-center gap-4 flex-wrap">
+              {(assetTypeFilter === "casual_leasing" || assetTypeFilter === "all") && (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: ASSET_COLORS.casual_leasing.bg }} />
+                  <span className="text-gray-700">Casual Leasing</span>
+                </div>
+              )}
+              {(assetTypeFilter === "vacant_shops" || assetTypeFilter === "all") && (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: ASSET_COLORS.vacant_shops.bg }} />
+                  <span className="text-gray-700">Vacant Shops</span>
+                </div>
+              )}
+              {(assetTypeFilter === "third_line" || assetTypeFilter === "all") && (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: ASSET_COLORS.third_line.bg }} />
+                  <span className="text-gray-700">Third Line Income</span>
+                </div>
+              )}
+            </div>
+            <p className="text-gray-600 italic">Hover over markers for details</p>
+          </div>
+        </div>
+
+        {/* Fixed Tooltip - rendered at component root level */}
+        {hoveredSite && (
+          <div
+            className="fixed z-[9999] pointer-events-none"
+            style={{
+              left: `${tooltipPosition.x + 15}px`,
+              top: `${tooltipPosition.y - 10}px`,
+            }}
+          >
+            <div className="bg-white rounded-lg shadow-2xl border-2 border-blue-200 p-4 min-w-[280px] max-w-[320px]">
+              {hoveredSite.imageUrl1 && (
+                <div className="mb-3 rounded-lg overflow-hidden">
+                  <img
+                    src={hoveredSite.imageUrl1}
+                    alt={hoveredSite.displayLabel || `Asset ${hoveredSite.id}`}
+                    className="w-full h-32 object-cover"
+                  />
+                </div>
+              )}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-blue-900 text-lg">
+                    {hoveredSite.displayLabel || hoveredSite.siteNumber || hoveredSite.shopNumber || hoveredSite.assetNumber}
+                  </h4>
+                  <span 
+                    className="text-xs px-2 py-1 rounded font-semibold"
+                    style={{
+                      backgroundColor: getMarkerColor(hoveredSite).bg + "20",
+                      color: getMarkerColor(hoveredSite).bg,
+                    }}
+                  >
+                    {hoveredSite.assetType === "vacant_shops" ? "Vacant Shop" :
+                     hoveredSite.assetType === "third_line" ? (hoveredSite.categoryName || "Third Line") :
+                     "Available"}
+                  </span>
+                </div>
+                {hoveredSite.description && (
+                  <p className="text-sm text-gray-700 line-clamp-2">{hoveredSite.description}</p>
+                )}
+                {(hoveredSite.size || hoveredSite.totalSizeM2 || hoveredSite.dimensions) && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Ruler className="h-4 w-4" />
+                    <span>
+                      {hoveredSite.size || 
+                       (hoveredSite.totalSizeM2 ? `${hoveredSite.totalSizeM2} m²` : null) ||
+                       hoveredSite.dimensions}
+                    </span>
+                  </div>
+                )}
+                {hoveredSite.powered && (
+                  <div className="flex items-center gap-2 text-sm text-green-600">
+                    <span className="text-green-500">⚡</span>
+                    <span>Power Available</span>
+                  </div>
+                )}
+                <div className="pt-2 border-t border-gray-200">
+                  {hoveredSite.assetType === "casual_leasing" || !hoveredSite.assetType ? (
+                    <>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Mon-Fri:</span>
+                        <span className="font-semibold text-gray-700 flex items-center gap-1">
+                          <DollarSign className="h-3 w-3" />
+                          {hoveredSite.pricePerDay ? Number(hoveredSite.pricePerDay).toFixed(2) : "150.00"}/day
+                        </span>
+                      </div>
+                      {hoveredSite.weekendPricePerDay && hoveredSite.weekendPricePerDay !== hoveredSite.pricePerDay && (
+                        <div className="flex items-center justify-between text-sm mt-1">
+                          <span className="text-gray-600">Weekend:</span>
+                          <span className="font-semibold text-purple-700 flex items-center gap-1">
+                            <DollarSign className="h-3 w-3" />
+                            {Number(hoveredSite.weekendPricePerDay).toFixed(2)}/day
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between text-sm mt-1">
+                        <span className="text-gray-600">Weekly:</span>
+                        <span className="font-bold text-blue-900 flex items-center gap-1">
+                          <DollarSign className="h-4 w-4" />
+                          {hoveredSite.pricePerWeek ? Number(hoveredSite.pricePerWeek).toFixed(2) : "750.00"}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {hoveredSite.pricePerWeek && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Weekly:</span>
+                          <span className="font-semibold text-gray-700 flex items-center gap-1">
+                            <DollarSign className="h-3 w-3" />
+                            {Number(hoveredSite.pricePerWeek).toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                      {hoveredSite.pricePerMonth && (
+                        <div className="flex items-center justify-between text-sm mt-1">
+                          <span className="text-gray-600">Monthly:</span>
+                          <span className="font-bold flex items-center gap-1" style={{ color: getMarkerColor(hoveredSite).bg }}>
+                            <DollarSign className="h-4 w-4" />
+                            {Number(hoveredSite.pricePerMonth).toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+                <div className="pt-2">
+                  <p className="text-xs font-medium" style={{ color: getMarkerColor(hoveredSite).bg }}>
+                    {hoveredSite.assetType === "casual_leasing" || !hoveredSite.assetType
+                      ? "Click marker to view details & book →"
+                      : "Click marker to enquire →"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
