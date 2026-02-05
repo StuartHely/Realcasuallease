@@ -1263,10 +1263,18 @@ export const appRouter = router({
         restrictions: z.string().optional(),
         dailyRate: z.string(),
         weeklyRate: z.string(),
+        weekendRate: z.string().optional(),
         instantBooking: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
-        return await db.createSite(input);
+        // Map frontend field names to database column names
+        const { dailyRate, weeklyRate, weekendRate, ...rest } = input;
+        return await db.createSite({
+          ...rest,
+          pricePerDay: dailyRate,
+          pricePerWeek: weeklyRate,
+          weekendPricePerDay: weekendRate || null,
+        });
       }),
 
     updateSite: adminProcedure

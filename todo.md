@@ -2932,3 +2932,8 @@
   - Added 'florist' to queryParser category keywords
   - Fixed sitesByCentre override to clear sites when category specified but no matches found
   - Added categoryNotAvailable flag to response for better UI messaging
+
+## Bug Fixes (Feb 5, 2025 - Site Rates)
+- [x] Fix daily and weekly rates not being saved on first site creation
+  - Root cause: createSite procedure passed dailyRate/weeklyRate directly but DB expects pricePerDay/pricePerWeek
+  - Fixed by mapping frontend field names to database column names in createSite mutation
