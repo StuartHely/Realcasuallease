@@ -247,6 +247,7 @@ export const bookings = mysqlTable("bookings", {
   rejectionReason: text("rejectionReason"),
   tablesRequested: int("tablesRequested").default(0),
   chairsRequested: int("chairsRequested").default(0),
+  bringingOwnTables: boolean("bringingOwnTables").default(false).notNull(),
   stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
   paymentMethod: mysqlEnum("paymentMethod", ["stripe", "invoice"]).default("stripe").notNull(),
   paidAt: timestamp("paidAt"),

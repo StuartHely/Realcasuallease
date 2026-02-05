@@ -57,7 +57,7 @@ export default function SiteDetail() {
     additionalCategoryText?: string;
     tablesRequested: number;
     chairsRequested: number;
-    proceedWithOwnTables?: boolean;
+    bringingOwnTables?: boolean;
   } | null>(null);
   
   const trackViewMutation = trpc.admin.trackImageView.useMutation();
@@ -162,7 +162,7 @@ export default function SiteDetail() {
         additionalCategoryText: additionalCategoryText || undefined,
         tablesRequested: requestedTables,
         chairsRequested: requestedChairs,
-        proceedWithOwnTables: true,
+        bringingOwnTables: true,
       });
       setShowCentreEquipmentDialog(true);
       return;

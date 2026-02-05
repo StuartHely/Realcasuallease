@@ -2947,3 +2947,9 @@
 ## Bug Fixes (Feb 5, 2025 - Equipment Dialog)
 - [x] Fix Yes option in Limited Equipment Available dialog not proceeding with booking
   - Replaced Select dropdown with explicit Yes/No buttons for reliable action triggering
+
+## Feature (Feb 5, 2025 - Own Tables Flag)
+- [x] Add flag to bookings to indicate when user brings their own tables
+  - Added bringingOwnTables boolean column to bookings table
+  - Updated bookings.create procedure to accept and store the flag
+  - Frontend passes bringingOwnTables=true when user confirms to proceed with own tables

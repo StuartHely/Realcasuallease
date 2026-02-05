@@ -291,6 +291,7 @@ export const appRouter = router({
         endDate: z.date(),
         tablesRequested: z.number().optional().default(0),
         chairsRequested: z.number().optional().default(0),
+        bringingOwnTables: z.boolean().optional().default(false),
       }))
       .mutation(async ({ input, ctx }) => {
         // Check availability
@@ -473,6 +474,7 @@ export const appRouter = router({
           requiresApproval,
           tablesRequested: input.tablesRequested || 0,
           chairsRequested: input.chairsRequested || 0,
+          bringingOwnTables: input.bringingOwnTables || false,
         });
         
         // Record initial status in history

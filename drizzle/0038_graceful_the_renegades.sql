@@ -1,0 +1,1 @@
+ALTER TABLE `bookings` ADD `bringingOwnTables` boolean DEFAULT false NOT NULL;
