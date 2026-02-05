@@ -2926,3 +2926,9 @@
   - Integration with existing WeeklyReportSettingsDialog component
   - Search functionality for filtering owners by name or email
   - Shows associated centres for each owner
+
+## Bug Fixes (Feb 3, 2025 - Category Filter)
+- [x] Fix category filter ignoring site restrictions - sites that don't permit a category should be excluded from search results
+  - Added 'florist' to queryParser category keywords
+  - Fixed sitesByCentre override to clear sites when category specified but no matches found
+  - Added categoryNotAvailable flag to response for better UI messaging

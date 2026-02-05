@@ -1,0 +1,13 @@
+BUG FIX PROGRESS:
+
+After fix applied:
+- Search for "florist carnes hill" now shows 0 markers (correct!)
+- Message shows "Your requested size is not available. Let me show you the other sites."
+- But there are no sites shown in the availability table (correct behavior)
+
+The fix is working - sites without the florist category are now excluded.
+
+However, the message is misleading - it says "size is not available" but the issue is category.
+Need to update the message to be more accurate when category filter returns no results.
+
+Also need to check if the centre should even be shown when no sites match the category.

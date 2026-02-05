@@ -419,10 +419,18 @@ export default function Search() {
             </div>
           )}
           {/* Show generic message if no close matches */}
-          {data?.sizeNotAvailable && !data?.closestMatch && (
+          {data?.sizeNotAvailable && !data?.closestMatch && !data?.categoryNotAvailable && (
             <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-amber-800 font-medium text-2xl">
                 Your requested size is not available. Let me show you the other sites.
+              </p>
+            </div>
+          )}
+          {/* Show message when category is not available at this centre */}
+          {data?.categoryNotAvailable && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 font-medium text-lg">
+                This product category is not permitted at this centre. Please try a different centre or search without the category filter.
               </p>
             </div>
           )}

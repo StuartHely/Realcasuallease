@@ -1,0 +1,22 @@
+BUG FINDING: Category filter not working properly
+
+Issue: When searching for "florist carnes hill", all 7 Carnes Hill sites appear in results
+even though NONE of them have the Florist category (id=60011) approved.
+
+Database verification:
+- Carnes Hill sites (1-7) all have hasFlorist = 0
+- The searchSitesWithCategory function in db.ts returns empty when category doesn't match
+- But the search.smart router falls back to centre-only search when siteResults is empty
+
+Root cause: In routers.ts search.smart, when parsedQuery.productCategory is set but 
+siteResults is empty (no sites match the category), the code falls back to showing ALL
+sites from the matching centre instead of showing no results.
+
+The problematic code flow:
+1. searchSitesWithCategory("florist carnes hill", "florist") returns empty (correct)
+2. centres = searchShoppingCentres("carnes hill") finds Carnes Hill (correct)
+3. getSearchDataOptimized fetches ALL sites for Carnes Hill (incorrect - should filter)
+4. The category filter override at line 982-993 is skipped because siteResults.length === 0
+
+Fix needed: When productCategory is specified but no sites match, we should NOT show
+any sites from that centre, rather than showing all sites.

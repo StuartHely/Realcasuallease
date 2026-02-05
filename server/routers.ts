@@ -980,16 +980,23 @@ export const appRouter = router({
         );
         
         // Override sitesByCentre if we have category-filtered sites from searchSitesWithCategory
-        if (parsedQuery.productCategory && siteResults.length > 0) {
-          const tempSitesByCentre = new Map();
-          for (const result of siteResults) {
-            const centreId = result.site.centreId;
-            if (!tempSitesByCentre.has(centreId)) {
-              tempSitesByCentre.set(centreId, []);
+        if (parsedQuery.productCategory) {
+          if (siteResults.length > 0) {
+            // We have matching sites - only show those sites
+            const tempSitesByCentre = new Map();
+            for (const result of siteResults) {
+              const centreId = result.site.centreId;
+              if (!tempSitesByCentre.has(centreId)) {
+                tempSitesByCentre.set(centreId, []);
+              }
+              tempSitesByCentre.get(centreId)!.push(result.site);
             }
-            tempSitesByCentre.get(centreId)!.push(result.site);
+            sitesByCentre = tempSitesByCentre;
+          } else {
+            // Category was specified but NO sites match - clear all sites from centres
+            // This ensures sites without the requested category are excluded from results
+            sitesByCentre = new Map();
           }
-          sitesByCentre = tempSitesByCentre;
         }
         
         // First pass: check if any sites match the requirements and find closest match
@@ -1075,6 +1082,9 @@ export const appRouter = router({
         // Return flag indicating if size requirement was met
         const sizeNotAvailable = hasRequirements && !hasMatchingSites;
         
+        // Return flag indicating if category filter returned no results
+        const categoryNotAvailable = !!parsedQuery.productCategory && siteResults.length === 0;
+        
         // Log successful search
         const { logSearch } = await import("./searchAnalyticsDb");
         await logSearch({
@@ -1094,7 +1104,7 @@ export const appRouter = router({
           floorLevels = await db.getFloorLevelsByCentre(centres[0].id);
         }
         
-        return { centres, sites: allSites, availability, matchedSiteIds, sizeNotAvailable, closestMatch, siteCategories, floorLevels };
+        return { centres, sites: allSites, availability, matchedSiteIds, sizeNotAvailable, categoryNotAvailable, closestMatch, siteCategories, floorLevels };
       }),
     byNameAndDate: publicProcedure
       .input(z.object({

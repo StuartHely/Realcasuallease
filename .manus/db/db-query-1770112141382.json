@@ -1,0 +1,59 @@
+{
+  "query": "SELECT s.id, s.siteNumber, s.centreId, sc.name as centreName, \n       GROUP_CONCAT(uc.name) as approvedCategories\nFROM sites s \nLEFT JOIN shopping_centres sc ON s.centreId = sc.id\nLEFT JOIN site_usage_categories suc ON s.id = suc.siteId\nLEFT JOIN usage_categories uc ON suc.categoryId = uc.id\nWHERE s.siteNumber = '1'\nGROUP BY s.id, s.siteNumber, s.centreId, sc.name\nLIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT s.id, s.siteNumber, s.centreId, sc.name as centreName, \n       GROUP_CONCAT(uc.name) as approvedCategories\nFROM sites s \nLEFT JOIN shopping_centres sc ON s.centreId = sc.id\nLEFT JOIN site_usage_categories suc ON s.id = suc.siteId\nLEFT JOIN usage_categories uc ON suc.categoryId = uc.id\nWHERE s.siteNumber = '1'\nGROUP BY s.id, s.siteNumber, s.centreId, sc.name\nLIMIT 10;",
+  "rows": [
+    {
+      "id": "60018",
+      "siteNumber": "1",
+      "centreId": "60003",
+      "centreName": "Highlands Marketplace",
+      "approvedCategories": "Automotive,Beauty & Cosmetics,Boating & Marine,Books & Stationery,Charities (Free),Charities (Paid),Clothing & Fashion,Electronics & Technology,Financial Services,Fitness & Wellness,Food & Beverage,Furniture & Homewares,Gardening & Outdoor,Government (Free),Health & Medical,Hobbies & Crafts,Home Improvement,Insurance,Jewellery & Accessories,Kids & Toys,Pets & Animals,Photography & Art,Real Estate,Renewable Energy,Security & Safety,Sports & Recreation,Telecommunications,Tourism & Travel,Trade Services,Utilities,Vaping & Smoking,Vehicles & Machinery,Wine & Liquor,Other,Alcohol,Art & Craft,Baby & Toddler,Charities Free,Community Groups,Electrical,Entertainment,Finance,Fitness & Health,Food,Furniture,Gardening,Government Free,Homewares,Jewellery,Music,Pets,Photography,Plants,Shoes,Sporting Goods,Technology,Tobacco,Tools,Tourism,Toys,Wellness,Test Custom Category,Test Free Category,Another Test Category,Beauty and Cosmetics,Bedding and Furniture,Boating and Marine,Books,Calendars,Clothing,Discount Variety,Educatio"
+    },
+    {
+      "id": "60023",
+      "siteNumber": "1",
+      "centreId": "60004",
+      "centreName": "Campbelltown Mall",
+      "approvedCategories": "Beauty & Cosmetics,Boating & Marine,Books & Stationery,Charities (Paid),Electronics & Technology,Financial Services,Fitness & Wellness,Food & Beverage,Furniture & Homewares,Health & Medical,Hobbies & Crafts,Home Improvement,Insurance,Kids & Toys,Pets & Animals,Photography & Art,Real Estate,Renewable Energy,Sports & Recreation,Telecommunications,Tourism & Travel,Trade Services,Utilities,Vaping & Smoking,Vehicles & Machinery,Wine & Liquor,Other,Automotive,Art & Craft,Baby & Toddler,Discount Variety,Financial and Insurance Services,Gardening,Health and Well-Being,Household Goods,Photography,Pet Products,Real Estate / Property Developers,Toys,Tools,Travel,Shoes / Footwear,Internal - Marketing and Centre Management,Home Improvements,Fitness / Sporting Goods,Education / Recruitment / Training,Calendars,Boating and Marine,Books,Clothing,Music,Homewares,Jewellery (Fashion) and Accessories,Ugg Boots,Wellness"
+    },
+    {
+      "id": "420001",
+      "siteNumber": "1",
+      "centreId": "450001",
+      "centreName": "Kogarah Town Centre ",
+      "approvedCategories": "Automotive,Charities (Free),Charities (Paid),Government (Free),Renewable Energy,Utilities,Art & Craft,Baby & Toddler,Entertainment,Gardening,Homewares,Music,Photography,Tools,Toys,Wellness,Beauty and Cosmetics,Bedding and Furniture,Boating and Marine,Books,Calendars,Discount Variety,Education / Recruitment / Training,Financial and Insurance Services,Fitness / Sporting Goods,Food and Beverage,Health and Well-Being,Home Improvements,Household Goods,Internal - Marketing and Centre Management,Jewellery (Fashion) and Accessories,Jewellery (Fine),News and Stationery,Pet Products,Pharmaceuticals,Real Estate / Property Developers,Shoes / Footwear,Technology and Telecommunications,Travel,Ugg Boots,Candles"
+    },
+    {
+      "id": "60049",
+      "siteNumber": "1",
+      "centreId": "60007",
+      "centreName": "Wanneroo Central",
+      "approvedCategories": "NULL"
+    },
+    {
+      "id": "60053",
+      "siteNumber": "1",
+      "centreId": "60008",
+      "centreName": "Rockdale Plaza",
+      "approvedCategories": "NULL"
+    },
+    {
+      "id": "60036",
+      "siteNumber": "1",
+      "centreId": "60005",
+      "centreName": "Carnes Hill Marketplace",
+      "approvedCategories": "NULL"
+    },
+    {
+      "id": "60066",
+      "siteNumber": "1",
+      "centreId": "60010",
+      "centreName": "Corio Village",
+      "approvedCategories": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsiteNumber\tcentreId\tcentreName\tapprovedCategories\n60018\t1\t60003\tHighlands Marketplace\tAutomotive,Beauty & Cosmetics,Boating & Marine,Books & Stationery,Charities (Free),Charities (Paid),Clothing & Fashion,Electronics & Technology,Financial Services,Fitness & Wellness,Food & Beverage,Furniture & Homewares,Gardening & Outdoor,Government (Free),Health & Medical,Hobbies & Crafts,Home Improvement,Insurance,Jewellery & Accessories,Kids & Toys,Pets & Animals,Photography & Art,Real Estate,Renewable Energy,Security & Safety,Sports & Recreation,Telecommunications,Tourism & Travel,Trade Services,Utilities,Vaping & Smoking,Vehicles & Machinery,Wine & Liquor,Other,Alcohol,Art & Craft,Baby & Toddler,Charities Free,Community Groups,Electrical,Entertainment,Finance,Fitness & Health,Food,Furniture,Gardening,Government Free,Homewares,Jewellery,Music,Pets,Photography,Plants,Shoes,Sporting Goods,Technology,Tobacco,Tools,Tourism,Toys,Wellness,Test Custom Category,Test Free Category,Another Test Category,Beauty and Cosmetics,Bedding and Furniture,Boating and Marine,Books,Calendars,Clothing,Discount Variety,Educatio\n60023\t1\t60004\tCampbelltown Mall\tBeauty & Cosmetics,Boating & Marine,Books & Stationery,Charities (Paid),Electronics & Technology,Financial Services,Fitness & Wellness,Food & Beverage,Furniture & Homewares,Health & Medical,Hobbies & Crafts,Home Improvement,Insurance,Kids & Toys,Pets & Animals,Photography & Art,Real Estate,Renewable Energy,Sports & Recreation,Telecommunications,Tourism & Travel,Trade Services,Utilities,Vaping & Smoking,Vehicles & Machinery,Wine & Liquor,Other,Automotive,Art & Craft,Baby & Toddler,Discount Variety,Financial and Insurance Services,Gardening,Health and Well-Being,Household Goods,Photography,Pet Products,Real Estate / Property Developers,Toys,Tools,Travel,Shoes / Footwear,Internal - Marketing and Centre Management,Home Improvements,Fitness / Sporting Goods,Education / Recruitment / Training,Calendars,Boating and Marine,Books,Clothing,Music,Homewares,Jewellery (Fashion) and Accessories,Ugg Boots,Wellness\n420001\t1\t450001\tKogarah Town Centre \tAutomotive,Charities (Free),Charities (Paid),Government (Free),Renewable Energy,Utilities,Art & Craft,Baby & Toddler,Entertainment,Gardening,Homewares,Music,Photography,Tools,Toys,Wellness,Beauty and Cosmetics,Bedding and Furniture,Boating and Marine,Books,Calendars,Discount Variety,Education / Recruitment / Training,Financial and Insurance Services,Fitness / Sporting Goods,Food and Beverage,Health and Well-Being,Home Improvements,Household Goods,Internal - Marketing and Centre Management,Jewellery (Fashion) and Accessories,Jewellery (Fine),News and Stationery,Pet Products,Pharmaceuticals,Real Estate / Property Developers,Shoes / Footwear,Technology and Telecommunications,Travel,Ugg Boots,Candles\n60049\t1\t60007\tWanneroo Central\tNULL\n60053\t1\t60008\tRockdale Plaza\tNULL\n60036\t1\t60005\tCarnes Hill Marketplace\tNULL\n60066\t1\t60010\tCorio Village\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 1623
+}

@@ -137,7 +137,7 @@ function extractProductCategory(query: string): string | undefined {
     // Pets & Animals
     'pets', 'pet', 'animals', 'animal',
     // Gardening & Outdoor
-    'flowers', 'plants', 'garden', 'gardening', 'outdoor',
+    'flowers', 'florist', 'plants', 'garden', 'gardening', 'outdoor',
     // Automotive & Marine
     'automotive', 'vehicles', 'machinery', 'boating', 'marine',
     // Services
@@ -369,7 +369,7 @@ function extractCentreName(query: string): string {
     // Pets & Animals
     'pets', 'pet', 'animals', 'animal',
     // Gardening & Outdoor
-    'flowers', 'plants', 'garden', 'gardening', 'outdoor',
+    'flowers', 'florist', 'plants', 'garden', 'gardening', 'outdoor',
     // Automotive & Marine
     'automotive', 'vehicles', 'machinery', 'boating', 'marine',
     // Services
