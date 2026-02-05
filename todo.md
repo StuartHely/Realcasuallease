@@ -2982,3 +2982,8 @@
   - Each floor shows its own map with level name header and marker count
   - Shared legend at bottom for all floors
   - Tooltip works across all floor maps
+
+## Bug Fixes (Feb 5, 2025 - Floor Plan Maps)
+- [x] Fix site markers shifted to the right on floor plan maps (Eastgate Ground Floor sites 2, 10, 11)
+  - Root cause: Container had w-full class making it wider than the image, causing percentage-based markers to shift
+  - Fixed by removing w-full and using inline-block to match container width to image width

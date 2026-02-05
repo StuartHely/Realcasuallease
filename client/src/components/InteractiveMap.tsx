@@ -399,8 +399,9 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
           <h4 className="font-semibold text-gray-800">{floor.levelName}</h4>
         </div>
         <div 
-          className="relative inline-block overflow-visible w-full"
+          className="relative overflow-visible"
           onMouseLeave={handleMarkerLeave}
+          style={{ display: 'inline-block' }}
         >
           {floorMapLoading ? (
             <div className="w-full h-64 flex items-center justify-center bg-gray-100">
@@ -410,7 +411,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
             <img
               src={floorDisplayUrl || ""}
               alt={`${centreName} ${floor.levelName}`}
-              className="max-w-full h-auto"
+              className="block max-w-full h-auto"
               draggable={false}
             />
           )}

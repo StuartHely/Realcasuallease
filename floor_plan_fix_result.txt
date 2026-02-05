@@ -1,0 +1,18 @@
+Floor Plan Marker Position Fix - Feb 5, 2025
+
+ISSUE: Site markers on the floor plan were shifted to the right compared to their actual positions.
+
+ROOT CAUSE: The container div had `w-full` class which made it take the full width of the grid cell,
+but the image inside had `max-w-full h-auto` which scales down to fit. The percentage-based marker
+positions were calculated relative to the container width (full grid cell), not the actual image width.
+
+FIX APPLIED: Changed the container from `inline-block w-full` to `inline-block` only (via style prop),
+and added `block` class to the image. This makes the container match the image width exactly.
+
+RESULT AFTER FIX:
+Looking at the screenshot, the markers now appear correctly positioned:
+- Ground Floor: Site 2 marker is positioned correctly near Coles
+- Ground Floor: Sites 10 and 11 markers are positioned correctly near the ENTRY
+- Mezzanine Level: L2-3 and L2-9 markers are positioned correctly
+
+The markers now align with the actual floor plan positions instead of being shifted to the right.

@@ -1,0 +1,28 @@
+Floor Plan Investigation - Eastgate Bondi Junction
+
+OBSERVATION:
+The Centre Floor Plan now shows two floors side by side:
+- Ground Floor: Shows markers for sites 2, 10, 11 (3 markers total)
+- Mezzanine Level: Shows markers for L2-3, L2-9 (2 markers total)
+
+The floor plan images appear to be correct - they show the actual floor plan images with site markers overlaid.
+
+POTENTIAL ISSUE:
+The user mentioned "site locations differ from search results maps" - need to verify:
+1. Are the marker positions (x, y coordinates) correct for each site?
+2. Are the sites being placed on the correct floor level?
+
+Sites in search results:
+- Site 2: Ground Floor
+- Site 10: Ground Floor  
+- Site 11: Ground Floor
+- Site L2-33: Mezzanine Level (shows as L2-3 in floor plan)
+- Site L2-99: Mezzanine Level (shows as L2-9 in floor plan)
+
+POSSIBLE DISCREPANCY:
+Looking at the markers on the floor plan:
+- Ground Floor shows markers at positions that may not match the actual site locations
+- The marker positions are stored in the database (mapX, mapY coordinates)
+- Need to check if the coordinates are correct or if they need to be updated
+
+Next step: Check the site coordinates in the database vs the floor plan image dimensions.
