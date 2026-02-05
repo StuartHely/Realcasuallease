@@ -2937,3 +2937,9 @@
 - [x] Fix daily and weekly rates not being saved on first site creation
   - Root cause: createSite procedure passed dailyRate/weeklyRate directly but DB expects pricePerDay/pricePerWeek
   - Fixed by mapping frontend field names to database column names in createSite mutation
+
+## Bug Fixes (Feb 5, 2025 - Table Validation)
+- [x] Add centre-level equipment inventory validation to booking flow
+  - Check requested tables against centre's totalTablesAvailable (from Equipment Management)
+  - If tables exceed availability, prompt user with dialog: "The centre only has X tables in total available. Do you still wish to proceed with your own tables?"
+  - Yes/No dropdown: Yes=proceed with booking, No=return to home search

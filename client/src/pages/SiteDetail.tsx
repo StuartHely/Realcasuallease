@@ -47,6 +47,8 @@ export default function SiteDetail() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [showTableLimitDialog, setShowTableLimitDialog] = useState(false);
+  const [showCentreEquipmentDialog, setShowCentreEquipmentDialog] = useState(false);
+  const [centreEquipmentMessage, setCentreEquipmentMessage] = useState("");
   const [pendingBookingData, setPendingBookingData] = useState<{
     siteId: number;
     startDate: Date;
@@ -55,6 +57,7 @@ export default function SiteDetail() {
     additionalCategoryText?: string;
     tablesRequested: number;
     chairsRequested: number;
+    proceedWithOwnTables?: boolean;
   } | null>(null);
   
   const trackViewMutation = trpc.admin.trackImageView.useMutation();
@@ -124,6 +127,7 @@ export default function SiteDetail() {
     }
 
     const requestedTables = parseInt(tablesRequested) || 0;
+    const requestedChairs = parseInt(chairsRequested) || 0;
     const maxTables = site?.maxTables || 0;
 
     // Check if requested tables exceed site maximum
@@ -136,9 +140,31 @@ export default function SiteDetail() {
         usageCategoryId: parseInt(usageCategoryId),
         additionalCategoryText: additionalCategoryText || undefined,
         tablesRequested: maxTables, // Will be adjusted to max if user confirms
-        chairsRequested: parseInt(chairsRequested) || 0,
+        chairsRequested: requestedChairs,
       });
       setShowTableLimitDialog(true);
+      return;
+    }
+
+    // Check centre-level equipment availability
+    const centreTablesAvailable = centre?.totalTablesAvailable || 0;
+    const centreChairsAvailable = centre?.totalChairsAvailable || 0;
+    
+    if (requestedTables > centreTablesAvailable && centreTablesAvailable > 0) {
+      setCentreEquipmentMessage(
+        `The centre only has ${centreTablesAvailable} table${centreTablesAvailable !== 1 ? 's' : ''} in total available. Do you still wish to proceed with your own tables?`
+      );
+      setPendingBookingData({
+        siteId,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        usageCategoryId: parseInt(usageCategoryId),
+        additionalCategoryText: additionalCategoryText || undefined,
+        tablesRequested: requestedTables,
+        chairsRequested: requestedChairs,
+        proceedWithOwnTables: true,
+      });
+      setShowCentreEquipmentDialog(true);
       return;
     }
 
@@ -150,7 +176,7 @@ export default function SiteDetail() {
       usageCategoryId: parseInt(usageCategoryId),
       additionalCategoryText: additionalCategoryText || undefined,
       tablesRequested: requestedTables,
-      chairsRequested: parseInt(chairsRequested) || 0,
+      chairsRequested: requestedChairs,
     });
   };
 
@@ -169,6 +195,21 @@ export default function SiteDetail() {
     if (site?.centreId && startDate) {
       setLocation(`/centre/${site.centreId}?date=${startDate}`);
     }
+  };
+
+  const handleCentreEquipmentConfirm = () => {
+    if (pendingBookingData) {
+      createBookingMutation.mutate(pendingBookingData);
+      setShowCentreEquipmentDialog(false);
+      setPendingBookingData(null);
+    }
+  };
+
+  const handleCentreEquipmentCancel = () => {
+    setShowCentreEquipmentDialog(false);
+    setPendingBookingData(null);
+    // Navigate back to home/search
+    setLocation('/');
   };
 
   if (isLoading) {
@@ -562,6 +603,41 @@ export default function SiteDetail() {
               {createBookingMutation.isPending ? "Processing..." : "Yes"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Centre Equipment Availability Dialog */}
+      <Dialog open={showCentreEquipmentDialog} onOpenChange={setShowCentreEquipmentDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Limited Equipment Available
+            </DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              {centreEquipmentMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Select
+              value={pendingBookingData?.proceedWithOwnTables ? "yes" : "no"}
+              onValueChange={(value) => {
+                if (value === "yes") {
+                  handleCentreEquipmentConfirm();
+                } else {
+                  handleCentreEquipmentCancel();
+                }
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select an option" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="yes">Yes - Proceed with my own tables</SelectItem>
+                <SelectItem value="no">No - Return to search</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
