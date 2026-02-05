@@ -2987,3 +2987,8 @@
 - [x] Fix site markers shifted to the right on floor plan maps (Eastgate Ground Floor sites 2, 10, 11)
   - Root cause: Container had w-full class making it wider than the image, causing percentage-based markers to shift
   - Fixed by removing w-full and using inline-block to match container width to image width
+
+## Bug Fixes (Feb 5, 2025 - Hover Tooltip)
+- [x] Fix hover tooltip not working on floor plan markers
+  - Reverted to tab-based layout (removed side-by-side)
+  - Changed tooltip to fixed positioning with clientX/clientY coordinates

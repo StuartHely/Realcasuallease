@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { MapPin, DollarSign, Ruler, Store, Layers } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -92,13 +92,8 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
 
   const handleMarkerHover = (site: Site, event: React.MouseEvent) => {
     setHoveredSite(site);
-    
-    if (mapContainerRef.current) {
-      const rect = mapContainerRef.current.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      setTooltipPosition({ x, y });
-    }
+    // Use clientX/clientY directly for fixed positioning
+    setTooltipPosition({ x: event.clientX, y: event.clientY });
   };
 
   const handleMarkerLeave = () => {
@@ -201,10 +196,10 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
           );
         })}
 
-        {/* Hover Tooltip */}
+        {/* Hover Tooltip - Fixed positioning to work across re-renders */}
         {hoveredSite && (
           <div
-            className="absolute z-50 pointer-events-none"
+            className="fixed z-[9999] pointer-events-none"
             style={{
               left: `${tooltipPosition.x + 15}px`,
               top: `${tooltipPosition.y - 10}px`,
@@ -367,182 +362,24 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
     </div>
   );
 
-  // Component to render a single floor's map
-  const FloorMapContent = ({ floor }: { floor: any }) => {
-    const floorMapUrl = floor.mapImageUrl;
-    const { url: floorDisplayUrl, isLoading: floorMapLoading, hasError: floorMapError } = useImageWithFallback(
-      floorMapUrl,
-      { type: "map", label: floor.levelName }
-    );
-    
-    // Filter sites for this specific floor
-    const floorSites = sites.filter((site: Site) => {
-      if (site.floorLevelId !== floor.id) return false;
-      if (!site.mapMarkerX || !site.mapMarkerY) return false;
-      if (assetTypeFilter === "all") return true;
-      const siteAssetType = site.assetType || "casual_leasing";
-      return siteAssetType === assetTypeFilter;
-    });
-    
-    if (!floorMapUrl || floorMapError) {
-      return (
-        <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
-          <p className="text-gray-600">Map Coming Shortly</p>
-          <p className="text-sm text-gray-500 mt-2">{floor.levelName}</p>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="bg-white rounded-lg border-2 border-gray-200 overflow-visible">
-        <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
-          <h4 className="font-semibold text-gray-800">{floor.levelName}</h4>
-        </div>
-        <div 
-          className="relative overflow-visible"
-          onMouseLeave={handleMarkerLeave}
-          style={{ display: 'inline-block' }}
-        >
-          {floorMapLoading ? (
-            <div className="w-full h-64 flex items-center justify-center bg-gray-100">
-              <p className="text-gray-500">Loading map...</p>
-            </div>
-          ) : (
-            <img
-              src={floorDisplayUrl || ""}
-              alt={`${centreName} ${floor.levelName}`}
-              className="block max-w-full h-auto"
-              draggable={false}
-            />
-          )}
-          
-          {/* Site Markers */}
-          {floorSites.map((site: Site) => {
-            const colors = getMarkerColor(site);
-            const label = getMarkerLabel(site);
-            
-            return (
-              <div
-                key={site.id}
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform z-10"
-                style={{
-                  left: `${site.mapMarkerX}%`,
-                  top: `${site.mapMarkerY}%`,
-                }}
-                onMouseEnter={(e) => handleMarkerHover(site, e)}
-                onMouseLeave={() => setHoveredSite(null)}
-                onClick={() => handleMarkerClick(site)}
-              >
-                <div 
-                  className="min-w-8 h-8 px-2 rounded-full flex items-center justify-center text-xs font-bold shadow-lg border-2"
-                  style={{ 
-                    backgroundColor: colors.bg, 
-                    color: colors.text,
-                    borderColor: colors.border,
-                  }}
-                >
-                  {label.length > 4 ? label.substring(0, 4) : label}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div className="bg-gray-50 border-t border-gray-200 px-3 py-2">
-          <span className="text-xs text-gray-500">{floorSites.length} markers</span>
-        </div>
-      </div>
-    );
-  };
-
-  // Multi-level centre - show floors side by side (2 per row)
+  // Multi-level centre with tabs
   if (isMultiLevel && floorLevels.length > 0) {
-    const floorsWithMaps = floorLevels.filter((fl: any) => fl.mapImageUrl);
-    
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {floorsWithMaps.map((floor: any) => (
-            <FloorMapContent key={floor.id} floor={floor} />
+        <Tabs value={selectedFloorId?.toString() || ""} onValueChange={(val) => setSelectedFloorId(parseInt(val))}>
+          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${floorLevels.length}, 1fr)` }}>
+            {floorLevels.map((floor: any) => (
+              <TabsTrigger key={floor.id} value={floor.id.toString()}>
+                {floor.levelName}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {floorLevels.map((floor: any) => (
+            <TabsContent key={floor.id} value={floor.id.toString()}>
+              <MapContent />
+            </TabsContent>
           ))}
-        </div>
-        
-        {/* Shared Legend */}
-        <div className="bg-gray-50 rounded-lg border border-gray-200 px-4 py-3">
-          <div className="flex items-center justify-between text-sm flex-wrap gap-2">
-            <div className="flex items-center gap-4 flex-wrap">
-              {(assetTypeFilter === "casual_leasing" || assetTypeFilter === "all") && (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: ASSET_COLORS.casual_leasing.bg }} />
-                  <span className="text-gray-700">Casual Leasing</span>
-                </div>
-              )}
-              {(assetTypeFilter === "vacant_shops" || assetTypeFilter === "all") && (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: ASSET_COLORS.vacant_shops.bg }} />
-                  <span className="text-gray-700">Vacant Shops</span>
-                </div>
-              )}
-              {(assetTypeFilter === "third_line" || assetTypeFilter === "all") && (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: ASSET_COLORS.third_line.bg }} />
-                  <span className="text-gray-700">Third Line Income</span>
-                </div>
-              )}
-            </div>
-            <p className="text-gray-600 italic">Hover over markers for details</p>
-          </div>
-        </div>
-        
-        {/* Tooltip - shared across all floors */}
-        {hoveredSite && (
-          <div
-            className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-xs pointer-events-none"
-            style={{
-              left: `${tooltipPosition.x}px`,
-              top: `${tooltipPosition.y}px`,
-              transform: 'translate(-50%, -100%) translateY(-10px)',
-            }}
-          >
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-4">
-                <span className="font-bold text-gray-900">
-                  {hoveredSite.displayLabel || hoveredSite.displayNumber || hoveredSite.siteNumber || hoveredSite.shopNumber || hoveredSite.assetNumber}
-                </span>
-                <span 
-                  className="text-xs px-2 py-0.5 rounded-full font-medium"
-                  style={{ 
-                    backgroundColor: getMarkerColor(hoveredSite).bg,
-                    color: getMarkerColor(hoveredSite).text 
-                  }}
-                >
-                  {hoveredSite.assetType === "vacant_shops" ? "Vacant Shop" : 
-                   hoveredSite.assetType === "third_line" ? "Third Line" : "Casual Lease"}
-                </span>
-              </div>
-              {hoveredSite.description && (
-                <p className="text-sm text-gray-700 line-clamp-2">{hoveredSite.description}</p>
-              )}
-              {(hoveredSite.size || hoveredSite.totalSizeM2 || hoveredSite.dimensions) && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Ruler className="h-4 w-4" />
-                  <span>
-                    {hoveredSite.size || 
-                     (hoveredSite.totalSizeM2 ? `${hoveredSite.totalSizeM2} m²` : null) ||
-                     hoveredSite.dimensions}
-                  </span>
-                </div>
-              )}
-              {hoveredSite.pricePerDay && (
-                <div className="pt-2 border-t border-gray-200">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Daily:</span>
-                    <span className="font-semibold text-gray-700">${Number(hoveredSite.pricePerDay).toFixed(2)}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        </Tabs>
       </div>
     );
   }
