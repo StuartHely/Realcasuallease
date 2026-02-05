@@ -2963,3 +2963,10 @@
 
 ## UI Fix (Feb 5, 2025 - Equipment Request Display)
 - [x] Fix Equipment Request in Pending Approvals to always show heading and display "0 tables, 0 chairs" when none requested
+
+## Feature (Feb 5, 2025 - Customer Profile Link)
+- [x] Add clickable customer name on booking details page to view customer profile and booking history
+  - Created CustomerProfile page at /admin/customer/:id with full customer details and booking history
+  - Added users.getById tRPC procedure to fetch user, profile, and bookings
+  - Made customer name clickable in PendingApprovals page
+  - Made Company Name clickable in Bookings page

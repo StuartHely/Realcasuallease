@@ -4,10 +4,12 @@ import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, Calendar, MapPin, User, DollarSign } from "lucide-react";
+import { CheckCircle, XCircle, Calendar, MapPin, User, DollarSign, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 
 export default function PendingApprovals() {
+  const [, setLocation] = useLocation();
   const { data: pendingBookings, isLoading, refetch } = trpc.admin.getPendingApprovals.useQuery();
   const approveBookingMutation = trpc.admin.approveBooking.useMutation({
     onSuccess: () => {
@@ -122,7 +124,13 @@ export default function PendingApprovals() {
                       <User className="h-5 w-5 text-gray-400 mt-0.5" />
                       <div>
                         <p className="font-semibold text-gray-900">Customer</p>
-                        <p className="text-sm text-gray-600">{booking.customerName}</p>
+                        <button
+                          onClick={() => setLocation(`/admin/customer/${booking.customerId}`)}
+                          className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                        >
+                          {booking.customerName}
+                          <ExternalLink className="h-3 w-3" />
+                        </button>
                         {booking.customerEmail && (
                           <p className="text-sm text-gray-500">{booking.customerEmail}</p>
                         )}

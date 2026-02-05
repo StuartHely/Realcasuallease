@@ -2072,6 +2072,22 @@ export const appRouter = router({
       return await db.getAllUsers();
     }),
 
+    getById: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        const user = await db.getUserById(input.userId);
+        if (!user) throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+        
+        const profile = await db.getCustomerProfileByUserId(input.userId);
+        const bookings = await db.getBookingsByCustomerId(input.userId);
+        
+        return {
+          user,
+          profile,
+          bookings,
+        };
+      }),
+
     updateInvoiceFlag: adminProcedure
       .input(z.object({
         userId: z.number(),

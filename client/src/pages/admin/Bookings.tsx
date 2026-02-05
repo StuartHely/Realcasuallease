@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Clock, DollarSign, Search, X, FileText, Pencil, Download } from "lucide-react";
+import { CheckCircle, XCircle, Clock, DollarSign, Search, X, FileText, Pencil, Download, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -438,7 +438,19 @@ export default function AdminBookings() {
                         return (
                           <TableRow key={booking.id}>
                             <TableCell className="font-medium whitespace-nowrap">{booking.bookingNumber}</TableCell>
-                            <TableCell>{booking.companyName || "—"}</TableCell>
+                            <TableCell>
+                              {booking.customerId ? (
+                                <button
+                                  onClick={() => setLocation(`/admin/customer/${booking.customerId}`)}
+                                  className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                                >
+                                  {booking.companyName || "—"}
+                                  <ExternalLink className="h-3 w-3" />
+                                </button>
+                              ) : (
+                                booking.companyName || "—"
+                              )}
+                            </TableCell>
                             <TableCell>{booking.tradingName || booking.companyName || "—"}</TableCell>
                             <TableCell>{booking.centreName || "—"}</TableCell>
                             <TableCell>{booking.productCategory || "—"}</TableCell>

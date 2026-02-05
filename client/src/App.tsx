@@ -48,6 +48,7 @@ import OwnerApprovals from "./pages/OwnerApprovals";
 import OwnerCentres from "./pages/OwnerCentres";
 import AdminEnquiries from "./pages/AdminEnquiries";
 import AdminBooking from "./pages/admin/AdminBooking";
+import CustomerProfile from "./pages/admin/CustomerProfile";
 
 function Router() {
   return (
@@ -87,6 +88,7 @@ function Router() {
       <Route path="/admin/enquiries" component={AdminEnquiries} />
       <Route path="/admin/admin-booking" component={AdminBooking} />
       <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/customer/:id" component={CustomerProfile} />
       <Route path="/admin/payments" component={Payments} />
       <Route path="/admin/invoice-dashboard" component={InvoiceDashboard} />
       <Route path="/admin/owners" component={AdminOwners} />
