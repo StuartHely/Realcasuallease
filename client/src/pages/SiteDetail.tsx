@@ -618,26 +618,22 @@ export default function SiteDetail() {
               {centreEquipmentMessage}
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Select
-              value={pendingBookingData?.proceedWithOwnTables ? "yes" : "no"}
-              onValueChange={(value) => {
-                if (value === "yes") {
-                  handleCentreEquipmentConfirm();
-                } else {
-                  handleCentreEquipmentCancel();
-                }
-              }}
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={handleCentreEquipmentCancel}
+              className="flex-1 sm:flex-none"
             >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select an option" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="yes">Yes - Proceed with my own tables</SelectItem>
-                <SelectItem value="no">No - Return to search</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              No - Return to search
+            </Button>
+            <Button
+              onClick={handleCentreEquipmentConfirm}
+              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700"
+              disabled={createBookingMutation.isPending}
+            >
+              {createBookingMutation.isPending ? "Processing..." : "Yes - Proceed with my own tables"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

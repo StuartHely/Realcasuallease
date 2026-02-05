@@ -2943,3 +2943,7 @@
   - Check requested tables against centre's totalTablesAvailable (from Equipment Management)
   - If tables exceed availability, prompt user with dialog: "The centre only has X tables in total available. Do you still wish to proceed with your own tables?"
   - Yes/No dropdown: Yes=proceed with booking, No=return to home search
+
+## Bug Fixes (Feb 5, 2025 - Equipment Dialog)
+- [x] Fix Yes option in Limited Equipment Available dialog not proceeding with booking
+  - Replaced Select dropdown with explicit Yes/No buttons for reliable action triggering
