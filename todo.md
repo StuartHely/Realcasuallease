@@ -2953,3 +2953,13 @@
   - Added bringingOwnTables boolean column to bookings table
   - Updated bookings.create procedure to accept and store the flag
   - Frontend passes bringingOwnTables=true when user confirms to proceed with own tables
+
+## Bug Fixes (Feb 5, 2025 - Pending Approvals)
+- [ ] Investigate CAHM-20260214-586 showing in Booking Management Pending tab but not in Pending Approvals
+
+## UI Updates (Feb 5, 2025 - Pending Approvals)
+- [x] Change "Pending Bookings" heading to "Pending Confirmation - Requiring Manual Review" in page and menu
+- [x] Fix "0" appearing under customer heading in Pending Approvals booking details (was Equipment Request showing 0)
+
+## UI Fix (Feb 5, 2025 - Equipment Request Display)
+- [x] Fix Equipment Request in Pending Approvals to always show heading and display "0 tables, 0 chairs" when none requested

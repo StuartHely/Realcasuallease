@@ -61,7 +61,7 @@ export default function PendingApprovals() {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Pending Approvals</h1>
+          <h1 className="text-3xl font-bold">Pending Confirmation - Requiring Manual Review</h1>
           <p className="text-muted-foreground mt-2">
             Review and approve or reject bookings that require manual approval
           </p>
@@ -139,16 +139,12 @@ export default function PendingApprovals() {
                       </div>
                     )}
 
-                    {((booking.tablesRequested && booking.tablesRequested > 0) || (booking.chairsRequested && booking.chairsRequested > 0)) && (
-                      <div>
-                        <p className="font-semibold text-gray-900">Equipment Request</p>
-                        <p className="text-sm text-gray-600">
-                          {booking.tablesRequested && booking.tablesRequested > 0 && `${booking.tablesRequested} tables`}
-                          {booking.tablesRequested && booking.tablesRequested > 0 && booking.chairsRequested && booking.chairsRequested > 0 && ", "}
-                          {booking.chairsRequested && booking.chairsRequested > 0 && `${booking.chairsRequested} chairs`}
-                        </p>
-                      </div>
-                    )}
+                    <div>
+                      <p className="font-semibold text-gray-900">Equipment Request</p>
+                      <p className="text-sm text-gray-600">
+                        {booking.tablesRequested ?? 0} tables, {booking.chairsRequested ?? 0} chairs
+                      </p>
+                    </div>
 
                     {booking.approvalReason && (
                       <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">

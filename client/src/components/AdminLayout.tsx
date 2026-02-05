@@ -83,7 +83,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
       {
         title: "Operations",
         items: [
-          { icon: CheckCircle, label: "Pending Approvals", path: "/admin/pending-approvals" },
+          { icon: CheckCircle, label: "Pending Confirmation - Requiring Manual Review", path: "/admin/pending-approvals" },
           { icon: Calendar, label: "Bookings", path: "/admin/bookings" },
           { icon: CalendarPlus, label: "Admin Booking", path: "/admin/admin-booking" },
           { icon: Store, label: "VS Bookings", path: "/admin/vs-bookings" },
