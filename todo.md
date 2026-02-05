@@ -2975,3 +2975,10 @@
 - [x] Add search box on Users page to filter by name, email, or company
   - Extended existing search to include companyName and tradingName from user profile
   - Updated placeholder text to indicate searchable fields
+
+## Feature (Feb 5, 2025 - Floor Plan Layout)
+- [x] Update Centre Floor Plan to show floors side by side (2 per row) in search results
+  - Replaced tab-based floor navigation with grid layout (2 columns on desktop)
+  - Each floor shows its own map with level name header and marker count
+  - Shared legend at bottom for all floors
+  - Tooltip works across all floor maps
