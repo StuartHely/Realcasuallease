@@ -75,7 +75,7 @@ describe("Usage Categories System", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       },
-    ]).onDuplicateKeyUpdate({ set: { updatedAt: new Date() } });
+    ]).onConflictDoNothing();
 
     // Create test owner
     const ownerResult = await db.insert(owners).values({

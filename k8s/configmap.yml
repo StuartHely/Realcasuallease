@@ -1,0 +1,44 @@
+# =============================================================================
+# CasualLease Kubernetes ConfigMap
+# Non-sensitive configuration values
+# =============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: casuallease-config
+  namespace: casuallease
+  labels:
+    app: casuallease
+    environment: production
+data:
+  # -----------------------------------------------------------------------------
+  # Node.js Environment
+  # -----------------------------------------------------------------------------
+  NODE_ENV: "production"
+  
+  # -----------------------------------------------------------------------------
+  # Application Port
+  # Must match containerPort in deployment and targetPort in service
+  # -----------------------------------------------------------------------------
+  PORT: "3000"
+  
+  # -----------------------------------------------------------------------------
+  # AWS Region
+  # Used for S3 and other AWS services
+  # -----------------------------------------------------------------------------
+  AWS_REGION: "ap-southeast-2"
+  
+  # -----------------------------------------------------------------------------
+  # Logging Configuration
+  # -----------------------------------------------------------------------------
+  LOG_LEVEL: "info"
+  
+  # -----------------------------------------------------------------------------
+  # Application Settings
+  # -----------------------------------------------------------------------------
+  # Maximum request body size for file uploads
+  MAX_BODY_SIZE: "50mb"
+  
+  # Trust proxy headers from load balancer
+  TRUST_PROXY: "true"

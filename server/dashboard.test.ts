@@ -99,7 +99,7 @@ describe('Dashboard Metrics Calculations', () => {
       month: 1,
       year: 2026,
       budgetAmount: '10000.00',
-    }).onDuplicateKeyUpdate({ set: { budgetAmount: '10000.00' } });
+    }).onConflictDoNothing();
 
     const metrics = await getBudgetMetrics([site.id], 1, 2026);
     

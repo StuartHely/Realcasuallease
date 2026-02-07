@@ -1,6 +1,6 @@
 import { eq, desc, and, or, isNull, lte, gte } from "drizzle-orm";
 import { expandCategoryKeyword } from "../shared/categorySynonyms.js";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { 
   InsertUser, users, 
   customerProfiles, InsertCustomerProfile,
@@ -76,7 +76,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     await db
       .insert(users)
       .values(values)
-      .onDuplicateKeyUpdate({ set: updateSet });
+      .onConflictDoUpdate({ target: users.openId, set: updateSet });
   } catch (error) {
     console.error("[Database] Error upserting user:", error);
     throw error;

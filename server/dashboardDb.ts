@@ -116,7 +116,7 @@ export async function getYTDMetrics(siteIds: number[], year: number, financialYe
       AND b.startDate <= ${endDate}
   `);
   
-  // db.execute returns [rows, fields] for MySQL
+  // db.execute returns rows for PostgreSQL
   const ytdBookings = Array.isArray(ytdBookingsResult) && ytdBookingsResult.length > 0 
     ? (Array.isArray(ytdBookingsResult[0]) ? ytdBookingsResult[0] : ytdBookingsResult) 
     : [];
