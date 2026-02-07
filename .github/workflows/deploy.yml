@@ -123,15 +123,27 @@ jobs:
           # Create namespace if it doesn't exist
           kubectl create namespace casuallease --dry-run=client -o yaml | kubectl apply -f -
           
+          # Build secret arguments (only include non-empty values)
+          SECRET_ARGS="--namespace casuallease"
+          SECRET_ARGS="$SECRET_ARGS --from-literal=DATABASE_URL='${{ secrets.DATABASE_URL }}'"
+          SECRET_ARGS="$SECRET_ARGS --from-literal=JWT_SECRET='${{ secrets.JWT_SECRET }}'"
+          
+          # Optional secrets - only add if set
+          if [ -n "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
+            SECRET_ARGS="$SECRET_ARGS --from-literal=AWS_ACCESS_KEY_ID='${{ secrets.AWS_ACCESS_KEY_ID }}'"
+          fi
+          if [ -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
+            SECRET_ARGS="$SECRET_ARGS --from-literal=AWS_SECRET_ACCESS_KEY='${{ secrets.AWS_SECRET_ACCESS_KEY }}'"
+          fi
+          if [ -n "${{ secrets.AWS_S3_BUCKET }}" ]; then
+            SECRET_ARGS="$SECRET_ARGS --from-literal=AWS_S3_BUCKET='${{ secrets.AWS_S3_BUCKET }}'"
+          fi
+          if [ -n "${{ secrets.GOOGLE_MAPS_API_KEY }}" ]; then
+            SECRET_ARGS="$SECRET_ARGS --from-literal=GOOGLE_MAPS_API_KEY='${{ secrets.GOOGLE_MAPS_API_KEY }}'"
+          fi
+          
           # Create or update the secrets
-          kubectl create secret generic casuallease-secrets \
-            --namespace casuallease \
-            --from-literal=DATABASE_URL='${{ secrets.DATABASE_URL }}' \
-            --from-literal=JWT_SECRET='${{ secrets.JWT_SECRET }}' \
-            --from-literal=AWS_ACCESS_KEY_ID='${{ secrets.AWS_ACCESS_KEY_ID }}' \
-            --from-literal=AWS_SECRET_ACCESS_KEY='${{ secrets.AWS_SECRET_ACCESS_KEY }}' \
-            --from-literal=AWS_S3_BUCKET='${{ secrets.AWS_S3_BUCKET }}' \
-            --from-literal=GOOGLE_MAPS_API_KEY='${{ secrets.GOOGLE_MAPS_API_KEY }}' \
+          kubectl create secret generic casuallease-secrets $SECRET_ARGS \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Update deployment image
