@@ -39,10 +39,8 @@ COPY --from=deps /app/pnpm-lock.yaml ./pnpm-lock.yaml
 # Copy source code
 COPY . .
 
-# Run type check before build
-RUN pnpm run check
-
 # Build the application (Vite frontend + esbuild server)
+# Type check is done in CI before Docker build
 RUN pnpm run build
 
 # Prune dev dependencies after build
