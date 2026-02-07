@@ -113,15 +113,15 @@ export async function createUsageCategory(name: string, isFree: boolean, display
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(usageCategories).values({
+  const [result] = await db.insert(usageCategories).values({
     name,
     isFree,
     displayOrder,
     isActive: true,
     createdAt: new Date(),
-  });
+  }).returning({ id: usageCategories.id });
   
-  return Number(result[0].insertId);
+  return result.id;
 }
 
 /**

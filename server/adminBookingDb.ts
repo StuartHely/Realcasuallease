@@ -286,7 +286,7 @@ export async function createAdminBooking(input: AdminBookingInput): Promise<{ bo
   const db = await getDb();
   if (!db) throw new Error("Database connection failed");
 
-  const result = await db.insert(bookings).values({
+  const [result] = await db.insert(bookings).values({
     bookingNumber: input.bookingNumber,
     siteId: input.siteId,
     customerId: input.customerId,
@@ -307,9 +307,9 @@ export async function createAdminBooking(input: AdminBookingInput): Promise<{ bo
     createdByAdmin: input.createdByAdminId,
     status: "confirmed", // Admin bookings are auto-confirmed
     requiresApproval: false,
-  });
+  }).returning({ id: bookings.id });
 
-  const bookingId = Number(result[0].insertId);
+  const bookingId = result.id;
 
   // Log the creation
   await db.insert(auditLog).values({

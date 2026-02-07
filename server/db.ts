@@ -701,7 +701,7 @@ export async function createBooking(booking: InsertBooking) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return await db.insert(bookings).values(booking);
+  return await db.insert(bookings).values(booking).returning({ id: bookings.id });
 }
 
 export async function getBookingById(id: number) {

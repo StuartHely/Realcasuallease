@@ -75,7 +75,7 @@ export async function createSeasonalRate(data: {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(seasonalRates).values({
+  const [result] = await db.insert(seasonalRates).values({
     siteId: data.siteId,
     name: data.name,
     startDate: data.startDate,
@@ -83,11 +83,11 @@ export async function createSeasonalRate(data: {
     weekdayRate: data.weekdayRate ? data.weekdayRate.toString() : null,
     weekendRate: data.weekendRate ? data.weekendRate.toString() : null,
     weeklyRate: data.weeklyRate ? data.weeklyRate.toString() : null,
-  });
+  }).returning({ id: seasonalRates.id });
   
   // Fetch the inserted record
   const rows = await db.select().from(seasonalRates)
-    .where(eq(seasonalRates.id, Number(result[0].insertId)))
+    .where(eq(seasonalRates.id, result.id))
     .limit(1);
   
   return rows[0];
@@ -117,9 +117,10 @@ export async function updateSeasonalRate(id: number, data: {
 
   const result = await db.update(seasonalRates)
     .set(updates)
-    .where(eq(seasonalRates.id, id));
+    .where(eq(seasonalRates.id, id))
+    .returning({ id: seasonalRates.id });
   
-  return result[0].affectedRows > 0;
+  return result.length > 0;
 }
 
 export async function deleteSeasonalRate(id: number): Promise<boolean> {
@@ -127,7 +128,8 @@ export async function deleteSeasonalRate(id: number): Promise<boolean> {
   if (!db) return false;
   
   const result = await db.delete(seasonalRates)
-    .where(eq(seasonalRates.id, id));
+    .where(eq(seasonalRates.id, id))
+    .returning({ id: seasonalRates.id });
   
-  return result[0].affectedRows > 0;
+  return result.length > 0;
 }

@@ -478,7 +478,7 @@ export const appRouter = router({
         });
         
         // Record initial status in history
-        const bookingId = Number(result[0].insertId);
+        const bookingId = result[0].id;
         const initialStatus = requiresApproval ? "pending" : (site.instantBooking ? "confirmed" : "pending");
         await db.recordBookingCreated(bookingId, initialStatus as "pending" | "confirmed", ctx.user.id, ctx.user.name || undefined);
 
@@ -1887,13 +1887,13 @@ export const appRouter = router({
           name: input.name,
           role: input.role,
           canPayByInvoice: input.canPayByInvoice,
-        });
+        }).returning({ id: users.id });
 
         // Create customer profile if company or insurance details provided
         if (input.companyName || input.insuranceCompany) {
           const { customerProfiles } = await import('../drizzle/schema');
           await dbInstance.insert(customerProfiles).values({
-            userId: newUser.insertId,
+            userId: newUser.id,
             companyName: input.companyName || null,
             tradingName: input.tradingName || null,
             website: input.companyWebsite || null,

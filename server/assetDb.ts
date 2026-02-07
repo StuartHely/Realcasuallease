@@ -40,8 +40,8 @@ export async function getActiveThirdLineCategories() {
 export async function createThirdLineCategory(data: Omit<InsertThirdLineCategory, "id" | "createdAt" | "updatedAt">) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const [result] = await db.insert(thirdLineCategories).values(data);
-  return result.insertId;
+  const [result] = await db.insert(thirdLineCategories).values(data).returning({ id: thirdLineCategories.id });
+  return result.id;
 }
 
 export async function updateThirdLineCategory(id: number, data: Partial<InsertThirdLineCategory>) {
@@ -128,8 +128,8 @@ export async function getVacantShopById(id: number) {
 export async function createVacantShop(data: Omit<InsertVacantShop, "id" | "createdAt" | "updatedAt">) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const [result] = await db.insert(vacantShops).values(data);
-  return result.insertId;
+  const [result] = await db.insert(vacantShops).values(data).returning({ id: vacantShops.id });
+  return result.id;
 }
 
 export async function updateVacantShop(id: number, data: Partial<InsertVacantShop>) {
@@ -238,8 +238,8 @@ export async function getThirdLineIncomeById(id: number) {
 export async function createThirdLineIncome(data: Omit<InsertThirdLineIncome, "id" | "createdAt" | "updatedAt">) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const [result] = await db.insert(thirdLineIncome).values(data);
-  return result.insertId;
+  const [result] = await db.insert(thirdLineIncome).values(data).returning({ id: thirdLineIncome.id });
+  return result.id;
 }
 
 export async function updateThirdLineIncome(id: number, data: Partial<InsertThirdLineIncome>) {
@@ -399,8 +399,8 @@ export async function checkVacantShopAvailability(
 export async function createVacantShopBooking(data: Omit<InsertVacantShopBooking, "id" | "createdAt" | "updatedAt">) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const [result] = await db.insert(vacantShopBookings).values(data);
-  return result.insertId;
+  const [result] = await db.insert(vacantShopBookings).values(data).returning({ id: vacantShopBookings.id });
+  return result.id;
 }
 
 export async function updateVacantShopBooking(id: number, data: Partial<InsertVacantShopBooking>) {
@@ -523,8 +523,8 @@ export async function checkThirdLineAvailability(
 export async function createThirdLineBooking(data: Omit<InsertThirdLineBooking, "id" | "createdAt" | "updatedAt">) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const [result] = await db.insert(thirdLineBookings).values(data);
-  return result.insertId;
+  const [result] = await db.insert(thirdLineBookings).values(data).returning({ id: thirdLineBookings.id });
+  return result.id;
 }
 
 export async function updateThirdLineBooking(id: number, data: Partial<InsertThirdLineBooking>) {
