@@ -1,25 +1,24 @@
-# Dockerfile
-
-# Use the official Node.js image as the base image
-FROM node:16
-
-# Set the working directory
+# Stage 1: Build
+FROM node:14 AS build
 WORKDIR /app
-
-# Copy package.json and package-lock.json to the container
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
-
-# Copy the entire application to the container
 COPY . .
-
-# Build the Vite application
 RUN npm run build
 
-# Expose the port the app runs on
-EXPOSE 3000
+# Stage 2: Production
+FROM node:14 AS production
+WORKDIR /app
+COPY --from=build /app/dist ./dist
+COPY package*.json ./
+RUN npm install --only=production
 
-# Command to run the application
-CMD [ "npm", "run", "start" ]
+# Set environment variables for PostgreSQL
+ENV DATABASE_URL=postgres://user:password@postgres:5432/mydb
+ENV NODE_ENV=production
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 CMD curl -f http://localhost:3000/health || exit 1
+
+EXPOSE 3000
+CMD ["node", "dist/server.js"]
