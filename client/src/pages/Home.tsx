@@ -335,6 +335,9 @@ export default function Home() {
         {/* How It Works */}
         <section className="py-16 px-4 bg-white">
           <div className="container mx-auto max-w-6xl">
+            <p className="text-base text-center text-blue-800 mb-4 max-w-4xl mx-auto leading-relaxed">
+              The most advanced Casual Leasing Platform ever created — Years of hands-on experience delivering unmatched control for landlords and managing agents — plus a seamless booking experience for users.
+            </p>
             <h3 className="text-3xl font-bold text-center text-blue-900 mb-12">
               How It Works
             </h3>

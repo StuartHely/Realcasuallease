@@ -2999,3 +2999,6 @@
   - Each floor has header with level name and marker count
   - Tooltip uses fixed positioning at component root level to avoid re-render issues
   - Shared legend at bottom for all floors
+
+## UI Update (Feb 7, 2025 - Home Page Text)
+- [x] Add descriptive text above "How it Works" section at half font size
