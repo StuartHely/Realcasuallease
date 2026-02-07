@@ -9,6 +9,9 @@
 # -----------------------------------------------------------------------------
 FROM node:20-alpine AS deps
 
+# Install libc6-compat for sharp and other native modules
+RUN apk add --no-cache libc6-compat
+
 # Install pnpm globally
 RUN corepack enable && corepack prepare pnpm@10.4.1 --activate
 
@@ -27,6 +30,7 @@ RUN pnpm install --frozen-lockfile
 # -----------------------------------------------------------------------------
 FROM node:20-alpine AS builder
 
+RUN apk add --no-cache libc6-compat
 RUN corepack enable && corepack prepare pnpm@10.4.1 --activate
 
 WORKDIR /app
@@ -52,8 +56,8 @@ RUN pnpm prune --prod
 # -----------------------------------------------------------------------------
 FROM node:20-alpine AS production
 
-# Install curl for health checks and dumb-init for proper signal handling
-RUN apk add --no-cache curl dumb-init
+# Install curl for health checks, dumb-init for signal handling, and libc6-compat for sharp
+RUN apk add --no-cache curl dumb-init libc6-compat
 
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs \

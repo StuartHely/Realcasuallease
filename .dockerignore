@@ -1,0 +1,43 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Test files
+*.test.ts
+*.test.js
+**/*.test.ts
+**/*.test.js
+vitest.config.ts
+
+# Documentation
+*.md
+docs/
+
+# Misc
+.env*
+.DS_Store
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Scripts (not needed in production)
+*.mjs
+scripts/
+
+# K8s manifests
+k8s/
+
+# GitHub
+.github/
