@@ -1,0 +1,64 @@
+# =============================================================================
+# CasualLease Horizontal Pod Autoscaler
+# Automatically scales pods based on CPU utilization
+# =============================================================================
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: casuallease-hpa
+  namespace: casuallease
+  labels:
+    app: casuallease
+    environment: production
+spec:
+  # Reference to the deployment to scale
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: casuallease
+  
+  # Scaling boundaries
+  minReplicas: 2
+  maxReplicas: 10
+  
+  # Metrics for scaling decisions
+  metrics:
+    # Scale based on CPU utilization
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    
+    # Optional: Scale based on memory utilization
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  
+  # Scaling behavior configuration
+  behavior:
+    # Scale up quickly when needed
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+      selectPolicy: Max
+    
+    # Scale down slowly to prevent flapping
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+      selectPolicy: Min

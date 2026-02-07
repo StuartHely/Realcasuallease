@@ -1,1 +1,188 @@
-apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: myapp-deployment\n  labels:\n    app: myapp\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: myapp\n  template:\n    metadata:\n      labels:\n        app: myapp\n    spec:\n      containers:\n      - name: myapp-container\n        image: myapp:latest\n        ports:\n        - containerPort: 80\n        env:\n        - name: DATABASE_URL\n          valueFrom:\n            secretKeyRef:\n              name: postgres-secret\n              key: database_url\n        - name: POSTGRES_USER\n          valueFrom:\n            secretKeyRef:\n              name: postgres-secret\n              key: postgres_user\n        - name: POSTGRES_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: postgres-secret\n              key: postgres_password\n        livenessProbe:\n          httpGet:\n            path: /health\n            port: 80\n          initialDelaySeconds: 30\n          periodSeconds: 10\n        readinessProbe:\n          httpGet:\n            path: /ready\n            port: 80\n          initialDelaySeconds: 5\n          periodSeconds: 10\n        securityContext:\n          runAsUser: 1001\n          runAsGroup: 3001\n          fsGroup: 2001\n        resources:\n          requests:\n            memory: "256Mi"\n            cpu: "500m"\n          limits:\n            memory: "512Mi"\n            cpu: "1"\n      \n      # Configure Horizontal Pod Autoscaler\n      minReplicas: 2\n      maxReplicas: 5\n      metrics:\n      - type: Resource\n        resource:\n          name: cpu\n          target:\n            type: Utilization\n            averageUtilization: 80\n\n
+# =============================================================================
+# CasualLease Kubernetes Deployment
+# Production-ready deployment with security, health checks, and resource limits
+# =============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: casuallease
+  namespace: casuallease
+  labels:
+    app: casuallease
+    environment: production
+spec:
+  # Initial replicas - HPA will manage scaling
+  replicas: 2
+  
+  # Deployment strategy for zero-downtime updates
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  
+  selector:
+    matchLabels:
+      app: casuallease
+  
+  template:
+    metadata:
+      labels:
+        app: casuallease
+        environment: production
+      annotations:
+        # Force redeployment when config changes
+        checksum/config: "{{ include (print $.Template.BasePath \"/configmap.yml\") . | sha256sum }}"
+    spec:
+      # Use non-root security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      
+      # Graceful shutdown period
+      terminationGracePeriodSeconds: 30
+      
+      # Service account for AWS IAM roles (if using IRSA)
+      serviceAccountName: casuallease-sa
+      
+      containers:
+        - name: casuallease
+          # Image will be updated by CI/CD pipeline
+          image: PLACEHOLDER_IMAGE:latest
+          imagePullPolicy: Always
+          
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          
+          # Environment variables from ConfigMap
+          envFrom:
+            - configMapRef:
+                name: casuallease-config
+          
+          # Environment variables from Secrets
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: casuallease-secrets
+                  key: DATABASE_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: casuallease-secrets
+                  key: JWT_SECRET
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: casuallease-secrets
+                  key: AWS_ACCESS_KEY_ID
+                  optional: true
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: casuallease-secrets
+                  key: AWS_SECRET_ACCESS_KEY
+                  optional: true
+            - name: AWS_S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: casuallease-secrets
+                  key: AWS_S3_BUCKET
+                  optional: true
+            - name: GOOGLE_MAPS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: casuallease-secrets
+                  key: GOOGLE_MAPS_API_KEY
+                  optional: true
+          
+          # Liveness probe - is the container alive?
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          
+          # Readiness probe - is the container ready to receive traffic?
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          
+          # Startup probe - give container time to start
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 30
+          
+          # Resource limits and requests
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          
+          # Container security context
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+
+---
+# =============================================================================
+# Pod Disruption Budget
+# Ensures minimum availability during voluntary disruptions
+# =============================================================================
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: casuallease-pdb
+  namespace: casuallease
+  labels:
+    app: casuallease
+spec:
+  # Ensure at least 1 pod is always available
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: casuallease
+
+---
+# =============================================================================
+# Service Account
+# For AWS IAM Roles for Service Accounts (IRSA) if needed
+# =============================================================================
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: casuallease-sa
+  namespace: casuallease
+  labels:
+    app: casuallease
+  annotations:
+    # Uncomment and set ARN when using IRSA for AWS access
+    # eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/casuallease-role

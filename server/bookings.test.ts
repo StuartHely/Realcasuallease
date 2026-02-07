@@ -2,7 +2,7 @@ import { describe, expect, it, beforeAll } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 import * as db from "./db";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { users } from "../drizzle/schema";
 
 const dbInstance = drizzle(process.env.DATABASE_URL!);
@@ -16,7 +16,7 @@ beforeAll(async () => {
       name: "Test User 1",
       loginMethod: "manus",
       role: "customer",
-    }).onDuplicateKeyUpdate({ set: { lastSignedIn: new Date() } });
+    }).onConflictDoUpdate({ target: users.openId, set: { lastSignedIn: new Date() } });
   } catch (e) {
     // User might already exist
   }

@@ -1,38 +1,58 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, bigint, index } from "drizzle-orm/mysql-core";
+import { integer, pgEnum, pgTable, text, timestamp, varchar, decimal, boolean, bigint, index, serial } from "drizzle-orm/pg-core";
+
+// =============================================================================
+// PostgreSQL Enums (defined before tables that use them)
+// =============================================================================
+
+export const roleEnum = pgEnum("role", [
+  "customer",
+  "owner_centre_manager",
+  "owner_marketing_manager",
+  "owner_regional_admin",
+  "owner_state_admin",
+  "owner_super_admin",
+  "mega_state_admin",
+  "mega_admin"
+]);
+
+export const remittanceTypeEnum = pgEnum("remittance_type", ["per_booking", "monthly"]);
+
+export const weekdayEnum = pgEnum("weekday", ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]);
+
+export const bookingStatusEnum = pgEnum("booking_status", ["pending", "confirmed", "cancelled", "completed", "rejected"]);
+
+export const paymentMethodEnum = pgEnum("payment_method", ["stripe", "invoice"]);
+
+export const transactionTypeEnum = pgEnum("transaction_type", ["booking", "cancellation", "monthly_fee"]);
+
+// =============================================================================
+// Tables
+// =============================================================================
 
 /**
  * Core user table backing auth flow.
  * Extended with role-based access control for the platform.
  */
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }).unique(),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", [
-    "customer",
-    "owner_centre_manager",
-    "owner_marketing_manager",
-    "owner_regional_admin",
-    "owner_state_admin",
-    "owner_super_admin",
-    "mega_state_admin",
-    "mega_admin"
-  ]).default("customer").notNull(),
+  role: roleEnum("role").default("customer").notNull(),
   assignedState: varchar("assignedState", { length: 3 }), // For state_admin roles: NSW, VIC, QLD, etc.
   canPayByInvoice: boolean("canPayByInvoice").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
 /**
  * Customer/Tenant profile with registration details
  */
-export const customerProfiles = mysqlTable("customer_profiles", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+export const customerProfiles = pgTable("customer_profiles", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
   firstName: varchar("firstName", { length: 100 }),
   lastName: varchar("lastName", { length: 100 }),
   phone: varchar("phone", { length: 20 }),
@@ -52,7 +72,7 @@ export const customerProfiles = mysqlTable("customer_profiles", {
   insuranceExpiry: timestamp("insuranceExpiry"),
   insuranceDocumentUrl: text("insuranceDocumentUrl"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
   userIdIdx: index("userId_idx").on(table.userId),
 }));
@@ -60,8 +80,8 @@ export const customerProfiles = mysqlTable("customer_profiles", {
 /**
  * Shopping centre owners/managers with bank details and fee configuration
  */
-export const owners = mysqlTable("owners", {
-  id: int("id").autoincrement().primaryKey(),
+export const owners = pgTable("owners", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 320 }),
   phone: varchar("phone", { length: 20 }),
@@ -71,7 +91,7 @@ export const owners = mysqlTable("owners", {
   bankAccountNumber: varchar("bankAccountNumber", { length: 20 }),
   monthlyFee: decimal("monthlyFee", { precision: 10, scale: 2 }).default("0.00").notNull(),
   commissionPercentage: decimal("commissionPercentage", { precision: 5, scale: 2 }).default("0.00").notNull(),
-  remittanceType: mysqlEnum("remittanceType", ["per_booking", "monthly"]).default("monthly").notNull(),
+  remittanceType: remittanceTypeEnum("remittanceType").default("monthly").notNull(),
   invoiceEmail1: varchar("invoiceEmail1", { length: 320 }),
   invoiceEmail2: varchar("invoiceEmail2", { length: 320 }),
   invoiceEmail3: varchar("invoiceEmail3", { length: 320 }),
@@ -81,32 +101,32 @@ export const owners = mysqlTable("owners", {
   remittanceEmail4: varchar("remittanceEmail4", { length: 320 }),
   remittanceEmail5: varchar("remittanceEmail5", { length: 320 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 /**
  * Floor levels for multi-level shopping centres
  */
-export const floorLevels = mysqlTable("floor_levels", {
-  id: int("id").autoincrement().primaryKey(),
-  centreId: int("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
+export const floorLevels = pgTable("floor_levels", {
+  id: serial("id").primaryKey(),
+  centreId: integer("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
   levelName: varchar("levelName", { length: 100 }).notNull(), // e.g., "Ground Floor", "Level 1", "Level 2"
   levelNumber: varchar("levelNumber", { length: 20 }).notNull(), // e.g., "G", "L1", "M", "Coles Level"
   mapImageUrl: text("mapImageUrl"),
-  displayOrder: int("displayOrder").notNull(), // For custom ordering
+  displayOrder: integer("displayOrder").notNull(), // For custom ordering
   isHidden: boolean("isHidden").default(false).notNull(), // Soft delete - hide from public but preserve historical data
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
-  centreIdIdx: index("centreId_idx").on(table.centreId),
+  centreIdIdx: index("floor_centreId_idx").on(table.centreId),
 }));
 
 /**
  * Shopping centres
  */
-export const shoppingCentres = mysqlTable("shopping_centres", {
-  id: int("id").autoincrement().primaryKey(),
-  ownerId: int("ownerId").notNull().references(() => owners.id, { onDelete: "cascade" }),
+export const shoppingCentres = pgTable("shopping_centres", {
+  id: serial("id").primaryKey(),
+  ownerId: integer("ownerId").notNull().references(() => owners.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 255 }).notNull(),
   centreCode: varchar("centreCode", { length: 50 }).unique(),
   address: text("address"),
@@ -118,7 +138,7 @@ export const shoppingCentres = mysqlTable("shopping_centres", {
   latitude: decimal("latitude", { precision: 10, scale: 7 }),
   longitude: decimal("longitude", { precision: 10, scale: 7 }),
   majors: text("majors"),
-  numberOfSpecialties: int("numberOfSpecialties"),
+  numberOfSpecialties: integer("numberOfSpecialties"),
   weeklyReportEmail1: varchar("weeklyReportEmail1", { length: 320 }),
   weeklyReportEmail2: varchar("weeklyReportEmail2", { length: 320 }),
   weeklyReportEmail3: varchar("weeklyReportEmail3", { length: 320 }),
@@ -130,11 +150,11 @@ export const shoppingCentres = mysqlTable("shopping_centres", {
   weeklyReportEmail9: varchar("weeklyReportEmail9", { length: 320 }),
   weeklyReportEmail10: varchar("weeklyReportEmail10", { length: 320 }),
   weeklyReportTimezone: varchar("weeklyReportTimezone", { length: 50 }).default("Australia/Sydney"),
-  weeklyReportNextOverrideDay: mysqlEnum("weeklyReportNextOverrideDay", ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]),
+  weeklyReportNextOverrideDay: weekdayEnum("weeklyReportNextOverrideDay"),
   includeInMainSite: boolean("includeInMainSite").default(true).notNull(),
   mapImageUrl: text("mapImageUrl"),
-  totalTablesAvailable: int("totalTablesAvailable").default(0),
-  totalChairsAvailable: int("totalChairsAvailable").default(0),
+  totalTablesAvailable: integer("totalTablesAvailable").default(0),
+  totalChairsAvailable: integer("totalChairsAvailable").default(0),
   contactPhone: varchar("contactPhone", { length: 20 }),
   contactEmail: varchar("contactEmail", { length: 320 }),
   operatingHours: text("operatingHours"),
@@ -147,22 +167,22 @@ export const shoppingCentres = mysqlTable("shopping_centres", {
   pdfUrl3: text("pdfUrl3"),
   pdfName3: varchar("pdfName3", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
-  ownerIdIdx: index("ownerId_idx").on(table.ownerId),
-  nameIdx: index("name_idx").on(table.name),
+  ownerIdIdx: index("centre_ownerId_idx").on(table.ownerId),
+  nameIdx: index("centre_name_idx").on(table.name),
 }));
 
 /**
  * Sites/Spaces within shopping centres
  */
-export const sites = mysqlTable("sites", {
-  id: int("id").autoincrement().primaryKey(),
-  centreId: int("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
+export const sites = pgTable("sites", {
+  id: serial("id").primaryKey(),
+  centreId: integer("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
   siteNumber: varchar("siteNumber", { length: 50 }).notNull(),
   description: text("description"),
   size: varchar("size", { length: 100 }),
-  maxTables: int("maxTables"),
+  maxTables: integer("maxTables"),
   powerAvailable: varchar("powerAvailable", { length: 100 }),
   restrictions: text("restrictions"),
   pricePerDay: decimal("pricePerDay", { precision: 10, scale: 2 }).default("150.00").notNull(),
@@ -174,24 +194,24 @@ export const sites = mysqlTable("sites", {
   imageUrl3: text("imageUrl3"),
   imageUrl4: text("imageUrl4"),
   videoUrl: text("videoUrl"),
-  floorLevelId: int("floorLevelId").references(() => floorLevels.id, { onDelete: "set null" }), // null for single-level centres
+  floorLevelId: integer("floorLevelId").references(() => floorLevels.id, { onDelete: "set null" }), // null for single-level centres
   mapMarkerX: decimal("mapMarkerX", { precision: 5, scale: 2 }),
   mapMarkerY: decimal("mapMarkerY", { precision: 5, scale: 2 }),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
-  centreIdIdx: index("centreId_idx").on(table.centreId),
+  centreIdIdx: index("site_centreId_idx").on(table.centreId),
 }));
 
 /**
  * Usage categories for bookings (34 predefined categories)
  */
-export const usageCategories = mysqlTable("usage_categories", {
-  id: int("id").autoincrement().primaryKey(),
+export const usageCategories = pgTable("usage_categories", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull().unique(),
   isFree: boolean("isFree").default(false).notNull(), // true for "Charities (Free)" and "Government (Free)"
-  displayOrder: int("displayOrder").notNull(),
+  displayOrder: integer("displayOrder").notNull(),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -199,22 +219,22 @@ export const usageCategories = mysqlTable("usage_categories", {
 /**
  * Junction table: which usage categories are approved for which sites
  */
-export const siteUsageCategories = mysqlTable("site_usage_categories", {
-  id: int("id").autoincrement().primaryKey(),
-  siteId: int("siteId").notNull().references(() => sites.id, { onDelete: "cascade" }),
-  categoryId: int("categoryId").notNull().references(() => usageCategories.id, { onDelete: "cascade" }),
+export const siteUsageCategories = pgTable("site_usage_categories", {
+  id: serial("id").primaryKey(),
+  siteId: integer("siteId").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  categoryId: integer("categoryId").notNull().references(() => usageCategories.id, { onDelete: "cascade" }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
-  siteIdIdx: index("siteId_idx").on(table.siteId),
-  categoryIdIdx: index("categoryId_idx").on(table.categoryId),
-  uniqueSiteCategory: index("unique_site_category").on(table.siteId, table.categoryId),
+  siteIdIdx: index("suc_siteId_idx").on(table.siteId),
+  categoryIdIdx: index("suc_categoryId_idx").on(table.categoryId),
+  uniqueSiteCategory: index("suc_unique_site_category").on(table.siteId, table.categoryId),
 }));
 
 /**
  * Legacy usage types table (kept for backward compatibility)
  */
-export const usageTypes = mysqlTable("usage_types", {
-  id: int("id").autoincrement().primaryKey(),
+export const usageTypes = pgTable("usage_types", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   requiresApproval: boolean("requiresApproval").default(false).notNull(),
   isActive: boolean("isActive").default(true).notNull(),
@@ -224,14 +244,14 @@ export const usageTypes = mysqlTable("usage_types", {
 /**
  * Bookings
  */
-export const bookings = mysqlTable("bookings", {
-  id: int("id").autoincrement().primaryKey(),
+export const bookings = pgTable("bookings", {
+  id: serial("id").primaryKey(),
   bookingNumber: varchar("bookingNumber", { length: 50 }).notNull().unique(),
-  siteId: int("siteId").notNull().references(() => sites.id, { onDelete: "cascade" }),
-  customerId: int("customerId").notNull().references(() => users.id, { onDelete: "cascade" }),
-  usageTypeId: int("usageTypeId").references(() => usageTypes.id),
+  siteId: integer("siteId").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  customerId: integer("customerId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  usageTypeId: integer("usageTypeId").references(() => usageTypes.id),
   customUsage: text("customUsage"),
-  usageCategoryId: int("usageCategoryId").references(() => usageCategories.id),
+  usageCategoryId: integer("usageCategoryId").references(() => usageCategories.id),
   additionalCategoryText: text("additionalCategoryText"), // triggers manual approval if filled
   startDate: timestamp("startDate").notNull(),
   endDate: timestamp("endDate").notNull(),
@@ -240,64 +260,64 @@ export const bookings = mysqlTable("bookings", {
   gstPercentage: decimal("gstPercentage", { precision: 5, scale: 2 }).notNull(), // Store GST rate at time of booking/transaction
   ownerAmount: decimal("ownerAmount", { precision: 12, scale: 2 }).notNull(),
   platformFee: decimal("platformFee", { precision: 12, scale: 2 }).notNull(),
-  status: mysqlEnum("status", ["pending", "confirmed", "cancelled", "completed", "rejected"]).default("pending").notNull(),
+  status: bookingStatusEnum("status").default("pending").notNull(),
   requiresApproval: boolean("requiresApproval").default(false).notNull(),
-  approvedBy: int("approvedBy").references(() => users.id),
+  approvedBy: integer("approvedBy").references(() => users.id),
   approvedAt: timestamp("approvedAt"),
   rejectionReason: text("rejectionReason"),
-  tablesRequested: int("tablesRequested").default(0),
-  chairsRequested: int("chairsRequested").default(0),
+  tablesRequested: integer("tablesRequested").default(0),
+  chairsRequested: integer("chairsRequested").default(0),
   bringingOwnTables: boolean("bringingOwnTables").default(false).notNull(),
   stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
-  paymentMethod: mysqlEnum("paymentMethod", ["stripe", "invoice"]).default("stripe").notNull(),
+  paymentMethod: paymentMethodEnum("paymentMethod").default("stripe").notNull(),
   paidAt: timestamp("paidAt"),
-  paymentRecordedBy: int("paymentRecordedBy").references(() => users.id),
+  paymentRecordedBy: integer("paymentRecordedBy").references(() => users.id),
   paymentDueDate: timestamp("paymentDueDate"), // For invoice bookings - when payment is due
-  remindersSent: int("remindersSent").default(0).notNull(), // Count of payment reminders sent
+  remindersSent: integer("remindersSent").default(0).notNull(), // Count of payment reminders sent
   customerEmail: varchar("customerEmail", { length: 320 }),
   confirmationEmailSent: boolean("confirmationEmailSent").default(false).notNull(),
   reminderEmailSent: boolean("reminderEmailSent").default(false).notNull(),
   completionEmailSent: boolean("completionEmailSent").default(false).notNull(),
   lastReminderSent: timestamp("lastReminderSent"),
   adminComments: text("adminComments"), // Internal admin notes, never shown on invoices/emails
-  createdByAdmin: int("createdByAdmin").references(() => users.id), // If booking was created by admin on behalf of user
+  createdByAdmin: integer("createdByAdmin").references(() => users.id), // If booking was created by admin on behalf of user
   invoiceOverride: boolean("invoiceOverride").default(false).notNull(), // Override Stripe user to pay by invoice for this booking
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
-  siteIdIdx: index("siteId_idx").on(table.siteId),
-  customerIdIdx: index("customerId_idx").on(table.customerId),
-  startDateIdx: index("startDate_idx").on(table.startDate),
-  statusIdx: index("status_idx").on(table.status),
+  siteIdIdx: index("booking_siteId_idx").on(table.siteId),
+  customerIdIdx: index("booking_customerId_idx").on(table.customerId),
+  startDateIdx: index("booking_startDate_idx").on(table.startDate),
+  statusIdx: index("booking_status_idx").on(table.status),
   // Composite index for optimized date range queries in search
-  siteIdDateRangeIdx: index("siteId_date_range_idx").on(table.siteId, table.startDate, table.endDate),
+  siteIdDateRangeIdx: index("booking_siteId_date_range_idx").on(table.siteId, table.startDate, table.endDate),
 }));
 
 /**
  * Booking status history for audit trail
  */
-export const bookingStatusHistory = mysqlTable("booking_status_history", {
-  id: int("id").autoincrement().primaryKey(),
-  bookingId: int("bookingId").notNull().references(() => bookings.id, { onDelete: "cascade" }),
-  previousStatus: mysqlEnum("previousStatus", ["pending", "confirmed", "cancelled", "completed", "rejected"]),
-  newStatus: mysqlEnum("newStatus", ["pending", "confirmed", "cancelled", "completed", "rejected"]).notNull(),
-  changedBy: int("changedBy").references(() => users.id),
+export const bookingStatusHistory = pgTable("booking_status_history", {
+  id: serial("id").primaryKey(),
+  bookingId: integer("bookingId").notNull().references(() => bookings.id, { onDelete: "cascade" }),
+  previousStatus: bookingStatusEnum("previousStatus"),
+  newStatus: bookingStatusEnum("newStatus").notNull(),
+  changedBy: integer("changedBy").references(() => users.id),
   changedByName: varchar("changedByName", { length: 255 }),
   reason: text("reason"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
-  bookingIdIdx: index("booking_status_bookingId_idx").on(table.bookingId),
-  createdAtIdx: index("booking_status_createdAt_idx").on(table.createdAt),
+  bookingIdIdx: index("bsh_bookingId_idx").on(table.bookingId),
+  createdAtIdx: index("bsh_createdAt_idx").on(table.createdAt),
 }));
 
 /**
  * Financial transactions (including reversals for cancellations)
  */
-export const transactions = mysqlTable("transactions", {
-  id: int("id").autoincrement().primaryKey(),
-  bookingId: int("bookingId").notNull().references(() => bookings.id, { onDelete: "cascade" }),
-  ownerId: int("ownerId").notNull().references(() => owners.id, { onDelete: "cascade" }),
-  type: mysqlEnum("type", ["booking", "cancellation", "monthly_fee"]).notNull(),
+export const transactions = pgTable("transactions", {
+  id: serial("id").primaryKey(),
+  bookingId: integer("bookingId").notNull().references(() => bookings.id, { onDelete: "cascade" }),
+  ownerId: integer("ownerId").notNull().references(() => owners.id, { onDelete: "cascade" }),
+  type: transactionTypeEnum("type").notNull(),
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   gstAmount: decimal("gstAmount", { precision: 12, scale: 2 }).notNull(),
   gstPercentage: decimal("gstPercentage", { precision: 5, scale: 2 }).notNull(), // Store GST rate at time of booking/transaction
@@ -307,30 +327,30 @@ export const transactions = mysqlTable("transactions", {
   remittedAt: timestamp("remittedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
-  bookingIdIdx: index("bookingId_idx").on(table.bookingId),
-  ownerIdIdx: index("ownerId_idx").on(table.ownerId),
-  remittedIdx: index("remitted_idx").on(table.remitted),
+  bookingIdIdx: index("tx_bookingId_idx").on(table.bookingId),
+  ownerIdIdx: index("tx_ownerId_idx").on(table.ownerId),
+  remittedIdx: index("tx_remitted_idx").on(table.remitted),
 }));
 
 /**
  * System configuration
  */
-export const systemConfig = mysqlTable("system_config", {
-  id: int("id").autoincrement().primaryKey(),
+export const systemConfig = pgTable("system_config", {
+  id: serial("id").primaryKey(),
   key: varchar("key", { length: 100 }).notNull().unique(),
   value: text("value").notNull(),
-  imageQuality: int("image_quality").default(85),
-  imageMaxWidth: int("image_max_width").default(1200),
-  imageMaxHeight: int("image_max_height").default(800),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  imageQuality: integer("image_quality").default(85),
+  imageMaxWidth: integer("image_max_width").default(1200),
+  imageMaxHeight: integer("image_max_height").default(800),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 /**
- * Image analytics tracking
+ * Seasonal rates for sites
  */
-export const seasonalRates = mysqlTable("seasonalRates", {
-  id: int("id").autoincrement().primaryKey(),
-  siteId: int("siteId").notNull(),
+export const seasonalRates = pgTable("seasonalRates", {
+  id: serial("id").primaryKey(),
+  siteId: integer("siteId").notNull(),
   name: varchar("name", { length: 255 }).notNull(), // e.g., "Christmas 2024", "Summer Sale"
   startDate: varchar("startDate", { length: 10 }).notNull(), // YYYY-MM-DD format
   endDate: varchar("endDate", { length: 10 }).notNull(), // YYYY-MM-DD format
@@ -344,27 +364,27 @@ export const seasonalRates = mysqlTable("seasonalRates", {
  * Site budgets for portfolio performance tracking
  * Budgets are set per site per month for revenue targets
  */
-export const budgets = mysqlTable("budgets", {
-  id: int("id").autoincrement().primaryKey(),
-  siteId: int("siteId").notNull().references(() => sites.id, { onDelete: "cascade" }),
-  month: int("month").notNull(), // 1-12
-  year: int("year").notNull(), // e.g., 2026
+export const budgets = pgTable("budgets", {
+  id: serial("id").primaryKey(),
+  siteId: integer("siteId").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  month: integer("month").notNull(), // 1-12
+  year: integer("year").notNull(), // e.g., 2026
   budgetAmount: decimal("budgetAmount", { precision: 12, scale: 2 }).notNull(), // Target revenue for this site/month
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
-  siteIdIdx: index("siteId_idx").on(table.siteId),
-  monthYearIdx: index("month_year_idx").on(table.month, table.year),
-  uniqueSiteMonthYear: index("unique_site_month_year").on(table.siteId, table.month, table.year),
+  siteIdIdx: index("budget_siteId_idx").on(table.siteId),
+  monthYearIdx: index("budget_month_year_idx").on(table.month, table.year),
+  uniqueSiteMonthYear: index("budget_unique_site_month_year").on(table.siteId, table.month, table.year),
 }));
 
 /**
  * Financial year monthly percentage distribution
  * Stores the percentage allocation for each month (July-June)
  */
-export const fyPercentages = mysqlTable("fy_percentages", {
-  id: int("id").autoincrement().primaryKey(),
-  financialYear: int("financialYear").notNull(), // e.g., 2026 means FY 2025-26 (July 2025 - June 2026)
+export const fyPercentages = pgTable("fy_percentages", {
+  id: serial("id").primaryKey(),
+  financialYear: integer("financialYear").notNull(), // e.g., 2026 means FY 2025-26 (July 2025 - June 2026)
   july: decimal("july", { precision: 5, scale: 2 }).default("8.33").notNull(),
   august: decimal("august", { precision: 5, scale: 2 }).default("8.33").notNull(),
   september: decimal("september", { precision: 5, scale: 2 }).default("8.33").notNull(),
@@ -378,38 +398,38 @@ export const fyPercentages = mysqlTable("fy_percentages", {
   may: decimal("may", { precision: 5, scale: 2 }).default("8.33").notNull(),
   june: decimal("june", { precision: 5, scale: 2 }).default("8.37").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
-  fyIdx: index("fy_idx").on(table.financialYear),
+  fyIdx: index("fyp_fy_idx").on(table.financialYear),
 }));
 
 /**
  * Centre annual budgets for financial year
  * Stores the total annual budget per centre
  */
-export const centreBudgets = mysqlTable("centre_budgets", {
-  id: int("id").autoincrement().primaryKey(),
-  centreId: int("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
-  financialYear: int("financialYear").notNull(), // e.g., 2026 means FY 2025-26
+export const centreBudgets = pgTable("centre_budgets", {
+  id: serial("id").primaryKey(),
+  centreId: integer("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
+  financialYear: integer("financialYear").notNull(), // e.g., 2026 means FY 2025-26
   annualBudget: decimal("annualBudget", { precision: 14, scale: 2 }).notNull(), // Total annual budget for the centre
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
-  centreIdIdx: index("centreId_idx").on(table.centreId),
-  fyIdx: index("fy_idx").on(table.financialYear),
-  uniqueCentreFy: index("unique_centre_fy").on(table.centreId, table.financialYear),
+  centreIdIdx: index("cb_centreId_idx").on(table.centreId),
+  fyIdx: index("cb_fy_idx").on(table.financialYear),
+  uniqueCentreFy: index("cb_unique_centre_fy").on(table.centreId, table.financialYear),
 }));
 
-export const imageAnalytics = mysqlTable("imageAnalytics", {
-  id: int("id").autoincrement().primaryKey(),
-  siteId: int("site_id").notNull().references(() => sites.id, { onDelete: 'cascade' }),
-  imageSlot: int("image_slot").notNull(), // 1-4
-  viewCount: int("view_count").default(0).notNull(),
-  clickCount: int("click_count").default(0).notNull(),
+export const imageAnalytics = pgTable("imageAnalytics", {
+  id: serial("id").primaryKey(),
+  siteId: integer("site_id").notNull().references(() => sites.id, { onDelete: 'cascade' }),
+  imageSlot: integer("image_slot").notNull(), // 1-4
+  viewCount: integer("view_count").default(0).notNull(),
+  clickCount: integer("click_count").default(0).notNull(),
   lastViewedAt: timestamp("last_viewed_at"),
   lastClickedAt: timestamp("last_clicked_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type InsertImageAnalytics = typeof imageAnalytics.$inferInsert;
@@ -418,25 +438,25 @@ export type SelectImageAnalytics = typeof imageAnalytics.$inferSelect;
 /**
  * Search analytics for tracking user searches and suggestions
  */
-export const searchAnalytics = mysqlTable("search_analytics", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").references(() => users.id, { onDelete: "set null" }),
+export const searchAnalytics = pgTable("search_analytics", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id, { onDelete: "set null" }),
   query: text("query").notNull(),
   centreName: varchar("centreName", { length: 255 }),
   minSizeM2: decimal("minSizeM2", { precision: 10, scale: 2 }),
   productCategory: varchar("productCategory", { length: 255 }),
-  resultsCount: int("resultsCount").notNull(),
+  resultsCount: integer("resultsCount").notNull(),
   hadResults: boolean("hadResults").notNull(),
-  suggestionsShown: int("suggestionsShown").default(0),
+  suggestionsShown: integer("suggestionsShown").default(0),
   suggestionClicked: boolean("suggestionClicked").default(false),
   clickedSuggestion: varchar("clickedSuggestion", { length: 255 }),
   searchDate: timestamp("searchDate").notNull(),
   ipAddress: varchar("ipAddress", { length: 45 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
-  searchDateIdx: index("searchDate_idx").on(table.searchDate),
-  hadResultsIdx: index("hadResults_idx").on(table.hadResults),
-  createdAtIdx: index("createdAt_idx").on(table.createdAt),
+  searchDateIdx: index("sa_searchDate_idx").on(table.searchDate),
+  hadResultsIdx: index("sa_hadResults_idx").on(table.hadResults),
+  createdAtIdx: index("sa_createdAt_idx").on(table.createdAt),
 }));
 
 export type SearchAnalytics = typeof searchAnalytics.$inferSelect;
@@ -445,38 +465,38 @@ export type InsertSearchAnalytics = typeof searchAnalytics.$inferInsert;
 /**
  * Audit log for admin changes
  */
-export const auditLog = mysqlTable("audit_log", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+export const auditLog = pgTable("audit_log", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
   action: varchar("action", { length: 255 }).notNull(),
   entityType: varchar("entityType", { length: 100 }),
-  entityId: int("entityId"),
+  entityId: integer("entityId"),
   changes: text("changes"),
   ipAddress: varchar("ipAddress", { length: 45 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
-  userIdIdx: index("userId_idx").on(table.userId),
-  createdAtIdx: index("createdAt_idx").on(table.createdAt),
+  userIdIdx: index("al_userId_idx").on(table.userId),
+  createdAtIdx: index("al_createdAt_idx").on(table.createdAt),
 }));
 
 /**
  * Third Line Income Categories (admin-managed)
  */
-export const thirdLineCategories = mysqlTable("third_line_categories", {
-  id: int("id").autoincrement().primaryKey(),
+export const thirdLineCategories = pgTable("third_line_categories", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull().unique(),
-  displayOrder: int("displayOrder").notNull().default(0),
+  displayOrder: integer("displayOrder").notNull().default(0),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 /**
  * Vacant Shops - Short-term physical retail tenancies
  */
-export const vacantShops = mysqlTable("vacant_shops", {
-  id: int("id").autoincrement().primaryKey(),
-  centreId: int("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
+export const vacantShops = pgTable("vacant_shops", {
+  id: serial("id").primaryKey(),
+  centreId: integer("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
   shopNumber: varchar("shopNumber", { length: 50 }).notNull(),
   totalSizeM2: decimal("totalSizeM2", { precision: 10, scale: 2 }), // Total size in square metres
   dimensions: varchar("dimensions", { length: 100 }), // e.g., "5m x 8m"
@@ -486,12 +506,12 @@ export const vacantShops = mysqlTable("vacant_shops", {
   imageUrl2: text("imageUrl2"),
   pricePerWeek: decimal("pricePerWeek", { precision: 10, scale: 2 }),
   pricePerMonth: decimal("pricePerMonth", { precision: 10, scale: 2 }),
-  floorLevelId: int("floorLevelId").references(() => floorLevels.id, { onDelete: "set null" }),
+  floorLevelId: integer("floorLevelId").references(() => floorLevels.id, { onDelete: "set null" }),
   mapMarkerX: decimal("mapMarkerX", { precision: 5, scale: 2 }),
   mapMarkerY: decimal("mapMarkerY", { precision: 5, scale: 2 }),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
   centreIdIdx: index("vs_centreId_idx").on(table.centreId),
   floorLevelIdIdx: index("vs_floorLevelId_idx").on(table.floorLevelId),
@@ -501,11 +521,11 @@ export const vacantShops = mysqlTable("vacant_shops", {
 /**
  * Third Line Income - Non-tenancy assets (vending, signage, etc.)
  */
-export const thirdLineIncome = mysqlTable("third_line_income", {
-  id: int("id").autoincrement().primaryKey(),
-  centreId: int("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
+export const thirdLineIncome = pgTable("third_line_income", {
+  id: serial("id").primaryKey(),
+  centreId: integer("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
   assetNumber: varchar("assetNumber", { length: 50 }).notNull(),
-  categoryId: int("categoryId").notNull().references(() => thirdLineCategories.id, { onDelete: "restrict" }),
+  categoryId: integer("categoryId").notNull().references(() => thirdLineCategories.id, { onDelete: "restrict" }),
   dimensions: varchar("dimensions", { length: 100 }), // e.g., "1.5m x 0.8m"
   powered: boolean("powered").default(false).notNull(),
   description: text("description"),
@@ -513,12 +533,12 @@ export const thirdLineIncome = mysqlTable("third_line_income", {
   imageUrl2: text("imageUrl2"),
   pricePerWeek: decimal("pricePerWeek", { precision: 10, scale: 2 }),
   pricePerMonth: decimal("pricePerMonth", { precision: 10, scale: 2 }),
-  floorLevelId: int("floorLevelId").references(() => floorLevels.id, { onDelete: "set null" }),
+  floorLevelId: integer("floorLevelId").references(() => floorLevels.id, { onDelete: "set null" }),
   mapMarkerX: decimal("mapMarkerX", { precision: 5, scale: 2 }),
   mapMarkerY: decimal("mapMarkerY", { precision: 5, scale: 2 }),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
   centreIdIdx: index("tli_centreId_idx").on(table.centreId),
   categoryIdIdx: index("tli_categoryId_idx").on(table.categoryId),
@@ -526,7 +546,84 @@ export const thirdLineIncome = mysqlTable("third_line_income", {
   isActiveIdx: index("tli_isActive_idx").on(table.isActive),
 }));
 
-// Type exports
+/**
+ * Vacant Shop Bookings - Bookings for short-term vacant shop tenancies
+ */
+export const vacantShopBookings = pgTable("vacant_shop_bookings", {
+  id: serial("id").primaryKey(),
+  bookingNumber: varchar("bookingNumber", { length: 50 }).notNull().unique(),
+  vacantShopId: integer("vacantShopId").notNull().references(() => vacantShops.id, { onDelete: "cascade" }),
+  customerId: integer("customerId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  startDate: timestamp("startDate").notNull(),
+  endDate: timestamp("endDate").notNull(),
+  totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull(),
+  gstAmount: decimal("gstAmount", { precision: 12, scale: 2 }).notNull(),
+  gstPercentage: decimal("gstPercentage", { precision: 5, scale: 2 }).notNull(),
+  ownerAmount: decimal("ownerAmount", { precision: 12, scale: 2 }).notNull(),
+  platformFee: decimal("platformFee", { precision: 12, scale: 2 }).notNull(),
+  status: bookingStatusEnum("status").default("pending").notNull(),
+  requiresApproval: boolean("requiresApproval").default(false).notNull(),
+  approvedBy: integer("approvedBy").references(() => users.id),
+  approvedAt: timestamp("approvedAt"),
+  rejectionReason: text("rejectionReason"),
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
+  paymentMethod: paymentMethodEnum("paymentMethod").default("stripe").notNull(),
+  paidAt: timestamp("paidAt"),
+  paymentRecordedBy: integer("paymentRecordedBy").references(() => users.id),
+  paymentDueDate: timestamp("paymentDueDate"),
+  customerEmail: varchar("customerEmail", { length: 320 }),
+  customerNotes: text("customerNotes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+}, (table) => ({
+  vacantShopIdIdx: index("vsb_vacantShopId_idx").on(table.vacantShopId),
+  customerIdIdx: index("vsb_customerId_idx").on(table.customerId),
+  startDateIdx: index("vsb_startDate_idx").on(table.startDate),
+  statusIdx: index("vsb_status_idx").on(table.status),
+  dateRangeIdx: index("vsb_date_range_idx").on(table.vacantShopId, table.startDate, table.endDate),
+}));
+
+/**
+ * Third Line Income Bookings - Bookings for non-tenancy assets
+ */
+export const thirdLineBookings = pgTable("third_line_bookings", {
+  id: serial("id").primaryKey(),
+  bookingNumber: varchar("bookingNumber", { length: 50 }).notNull().unique(),
+  thirdLineIncomeId: integer("thirdLineIncomeId").notNull().references(() => thirdLineIncome.id, { onDelete: "cascade" }),
+  customerId: integer("customerId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  startDate: timestamp("startDate").notNull(),
+  endDate: timestamp("endDate").notNull(),
+  totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull(),
+  gstAmount: decimal("gstAmount", { precision: 12, scale: 2 }).notNull(),
+  gstPercentage: decimal("gstPercentage", { precision: 5, scale: 2 }).notNull(),
+  ownerAmount: decimal("ownerAmount", { precision: 12, scale: 2 }).notNull(),
+  platformFee: decimal("platformFee", { precision: 12, scale: 2 }).notNull(),
+  status: bookingStatusEnum("status").default("pending").notNull(),
+  requiresApproval: boolean("requiresApproval").default(false).notNull(),
+  approvedBy: integer("approvedBy").references(() => users.id),
+  approvedAt: timestamp("approvedAt"),
+  rejectionReason: text("rejectionReason"),
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
+  paymentMethod: paymentMethodEnum("paymentMethod").default("stripe").notNull(),
+  paidAt: timestamp("paidAt"),
+  paymentRecordedBy: integer("paymentRecordedBy").references(() => users.id),
+  paymentDueDate: timestamp("paymentDueDate"),
+  customerEmail: varchar("customerEmail", { length: 320 }),
+  customerNotes: text("customerNotes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+}, (table) => ({
+  thirdLineIncomeIdIdx: index("tlb_thirdLineIncomeId_idx").on(table.thirdLineIncomeId),
+  customerIdIdx: index("tlb_customerId_idx").on(table.customerId),
+  startDateIdx: index("tlb_startDate_idx").on(table.startDate),
+  statusIdx: index("tlb_status_idx").on(table.status),
+  dateRangeIdx: index("tlb_date_range_idx").on(table.thirdLineIncomeId, table.startDate, table.endDate),
+}));
+
+// =============================================================================
+// Type Exports
+// =============================================================================
+
 export type ThirdLineCategory = typeof thirdLineCategories.$inferSelect;
 export type InsertThirdLineCategory = typeof thirdLineCategories.$inferInsert;
 export type VacantShop = typeof vacantShops.$inferSelect;
@@ -562,81 +659,6 @@ export type FyPercentages = typeof fyPercentages.$inferSelect;
 export type InsertFyPercentages = typeof fyPercentages.$inferInsert;
 export type CentreBudget = typeof centreBudgets.$inferSelect;
 export type InsertCentreBudget = typeof centreBudgets.$inferInsert;
-
-/**
- * Vacant Shop Bookings - Bookings for short-term vacant shop tenancies
- */
-export const vacantShopBookings = mysqlTable("vacant_shop_bookings", {
-  id: int("id").autoincrement().primaryKey(),
-  bookingNumber: varchar("bookingNumber", { length: 50 }).notNull().unique(),
-  vacantShopId: int("vacantShopId").notNull().references(() => vacantShops.id, { onDelete: "cascade" }),
-  customerId: int("customerId").notNull().references(() => users.id, { onDelete: "cascade" }),
-  startDate: timestamp("startDate").notNull(),
-  endDate: timestamp("endDate").notNull(),
-  totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull(),
-  gstAmount: decimal("gstAmount", { precision: 12, scale: 2 }).notNull(),
-  gstPercentage: decimal("gstPercentage", { precision: 5, scale: 2 }).notNull(),
-  ownerAmount: decimal("ownerAmount", { precision: 12, scale: 2 }).notNull(),
-  platformFee: decimal("platformFee", { precision: 12, scale: 2 }).notNull(),
-  status: mysqlEnum("status", ["pending", "confirmed", "cancelled", "completed", "rejected"]).default("pending").notNull(),
-  requiresApproval: boolean("requiresApproval").default(false).notNull(),
-  approvedBy: int("approvedBy").references(() => users.id),
-  approvedAt: timestamp("approvedAt"),
-  rejectionReason: text("rejectionReason"),
-  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
-  paymentMethod: mysqlEnum("paymentMethod", ["stripe", "invoice"]).default("stripe").notNull(),
-  paidAt: timestamp("paidAt"),
-  paymentRecordedBy: int("paymentRecordedBy").references(() => users.id),
-  paymentDueDate: timestamp("paymentDueDate"),
-  customerEmail: varchar("customerEmail", { length: 320 }),
-  customerNotes: text("customerNotes"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => ({
-  vacantShopIdIdx: index("vsb_vacantShopId_idx").on(table.vacantShopId),
-  customerIdIdx: index("vsb_customerId_idx").on(table.customerId),
-  startDateIdx: index("vsb_startDate_idx").on(table.startDate),
-  statusIdx: index("vsb_status_idx").on(table.status),
-  dateRangeIdx: index("vsb_date_range_idx").on(table.vacantShopId, table.startDate, table.endDate),
-}));
-
-/**
- * Third Line Income Bookings - Bookings for non-tenancy assets
- */
-export const thirdLineBookings = mysqlTable("third_line_bookings", {
-  id: int("id").autoincrement().primaryKey(),
-  bookingNumber: varchar("bookingNumber", { length: 50 }).notNull().unique(),
-  thirdLineIncomeId: int("thirdLineIncomeId").notNull().references(() => thirdLineIncome.id, { onDelete: "cascade" }),
-  customerId: int("customerId").notNull().references(() => users.id, { onDelete: "cascade" }),
-  startDate: timestamp("startDate").notNull(),
-  endDate: timestamp("endDate").notNull(),
-  totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull(),
-  gstAmount: decimal("gstAmount", { precision: 12, scale: 2 }).notNull(),
-  gstPercentage: decimal("gstPercentage", { precision: 5, scale: 2 }).notNull(),
-  ownerAmount: decimal("ownerAmount", { precision: 12, scale: 2 }).notNull(),
-  platformFee: decimal("platformFee", { precision: 12, scale: 2 }).notNull(),
-  status: mysqlEnum("status", ["pending", "confirmed", "cancelled", "completed", "rejected"]).default("pending").notNull(),
-  requiresApproval: boolean("requiresApproval").default(false).notNull(),
-  approvedBy: int("approvedBy").references(() => users.id),
-  approvedAt: timestamp("approvedAt"),
-  rejectionReason: text("rejectionReason"),
-  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
-  paymentMethod: mysqlEnum("paymentMethod", ["stripe", "invoice"]).default("stripe").notNull(),
-  paidAt: timestamp("paidAt"),
-  paymentRecordedBy: int("paymentRecordedBy").references(() => users.id),
-  paymentDueDate: timestamp("paymentDueDate"),
-  customerEmail: varchar("customerEmail", { length: 320 }),
-  customerNotes: text("customerNotes"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => ({
-  thirdLineIncomeIdIdx: index("tlb_thirdLineIncomeId_idx").on(table.thirdLineIncomeId),
-  customerIdIdx: index("tlb_customerId_idx").on(table.customerId),
-  startDateIdx: index("tlb_startDate_idx").on(table.startDate),
-  statusIdx: index("tlb_status_idx").on(table.status),
-  dateRangeIdx: index("tlb_date_range_idx").on(table.thirdLineIncomeId, table.startDate, table.endDate),
-}));
-
 export type VacantShopBooking = typeof vacantShopBookings.$inferSelect;
 export type InsertVacantShopBooking = typeof vacantShopBookings.$inferInsert;
 export type ThirdLineBooking = typeof thirdLineBookings.$inferSelect;
