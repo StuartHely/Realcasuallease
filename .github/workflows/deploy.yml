@@ -107,7 +107,7 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64
+          platforms: linux/arm64
 
       # -----------------------------------------------------------------------
       # EKS Deployment
@@ -160,18 +160,16 @@ jobs:
           # Replace image placeholder in deployment
           export IMAGE=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
           
+          # Replace placeholder in deployment.yml before applying
+          sed -i "s|PLACEHOLDER_IMAGE:latest|$IMAGE|g" k8s/deployment.yml
+          
           # Apply all Kubernetes manifests
           kubectl apply -f k8s/configmap.yml -n casuallease
           kubectl apply -f k8s/secrets.yml -n casuallease || true  # May fail if using dynamic secrets above
           kubectl apply -f k8s/deployment.yml -n casuallease
           kubectl apply -f k8s/service.yml -n casuallease
           kubectl apply -f k8s/hpa.yml -n casuallease
-          kubectl apply -f k8s/ingress.yml -n casuallease
-          
-          # Update the deployment with the new image
-          kubectl set image deployment/casuallease \
-            casuallease=$IMAGE \
-            -n casuallease
+          kubectl apply -f k8s/ingress.yml -n casuallease || true  # May fail if ALB controller not installed
 
       - name: Wait for deployment rollout
         run: |
