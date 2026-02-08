@@ -1,1 +1,0 @@
-ALTER TABLE `floor_levels` MODIFY COLUMN `levelNumber` varchar(20) NOT NULL;

@@ -1,1 +1,0 @@
-ALTER TABLE `floor_levels` ADD `isHidden` boolean DEFAULT false NOT NULL;

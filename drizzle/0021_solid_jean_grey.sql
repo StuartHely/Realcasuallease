@@ -1,1 +1,0 @@
-ALTER TABLE `customer_profiles` ADD `productDetails` text;

@@ -1,1 +1,0 @@
-ALTER TABLE `seasonalRates` ADD `weeklyRate` decimal(10,2);

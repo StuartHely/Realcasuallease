@@ -1,1 +1,0 @@
-ALTER TABLE `shopping_centres` ADD `description` text;
