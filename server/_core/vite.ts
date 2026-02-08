@@ -7,17 +7,14 @@ export async function setupVite(app: Express, server: Server) {
   // Dynamic imports for dev-only dependencies
   const { nanoid } = await import("nanoid");
   const { createServer: createViteServer } = await import("vite");
-  const viteConfig = (await import("../../vite.config")).default;
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server },
-    allowedHosts: true as const,
-  };
-
+  
   const vite = await createViteServer({
-    ...viteConfig,
-    configFile: false,
-    server: serverOptions,
+    configFile: path.resolve(import.meta.dirname, "../../vite.config.ts"),
+    server: {
+      middlewareMode: true,
+      hmr: { server },
+      allowedHosts: true as const,
+    },
     appType: "custom",
   });
 
