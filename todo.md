@@ -3002,3 +3002,6 @@
 
 ## UI Update (Feb 7, 2025 - Home Page Text)
 - [x] Add descriptive text above "How it Works" section at half font size
+
+## Bug Fix (Feb 7, 2025 - Sites HTML Tags)
+- [x] Fix raw <p> HTML tags showing in Content Mgt Sites

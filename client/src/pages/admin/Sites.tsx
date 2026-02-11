@@ -543,7 +543,7 @@ export default function AdminSites() {
                       </Button>
                     </div>
                   </div>
-                  <CardDescription>{site.description || "No description"}</CardDescription>
+                  <CardDescription><span dangerouslySetInnerHTML={{ __html: site.description || "No description" }} /></CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="w-full h-32 rounded-md overflow-hidden bg-gray-100">
