@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
-import { MapPin, DollarSign, Ruler, Store, Layers } from "lucide-react";
+import { MapPin, DollarSign, Ruler, Store, Layers, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { useImageWithFallback } from "@/components/ImageWithFallback";
@@ -52,6 +53,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
   const [hoveredSite, setHoveredSite] = useState<Site | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [selectedFloorId, setSelectedFloorId] = useState<number | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   // Fetch floor levels for this centre
@@ -134,6 +136,18 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
     }
   };
 
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.25, 3));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
+  };
+
+  const handleResetZoom = () => {
+    setZoomLevel(1);
+  };
+
   if (!rawMapUrl || mapError) {
     return (
       <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
@@ -147,9 +161,39 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
 
   const MapContent = () => (
     <div className="bg-white rounded-lg border-2 border-gray-200 overflow-visible">
+      {/* Zoom Controls */}
+      <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
+        <Button
+          size="icon"
+          variant="outline"
+          className="bg-white shadow-lg hover:bg-gray-100"
+          onClick={handleZoomIn}
+          disabled={zoomLevel >= 3}
+        >
+          <ZoomIn className="h-4 w-4" />
+        </Button>
+        <Button
+          size="icon"
+          variant="outline"
+          className="bg-white shadow-lg hover:bg-gray-100"
+          onClick={handleZoomOut}
+          disabled={zoomLevel <= 0.5}
+        >
+          <ZoomOut className="h-4 w-4" />
+        </Button>
+        <Button
+          size="icon"
+          variant="outline"
+          className="bg-white shadow-lg hover:bg-gray-100"
+          onClick={handleResetZoom}
+          disabled={zoomLevel === 1}
+        >
+          <RotateCcw className="h-4 w-4" />
+        </Button>
+      </div>
       <div 
         ref={mapContainerRef} 
-        className="relative inline-block overflow-visible"
+        className="relative inline-block overflow-auto max-h-[600px]"
         onMouseLeave={handleMarkerLeave}
       >
         {mapLoading ? (
@@ -161,6 +205,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
             src={displayMapUrl || ""}
             alt={`${centreName} floor plan`}
             className="max-w-full h-auto"
+            style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}
             draggable={false}
           />
         )}
@@ -380,21 +425,52 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
         {/* Side-by-side floor maps grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {floorsWithMaps.map((floor: any) => (
-            <div key={floor.id} className="bg-white rounded-lg border-2 border-gray-200 overflow-visible">
+            <div key={floor.id} className="bg-white rounded-lg border-2 border-gray-200 overflow-visible relative">
               {/* Floor header */}
               <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
                 <h4 className="font-semibold text-gray-800">{floor.levelName}</h4>
                 <span className="text-xs text-gray-500">{floor.sites.length} markers</span>
               </div>
+              {/* Zoom Controls */}
+              <div className="absolute top-14 right-2 z-20 flex flex-col gap-1">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="bg-white shadow-lg hover:bg-gray-100 h-8 w-8"
+                  onClick={handleZoomIn}
+                  disabled={zoomLevel >= 3}
+                >
+                  <ZoomIn className="h-3 w-3" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="bg-white shadow-lg hover:bg-gray-100 h-8 w-8"
+                  onClick={handleZoomOut}
+                  disabled={zoomLevel <= 0.5}
+                >
+                  <ZoomOut className="h-3 w-3" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="bg-white shadow-lg hover:bg-gray-100 h-8 w-8"
+                  onClick={handleResetZoom}
+                  disabled={zoomLevel === 1}
+                >
+                  <RotateCcw className="h-3 w-3" />
+                </Button>
+              </div>
               {/* Map container */}
               <div 
-                className="relative inline-block overflow-visible"
+                className="relative inline-block overflow-auto max-h-[400px]"
                 onMouseLeave={handleMarkerLeave}
               >
                 <img
                   src={floor.mapImageUrl || ""}
                   alt={`${centreName} - ${floor.levelName}`}
                   className="max-w-full h-auto"
+                  style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}
                   draggable={false}
                 />
                 {/* Site Markers for this floor */}

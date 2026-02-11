@@ -3005,3 +3005,6 @@
 
 ## Bug Fix (Feb 7, 2025 - Sites HTML Tags)
 - [x] Fix raw <p> HTML tags showing in Content Mgt Sites
+
+## Feature Enhancement (Feb 11, 2025 - Floor Plan Zoom)
+- [x] Add zoom in/out controls to floor plan maps for better marker visibility
