@@ -11,30 +11,9 @@ metadata:
   labels:
     app: casuallease
     environment: production
-  annotations:
-    # AWS Load Balancer Controller annotations for NLB
-    # Use this for Network Load Balancer (Layer 4)
-    service.beta.kubernetes.io/aws-load-balancer-type: "external"
-    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
-    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-    
-    # Health check configuration
-    service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/health"
-    service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "HTTP"
-    service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "3000"
-    service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "30"
-    service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout: "10"
-    service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "2"
-    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "3"
-    
-    # Cross-zone load balancing
-    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
-
 spec:
-  type: LoadBalancer
-  
-  # Use NLB with AWS Load Balancer Controller
-  loadBalancerClass: service.k8s.aws/nlb
+  # Changed from LoadBalancer to ClusterIP to use shared ALB via Ingress
+  type: ClusterIP
   
   selector:
     app: casuallease

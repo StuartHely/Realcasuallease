@@ -13,6 +13,12 @@ metadata:
     environment: production
   annotations:
     # -----------------------------------------------------------------------------
+    # Shared ALB Group - all apps with this group share one ALB
+    # -----------------------------------------------------------------------------
+    alb.ingress.kubernetes.io/group.name: shared-alb
+    alb.ingress.kubernetes.io/group.order: '20'
+    
+    # -----------------------------------------------------------------------------
     # AWS Load Balancer Controller Configuration
     # -----------------------------------------------------------------------------
     kubernetes.io/ingress.class: alb
@@ -77,8 +83,10 @@ spec:
   ingressClassName: alb
   
   rules:
-    # Default rule - handles all hosts
-    - http:
+    # Host-based routing - add your domain here
+    # For now using wildcard, update with actual domain when ready
+    - host: casuallease.rocks  # TODO: Update with your actual domain
+      http:
         paths:
           - path: /
             pathType: Prefix
