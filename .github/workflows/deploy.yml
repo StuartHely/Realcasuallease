@@ -107,7 +107,7 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/arm64
+          platforms: linux/amd64
 
       # -----------------------------------------------------------------------
       # EKS Deployment
