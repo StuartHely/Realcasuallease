@@ -22,16 +22,12 @@ permissions:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # Build and Deploy Job
+  # Type Check Job (runs on x86)
   # ---------------------------------------------------------------------------
-  build-and-deploy:
-    name: Build and Deploy
+  typecheck:
+    name: Type Check
     runs-on: ubuntu-latest
-    
     steps:
-      # -----------------------------------------------------------------------
-      # Checkout and Setup
-      # -----------------------------------------------------------------------
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -58,14 +54,26 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      # -----------------------------------------------------------------------
-      # Install Dependencies and Type Check
-      # -----------------------------------------------------------------------
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Run type check
         run: pnpm run check
+
+  # ---------------------------------------------------------------------------
+  # Build and Deploy Job (runs on native ARM64)
+  # ---------------------------------------------------------------------------
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-24.04-arm
+    needs: typecheck
+    
+    steps:
+      # -----------------------------------------------------------------------
+      # Checkout and Setup
+      # -----------------------------------------------------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       # -----------------------------------------------------------------------
       # AWS Authentication
@@ -107,7 +115,7 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64
+          platforms: linux/arm64
 
       # -----------------------------------------------------------------------
       # EKS Deployment
