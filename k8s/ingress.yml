@@ -30,9 +30,10 @@ metadata:
     # Uncomment and set your ACM certificate ARN for HTTPS
     # -----------------------------------------------------------------------------
     # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-southeast-2:ACCOUNT_ID:certificate/CERT_ID
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
-    alb.ingress.kubernetes.io/ssl-redirect: "443"
-    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+    # SSL redirect disabled until ACM certificate is configured
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    # alb.ingress.kubernetes.io/ssl-redirect: "443"
+    # alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
     
     # -----------------------------------------------------------------------------
     # Health Check Configuration
