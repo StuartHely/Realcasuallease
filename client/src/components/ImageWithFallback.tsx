@@ -33,9 +33,6 @@ function buildPlaceholderUrl(options: PlaceholderOptions): string {
  * 1. First tries to load the direct URL
  * 2. If that fails (403, etc.), tries the proxy endpoint
  * 3. If proxy also fails, shows a generated placeholder image
- * 
- * When Manus fixes the storage permissions, images will automatically
- * load directly without needing any code changes.
  */
 export function ImageWithFallback({
   src,

@@ -1,7 +1,6 @@
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -73,7 +72,7 @@ export default function MyBookings() {
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-gray-600 mb-4">Please log in to view your bookings</p>
-            <Button onClick={() => (window.location.href = getLoginUrl())} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={() => (window.location.href = "/login")} className="bg-blue-600 hover:bg-blue-700">
               Log In
             </Button>
           </CardContent>

@@ -18,7 +18,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { getLoginUrl } from "@/const";
+
 import { 
   LayoutDashboard, 
   Building2, 
@@ -189,7 +189,7 @@ export default function AdminLayout({
   // Redirect non-admin users
   useEffect(() => {
     if (!loading && !user) {
-      window.location.href = getLoginUrl();
+      window.location.href = "/login";
     }
     if (!loading && user && user.role === "customer") {
       setLocation("/");

@@ -1,9 +1,0 @@
-{
-  "query": "UPDATE sites \nSET floorLevelId = (\n  SELECT id FROM floor_levels \n  WHERE centreId = (SELECT id FROM shopping_centres WHERE name = 'Campbelltown Mall') \n  AND levelName = 'Test Upper Level'\n)\nWHERE centreId = (SELECT id FROM shopping_centres WHERE name = 'Campbelltown Mall')\nAND siteNumber IN ('Site 2 (Upper Level)', 'Site 7 (Upper Level)');",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute UPDATE sites \nSET floorLevelId = (\n  SELECT id FROM floor_levels \n  WHERE centreId = (SELECT id FROM shopping_centres WHERE name = 'Campbelltown Mall') \n  AND levelName = 'Test Upper Level'\n)\nWHERE centreId = (SELECT id FROM shopping_centres WHERE name = 'Campbelltown Mall')\nAND siteNumber IN ('Site 2 (Upper Level)', 'Site 7 (Upper Level)');",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1632
-}

@@ -1,9 +1,0 @@
-{
-  "query": "SELECT \n  s.id as site_id,\n  s.siteNumber,\n  sc.name as centre_name,\n  uc.name as category_name\nFROM sites s\nJOIN shopping_centres sc ON s.centreId = sc.id\nLEFT JOIN site_usage_categories suc ON s.id = suc.siteId\nLEFT JOIN usage_categories uc ON suc.categoryId = uc.id\nWHERE sc.name LIKE '%Highlands%' AND s.siteNumber = '3' AND uc.name LIKE '%Book%';",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT \n  s.id as site_id,\n  s.siteNumber,\n  sc.name as centre_name,\n  uc.name as category_name\nFROM sites s\nJOIN shopping_centres sc ON s.centreId = sc.id\nLEFT JOIN site_usage_categories suc ON s.id = suc.siteId\nLEFT JOIN usage_categories uc ON suc.categoryId = uc.id\nWHERE sc.name LIKE '%Highlands%' AND s.siteNumber = '3' AND uc.name LIKE '%Book%';",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1483
-}

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -88,7 +87,7 @@ export default function ThirdLineDetail() {
 
   const handleEnquiry = () => {
     if (!isAuthenticated) {
-      window.location.href = getLoginUrl();
+      window.location.href = "/login";
       return;
     }
 
@@ -351,7 +350,7 @@ export default function ThirdLineDetail() {
               <CardContent className="space-y-4">
                 {!isAuthenticated && (
                   <Button
-                    onClick={() => (window.location.href = getLoginUrl())}
+                    onClick={() => (window.location.href = "/login")}
                     className="w-full bg-purple-600 hover:bg-purple-700"
                   >
                     Log In to Enquire

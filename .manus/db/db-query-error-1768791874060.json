@@ -1,8 +1,0 @@
-{
-  "query": "\nSELECT vs.id, vs.shopNumber, c.name as centreName, fl.levelName\nFROM vacant_shops vs\nJOIN centres c ON vs.centreId = c.id\nLEFT JOIN floor_levels fl ON vs.floorLevelId = fl.id\nWHERE vs.mapMarkerX IS NULL OR vs.mapMarkerY IS NULL\nLIMIT 10;\n",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute \nSELECT vs.id, vs.shopNumber, c.name as centreName, fl.levelName\nFROM vacant_shops vs\nJOIN centres c ON vs.centreId = c.id\nLEFT JOIN floor_levels fl ON vs.floorLevelId = fl.id\nWHERE vs.mapMarkerX IS NULL OR vs.mapMarkerY IS NULL\nLIMIT 10;\n",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1146 (42S02) at line 2: Table '6yeahznhexqxkcgnnuhdle.centres' doesn't exist"
-  ]
-}

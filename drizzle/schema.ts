@@ -32,10 +32,13 @@ export const transactionTypeEnum = pgEnum("transaction_type", ["booking", "cance
 /**
  * Core user table backing auth flow.
  * Extended with role-based access control for the platform.
+ * Supports both OAuth (via openId) and username/password authentication.
  */
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
+  username: varchar("username", { length: 64 }).unique(),
+  passwordHash: varchar("passwordHash", { length: 255 }),
   name: text("name"),
   email: varchar("email", { length: 320 }).unique(),
   loginMethod: varchar("loginMethod", { length: 64 }),

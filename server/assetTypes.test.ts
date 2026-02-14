@@ -10,7 +10,7 @@ function createAdminContext(): { ctx: TrpcContext } {
     openId: "admin-user",
     email: "admin@casuallease.com",
     name: "Admin User",
-    loginMethod: "manus",
+    loginMethod: "email",
     role: "mega_admin",
     createdAt: new Date(),
     updatedAt: new Date(),

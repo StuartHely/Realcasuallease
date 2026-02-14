@@ -1,4 +1,4 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
@@ -12,6 +12,7 @@ import * as assetDb from "./assetDb";
 import { TRPCError } from "@trpc/server";
 import { notifyOwner } from "./_core/notification";
 import { sendBookingConfirmationEmail, sendBookingRejectionEmail, sendNewBookingNotificationToOwner } from "./_core/bookingNotifications";
+import { authService } from "./_core/authService";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -26,6 +27,35 @@ export const appRouter = router({
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    login: publicProcedure
+      .input(z.object({
+        username: z.string().min(1, "Username is required"),
+        password: z.string().min(1, "Password is required"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await authService.login(input.username, input.password);
+        
+        if (!result) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Invalid username or password",
+          });
+        }
+
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, result.token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+        return {
+          success: true,
+          user: {
+            id: result.user.id,
+            username: result.user.username,
+            name: result.user.name,
+            email: result.user.email,
+            role: result.user.role,
+          },
+        };
+      }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });

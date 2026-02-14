@@ -14,7 +14,7 @@ beforeAll(async () => {
       openId: "test-user-1",
       email: "test1@example.com",
       name: "Test User 1",
-      loginMethod: "manus",
+      loginMethod: "email",
       role: "customer",
     }).onConflictDoUpdate({ target: users.openId, set: { lastSignedIn: new Date() } });
   } catch (e) {
@@ -30,7 +30,7 @@ function createAuthContext(userId: number = 1, role: AuthenticatedUser["role"] =
     openId: `test-user-${userId}`,
     email: `test${userId}@example.com`,
     name: `Test User ${userId}`,
-    loginMethod: "manus",
+    loginMethod: "email",
     role,
     createdAt: new Date(),
     updatedAt: new Date(),

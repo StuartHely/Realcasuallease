@@ -3,7 +3,6 @@ import express from "express";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
 import { registerImageProxyRoutes } from "./imageProxy";
 import { registerPlaceholderRoutes } from "./placeholderImage";
 import { healthRouter } from "./health";
@@ -38,8 +37,6 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // Health check endpoints for Kubernetes probes
   app.use(healthRouter);
-  // OAuth callback under /api/oauth/callback
-  registerOAuthRoutes(app);
   // Image proxy for fallback when CloudFront URLs fail
   registerImageProxyRoutes(app);
   // Placeholder image generator

@@ -1,9 +1,0 @@
-{
-  "query": "SELECT b.siteId, s.id as sites_id, s.siteNumber\nFROM bookings b\nLEFT JOIN sites s ON b.siteId = s.id\nWHERE b.status = 'confirmed' \nAND b.startDate >= '2025-07-01'\nAND s.id IS NULL\nLIMIT 10;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute SELECT b.siteId, s.id as sites_id, s.siteNumber\nFROM bookings b\nLEFT JOIN sites s ON b.siteId = s.id\nWHERE b.status = 'confirmed' \nAND b.startDate >= '2025-07-01'\nAND s.id IS NULL\nLIMIT 10;",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1528
-}

@@ -1,9 +1,0 @@
-{
-  "query": "\nSELECT \n  sc.name as centre_name,\n  s.siteNumber,\n  s.id\nFROM sites s\nJOIN shopping_centres sc ON s.centreId = sc.id\nWHERE sc.id IN (1, 2, 3, 4, 5, 6, 7, 8)\nORDER BY sc.id, s.siteNumber\n",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21ksxipa4kLneoE.root --database 6yeAhZnHexQXKcGnnUhDLE --execute \nSELECT \n  sc.name as centre_name,\n  s.siteNumber,\n  s.id\nFROM sites s\nJOIN shopping_centres sc ON s.centreId = sc.id\nWHERE sc.id IN (1, 2, 3, 4, 5, 6, 7, 8)\nORDER BY sc.id, s.siteNumber\n",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1625
-}

@@ -107,6 +107,39 @@ export async function getUserByEmail(email: string) {
   return user || null;
 }
 
+export async function getUserByUsername(username: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [user] = await db.select().from(users).where(eq(users.username, username));
+  return user || null;
+}
+
+export async function createUserWithPassword(userData: {
+  openId: string;
+  username: string;
+  passwordHash: string;
+  name?: string | null;
+  email?: string | null;
+  role?: "customer" | "owner_centre_manager" | "owner_marketing_manager" | "owner_regional_admin" | "owner_state_admin" | "owner_super_admin" | "mega_state_admin" | "mega_admin";
+  loginMethod?: string;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db.insert(users).values({
+    openId: userData.openId,
+    username: userData.username,
+    passwordHash: userData.passwordHash,
+    name: userData.name || null,
+    email: userData.email || null,
+    role: userData.role || "customer",
+    loginMethod: userData.loginMethod || "password",
+  });
+}
+
 export async function getAllUsers() {
   const db = await getDb();
   if (!db) return [];
