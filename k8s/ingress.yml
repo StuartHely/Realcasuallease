@@ -27,13 +27,11 @@ metadata:
     
     # -----------------------------------------------------------------------------
     # SSL/TLS Configuration
-    # Uncomment and set your ACM certificate ARN for HTTPS
     # -----------------------------------------------------------------------------
-    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-southeast-2:ACCOUNT_ID:certificate/CERT_ID
-    # SSL redirect disabled until ACM certificate is configured
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
-    # alb.ingress.kubernetes.io/ssl-redirect: "443"
-    # alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-southeast-2:315560623667:certificate/cca311fb-15c1-4af2-a9cb-b5ce4de53025
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
     
     # -----------------------------------------------------------------------------
     # Health Check Configuration
@@ -84,9 +82,8 @@ spec:
   ingressClassName: alb
   
   rules:
-    # Host-based routing - add your domain here
-    # For now using wildcard, update with actual domain when ready
-    - host: casuallease.rocks  # TODO: Update with your actual domain
+    # Host-based routing to casuallease.multi-pass.xyz
+    - host: casuallease.multi-pass.xyz
       http:
         paths:
           - path: /
