@@ -177,6 +177,28 @@ jobs:
             -n casuallease \
             --timeout=300s
 
+      - name: Run database migrations and seed
+        run: |
+          # Get a running pod name
+          POD=$(kubectl get pods -n casuallease -l app=casuallease -o jsonpath='{.items[0].metadata.name}')
+          
+          echo "Running database migrations on pod $POD..."
+          kubectl exec -n casuallease $POD -- node -e "
+            const { drizzle } = require('drizzle-orm/node-postgres');
+            const { migrate } = require('drizzle-orm/node-postgres/migrator');
+            const db = drizzle(process.env.DATABASE_URL);
+            migrate(db, { migrationsFolder: './drizzle' }).then(() => {
+              console.log('Migrations complete');
+              process.exit(0);
+            }).catch(err => {
+              console.error('Migration failed:', err);
+              process.exit(1);
+            });
+          " || echo "Migration step skipped or failed - may need manual intervention"
+          
+          echo "Seeding admin user (idempotent)..."
+          kubectl exec -n casuallease $POD -- npx tsx scripts/seed-admin-user.ts || echo "Seed skipped - may need manual run"
+
       - name: Verify deployment
         run: |
           echo "Deployment Status:"
