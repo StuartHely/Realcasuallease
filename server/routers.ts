@@ -13,6 +13,7 @@ import { TRPCError } from "@trpc/server";
 import { notifyOwner } from "./_core/notification";
 import { sendBookingConfirmationEmail, sendBookingRejectionEmail, sendNewBookingNotificationToOwner } from "./_core/bookingNotifications";
 import { authService } from "./_core/authService";
+import { searchPlaces, getPlaceSuggestions, getPlaceDetails } from "./_core/amazonLocation";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -24,6 +25,40 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 
 export const appRouter = router({
   system: systemRouter,
+
+  places: router({
+    search: publicProcedure
+      .input(z.object({
+        text: z.string().min(1),
+        maxResults: z.number().optional(),
+        biasPosition: z.tuple([z.number(), z.number()]).optional(),
+      }))
+      .query(async ({ input }) => {
+        return await searchPlaces(input.text, {
+          maxResults: input.maxResults,
+          biasPosition: input.biasPosition,
+        });
+      }),
+
+    suggestions: publicProcedure
+      .input(z.object({
+        text: z.string().min(1),
+        maxResults: z.number().optional(),
+        biasPosition: z.tuple([z.number(), z.number()]).optional(),
+      }))
+      .query(async ({ input }) => {
+        return await getPlaceSuggestions(input.text, {
+          maxResults: input.maxResults,
+          biasPosition: input.biasPosition,
+        });
+      }),
+
+    getDetails: publicProcedure
+      .input(z.object({ placeId: z.string() }))
+      .query(async ({ input }) => {
+        return await getPlaceDetails(input.placeId);
+      }),
+  }),
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

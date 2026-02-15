@@ -11,6 +11,8 @@ export const ENV = {
   awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID ?? "",
   awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? "",
   awsS3Bucket: process.env.AWS_S3_BUCKET ?? "",
+  amazonLocationPlaceIndex: process.env.AMAZON_LOCATION_PLACE_INDEX ?? "casuallease-place-index",
+  amazonLocationRouteCalculator: process.env.AMAZON_LOCATION_ROUTE_CALCULATOR ?? "casuallease-route-calculator",
   // SMTP configuration
   smtpHost: process.env.SMTP_HOST ?? "",
   smtpPort: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587,
