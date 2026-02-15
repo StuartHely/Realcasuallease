@@ -6,12 +6,12 @@ import {
 } from "@aws-sdk/client-location";
 import { ENV } from "./env";
 
+// Use IRSA (IAM Roles for Service Accounts) for authentication
+// Credentials are automatically loaded from the EKS service account
+// No hardcoded credentials needed!
 const client = new LocationClient({
   region: ENV.awsRegion,
-  credentials: {
-    accessKeyId: ENV.awsAccessKeyId,
-    secretAccessKey: ENV.awsSecretAccessKey,
-  },
+  maxAttempts: 3, // Retry failed requests up to 3 times
 });
 
 export interface AddressComponents {

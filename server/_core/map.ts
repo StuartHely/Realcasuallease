@@ -26,18 +26,11 @@ let locationClient: LocationClient | null = null;
 
 function getLocationClient(): LocationClient {
   if (!locationClient) {
-    if (!ENV.awsAccessKeyId || !ENV.awsSecretAccessKey) {
-      throw new Error(
-        "AWS credentials missing: set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables"
-      );
-    }
-
+    // Use IRSA (IAM Roles for Service Accounts) for authentication
+    // Credentials are automatically loaded from the EKS service account
     locationClient = new LocationClient({
       region: ENV.awsRegion,
-      credentials: {
-        accessKeyId: ENV.awsAccessKeyId,
-        secretAccessKey: ENV.awsSecretAccessKey,
-      },
+      maxAttempts: 3, // Retry failed requests up to 3 times
     });
   }
 

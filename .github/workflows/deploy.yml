@@ -130,10 +130,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          AWS_ACCESS_KEY_ID_VAL: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY_VAL: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
         run: |
           set -x  # Enable debug output
           
@@ -150,15 +147,14 @@ jobs:
           echo "JWT_SECRET length: ${#JWT_SECRET}"
           
           # Create secret from environment variables
+          # Note: AWS credentials removed - now using IRSA via location-service service account
+          # Google Maps API key removed - migrated to AWS Location Service
           echo "Creating secrets..."
           kubectl create secret generic casuallease-secrets \
             --namespace casuallease \
             --from-literal=DATABASE_URL="$DATABASE_URL" \
             --from-literal=JWT_SECRET="$JWT_SECRET" \
-            --from-literal=AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID_VAL:-notset}" \
-            --from-literal=AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY_VAL:-notset}" \
             --from-literal=AWS_S3_BUCKET="${AWS_S3_BUCKET:-notset}" \
-            --from-literal=GOOGLE_MAPS_API_KEY="${GOOGLE_MAPS_API_KEY:-notset}" \
             --dry-run=client -o yaml | kubectl apply -f -
           
           echo "Secrets created successfully"

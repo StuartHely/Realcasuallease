@@ -45,8 +45,10 @@ spec:
       # Graceful shutdown period
       terminationGracePeriodSeconds: 30
       
-      # Service account for AWS IAM roles (if using IRSA)
-      serviceAccountName: casuallease-sa
+      # Service account with IRSA for AWS Location Service access
+      # This service account is created by Terraform and has permissions
+      # to access Place Index, Maps, and Route Calculator
+      serviceAccountName: location-service
       
       containers:
         - name: casuallease
@@ -76,30 +78,14 @@ spec:
                 secretKeyRef:
                   name: casuallease-secrets
                   key: JWT_SECRET
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: casuallease-secrets
-                  key: AWS_ACCESS_KEY_ID
-                  optional: true
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: casuallease-secrets
-                  key: AWS_SECRET_ACCESS_KEY
-                  optional: true
             - name: AWS_S3_BUCKET
               valueFrom:
                 secretKeyRef:
                   name: casuallease-secrets
                   key: AWS_S3_BUCKET
                   optional: true
-            - name: GOOGLE_MAPS_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: casuallease-secrets
-                  key: GOOGLE_MAPS_API_KEY
-                  optional: true
+            # AWS credentials removed - using IRSA via location-service service account
+            # Google Maps API key removed - migrated to AWS Location Service
           
           # Liveness probe - is the container alive?
           livenessProbe:
