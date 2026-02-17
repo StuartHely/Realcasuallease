@@ -1,5 +1,5 @@
 /**
- * Voice transcription helper using AWS Transcribe
+ * Voice transcription helper using internal Speech-to-Text service
  *
  * Frontend implementation guide:
  * 1. Capture audio using MediaRecorder API
@@ -21,29 +21,19 @@
  * transcribeMutation.mutate({
  *   audioUrl: uploadedAudioUrl,
  *   language: 'en', // optional
- *   prompt: 'Transcribe the meeting' // optional (not used by AWS Transcribe)
+ *   prompt: 'Transcribe the meeting' // optional
  * });
  * ```
  */
-import {
-  TranscribeClient,
-  StartTranscriptionJobCommand,
-  GetTranscriptionJobCommand,
-  TranscriptionJobStatus,
-  LanguageCode,
-} from "@aws-sdk/client-transcribe";
-import {
-  S3Client,
-  PutObjectCommand,
-} from "@aws-sdk/client-s3";
-import { nanoid } from "nanoid";
+import { ENV } from "./env";
 
 export type TranscribeOptions = {
-  audioUrl: string;
-  language?: string;
-  prompt?: string;
+  audioUrl: string; // URL to the audio file (e.g., S3 URL)
+  language?: string; // Optional: specify language code (e.g., "en", "es", "zh")
+  prompt?: string; // Optional: custom prompt for the transcription
 };
 
+// Native Whisper API segment format
 export type WhisperSegment = {
   id: number;
   seek: number;
@@ -57,6 +47,7 @@ export type WhisperSegment = {
   no_speech_prob: number;
 };
 
+// Native Whisper API response format
 export type WhisperResponse = {
   task: "transcribe";
   language: string;
@@ -65,7 +56,7 @@ export type WhisperResponse = {
   segments: WhisperSegment[];
 };
 
-export type TranscriptionResponse = WhisperResponse;
+export type TranscriptionResponse = WhisperResponse; // Return native Whisper API response directly
 
 export type TranscriptionError = {
   error: string;
@@ -73,119 +64,33 @@ export type TranscriptionError = {
   details?: string;
 };
 
-type AWSConfig = {
-  transcribeClient: TranscribeClient;
-  s3Client: S3Client;
-  bucket: string;
-  region: string;
-};
-
-let cachedConfig: AWSConfig | null = null;
-
-function getAWSConfig(): AWSConfig | TranscriptionError {
-  if (cachedConfig) return cachedConfig;
-
-  const bucket = process.env.AWS_S3_BUCKET;
-  const region = process.env.AWS_REGION;
-  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-
-  if (!bucket || !region || !accessKeyId || !secretAccessKey) {
-    return {
-      error: "AWS credentials not configured for voice transcription",
-      code: "SERVICE_ERROR",
-      details: "Set AWS_S3_BUCKET, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY",
-    };
-  }
-
-  const credentials = { accessKeyId, secretAccessKey };
-
-  const transcribeClient = new TranscribeClient({ region, credentials });
-  const s3Client = new S3Client({ region, credentials });
-
-  cachedConfig = { transcribeClient, s3Client, bucket, region };
-  return cachedConfig;
-}
-
-function mapLanguageCode(langCode?: string): LanguageCode | undefined {
-  if (!langCode) return undefined;
-
-  const langMap: Record<string, LanguageCode> = {
-    en: LanguageCode.EN_US,
-    "en-us": LanguageCode.EN_US,
-    "en-gb": LanguageCode.EN_GB,
-    "en-au": LanguageCode.EN_AU,
-    es: LanguageCode.ES_ES,
-    "es-es": LanguageCode.ES_ES,
-    "es-us": LanguageCode.ES_US,
-    fr: LanguageCode.FR_FR,
-    "fr-fr": LanguageCode.FR_FR,
-    de: LanguageCode.DE_DE,
-    "de-de": LanguageCode.DE_DE,
-    it: LanguageCode.IT_IT,
-    "it-it": LanguageCode.IT_IT,
-    pt: LanguageCode.PT_BR,
-    "pt-br": LanguageCode.PT_BR,
-    "pt-pt": LanguageCode.PT_PT,
-    ja: LanguageCode.JA_JP,
-    "ja-jp": LanguageCode.JA_JP,
-    ko: LanguageCode.KO_KR,
-    "ko-kr": LanguageCode.KO_KR,
-    zh: LanguageCode.ZH_CN,
-    "zh-cn": LanguageCode.ZH_CN,
-    "zh-tw": LanguageCode.ZH_TW,
-    ar: LanguageCode.AR_SA,
-    "ar-sa": LanguageCode.AR_SA,
-    hi: LanguageCode.HI_IN,
-    "hi-in": LanguageCode.HI_IN,
-    nl: LanguageCode.NL_NL,
-    "nl-nl": LanguageCode.NL_NL,
-    ru: LanguageCode.RU_RU,
-    "ru-ru": LanguageCode.RU_RU,
-    tr: LanguageCode.TR_TR,
-    "tr-tr": LanguageCode.TR_TR,
-    sv: LanguageCode.SV_SE,
-    "sv-se": LanguageCode.SV_SE,
-    da: LanguageCode.DA_DK,
-    "da-dk": LanguageCode.DA_DK,
-    fi: LanguageCode.FI_FI,
-    "fi-fi": LanguageCode.FI_FI,
-  };
-
-  const key = langCode.toLowerCase();
-  return langMap[key];
-}
-
-function getMediaFormat(mimeType: string): "mp3" | "mp4" | "wav" | "flac" | "ogg" | "webm" | undefined {
-  const formatMap: Record<string, "mp3" | "mp4" | "wav" | "flac" | "ogg" | "webm"> = {
-    "audio/mp3": "mp3",
-    "audio/mpeg": "mp3",
-    "audio/wav": "wav",
-    "audio/wave": "wav",
-    "audio/x-wav": "wav",
-    "audio/flac": "flac",
-    "audio/ogg": "ogg",
-    "audio/webm": "webm",
-    "audio/mp4": "mp4",
-    "audio/m4a": "mp4",
-    "video/webm": "webm",
-  };
-  return formatMap[mimeType];
-}
-
-async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
+/**
+ * Transcribe audio to text using the internal Speech-to-Text service
+ * 
+ * @param options - Audio data and metadata
+ * @returns Transcription result or error
+ */
 export async function transcribeAudio(
   options: TranscribeOptions
 ): Promise<TranscriptionResponse | TranscriptionError> {
   try {
-    const config = getAWSConfig();
-    if ("error" in config) return config;
+    // Step 1: Validate environment configuration
+    if (!ENV.forgeApiUrl) {
+      return {
+        error: "Voice transcription service is not configured",
+        code: "SERVICE_ERROR",
+        details: "BUILT_IN_FORGE_API_URL is not set"
+      };
+    }
+    if (!ENV.forgeApiKey) {
+      return {
+        error: "Voice transcription service authentication is missing",
+        code: "SERVICE_ERROR",
+        details: "BUILT_IN_FORGE_API_KEY is not set"
+      };
+    }
 
-    const { transcribeClient, s3Client, bucket, region } = config;
-
+    // Step 2: Download audio from URL
     let audioBuffer: Buffer;
     let mimeType: string;
     try {
@@ -194,204 +99,186 @@ export async function transcribeAudio(
         return {
           error: "Failed to download audio file",
           code: "INVALID_FORMAT",
-          details: `HTTP ${response.status}: ${response.statusText}`,
+          details: `HTTP ${response.status}: ${response.statusText}`
         };
       }
-
+      
       audioBuffer = Buffer.from(await response.arrayBuffer());
-      mimeType = response.headers.get("content-type") || "audio/mpeg";
-
+      mimeType = response.headers.get('content-type') || 'audio/mpeg';
+      
+      // Check file size (16MB limit)
       const sizeMB = audioBuffer.length / (1024 * 1024);
-      if (sizeMB > 500) {
+      if (sizeMB > 16) {
         return {
           error: "Audio file exceeds maximum size limit",
           code: "FILE_TOO_LARGE",
-          details: `File size is ${sizeMB.toFixed(2)}MB, maximum allowed is 500MB`,
+          details: `File size is ${sizeMB.toFixed(2)}MB, maximum allowed is 16MB`
         };
       }
     } catch (error) {
       return {
         error: "Failed to fetch audio file",
         code: "SERVICE_ERROR",
-        details: error instanceof Error ? error.message : "Unknown error",
+        details: error instanceof Error ? error.message : "Unknown error"
       };
     }
 
-    const mediaFormat = getMediaFormat(mimeType);
-    if (!mediaFormat) {
+    // Step 3: Create FormData for multipart upload to Whisper API
+    const formData = new FormData();
+    
+    // Create a Blob from the buffer and append to form
+    const filename = `audio.${getFileExtension(mimeType)}`;
+    const audioBlob = new Blob([new Uint8Array(audioBuffer)], { type: mimeType });
+    formData.append("file", audioBlob, filename);
+    
+    formData.append("model", "whisper-1");
+    formData.append("response_format", "verbose_json");
+    
+    // Add prompt - use custom prompt if provided, otherwise generate based on language
+    const prompt = options.prompt || (
+      options.language 
+        ? `Transcribe the user's voice to text, the user's working language is ${getLanguageName(options.language)}`
+        : "Transcribe the user's voice to text"
+    );
+    formData.append("prompt", prompt);
+
+    // Step 4: Call the transcription service
+    const baseUrl = ENV.forgeApiUrl.endsWith("/")
+      ? ENV.forgeApiUrl
+      : `${ENV.forgeApiUrl}/`;
+    
+    const fullUrl = new URL(
+      "v1/audio/transcriptions",
+      baseUrl
+    ).toString();
+
+    const response = await fetch(fullUrl, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${ENV.forgeApiKey}`,
+        "Accept-Encoding": "identity",
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
       return {
-        error: "Unsupported audio format",
-        code: "INVALID_FORMAT",
-        details: `MIME type ${mimeType} is not supported by AWS Transcribe`,
-      };
-    }
-
-    const jobId = `transcription-${nanoid()}`;
-    const s3Key = `transcriptions/${jobId}.${mediaFormat}`;
-
-    try {
-      await s3Client.send(
-        new PutObjectCommand({
-          Bucket: bucket,
-          Key: s3Key,
-          Body: audioBuffer,
-          ContentType: mimeType,
-        })
-      );
-    } catch (error) {
-      return {
-        error: "Failed to upload audio to S3",
-        code: "UPLOAD_FAILED",
-        details: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
-
-    const mediaFileUri = `s3://${bucket}/${s3Key}`;
-    const languageCode = mapLanguageCode(options.language);
-
-    try {
-      await transcribeClient.send(
-        new StartTranscriptionJobCommand({
-          TranscriptionJobName: jobId,
-          LanguageCode: languageCode || LanguageCode.EN_US,
-          IdentifyLanguage: !languageCode,
-          MediaFormat: mediaFormat,
-          Media: { MediaFileUri: mediaFileUri },
-          OutputBucketName: bucket,
-          OutputKey: `transcriptions/${jobId}-output.json`,
-        })
-      );
-    } catch (error) {
-      return {
-        error: "Failed to start transcription job",
+        error: "Transcription service request failed",
         code: "TRANSCRIPTION_FAILED",
-        details: error instanceof Error ? error.message : "Unknown error",
+        details: `${response.status} ${response.statusText}${errorText ? `: ${errorText}` : ""}`
       };
     }
 
-    const maxAttempts = 60;
-    const pollInterval = 2000;
-    let attempts = 0;
-
-    while (attempts < maxAttempts) {
-      attempts++;
-      await sleep(pollInterval);
-
-      try {
-        const jobResult = await transcribeClient.send(
-          new GetTranscriptionJobCommand({ TranscriptionJobName: jobId })
-        );
-
-        const job = jobResult.TranscriptionJob;
-        if (!job) continue;
-
-        if (job.TranscriptionJobStatus === TranscriptionJobStatus.COMPLETED) {
-          const transcriptUrl = job.Transcript?.TranscriptFileUri;
-          if (!transcriptUrl) {
-            return {
-              error: "Transcription completed but no transcript URL available",
-              code: "TRANSCRIPTION_FAILED",
-            };
-          }
-
-          const transcriptResponse = await fetch(transcriptUrl);
-          if (!transcriptResponse.ok) {
-            return {
-              error: "Failed to fetch transcription result",
-              code: "TRANSCRIPTION_FAILED",
-              details: `HTTP ${transcriptResponse.status}`,
-            };
-          }
-
-          const transcriptData = await transcriptResponse.json();
-          const results = transcriptData.results;
-
-          const fullText = results.transcripts
-            ?.map((t: { transcript: string }) => t.transcript)
-            .join(" ") || "";
-
-          const segments: WhisperSegment[] = [];
-          let segmentId = 0;
-
-          if (results.items) {
-            let currentSegment: Partial<WhisperSegment> | null = null;
-
-            for (const item of results.items) {
-              if (item.type === "pronunciation") {
-                const startTime = parseFloat(item.start_time || "0");
-                const endTime = parseFloat(item.end_time || "0");
-                const content = item.alternatives?.[0]?.content || "";
-
-                if (!currentSegment || startTime - (currentSegment.end || 0) > 1) {
-                  if (currentSegment && currentSegment.text) {
-                    segments.push(currentSegment as WhisperSegment);
-                  }
-                  currentSegment = {
-                    id: segmentId++,
-                    seek: 0,
-                    start: startTime,
-                    end: endTime,
-                    text: content,
-                    tokens: [],
-                    temperature: 0,
-                    avg_logprob: 0,
-                    compression_ratio: 0,
-                    no_speech_prob: 0,
-                  };
-                } else {
-                  currentSegment.text = (currentSegment.text || "") + " " + content;
-                  currentSegment.end = endTime;
-                }
-              } else if (item.type === "punctuation" && currentSegment) {
-                currentSegment.text = (currentSegment.text || "") + (item.alternatives?.[0]?.content || "");
-              }
-            }
-
-            if (currentSegment && currentSegment.text) {
-              segments.push(currentSegment as WhisperSegment);
-            }
-          }
-
-          const detectedLang = job.LanguageCode || languageCode || "en-US";
-          const duration = segments.length > 0
-            ? segments[segments.length - 1].end
-            : 0;
-
-          return {
-            task: "transcribe",
-            language: detectedLang.split("-")[0],
-            duration,
-            text: fullText,
-            segments,
-          };
-        }
-
-        if (job.TranscriptionJobStatus === TranscriptionJobStatus.FAILED) {
-          return {
-            error: "Transcription job failed",
-            code: "TRANSCRIPTION_FAILED",
-            details: job.FailureReason,
-          };
-        }
-      } catch (error) {
-        return {
-          error: "Failed to check transcription job status",
-          code: "SERVICE_ERROR",
-          details: error instanceof Error ? error.message : "Unknown error",
-        };
-      }
+    // Step 5: Parse and return the transcription result
+    const whisperResponse = await response.json() as WhisperResponse;
+    
+    // Validate response structure
+    if (!whisperResponse.text || typeof whisperResponse.text !== 'string') {
+      return {
+        error: "Invalid transcription response",
+        code: "SERVICE_ERROR",
+        details: "Transcription service returned an invalid response format"
+      };
     }
 
-    return {
-      error: "Transcription job timed out",
-      code: "TRANSCRIPTION_FAILED",
-      details: "Job did not complete within the expected time",
-    };
+    return whisperResponse; // Return native Whisper API response directly
+
   } catch (error) {
+    // Handle unexpected errors
     return {
       error: "Voice transcription failed",
       code: "SERVICE_ERROR",
-      details: error instanceof Error ? error.message : "An unexpected error occurred",
+      details: error instanceof Error ? error.message : "An unexpected error occurred"
     };
   }
 }
+
+/**
+ * Helper function to get file extension from MIME type
+ */
+function getFileExtension(mimeType: string): string {
+  const mimeToExt: Record<string, string> = {
+    'audio/webm': 'webm',
+    'audio/mp3': 'mp3',
+    'audio/mpeg': 'mp3',
+    'audio/wav': 'wav',
+    'audio/wave': 'wav',
+    'audio/ogg': 'ogg',
+    'audio/m4a': 'm4a',
+    'audio/mp4': 'm4a',
+  };
+  
+  return mimeToExt[mimeType] || 'audio';
+}
+
+/**
+ * Helper function to get full language name from ISO code
+ */
+function getLanguageName(langCode: string): string {
+  const langMap: Record<string, string> = {
+    'en': 'English',
+    'es': 'Spanish',
+    'fr': 'French',
+    'de': 'German',
+    'it': 'Italian',
+    'pt': 'Portuguese',
+    'ru': 'Russian',
+    'ja': 'Japanese',
+    'ko': 'Korean',
+    'zh': 'Chinese',
+    'ar': 'Arabic',
+    'hi': 'Hindi',
+    'nl': 'Dutch',
+    'pl': 'Polish',
+    'tr': 'Turkish',
+    'sv': 'Swedish',
+    'da': 'Danish',
+    'no': 'Norwegian',
+    'fi': 'Finnish',
+  };
+  
+  return langMap[langCode] || langCode;
+}
+
+/**
+ * Example tRPC procedure implementation:
+ * 
+ * ```ts
+ * // In server/routers.ts
+ * import { transcribeAudio } from "./_core/voiceTranscription";
+ * 
+ * export const voiceRouter = router({
+ *   transcribe: protectedProcedure
+ *     .input(z.object({
+ *       audioUrl: z.string(),
+ *       language: z.string().optional(),
+ *       prompt: z.string().optional(),
+ *     }))
+ *     .mutation(async ({ input, ctx }) => {
+ *       const result = await transcribeAudio(input);
+ *       
+ *       // Check if it's an error
+ *       if ('error' in result) {
+ *         throw new TRPCError({
+ *           code: 'BAD_REQUEST',
+ *           message: result.error,
+ *           cause: result,
+ *         });
+ *       }
+ *       
+ *       // Optionally save transcription to database
+ *       await db.insert(transcriptions).values({
+ *         userId: ctx.user.id,
+ *         text: result.text,
+ *         duration: result.duration,
+ *         language: result.language,
+ *         audioUrl: input.audioUrl,
+ *         createdAt: new Date(),
+ *       });
+ *       
+ *       return result;
+ *     }),
+ * });
+ * ```
+ */

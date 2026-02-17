@@ -7,9 +7,25 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Calendar, MapPin, User, DollarSign, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { InsuranceStatusDisplay, INSURANCE_REJECTION_TEMPLATES } from "@/components/InsuranceStatusDisplay";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function PendingApprovals() {
   const [, setLocation] = useLocation();
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState("");
   const { data: pendingBookings, isLoading, refetch } = trpc.admin.getPendingApprovals.useQuery();
   const approveBookingMutation = trpc.admin.approveBooking.useMutation({
     onSuccess: () => {
@@ -21,10 +37,13 @@ export default function PendingApprovals() {
     },
   });
 
-  const rejectBookingMutation = trpc.admin.rejectBooking.useMutation({
+  const rejectBookingMutation = trpc.bookings.reject.useMutation({
     onSuccess: () => {
-      toast.success("Booking rejected successfully");
+      toast.success("Booking rejected and customer notified");
       refetch();
+      setRejectDialogOpen(false);
+      setRejectionReason("");
+      setSelectedTemplate("");
     },
     onError: (error) => {
       toast.error("Failed to reject booking: " + error.message);
@@ -38,9 +57,24 @@ export default function PendingApprovals() {
   };
 
   const handleReject = (bookingId: number) => {
-    if (confirm("Are you sure you want to reject this booking? This action cannot be undone.")) {
-      rejectBookingMutation.mutate({ bookingId });
+    setSelectedBookingId(bookingId);
+    setRejectDialogOpen(true);
+  };
+
+  const confirmReject = () => {
+    if (!selectedBookingId) return;
+    
+    const finalReason = selectedTemplate || rejectionReason;
+    
+    if (!finalReason.trim()) {
+      toast.error("Please select a template or enter a rejection reason");
+      return;
     }
+    
+    rejectBookingMutation.mutate({ 
+      bookingId: selectedBookingId,
+      reason: finalReason
+    });
   };
 
   const formatDate = (date: Date | string) => {
@@ -96,6 +130,13 @@ export default function PendingApprovals() {
                 </div>
               </CardHeader>
               <CardContent>
+                {/* Insurance Status */}
+                <InsuranceStatusDisplay
+                  insuranceScan={booking.insuranceScan}
+                  insuranceValidation={booking.insuranceValidation}
+                  insuranceDocumentUrl={booking.insuranceDocumentUrl}
+                />
+
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* Left Column: Booking Details */}
                   <div className="space-y-4">
@@ -211,6 +252,75 @@ export default function PendingApprovals() {
           ))}
         </div>
       )}
+
+      {/* Rejection Dialog with Templates */}
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Reject Booking</DialogTitle>
+            <DialogDescription>
+              Select a template reason or write a custom message to send to the customer.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Quick Templates (Click to select)</Label>
+              <RadioGroup value={selectedTemplate} onValueChange={(value) => {
+                setSelectedTemplate(value);
+                setRejectionReason(""); // Clear custom text when template selected
+              }}>
+                {INSURANCE_REJECTION_TEMPLATES.map((template, idx) => (
+                  <div key={idx} className="flex items-start space-x-2">
+                    <RadioGroupItem value={template} id={`template-${idx}`} />
+                    <Label 
+                      htmlFor={`template-${idx}`} 
+                      className="cursor-pointer text-sm leading-relaxed font-normal"
+                    >
+                      {template}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="custom-reason">Or Write Custom Reason</Label>
+              <Textarea
+                id="custom-reason"
+                placeholder="Enter a custom rejection reason..."
+                value={rejectionReason}
+                onChange={(e) => {
+                  setRejectionReason(e.target.value);
+                  setSelectedTemplate(""); // Clear template when typing
+                }}
+                rows={4}
+              />
+            </div>
+            
+            {(selectedTemplate || rejectionReason) && (
+              <div className="p-3 bg-gray-50 rounded text-sm">
+                <p className="font-semibold mb-1">Customer will receive:</p>
+                <p className="text-gray-700">{selectedTemplate || rejectionReason}</p>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmReject}
+              disabled={!selectedTemplate && !rejectionReason.trim()}
+            >
+              Send Rejection Email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       </div>
     </AdminLayout>
   );

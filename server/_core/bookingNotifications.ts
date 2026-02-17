@@ -500,3 +500,207 @@ Real Casual Leasing Team
     return false;
   }
 }
+
+/**
+ * Send email when booking is rejected due to insurance issues
+ */
+export async function sendInsuranceRejectionEmail(
+  booking: {
+    bookingNumber: string;
+    customerName: string;
+    customerEmail: string;
+    centreName: string;
+    siteNumber: string;
+    startDate: Date;
+    endDate: Date;
+  },
+  insuranceIssues: string[]
+): Promise<void> {
+  const { sendEmail } = await import('./email');
+  
+  const issuesList = insuranceIssues.map(issue => `• ${issue}`).join('\n');
+  
+  const subject = `Action Required: Insurance Issues - Booking ${booking.bookingNumber}`;
+  
+  const htmlBody = `
+    <h2>Insurance Update Required</h2>
+    
+    <p>Dear ${booking.customerName},</p>
+    
+    <p>Your booking request <strong>${booking.bookingNumber}</strong> for <strong>${booking.centreName}</strong> 
+    has been placed on hold due to the following insurance issues:</p>
+    
+    <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
+      <strong>Issues Found:</strong><br>
+      ${issuesList}
+    </div>
+    
+    <p><strong>What to do next:</strong></p>
+    <ol>
+      <li>Log in to your account</li>
+      <li>Go to "My Bookings"</li>
+      <li>Find booking ${booking.bookingNumber}</li>
+      <li>Click "Update Insurance"</li>
+      <li>Upload a clear, current insurance certificate showing:
+        <ul>
+          <li>Expiry date (must be valid for at least 6 months)</li>
+          <li>Coverage amount ($20 million minimum public liability)</li>
+          <li>Policy number</li>
+          <li>Insurance company name</li>
+        </ul>
+      </li>
+    </ol>
+    
+    <p>Once you upload valid insurance, your booking will automatically move back to pending for approval.</p>
+    
+    <h3>Booking Details:</h3>
+    <ul>
+      <li><strong>Booking Number:</strong> ${booking.bookingNumber}</li>
+      <li><strong>Centre:</strong> ${booking.centreName}</li>
+      <li><strong>Site:</strong> ${booking.siteNumber}</li>
+      <li><strong>Dates:</strong> ${booking.startDate.toLocaleDateString()} - ${booking.endDate.toLocaleDateString()}</li>
+    </ul>
+    
+    <p>If you have any questions, please contact us.</p>
+    
+    <p>Best regards,<br>
+    The Casual Lease Team</p>
+  `;
+  
+  const textBody = `
+Insurance Update Required
+
+Dear ${booking.customerName},
+
+Your booking request ${booking.bookingNumber} for ${booking.centreName} has been placed on hold due to the following insurance issues:
+
+${issuesList}
+
+What to do next:
+1. Log in to your account
+2. Go to "My Bookings"  
+3. Find booking ${booking.bookingNumber}
+4. Click "Update Insurance"
+5. Upload a clear, current insurance certificate
+
+Required on certificate:
+- Expiry date (valid for 6+ months)
+- Coverage amount ($20M minimum public liability)
+- Policy number
+- Insurance company name
+
+Once you upload valid insurance, your booking will automatically move back to pending for approval.
+
+Booking Details:
+- Booking Number: ${booking.bookingNumber}
+- Centre: ${booking.centreName}
+- Site: ${booking.siteNumber}
+- Dates: ${booking.startDate.toLocaleDateString()} - ${booking.endDate.toLocaleDateString()}
+
+Best regards,
+The Casual Lease Team
+  `;
+
+  await sendEmail({
+    to: booking.customerEmail,
+    subject,
+    html: htmlBody,
+    text: textBody,
+  });
+  
+  console.log(`[Email] Sent insurance rejection email to ${booking.customerEmail} for booking ${booking.bookingNumber}`);
+}
+
+/**
+ * Send automated email when insurance document is unreadable
+ */
+export async function sendInsuranceUnreadableEmail(
+  customer: {
+    name: string;
+    email: string;
+  },
+  bookingNumber: string
+): Promise<void> {
+  const { sendEmail } = await import('./email');
+  
+  const subject = `Please Re-upload Insurance - Booking ${bookingNumber}`;
+  
+  const htmlBody = `
+    <h2>Insurance Document Needs Attention</h2>
+    
+    <p>Dear ${customer.name},</p>
+    
+    <p>We received your insurance document for booking <strong>${bookingNumber}</strong>, but our system 
+    couldn't read all the required information from it.</p>
+    
+    <div style="background-color: #d1ecf1; border-left: 4px solid #0c5460; padding: 15px; margin: 20px 0;">
+      <strong>Common Issues:</strong><br>
+      • Photo is blurry or too small<br>
+      • Document is rotated incorrectly<br>
+      • Important sections are cut off<br>
+      • PDF is password-protected or corrupted
+    </div>
+    
+    <p><strong>Please re-upload a clear version showing:</strong></p>
+    <ul>
+      <li>✓ Expiry date clearly visible</li>
+      <li>✓ Coverage amount (must be $20 million minimum)</li>
+      <li>✓ Policy number</li>
+      <li>✓ Insurance company name</li>
+    </ul>
+    
+    <p><strong>Tips for a good upload:</strong></p>
+    <ul>
+      <li>Use a scanner if possible (better than phone camera)</li>
+      <li>Make sure image is well-lit and in focus</li>
+      <li>Ensure entire document is in frame</li>
+      <li>Save as PDF or high-quality JPEG</li>
+    </ul>
+    
+    <p>Log in to your account and go to "My Bookings" to update your insurance document.</p>
+    
+    <p>Best regards,<br>
+    The Casual Lease Team</p>
+  `;
+  
+  const textBody = `
+Insurance Document Needs Attention
+
+Dear ${customer.name},
+
+We received your insurance document for booking ${bookingNumber}, but our system couldn't read all the required information from it.
+
+Common Issues:
+• Photo is blurry or too small
+• Document is rotated incorrectly  
+• Important sections are cut off
+• PDF is password-protected or corrupted
+
+Please re-upload a clear version showing:
+✓ Expiry date clearly visible
+✓ Coverage amount ($20M minimum)
+✓ Policy number
+✓ Insurance company name
+
+Tips for a good upload:
+• Use a scanner if possible
+• Make sure image is well-lit and in focus
+• Ensure entire document is in frame
+• Save as PDF or high-quality JPEG
+
+Log in to your account and go to "My Bookings" to update your insurance document.
+
+Best regards,
+The Casual Lease Team
+  `;
+
+  await sendEmail({
+    to: customer.email,
+    subject,
+    html: htmlBody,
+    text: textBody,
+  });
+  
+  console.log(`[Email] Sent insurance unreadable email to ${customer.email} for booking ${bookingNumber}`);
+}
+

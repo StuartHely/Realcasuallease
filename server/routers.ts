@@ -13,7 +13,6 @@ import { TRPCError } from "@trpc/server";
 import { notifyOwner } from "./_core/notification";
 import { sendBookingConfirmationEmail, sendBookingRejectionEmail, sendNewBookingNotificationToOwner } from "./_core/bookingNotifications";
 import { authService } from "./_core/authService";
-import { searchPlaces, getPlaceSuggestions, getPlaceDetails } from "./_core/amazonLocation";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -23,42 +22,19 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
+// Helper function to check if user role is an owner role
+function isOwnerRole(role: string): boolean {
+  return [
+    'owner_centre_manager',
+    'owner_marketing_manager',
+    'owner_regional_admin',
+    'owner_state_admin',
+    'owner_super_admin'
+  ].includes(role);
+}
+
 export const appRouter = router({
   system: systemRouter,
-
-  places: router({
-    search: publicProcedure
-      .input(z.object({
-        text: z.string().min(1),
-        maxResults: z.number().optional(),
-        biasPosition: z.tuple([z.number(), z.number()]).optional(),
-      }))
-      .query(async ({ input }) => {
-        return await searchPlaces(input.text, {
-          maxResults: input.maxResults,
-          biasPosition: input.biasPosition,
-        });
-      }),
-
-    suggestions: publicProcedure
-      .input(z.object({
-        text: z.string().min(1),
-        maxResults: z.number().optional(),
-        biasPosition: z.tuple([z.number(), z.number()]).optional(),
-      }))
-      .query(async ({ input }) => {
-        return await getPlaceSuggestions(input.text, {
-          maxResults: input.maxResults,
-          biasPosition: input.biasPosition,
-        });
-      }),
-
-    getDetails: publicProcedure
-      .input(z.object({ placeId: z.string() }))
-      .query(async ({ input }) => {
-        return await getPlaceDetails(input.placeId);
-      }),
-  }),
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -713,8 +689,9 @@ export const appRouter = router({
       }))
       .query(async ({ input }) => {
         const { getDb } = await import("./db");
-        const { bookings, sites, shoppingCentres, users, usageCategories } = await import("../drizzle/schema");
+        const { bookings, sites, shoppingCentres, users, usageCategories, customerProfiles } = await import("../drizzle/schema");
         const { eq, and, inArray } = await import("drizzle-orm");
+        const { scanInsuranceDocument, validateInsurance } = await import('./insuranceScanner');
         
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
@@ -724,7 +701,7 @@ export const appRouter = router({
           ? undefined 
           : eq(bookings.status, input.status);
 
-        // Fetch bookings with joined data
+        // Fetch bookings with joined data INCLUDING customer profile
         const bookingsList = await db
           .select({
             id: bookings.id,
@@ -751,16 +728,131 @@ export const appRouter = router({
             // Category info
             categoryId: usageCategories.id,
             categoryName: usageCategories.name,
+            // Insurance info from customer profile
+            insuranceDocumentUrl: customerProfiles.insuranceDocumentUrl,
+            insuranceCompany: customerProfiles.insuranceCompany,
+            insurancePolicyNo: customerProfiles.insurancePolicyNo,
+            insuranceAmount: customerProfiles.insuranceAmount,
+            insuranceExpiry: customerProfiles.insuranceExpiry,
           })
           .from(bookings)
           .innerJoin(users, eq(bookings.customerId, users.id))
           .innerJoin(sites, eq(bookings.siteId, sites.id))
           .innerJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
           .leftJoin(usageCategories, eq(bookings.usageCategoryId, usageCategories.id))
+          .leftJoin(customerProfiles, eq(users.id, customerProfiles.userId))
           .where(whereClause)
           .orderBy(bookings.createdAt);
 
-        return bookingsList;
+        // For each booking, scan insurance if URL exists and validate
+        const bookingsWithInsuranceStatus = await Promise.all(
+          bookingsList.map(async (booking) => {
+            let insuranceScanResult = null;
+            let insuranceValidation = null;
+
+            // If customer has uploaded insurance document, scan it
+            if (booking.insuranceDocumentUrl) {
+              try {
+                const scanResult = await scanInsuranceDocument(booking.insuranceDocumentUrl);
+                insuranceScanResult = scanResult;
+                insuranceValidation = validateInsurance(scanResult);
+              } catch (error) {
+                console.error('[getPendingApprovals] Error scanning insurance:', error);
+                insuranceValidation = {
+                  valid: false,
+                  errors: ['Error scanning insurance document - manual review required']
+                };
+              }
+            } else {
+              // No insurance document uploaded
+              insuranceValidation = {
+                valid: false,
+                errors: ['No insurance document uploaded']
+              };
+            }
+
+            return {
+              ...booking,
+              insuranceScan: insuranceScanResult,
+              insuranceValidation: insuranceValidation,
+            };
+          })
+        );
+
+        return bookingsWithInsuranceStatus;
+      }),
+
+    // Allow customer to update insurance for their booking
+    updateBookingInsurance: protectedProcedure
+      .input(z.object({
+        bookingId: z.number(),
+        base64Document: z.string(),
+        fileName: z.string(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Get the booking and verify ownership
+        const booking = await db.getBookingById(input.bookingId);
+        if (!booking) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
+        }
+
+        // Only the customer who made the booking can update insurance
+        if (booking.customerId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You can only update insurance for your own bookings" });
+        }
+
+        // Only allow updating insurance for pending or rejected bookings
+        if (booking.status !== "pending" && booking.status !== "rejected") {
+          throw new TRPCError({ 
+            code: "BAD_REQUEST", 
+            message: "Insurance can only be updated for pending or rejected bookings" 
+          });
+        }
+
+        // Upload the new insurance document
+        const { storagePut } = await import('./storage');
+        const base64Data = input.base64Document.replace(/^data:[^;]+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        const fileKey = `insurance/${ctx.user.id}/${Date.now()}-${input.fileName}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+
+        // Scan the new insurance document
+        const { scanInsuranceDocument, validateInsurance } = await import('./insuranceScanner');
+        const scanResult = await scanInsuranceDocument(url);
+        const validation = validateInsurance(scanResult);
+
+        // Update customer profile with new insurance data
+        await db.updateCustomerProfile(ctx.user.id, {
+          insuranceDocumentUrl: url,
+          insuranceCompany: scanResult.insuranceCompany,
+          insurancePolicyNo: scanResult.policyNumber,
+          insuranceAmount: scanResult.insuredAmount ? scanResult.insuredAmount.toString() : null,
+          insuranceExpiry: scanResult.expiryDate ? new Date(scanResult.expiryDate) : null,
+        });
+
+        // If insurance is now valid AND booking was rejected, move it back to pending
+        if (validation.valid && booking.status === "rejected") {
+          await db.updateBookingStatus(input.bookingId, "pending", ctx.user.id, ctx.user.name || undefined);
+          
+          // Notify shopping centre that booking needs re-review
+          const site = await db.getSiteById(booking.siteId);
+          const centre = site ? await db.getShoppingCentreById(site.centreId) : null;
+          
+          if (centre) {
+            console.log(`[Insurance Update] Booking ${booking.bookingNumber} returned to pending after valid insurance upload`);
+          }
+        }
+
+        return {
+          success: true,
+          insuranceValid: validation.valid,
+          errors: validation.errors,
+          bookingStatus: validation.valid && booking.status === "rejected" ? "pending" : booking.status,
+          message: validation.valid 
+            ? "Insurance uploaded successfully and booking moved to pending for review" 
+            : "Insurance uploaded but has issues - please correct and re-upload",
+        };
       }),
   }),
 
@@ -2227,6 +2319,313 @@ export const appRouter = router({
         }
         await setConfigValue("gst_percentage", input.gstPercentage.toString());
         return { success: true, gstPercentage: input.gstPercentage };
+      }),
+
+    // Get current logo selection
+    getCurrentLogo: publicProcedure.query(async () => {
+      const selectedLogo = await getConfigValue("selected_logo");
+      return { selectedLogo: selectedLogo || "logo_1" }; // Default to logo_1
+    }),
+
+    // Set logo selection (MegaAdmin only)
+    setLogo: adminProcedure
+      .input(z.object({ 
+        logoId: z.enum(["logo_1", "logo_2", "logo_3", "logo_4", "logo_5"]) 
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Only mega_admin can change logo
+        if (ctx.user.role !== "mega_admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only MegaAdmin can change the logo" });
+        }
+        await setConfigValue("selected_logo", input.logoId);
+        return { success: true, selectedLogo: input.logoId };
+      }),
+
+    // Upload custom logo (for future use - allows uploading the 5 logo options)
+    uploadLogo: adminProcedure
+      .input(z.object({
+        logoId: z.enum(["logo_1", "logo_2", "logo_3", "logo_4", "logo_5"]),
+        base64Image: z.string(),
+        fileName: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== "mega_admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only MegaAdmin can upload logos" });
+        }
+
+        const { storagePut } = await import('./storage');
+        
+        // Extract base64 data
+        const base64Data = input.base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        
+        // Store logo with fixed name based on logoId
+        const fileKey = `logos/${input.logoId}.png`;
+        const { url } = await storagePut(fileKey, buffer, 'image/png');
+        
+        // Store the URL in system config for this logo slot
+        await setConfigValue(`${input.logoId}_url`, url);
+        
+        return { success: true, url };
+      }),
+
+    // Get all logo URLs
+    getAllLogos: publicProcedure.query(async () => {
+      const logos = await Promise.all([
+        getConfigValue("logo_1_url"),
+        getConfigValue("logo_2_url"),
+        getConfigValue("logo_3_url"),
+        getConfigValue("logo_4_url"),
+        getConfigValue("logo_5_url"),
+      ]);
+
+      return {
+        logo_1: logos[0] || "/logos/logo_1.png",
+        logo_2: logos[1] || "/logos/logo_2.png",
+        logo_3: logos[2] || "/logos/logo_3.png",
+        logo_4: logos[3] || "/logos/logo_4.png",
+        logo_5: logos[4] || "/logos/logo_5.png",
+      };
+    }),
+
+    // Get logo for specific owner (returns owner's allocated logo or default)
+    getOwnerLogo: publicProcedure
+      .input(z.object({ ownerId: z.number() }))
+      .query(async ({ input }) => {
+        // Get owner's allocated logo
+        const owner = await db.getUserById(input.ownerId);
+        
+        if (owner?.allocatedLogoId) {
+          // Get URL for owner's allocated logo
+          const customUrl = await getConfigValue(`${owner.allocatedLogoId}_url`);
+          return {
+            logoId: owner.allocatedLogoId,
+            logoUrl: customUrl || `/logos/${owner.allocatedLogoId}.png`,
+          };
+        }
+        
+        // Fallback to default platform logo
+        const defaultLogo = await getConfigValue("selected_logo") || "logo_1";
+        const defaultUrl = await getConfigValue(`${defaultLogo}_url`);
+        return {
+          logoId: defaultLogo,
+          logoUrl: defaultUrl || `/logos/${defaultLogo}.png`,
+        };
+      }),
+
+    // Get logo for current user (if owner, returns their allocated logo)
+    getMyLogo: protectedProcedure.query(async ({ ctx }) => {
+      const user = ctx.user;
+      
+      // If user is an owner and has allocated logo, return it
+      if (user.allocatedLogoId && isOwnerRole(user.role)) {
+        const customUrl = await getConfigValue(`${user.allocatedLogoId}_url`);
+        return {
+          logoId: user.allocatedLogoId,
+          logoUrl: customUrl || `/logos/${user.allocatedLogoId}.png`,
+        };
+      }
+      
+      // Otherwise return platform default logo
+      const defaultLogo = await getConfigValue("selected_logo") || "logo_1";
+      const defaultUrl = await getConfigValue(`${defaultLogo}_url`);
+      return {
+        logoId: defaultLogo,
+        logoUrl: defaultUrl || `/logos/${defaultLogo}.png`,
+      };
+    }),
+
+    // Allocate logo to owner (MegaAdmin only)
+    allocateLogoToOwner: adminProcedure
+      .input(z.object({
+        ownerId: z.number(),
+        logoId: z.enum(["logo_1", "logo_2", "logo_3", "logo_4", "logo_5"]).nullable(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Only mega_admin can allocate logos to owners
+        if (ctx.user.role !== "mega_admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only MegaAdmin can allocate logos to owners" });
+        }
+
+        // Verify the user is an owner
+        const owner = await db.getUserById(input.ownerId);
+        if (!owner) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Owner not found" });
+        }
+
+        if (!isOwnerRole(owner.role)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "User is not an owner" });
+        }
+
+        // Update owner's allocated logo
+        await db.updateUser(input.ownerId, {
+          allocatedLogoId: input.logoId,
+        });
+
+        return { success: true, ownerId: input.ownerId, logoId: input.logoId };
+      }),
+
+    // Get all owners with their allocated logos (MegaAdmin only)
+    getOwnersWithLogos: adminProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "mega_admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only MegaAdmin can view owner logo allocations" });
+      }
+
+      const { getDb } = await import("./db");
+      const { users } = await import("../drizzle/schema");
+      const { or, eq } = await import("drizzle-orm");
+      
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+
+      // Get all users with owner roles
+      const owners = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          role: users.role,
+          allocatedLogoId: users.allocatedLogoId,
+          assignedState: users.assignedState,
+        })
+        .from(users)
+        .where(
+          or(
+            eq(users.role, "owner_centre_manager"),
+            eq(users.role, "owner_marketing_manager"),
+            eq(users.role, "owner_regional_admin"),
+            eq(users.role, "owner_state_admin"),
+            eq(users.role, "owner_super_admin")
+          )
+        );
+
+      return owners;
+    }),
+  }),
+
+  // FAQs for homepage
+  faqs: router({
+    // Public endpoint - get all active FAQs ordered by displayOrder
+    list: publicProcedure.query(async () => {
+      const { getDb } = await import("./db");
+      const { faqs } = await import("../drizzle/schema");
+      const { eq, asc } = await import("drizzle-orm");
+      
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+
+      return await db
+        .select()
+        .from(faqs)
+        .where(eq(faqs.isActive, true))
+        .orderBy(asc(faqs.displayOrder));
+    }),
+
+    // Admin: Get all FAQs (including inactive)
+    listAll: adminProcedure.query(async () => {
+      const { getDb } = await import("./db");
+      const { faqs } = await import("../drizzle/schema");
+      const { asc } = await import("drizzle-orm");
+      
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+
+      return await db
+        .select()
+        .from(faqs)
+        .orderBy(asc(faqs.displayOrder));
+    }),
+
+    // Admin: Create new FAQ
+    create: adminProcedure
+      .input(z.object({
+        question: z.string().min(1).max(500),
+        answer: z.string().min(1),
+        displayOrder: z.number().int().default(0),
+        isActive: z.boolean().default(true),
+      }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { faqs } = await import("../drizzle/schema");
+        
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+
+        const result = await db.insert(faqs).values({
+          question: input.question,
+          answer: input.answer,
+          displayOrder: input.displayOrder,
+          isActive: input.isActive,
+        }).returning();
+
+        return { success: true, faq: result[0] };
+      }),
+
+    // Admin: Update FAQ
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        question: z.string().min(1).max(500).optional(),
+        answer: z.string().min(1).optional(),
+        displayOrder: z.number().int().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { faqs } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+
+        const { id, ...updates } = input;
+
+        await db
+          .update(faqs)
+          .set({ ...updates, updatedAt: new Date() })
+          .where(eq(faqs.id, id));
+
+        return { success: true };
+      }),
+
+    // Admin: Delete FAQ
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { faqs } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+
+        await db.delete(faqs).where(eq(faqs.id, input.id));
+
+        return { success: true };
+      }),
+
+    // Admin: Reorder FAQs
+    reorder: adminProcedure
+      .input(z.object({
+        faqIds: z.array(z.number()), // Array of FAQ IDs in desired order
+      }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { faqs } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+
+        // Update display order for each FAQ
+        for (let i = 0; i < input.faqIds.length; i++) {
+          await db
+            .update(faqs)
+            .set({ displayOrder: i, updatedAt: new Date() })
+            .where(eq(faqs.id, input.faqIds[i]));
+        }
+
+        return { success: true };
       }),
   }),
 

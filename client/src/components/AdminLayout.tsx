@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import Logo from "@/components/Logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -105,6 +106,9 @@ const getMenuSections = (userRole: string): MenuSection[] => {
         items: [
           { icon: Users, label: "Users", path: "/admin/users" },
           { icon: Users, label: "Owners & Managers", path: "/admin/owners" },
+          { icon: FileText, label: "Manage FAQs", path: "/admin/manage-faq" },
+          { icon: Image, label: "Logo Management", path: "/admin/logo-management" },
+          { icon: Building2, label: "Owner Logo Allocation", path: "/admin/owner-logo-allocation" },
           { icon: Search, label: "Search Analytics", path: "/admin/search-analytics" },
           { icon: Image, label: "Image Analytics", path: "/admin/image-analytics" },
           { icon: FileText, label: "Audit Log", path: "/admin/audit" },
@@ -224,12 +228,9 @@ export default function AdminLayout({
       <Sidebar collapsible="none">
         <SidebarHeader className="border-b px-6 py-4">
           <div className="flex items-center gap-2">
-            <Building2 className="h-6 w-6 text-blue-600" />
-            <div>
-              <h2 className="font-bold text-lg">Real Casual Leasing</h2>
-              <p className="text-xs text-muted-foreground">Admin Dashboard</p>
-            </div>
+            <Logo height={40} width={150} className="h-10" />
           </div>
+          <p className="text-xs text-muted-foreground mt-1">Admin Dashboard</p>
         </SidebarHeader>
         <SidebarContent>
           {menuSections.map((section) => (
