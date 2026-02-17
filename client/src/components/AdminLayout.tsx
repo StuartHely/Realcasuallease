@@ -106,6 +106,9 @@ const getMenuSections = (userRole: string): MenuSection[] => {
         items: [
           { icon: Users, label: "Users", path: "/admin/users" },
           { icon: Users, label: "Owners & Managers", path: "/admin/owners" },
+          { icon: FileText, label: "Manage FAQs", path: "/admin/manage-faq" },
+          { icon: Image, label: "Logo Management", path: "/admin/logo-management" },
+          { icon: Building2, label: "Owner Logo Allocation", path: "/admin/owner-logo-allocation" },
           { icon: Search, label: "Search Analytics", path: "/admin/search-analytics" },
           { icon: Image, label: "Image Analytics", path: "/admin/image-analytics" },
           { icon: FileText, label: "Audit Log", path: "/admin/audit" },
