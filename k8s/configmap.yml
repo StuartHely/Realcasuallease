@@ -25,18 +25,9 @@ data:
   
   # -----------------------------------------------------------------------------
   # AWS Region
-  # Used for S3, AWS Location Service, and other AWS services
+  # Used for S3 and other AWS services
   # -----------------------------------------------------------------------------
   AWS_REGION: "ap-southeast-2"
-  
-  # -----------------------------------------------------------------------------
-  # AWS Location Service
-  # Resources created by Terraform in tinkertank-infra
-  # Uses IRSA via location-service service account for authentication
-  # -----------------------------------------------------------------------------
-  AMAZON_LOCATION_PLACE_INDEX: "tinkertank-dev-place-index"
-  AMAZON_LOCATION_ROUTE_CALCULATOR: "tinkertank-dev-route-calculator"
-  AMAZON_LOCATION_MAP: "tinkertank-dev-map"
   
   # -----------------------------------------------------------------------------
   # Logging Configuration

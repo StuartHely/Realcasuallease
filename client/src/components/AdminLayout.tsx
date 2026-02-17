@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import Logo from "@/components/Logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -224,12 +225,9 @@ export default function AdminLayout({
       <Sidebar collapsible="none">
         <SidebarHeader className="border-b px-6 py-4">
           <div className="flex items-center gap-2">
-            <Building2 className="h-6 w-6 text-blue-600" />
-            <div>
-              <h2 className="font-bold text-lg">Real Casual Leasing</h2>
-              <p className="text-xs text-muted-foreground">Admin Dashboard</p>
-            </div>
+            <Logo height={40} width={150} className="h-10" />
           </div>
+          <p className="text-xs text-muted-foreground mt-1">Admin Dashboard</p>
         </SidebarHeader>
         <SidebarContent>
           {menuSections.map((section) => (

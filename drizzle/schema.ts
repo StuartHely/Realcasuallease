@@ -44,6 +44,7 @@ export const users = pgTable("users", {
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: roleEnum("role").default("customer").notNull(),
   assignedState: varchar("assignedState", { length: 3 }), // For state_admin roles: NSW, VIC, QLD, etc.
+  allocatedLogoId: varchar("allocated_logo_id", { length: 20 }), // For owners: which logo to use (logo_1, logo_2, etc.)
   canPayByInvoice: boolean("canPayByInvoice").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
@@ -346,6 +347,19 @@ export const systemConfig = pgTable("system_config", {
   imageMaxWidth: integer("image_max_width").default(1200),
   imageMaxHeight: integer("image_max_height").default(800),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+/**
+ * FAQ (Frequently Asked Questions) for the homepage
+ */
+export const faqs = pgTable("faqs", {
+  id: serial("id").primaryKey(),
+  question: varchar("question", { length: 500 }).notNull(),
+  answer: text("answer").notNull(),
+  displayOrder: integer("display_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 /**
@@ -666,3 +680,5 @@ export type VacantShopBooking = typeof vacantShopBookings.$inferSelect;
 export type InsertVacantShopBooking = typeof vacantShopBookings.$inferInsert;
 export type ThirdLineBooking = typeof thirdLineBookings.$inferSelect;
 export type InsertThirdLineBooking = typeof thirdLineBookings.$inferInsert;
+export type FAQ = typeof faqs.$inferSelect;
+export type InsertFAQ = typeof faqs.$inferInsert;

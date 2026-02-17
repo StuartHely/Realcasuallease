@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { getBookingById, getSiteById, getShoppingCentreById, getUserById, getCustomerProfileByUserId } from './db';
+import { getLogoAsBase64, getOwnerIdFromContext } from './logoHelper';
 
 /**
  * Generate invoice PDF for a booking
@@ -30,19 +31,38 @@ export async function generateInvoicePDF(bookingId: number): Promise<string> {
 
   const profile = await getCustomerProfileByUserId(customer.id);
 
+  // Get owner ID to use owner-specific logo
+  const ownerId = await getOwnerIdFromContext({ bookingId });
+
   // Create PDF
   const doc = new jsPDF();
   
   // Set font
   doc.setFont('helvetica');
   
-  // Header - Company Name
-  doc.setFontSize(24);
-  doc.setTextColor(18, 48, 71); // #123047
-  doc.text('Casual Lease', 20, 25);
+  // Add Logo (owner-specific or default)
+  try {
+    const logoBase64 = await getLogoAsBase64(ownerId);
+    if (logoBase64) {
+      // Add logo image - positioned at top left
+      doc.addImage(logoBase64, 'PNG', 20, 10, 60, 20);
+    } else {
+      // Fallback to text if logo not available
+      doc.setFontSize(24);
+      doc.setTextColor(18, 48, 71);
+      doc.text('Casual Lease', 20, 25);
+    }
+  } catch (error) {
+    console.error('[Invoice] Error adding logo:', error);
+    // Fallback to text
+    doc.setFontSize(24);
+    doc.setTextColor(18, 48, 71);
+    doc.text('Casual Lease', 20, 25);
+  }
   
   // Invoice Title
   doc.setFontSize(20);
+  doc.setTextColor(0, 0, 0);
   doc.text('INVOICE', 150, 25);
   
   // Invoice Details

@@ -1,7 +1,50 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
-import { trpc } from "@/lib/trpc";
-import { cn } from "@/lib/utils";
+
+const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
+const FORGE_BASE_URL =
+  import.meta.env.VITE_FRONTEND_FORGE_API_URL ||
+  "https://forge.butterfly-effect.dev";
+const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
+
+let mapScriptLoaded = false;
+let mapScriptPromise: Promise<void> | null = null;
+
+function loadMapScript() {
+  if (mapScriptLoaded && window.google?.maps) {
+    return Promise.resolve();
+  }
+  
+  if (mapScriptPromise) {
+    return mapScriptPromise;
+  }
+  
+  mapScriptPromise = new Promise((resolve, reject) => {
+    const existingScript = document.querySelector(`script[src*="${MAPS_PROXY_URL}/maps/api/js"]`);
+    if (existingScript) {
+      mapScriptLoaded = true;
+      resolve();
+      return;
+    }
+    
+    const script = document.createElement("script");
+    script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=places`;
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    script.onload = () => {
+      mapScriptLoaded = true;
+      resolve();
+    };
+    script.onerror = () => {
+      console.error("Failed to load Google Maps script");
+      mapScriptPromise = null;
+      reject(new Error("Failed to load Google Maps"));
+    };
+    document.head.appendChild(script);
+  });
+  
+  return mapScriptPromise;
+}
 
 interface AddressComponents {
   streetAddress: string;
@@ -29,162 +72,111 @@ export function AddressAutocomplete({
   className,
   id,
 }: AddressAutocompleteProps) {
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const { data: suggestions, isLoading } = trpc.places.suggestions.useQuery(
-    { text: value, maxResults: 5 },
-    { enabled: value.length >= 3, staleTime: 30000 }
-  );
-
-  const { data: placeDetails } = trpc.places.getDetails.useQuery(
-    { placeId: selectedPlaceId! },
-    { enabled: !!selectedPlaceId }
-  );
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    if (placeDetails && selectedPlaceId) {
-      onAddressSelect({
-        streetAddress: placeDetails.addressComponents.streetAddress,
-        suburb: placeDetails.addressComponents.suburb,
-        state: placeDetails.addressComponents.state,
-        postcode: placeDetails.addressComponents.postcode,
-        latitude: placeDetails.addressComponents.latitude,
-        longitude: placeDetails.addressComponents.longitude,
-      });
-      onChange(placeDetails.addressComponents.streetAddress);
-      setSelectedPlaceId(null);
-    }
-  }, [placeDetails, selectedPlaceId, onAddressSelect, onChange]);
-
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = e.target.value;
-      onChange(newValue);
-      setSelectedIndex(-1);
-
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-
-      debounceRef.current = setTimeout(() => {
-        if (newValue.length >= 3) {
-          setShowDropdown(true);
-        } else {
-          setShowDropdown(false);
-        }
-      }, 300);
-    },
-    [onChange]
-  );
-
-  const handleSelectSuggestion = useCallback(
-    (placeId: string, displayText: string) => {
-      setShowDropdown(false);
-      onChange(displayText);
-      setSelectedPlaceId(placeId);
-    },
-    [onChange]
-  );
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (!showDropdown || !suggestions?.length) return;
-
-      switch (e.key) {
-        case "ArrowDown":
-          e.preventDefault();
-          setSelectedIndex((prev) =>
-            prev < suggestions.length - 1 ? prev + 1 : prev
-          );
-          break;
-        case "ArrowUp":
-          e.preventDefault();
-          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
-          break;
-        case "Enter":
-          e.preventDefault();
-          if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-            handleSelectSuggestion(
-              suggestions[selectedIndex].placeId,
-              suggestions[selectedIndex].text
-            );
-          }
-          break;
-        case "Escape":
-          setShowDropdown(false);
-          break;
-      }
-    },
-    [showDropdown, suggestions, selectedIndex, handleSelectSuggestion]
-  );
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        inputRef.current &&
-        !inputRef.current.contains(event.target as Node)
-      ) {
-        setShowDropdown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    loadMapScript()
+      .then(() => setIsLoaded(true))
+      .catch(console.error);
   }, []);
 
-  return (
-    <div className="relative">
-      <Input
-        ref={inputRef}
-        id={id}
-        value={value}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        onFocus={() => {
-          if (value.length >= 3 && suggestions?.length) {
-            setShowDropdown(true);
-          }
-        }}
-        placeholder={placeholder}
-        className={className}
-        autoComplete="off"
-      />
+  // Store callbacks in refs to avoid re-initializing autocomplete
+  const onChangeRef = useRef(onChange);
+  const onAddressSelectRef = useRef(onAddressSelect);
+  
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    onAddressSelectRef.current = onAddressSelect;
+  }, [onChange, onAddressSelect]);
 
-      {showDropdown && (suggestions?.length || isLoading) && (
-        <div
-          ref={dropdownRef}
-          className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto"
-        >
-          {isLoading ? (
-            <div className="px-4 py-3 text-sm text-gray-500">
-              Searching...
-            </div>
-          ) : (
-            suggestions?.map((suggestion, index) => (
-              <button
-                key={suggestion.placeId}
-                type="button"
-                className={cn(
-                  "w-full px-4 py-3 text-left text-sm hover:bg-gray-100 focus:bg-gray-100 focus:outline-none",
-                  index === selectedIndex && "bg-gray-100"
-                )}
-                onClick={() =>
-                  handleSelectSuggestion(suggestion.placeId, suggestion.text)
-                }
-              >
-                {suggestion.text}
-              </button>
-            ))
-          )}
-        </div>
-      )}
-    </div>
+  useEffect(() => {
+    if (!isLoaded || !inputRef.current || autocompleteRef.current) return;
+
+    console.log('[AddressAutocomplete] Initializing Google Places Autocomplete');
+    
+    // Initialize Autocomplete
+    autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
+      componentRestrictions: { country: "au" }, // Restrict to Australia
+      fields: ["address_components", "geometry", "formatted_address"],
+      types: ["address"],
+    });
+
+    // Listen for place selection
+    autocompleteRef.current.addListener("place_changed", () => {
+      const place = autocompleteRef.current?.getPlace();
+      console.log('[AddressAutocomplete] Place changed:', place);
+      
+      if (!place?.address_components) {
+        console.log('[AddressAutocomplete] No address components found');
+        return;
+      }
+
+      // Parse address components
+      let streetNumber = "";
+      let route = "";
+      let suburb = "";
+      let state = "";
+      let postcode = "";
+      let latitude: number | undefined;
+      let longitude: number | undefined;
+
+      for (const component of place.address_components) {
+        const types = component.types;
+        if (types.includes("street_number")) {
+          streetNumber = component.long_name;
+        } else if (types.includes("route")) {
+          route = component.long_name;
+        } else if (types.includes("locality")) {
+          suburb = component.long_name;
+        } else if (types.includes("administrative_area_level_1")) {
+          state = component.short_name; // NSW, VIC, etc.
+        } else if (types.includes("postal_code")) {
+          postcode = component.long_name;
+        }
+      }
+
+      if (place.geometry?.location) {
+        latitude = place.geometry.location.lat();
+        longitude = place.geometry.location.lng();
+      }
+
+      const streetAddress = streetNumber ? `${streetNumber} ${route}` : route;
+      
+      console.log('[AddressAutocomplete] Parsed address:', { streetAddress, suburb, state, postcode });
+
+      // Update the input value
+      onChangeRef.current(streetAddress);
+
+      // Notify parent of parsed components
+      onAddressSelectRef.current({
+        streetAddress,
+        suburb,
+        state,
+        postcode,
+        latitude,
+        longitude,
+      });
+    });
+
+    return () => {
+      // Cleanup - remove listeners
+      if (autocompleteRef.current) {
+        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      }
+    };
+  }, [isLoaded]);
+
+  return (
+    <Input
+      ref={inputRef}
+      id={id}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className={className}
+      autoComplete="off"
+    />
   );
 }

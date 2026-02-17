@@ -43,6 +43,9 @@ import ThirdLineIncome from "./pages/admin/ThirdLineIncome";
 import ThirdLineCategories from "./pages/admin/ThirdLineCategories";
 import AssetMapPlacement from "./pages/admin/AssetMapPlacement";
 import VSBookings from "./pages/admin/VSBookings";
+import ManageFAQ from "./pages/admin/ManageFAQ";
+import LogoManagement from "./pages/admin/LogoManagement";
+import OwnerLogoAllocation from "./pages/admin/OwnerLogoAllocation";
 import ThirdLineBookings from "./pages/admin/ThirdLineBookings";
 import OwnerApprovals from "./pages/OwnerApprovals";
 import OwnerCentres from "./pages/OwnerCentres";
@@ -68,6 +71,9 @@ function Router() {
       <Route path="/admin/sites" component={AdminSites} />
       <Route path="/admin/maps" component={Maps} />
       <Route path="/admin/system-config" component={SystemConfig} />
+      <Route path="/admin/manage-faq" component={ManageFAQ} />
+      <Route path="/admin/logo-management" component={LogoManagement} />
+      <Route path="/admin/owner-logo-allocation" component={OwnerLogoAllocation} />
       <Route path="/admin/image-analytics" component={ImageAnalytics} />
       <Route path="/admin/search-analytics" component={SearchAnalytics} />
       <Route path="/admin/site-assignment" component={AdminSiteAssignment} />

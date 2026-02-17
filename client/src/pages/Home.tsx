@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, Calendar, CheckCircle, MapPin, Info } from "lucide-react";
 import AustraliaMap from "@/components/AustraliaMap";
+import FAQ from "@/components/FAQ";
+import Logo from "@/components/Logo";
 import { format } from "date-fns";
 import { trpc } from "@/lib/trpc";
 import { parseSearchQuery } from "@shared/queryParser";
@@ -185,7 +187,7 @@ export default function Home() {
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => setLocation("/")}
           >
-            <img src="/logo.png" alt="Real Casual Leasing" className="h-12" />
+            <Logo height={48} className="h-12" />
           </div>
           <nav className="flex items-center gap-4">
             <Button variant="ghost" onClick={() => setLocation("/")}>Home</Button>
@@ -384,6 +386,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* FAQ Section */}
+        <FAQ />
       </main>
 
       {/* Footer */}

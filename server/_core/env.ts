@@ -5,12 +5,8 @@ export const ENV = {
   oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
   isProduction: process.env.NODE_ENV === "production",
-  // AWS configuration - using IRSA (no hardcoded credentials needed)
-  awsRegion: process.env.AWS_REGION ?? "ap-southeast-2",
-  awsS3Bucket: process.env.AWS_S3_BUCKET ?? "",
-  // AWS Location Service - matches Terraform module output names
-  amazonLocationPlaceIndex: process.env.AMAZON_LOCATION_PLACE_INDEX ?? "tinkertank-dev-place-index",
-  amazonLocationRouteCalculator: process.env.AMAZON_LOCATION_ROUTE_CALCULATOR ?? "tinkertank-dev-route-calculator",
+  forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
+  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   // SMTP configuration
   smtpHost: process.env.SMTP_HOST ?? "",
   smtpPort: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587,

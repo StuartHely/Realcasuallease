@@ -1,13 +1,4 @@
-import {
-  BedrockRuntimeClient,
-  ConverseCommand,
-  ContentBlock,
-  Message as BedrockMessage,
-  ToolConfiguration,
-  ToolChoice as BedrockToolChoice,
-  ConverseCommandOutput,
-  Tool as BedrockTool,
-} from "@aws-sdk/client-bedrock-runtime";
+import { ENV } from "./env";
 
 export type Role = "system" | "user" | "assistant" | "tool" | "function";
 
@@ -28,7 +19,7 @@ export type FileContent = {
   type: "file_url";
   file_url: {
     url: string;
-    mime_type?: "audio/mpeg" | "audio/wav" | "application/pdf" | "audio/mp4" | "video/mp4";
+    mime_type?: "audio/mpeg" | "audio/wav" | "application/pdf" | "audio/mp4" | "video/mp4" ;
   };
 };
 
@@ -119,276 +110,225 @@ export type ResponseFormat =
   | { type: "json_object" }
   | { type: "json_schema"; json_schema: JsonSchema };
 
-const MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0";
-
-const getBedrockClient = (): BedrockRuntimeClient => {
-  return new BedrockRuntimeClient({
-    region: process.env.AWS_REGION || "us-east-1",
-    credentials: process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
-      ? {
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        }
-      : undefined,
-  });
-};
-
 const ensureArray = (
   value: MessageContent | MessageContent[]
 ): MessageContent[] => (Array.isArray(value) ? value : [value]);
 
-const extractTextFromContent = (content: MessageContent | MessageContent[]): string => {
-  const parts = ensureArray(content);
-  return parts
-    .map(part => {
-      if (typeof part === "string") return part;
-      if (part.type === "text") return part.text;
-      return "";
-    })
-    .join("\n");
-};
-
-const convertToBedrockContent = (content: MessageContent | MessageContent[]): ContentBlock[] => {
-  const parts = ensureArray(content);
-  const blocks: ContentBlock[] = [];
-
-  for (const part of parts) {
-    if (typeof part === "string") {
-      blocks.push({ text: part });
-    } else if (part.type === "text") {
-      blocks.push({ text: part.text });
-    } else if (part.type === "image_url") {
-      const url = part.image_url.url;
-      if (url.startsWith("data:")) {
-        const match = url.match(/^data:image\/(\w+);base64,(.+)$/);
-        if (match) {
-          const format = match[1] as "png" | "jpeg" | "gif" | "webp";
-          const base64Data = match[2];
-          blocks.push({
-            image: {
-              format,
-              source: {
-                bytes: Buffer.from(base64Data, "base64"),
-              },
-            },
-          });
-        }
-      }
-    }
+const normalizeContentPart = (
+  part: MessageContent
+): TextContent | ImageContent | FileContent => {
+  if (typeof part === "string") {
+    return { type: "text", text: part };
   }
 
-  return blocks.length > 0 ? blocks : [{ text: "" }];
-};
-
-const convertMessages = (
-  messages: Message[]
-): { system: string | undefined; bedrockMessages: BedrockMessage[] } => {
-  let systemPrompt: string | undefined;
-  const bedrockMessages: BedrockMessage[] = [];
-  const toolResultsMap = new Map<string, string>();
-
-  for (const msg of messages) {
-    if (msg.role === "tool" || msg.role === "function") {
-      if (msg.tool_call_id) {
-        toolResultsMap.set(msg.tool_call_id, extractTextFromContent(msg.content));
-      }
-    }
+  if (part.type === "text") {
+    return part;
   }
 
-  for (const msg of messages) {
-    if (msg.role === "system") {
-      systemPrompt = extractTextFromContent(msg.content);
-    } else if (msg.role === "user") {
-      bedrockMessages.push({
-        role: "user",
-        content: convertToBedrockContent(msg.content),
-      });
-    } else if (msg.role === "assistant") {
-      bedrockMessages.push({
-        role: "assistant",
-        content: convertToBedrockContent(msg.content),
-      });
-    } else if (msg.role === "tool" || msg.role === "function") {
-      if (msg.tool_call_id) {
-        bedrockMessages.push({
-          role: "user",
-          content: [
-            {
-              toolResult: {
-                toolUseId: msg.tool_call_id,
-                content: [{ text: extractTextFromContent(msg.content) }],
-              },
-            },
-          ],
-        });
-      }
-    }
+  if (part.type === "image_url") {
+    return part;
   }
 
-  return { system: systemPrompt, bedrockMessages };
+  if (part.type === "file_url") {
+    return part;
+  }
+
+  throw new Error("Unsupported message content part");
 };
 
-const convertTools = (tools: Tool[]): ToolConfiguration => {
+const normalizeMessage = (message: Message) => {
+  const { role, name, tool_call_id } = message;
+
+  if (role === "tool" || role === "function") {
+    const content = ensureArray(message.content)
+      .map(part => (typeof part === "string" ? part : JSON.stringify(part)))
+      .join("\n");
+
+    return {
+      role,
+      name,
+      tool_call_id,
+      content,
+    };
+  }
+
+  const contentParts = ensureArray(message.content).map(normalizeContentPart);
+
+  // If there's only text content, collapse to a single string for compatibility
+  if (contentParts.length === 1 && contentParts[0].type === "text") {
+    return {
+      role,
+      name,
+      content: contentParts[0].text,
+    };
+  }
+
   return {
-    tools: tools.map(tool => ({
-      toolSpec: {
-        name: tool.function.name,
-        description: tool.function.description,
-        inputSchema: tool.function.parameters
-          ? { json: tool.function.parameters }
-          : { json: { type: "object", properties: {} } },
-      },
-    })) as BedrockTool[],
+    role,
+    name,
+    content: contentParts,
   };
 };
 
-const convertToolChoice = (
+const normalizeToolChoice = (
   toolChoice: ToolChoice | undefined,
   tools: Tool[] | undefined
-): BedrockToolChoice | undefined => {
+): "none" | "auto" | ToolChoiceExplicit | undefined => {
   if (!toolChoice) return undefined;
 
-  if (toolChoice === "none") {
-    return undefined;
-  }
-
-  if (toolChoice === "auto") {
-    return { auto: {} };
+  if (toolChoice === "none" || toolChoice === "auto") {
+    return toolChoice;
   }
 
   if (toolChoice === "required") {
     if (!tools || tools.length === 0) {
-      throw new Error("tool_choice 'required' was provided but no tools were configured");
+      throw new Error(
+        "tool_choice 'required' was provided but no tools were configured"
+      );
     }
-    if (tools.length === 1) {
-      return { tool: { name: tools[0].function.name } };
+
+    if (tools.length > 1) {
+      throw new Error(
+        "tool_choice 'required' needs a single tool or specify the tool name explicitly"
+      );
     }
-    return { any: {} };
+
+    return {
+      type: "function",
+      function: { name: tools[0].function.name },
+    };
   }
 
   if ("name" in toolChoice) {
-    return { tool: { name: toolChoice.name } };
+    return {
+      type: "function",
+      function: { name: toolChoice.name },
+    };
   }
 
-  if ("function" in toolChoice && toolChoice.function?.name) {
-    return { tool: { name: toolChoice.function.name } };
-  }
-
-  return undefined;
+  return toolChoice;
 };
 
-const convertBedrockResponse = (
-  response: ConverseCommandOutput,
-  model: string
-): InvokeResult => {
-  const output = response.output;
-  const messageContent = output?.message?.content || [];
+const resolveApiUrl = () => {
+  if (!ENV.forgeApiUrl || ENV.forgeApiUrl.trim().length === 0) {
+    throw new Error("BUILT_IN_FORGE_API_URL is not configured");
+  }
+  return `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`;
+};
 
-  let textContent = "";
-  const toolCalls: ToolCall[] = [];
+const assertApiKey = () => {
+  if (!ENV.forgeApiKey) {
+    throw new Error("OPENAI_API_KEY is not configured");
+  }
+};
 
-  for (const block of messageContent) {
-    if ("text" in block && block.text) {
-      textContent += block.text;
-    } else if ("toolUse" in block && block.toolUse) {
-      toolCalls.push({
-        id: block.toolUse.toolUseId || `tool_${Date.now()}`,
-        type: "function",
-        function: {
-          name: block.toolUse.name || "",
-          arguments: JSON.stringify(block.toolUse.input || {}),
-        },
-      });
+const normalizeResponseFormat = ({
+  responseFormat,
+  response_format,
+  outputSchema,
+  output_schema,
+}: {
+  responseFormat?: ResponseFormat;
+  response_format?: ResponseFormat;
+  outputSchema?: OutputSchema;
+  output_schema?: OutputSchema;
+}):
+  | { type: "json_schema"; json_schema: JsonSchema }
+  | { type: "text" }
+  | { type: "json_object" }
+  | undefined => {
+  const explicitFormat = responseFormat || response_format;
+  if (explicitFormat) {
+    if (
+      explicitFormat.type === "json_schema" &&
+      !explicitFormat.json_schema?.schema
+    ) {
+      throw new Error(
+        "responseFormat json_schema requires a defined schema object"
+      );
     }
+    return explicitFormat;
   }
 
-  const finishReason = response.stopReason === "tool_use" ? "tool_calls" : "stop";
+  const schema = outputSchema || output_schema;
+  if (!schema) return undefined;
+
+  if (!schema.name || !schema.schema) {
+    throw new Error("outputSchema requires both name and schema");
+  }
 
   return {
-    id: `bedrock-${Date.now()}`,
-    created: Math.floor(Date.now() / 1000),
-    model,
-    choices: [
-      {
-        index: 0,
-        message: {
-          role: "assistant",
-          content: textContent,
-          ...(toolCalls.length > 0 ? { tool_calls: toolCalls } : {}),
-        },
-        finish_reason: finishReason,
-      },
-    ],
-    usage: response.usage
-      ? {
-          prompt_tokens: response.usage.inputTokens || 0,
-          completion_tokens: response.usage.outputTokens || 0,
-          total_tokens: (response.usage.inputTokens || 0) + (response.usage.outputTokens || 0),
-        }
-      : undefined,
+    type: "json_schema",
+    json_schema: {
+      name: schema.name,
+      schema: schema.schema,
+      ...(typeof schema.strict === "boolean" ? { strict: schema.strict } : {}),
+    },
   };
 };
 
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
+  assertApiKey();
+
   const {
     messages,
     tools,
     toolChoice,
     tool_choice,
-    maxTokens,
-    max_tokens,
     outputSchema,
     output_schema,
     responseFormat,
     response_format,
   } = params;
 
-  const client = getBedrockClient();
-  const { system, bedrockMessages } = convertMessages(messages);
-
-  const resolvedMaxTokens = maxTokens || max_tokens || 4096;
-
-  const commandInput: {
-    modelId: string;
-    messages: BedrockMessage[];
-    system?: Array<{ text: string }>;
-    inferenceConfig: { maxTokens: number };
-    toolConfig?: ToolConfiguration;
-  } = {
-    modelId: MODEL_ID,
-    messages: bedrockMessages,
-    inferenceConfig: {
-      maxTokens: resolvedMaxTokens,
-    },
+  const payload: Record<string, unknown> = {
+    model: "gemini-2.5-flash",
+    messages: messages.map(normalizeMessage),
   };
 
-  if (system) {
-    commandInput.system = [{ text: system }];
-  }
-
   if (tools && tools.length > 0) {
-    const toolConfig = convertTools(tools);
-    const bedrockToolChoice = convertToolChoice(toolChoice || tool_choice, tools);
-    if (bedrockToolChoice) {
-      toolConfig.toolChoice = bedrockToolChoice;
-    }
-    commandInput.toolConfig = toolConfig;
+    payload.tools = tools;
   }
 
-  const format = responseFormat || response_format;
-  const schema = outputSchema || output_schema;
-  if (format?.type === "json_object" || format?.type === "json_schema" || schema) {
-    if (system) {
-      commandInput.system = [
-        { text: `${system}\n\nYou must respond with valid JSON only, no other text.` },
-      ];
-    } else {
-      commandInput.system = [{ text: "You must respond with valid JSON only, no other text." }];
-    }
+  const normalizedToolChoice = normalizeToolChoice(
+    toolChoice || tool_choice,
+    tools
+  );
+  if (normalizedToolChoice) {
+    payload.tool_choice = normalizedToolChoice;
   }
 
-  const command = new ConverseCommand(commandInput);
-  const response = await client.send(command);
+  payload.max_tokens = 32768
+  payload.thinking = {
+    "budget_tokens": 128
+  }
 
-  return convertBedrockResponse(response, MODEL_ID);
+  const normalizedResponseFormat = normalizeResponseFormat({
+    responseFormat,
+    response_format,
+    outputSchema,
+    output_schema,
+  });
+
+  if (normalizedResponseFormat) {
+    payload.response_format = normalizedResponseFormat;
+  }
+
+  const response = await fetch(resolveApiUrl(), {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${ENV.forgeApiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`
+    );
+  }
+
+  return (await response.json()) as InvokeResult;
 }
