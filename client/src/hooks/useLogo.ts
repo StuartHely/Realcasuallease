@@ -22,8 +22,14 @@ export function useLogo(ownerId?: number) {
   // 2. If logged in user is owner, use their allocated logo
   // 3. Otherwise use platform default logo
   const logoData = ownerId ? ownerLogo : (myLogo || currentLogo);
-  const selectedLogoId = logoData?.logoId || logoData?.selectedLogo || "logo_1";
-  const currentLogoUrl = logoData?.logoUrl || allLogos?.[selectedLogoId as keyof typeof allLogos] || "/logos/logo_1.png";
+  
+  // Handle union type: { selectedLogo: string } | { logoId: string; logoUrl: string }
+  const selectedLogoId = logoData 
+    ? ('logoId' in logoData ? logoData.logoId : logoData.selectedLogo) 
+    : "logo_1";
+  const currentLogoUrl = logoData && 'logoUrl' in logoData 
+    ? logoData.logoUrl 
+    : (allLogos?.[selectedLogoId as keyof typeof allLogos] || "/logos/logo_1.png");
 
   return {
     selectedLogoId,

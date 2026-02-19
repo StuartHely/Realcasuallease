@@ -11,6 +11,7 @@
 
 import { jsPDF } from 'jspdf';
 import { getLogoAsBase64 } from './logoHelper';
+import { sendEmail } from './_core/email';
 
 export async function generatePDFWithLogo() {
   const doc = new jsPDF();

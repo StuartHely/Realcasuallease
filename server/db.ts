@@ -968,6 +968,42 @@ export async function rejectBooking(bookingId: number, reason: string, rejectedB
   });
 }
 
+export async function updateBookingStatus(
+  bookingId: number, 
+  status: "pending" | "confirmed" | "cancelled" | "completed" | "rejected",
+  changedBy?: number,
+  changedByName?: string,
+  reason?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Get booking to record previous status
+  const booking = await getBookingById(bookingId);
+  const previousStatus = booking?.status;
+
+  await db.update(bookings).set({
+    status,
+  }).where(eq(bookings.id, bookingId));
+  
+  // Record status history
+  await db.insert(bookingStatusHistory).values({
+    bookingId,
+    previousStatus: previousStatus as "pending" | "confirmed" | "cancelled" | "completed" | "rejected" | undefined,
+    newStatus: status,
+    changedBy: changedBy || null,
+    changedByName: changedByName || null,
+    reason: reason || `Status changed to ${status}`,
+  });
+}
+
+export async function updateUser(userId: number, updates: Partial<InsertUser>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.update(users).set(updates).where(eq(users.id, userId));
+}
+
 export async function updateUserInvoiceFlag(userId: number, canPayByInvoice: boolean) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
