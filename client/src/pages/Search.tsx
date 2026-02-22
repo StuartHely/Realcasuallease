@@ -1759,7 +1759,7 @@ export default function Search() {
                                     })()}
                                   </div>
                                   <CardDescription className="mt-2">
-                                    {site.description}
+                                    {site.description?.replace(/<[^>]*>/g, '')}
                                   </CardDescription>
 
                                 </div>

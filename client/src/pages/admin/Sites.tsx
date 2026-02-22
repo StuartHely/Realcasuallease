@@ -557,7 +557,7 @@ export default function AdminSites() {
                   <CardDescription><span dangerouslySetInnerHTML={{ __html: site.description || "No description" }} /></CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="w-full aspect-[3/2] rounded-md overflow-hidden">
+                  <div className="w-1/2 aspect-[3/2] rounded-md overflow-hidden mx-auto">
                     <SiteImageCarousel
                       images={[site.imageUrl1, site.imageUrl2, site.imageUrl3, site.imageUrl4]}
                       siteNumber={site.siteNumber || ""}
