@@ -101,25 +101,23 @@ export async function getYTDMetrics(siteIds: number[], year: number, financialYe
   // Get all confirmed bookings in date range
   // Use raw SQL to avoid the siteId mismatch issue between bookings and sites tables
   const ytdBookingsResult = await db.execute(sql`
-    SELECT 
-      b.siteId,
-      b.ownerAmount,
-      b.startDate,
-      b.endDate,
-      s.siteNumber as siteName,
+    SELECT
+      b."siteId",
+      b."ownerAmount",
+      b."startDate",
+      b."endDate",
+      s."siteNumber" as siteName,
       sc.name as centreName
     FROM bookings b
-    LEFT JOIN sites s ON b.siteId = s.id
-    LEFT JOIN shopping_centres sc ON s.centreId = sc.id
+    LEFT JOIN sites s ON b."siteId" = s.id
+    LEFT JOIN shopping_centres sc ON s."centreId" = sc.id
     WHERE b.status = 'confirmed'
-      AND b.startDate >= ${startDate}
-      AND b.startDate <= ${endDate}
+      AND b."startDate" >= ${startDate}
+      AND b."startDate" <= ${endDate}
   `);
   
   // db.execute returns rows for PostgreSQL
-  const ytdBookings = Array.isArray(ytdBookingsResult) && ytdBookingsResult.length > 0 
-    ? (Array.isArray(ytdBookingsResult[0]) ? ytdBookingsResult[0] : ytdBookingsResult) 
-    : [];
+  const ytdBookings = ytdBookingsResult.rows || [];
   
   console.log('[YTD Debug] Bookings found:', ytdBookings.length);
   if (ytdBookings.length > 0) {
@@ -128,19 +126,19 @@ export async function getYTDMetrics(siteIds: number[], year: number, financialYe
   
   // Debug: Check what bookings exist in the database using raw SQL
   const rawBookings = await db.execute(sql`
-    SELECT b.siteId, b.status, b.startDate, b.ownerAmount, s.id as sites_table_id
-    FROM bookings b
-    LEFT JOIN sites s ON b.siteId = s.id
-    WHERE b.status = 'confirmed' AND b.startDate >= '2025-07-01'
+    SELECT b."siteId", b.status, b."startDate", b."ownerAmount", s.id as sites_table_id
+FROM bookings b
+LEFT JOIN sites s ON b."siteId" = s.id
+WHERE b.status = 'confirmed' AND b."startDate" >= '2025-07-01'
     LIMIT 5
   `);
   console.log('[YTD Debug] Raw SQL bookings:', JSON.stringify(rawBookings, null, 2));
   
   // Debug: Check if any bookings have startDate before today
   const pastBookings = await db.execute(sql`
-    SELECT COUNT(*) as cnt, MIN(startDate) as earliest, MAX(startDate) as latest
-    FROM bookings 
-    WHERE status = 'confirmed' AND startDate >= '2025-07-01' AND startDate < '2026-01-18'
+    SELECT COUNT(*) as cnt, MIN("startDate") as earliest, MAX("startDate") as latest
+FROM bookings 
+WHERE status = 'confirmed' AND "startDate" >= '2025-07-01' AND "startDate" < '2026-01-18'
   `);
   console.log('[YTD Debug] Past bookings (before today):', JSON.stringify(pastBookings, null, 2));
   

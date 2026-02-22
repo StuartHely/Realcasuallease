@@ -69,7 +69,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
         title: "Content Management",
         items: [
           { icon: Building2, label: "Shopping Centres", path: "/admin/centres" },
-          { icon: MapPin, label: "Sites", path: "/admin/sites" },
+          { icon: MapPin, label: "Casual Leasing Sites", path: "/admin/sites" },
           { icon: Store, label: "Vacant Shops", path: "/admin/vacant-shops" },
           { icon: Layers, label: "Third Line Income", path: "/admin/third-line-income" },
           { icon: Tag, label: "Third Line Categories", path: "/admin/third-line-categories" },
@@ -136,7 +136,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
         title: "Management",
         items: [
           { icon: Building2, label: "My Centres", path: "/admin/centres" },
-          { icon: MapPin, label: "Sites", path: "/admin/sites" },
+          { icon: MapPin, label: "Casual Leasing Sites", path: "/admin/sites" },
           { icon: Calendar, label: "Bookings", path: "/admin/bookings" },
           { icon: DollarSign, label: "Reports", path: "/admin/financials" },
         ],
@@ -158,7 +158,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
         title: "Content",
         items: [
           { icon: Building2, label: "Centres", path: "/admin/centres" },
-          { icon: MapPin, label: "Sites", path: "/admin/sites" },
+          { icon: MapPin, label: "Casual Leasing Sites", path: "/admin/sites" },
           { icon: FileText, label: "Content", path: "/admin/content" },
         ],
       },

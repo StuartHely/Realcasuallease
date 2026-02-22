@@ -15,6 +15,20 @@
       "when": 1771288986780,
       "tag": "0001_nostalgic_preak",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1771395838014,
+      "tag": "0002_complete_madame_masque",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1771459684915,
+      "tag": "0003_flippant_ultimates",
+      "breakpoints": true
     }
   ]
 }

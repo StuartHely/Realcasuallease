@@ -283,7 +283,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
 
                 {hoveredSite.description && (
                   <p className="text-sm text-gray-700 line-clamp-2">
-                    {hoveredSite.description}
+                    {hoveredSite.description?.replace(/<[^>]*>/g, '')}
                   </p>
                 )}
 
@@ -571,7 +571,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
                   </span>
                 </div>
                 {hoveredSite.description && (
-                  <p className="text-sm text-gray-700 line-clamp-2">{hoveredSite.description}</p>
+                  <p className="text-sm text-gray-700 line-clamp-2">{hoveredSite.description?.replace(/<[^>]*>/g, '')}</p>
                 )}
                 {(hoveredSite.size || hoveredSite.totalSizeM2 || hoveredSite.dimensions) && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
