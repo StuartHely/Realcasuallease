@@ -1935,7 +1935,7 @@ export default function Search() {
             })}
             
             {/* Centre Floor Plan Map - Show below sites listing */}
-            {data.floorLevels && data.floorLevels.length > 0 && data.floorLevels.some((fl: any) => fl.mapImageUrl) && (
+            {((data.floorLevels && data.floorLevels.length > 0 && data.floorLevels.some((fl: any) => fl.mapImageUrl)) || data.centres[0]?.mapImageUrl) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Centre Floor Plan</CardTitle>
@@ -1946,7 +1946,7 @@ export default function Search() {
                 <CardContent>
                   <InteractiveMap
                     centreId={data.centres[0].id}
-                    mapUrl={data.floorLevels.find((fl: any) => fl.mapImageUrl)?.mapImageUrl || ''}
+                    mapUrl={data.floorLevels?.find((fl: any) => fl.mapImageUrl)?.mapImageUrl || data.centres[0]?.mapImageUrl || ''}
                     sites={combinedSites}
                     centreName={data.centres[0].name}
                     assetTypeFilter={selectedAssetType}
