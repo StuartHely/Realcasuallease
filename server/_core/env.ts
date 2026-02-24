@@ -13,8 +13,8 @@ export const ENV = {
   awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID ?? "",
   awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? "",
   // AWS Location Service - matches Terraform module output names
-  amazonLocationPlaceIndex: process.env.AMAZON_LOCATION_PLACE_INDEX ?? "tinkertank-dev-place-index",
-  amazonLocationRouteCalculator: process.env.AMAZON_LOCATION_ROUTE_CALCULATOR ?? "tinkertank-dev-route-calculator",
+  amazonLocationPlaceIndex: process.env.AMAZON_LOCATION_PLACE_INDEX ?? "casuallease-place-index",
+  amazonLocationRouteCalculator: process.env.AMAZON_LOCATION_ROUTE_CALCULATOR ?? "casuallease-route-calculator",
   // SMTP configuration
   smtpHost: process.env.SMTP_HOST ?? "",
   smtpPort: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587,

@@ -32,7 +32,7 @@ pnpm test
 │  - Vite + React 19 + TypeScript                                 │
 │  - TailwindCSS + Radix UI components                            │
 │  - tRPC client for type-safe API calls                          │
-│  - MapLibre GL for maps (powered by Amazon Location)            │
+│  - Google Maps (overview map, autocomplete) + MapLibre GL       │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -40,14 +40,14 @@ pnpm test
 │                      Server (Express + tRPC)                    │
 │  - Express.js with tRPC router                                  │
 │  - Drizzle ORM for database operations                          │
-│  - JWT-based authentication                                     │
-│  - AWS SDK integrations                                         │
+│  - Dual auth: JWT password-based (primary) + OAuth fallback     │
+│  - Forge API proxy for storage, AWS SDK for other services      │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                        AWS Services                             │
-│  - S3: File storage (images, documents)                         │
+│  - Storage: Forge API proxy (S3 SDK installed but secondary)    │
 │  - Location Service: Geocoding, places, routing                 │
 │  - Bedrock: LLM (Claude), Image generation (Stable Diffusion)   │
 │  - Transcribe: Voice-to-text                                    │
@@ -71,16 +71,25 @@ pnpm test
 ├── server/                 # Express backend
 │   ├── _core/              # Core infrastructure
 │   │   ├── index.ts        # Server entry point
-│   │   ├── trpc.ts         # tRPC router setup
+│   │   ├── trpc.ts         # tRPC setup + procedure hierarchy
+│   │   ├── context.ts      # Dual auth (JWT + OAuth fallback)
 │   │   ├── env.ts          # Environment variables
+│   │   ├── rateLimit.ts    # IP-based login rate limiter
 │   │   ├── authService.ts  # Authentication logic
-│   │   ├── amazonLocation.ts # AWS Location Service
+│   │   ├── amazonLocation.ts # AWS Location (geocoding, directions)
 │   │   ├── llm.ts          # AWS Bedrock LLM
 │   │   ├── imageGeneration.ts # AWS Bedrock images
 │   │   └── voiceTranscription.ts # AWS Transcribe
-│   ├── routers.ts          # All tRPC procedures
+│   ├── routers.ts          # Thin aggregator (~55 lines)
+│   ├── routers/            # 17 domain-specific router files
+│   │   ├── auth.ts, profile.ts, centres.ts, sites.ts
+│   │   ├── bookings.ts, search.ts, admin.ts, users.ts
+│   │   ├── usageCategories.ts, searchAnalytics.ts
+│   │   ├── systemConfig.ts, faqs.ts, dashboard.ts
+│   │   ├── budgets.ts, owners.ts, adminBooking.ts
+│   │   └── assets.ts
 │   ├── db.ts               # Database queries
-│   └── storage.ts          # AWS S3 operations
+│   └── storage.ts          # Forge API proxy for file storage
 │
 ├── shared/                 # Shared code (client + server)
 │   └── types.ts            # Shared TypeScript types
@@ -96,7 +105,8 @@ pnpm test
 │
 ├── scripts/                # Utility scripts
 │   ├── seed-admin-user.ts  # Create admin user
-│   └── import-*.ts         # Data import scripts
+│   ├── import-*.ts         # Data import scripts
+│   └── debug/              # 68 debug/test scripts (moved from root)
 │
 └── .github/workflows/      # CI/CD
     └── deploy.yml          # EKS deployment
@@ -114,11 +124,15 @@ pnpm test
 | `AWS_S3_BUCKET` | S3 bucket for file storage |
 | `AWS_ACCESS_KEY_ID` | AWS credentials (or use IRSA) |
 | `AWS_SECRET_ACCESS_KEY` | AWS credentials (or use IRSA) |
+| `BUILT_IN_FORGE_API_URL` | Storage proxy base URL (required for file storage) |
+| `BUILT_IN_FORGE_API_KEY` | Storage proxy API key (required for file storage) |
 
 ### Optional
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `OAUTH_SERVER_URL` | OAuth server for legacy auth | - |
+| `OWNER_OPEN_ID` | Owner OAuth identifier | - |
 | `AMAZON_LOCATION_PLACE_INDEX` | Place index name | `casuallease-place-index` |
 | `AMAZON_LOCATION_ROUTE_CALCULATOR` | Route calculator name | `casuallease-route-calculator` |
 | `SMTP_HOST` | Email server host | - |
@@ -129,8 +143,10 @@ pnpm test
 
 ## AWS Services Integration
 
-### S3 - File Storage
+### File Storage (Forge API Proxy)
 **File:** `server/storage.ts`
+
+Storage uses a **Forge API proxy** (`BUILT_IN_FORGE_API_URL` + `BUILT_IN_FORGE_API_KEY`), not direct AWS S3 SDK calls. The AWS S3 SDK is installed but only used for specific secondary operations.
 
 ```typescript
 import { storagePut, storageGet } from './storage';
@@ -138,7 +154,7 @@ import { storagePut, storageGet } from './storage';
 // Upload a file
 const { url } = await storagePut('path/to/file.jpg', buffer, 'image/jpeg');
 
-// Get download URL (presigned, 1hr expiry)
+// Get download URL
 const { url } = await storageGet('path/to/file.jpg');
 ```
 
@@ -227,23 +243,39 @@ Key tables in `drizzle/schema.ts`:
 - `customer` - Can browse and book sites
 - `owner_centre_manager` - Manage specific centre
 - `owner_state_admin` - Manage centres in a state
+- `mega_state_admin` - State-level admin access
 - `mega_admin` - Full system access
+
+### Auth Procedure Hierarchy (`server/_core/trpc.ts`)
+- `publicProcedure` — anyone (no auth required)
+- `protectedProcedure` — any logged-in user
+- `ownerProcedure` — any non-customer role (all owner_* + mega_state_admin + mega_admin)
+- `adminProcedure` — mega_admin or mega_state_admin only
+
+### Authentication
+Dual auth system in `server/_core/context.ts`: password-based JWT (primary, 7-day sessions) with SDK/OAuth fallback. Login is rate-limited (5 attempts per 15min via `server/_core/rateLimit.ts`). A future **Cognito** integration is planned to replace the custom JWT auth.
 
 ## Adding New Features
 
 ### Adding a New API Endpoint
 
-1. Add the procedure to `server/routers.ts`:
+1. Add the procedure to the appropriate domain router in `server/routers/`:
 
 ```typescript
-// In the appropriate router section
-myNewEndpoint: protectedProcedure
+// server/routers/myDomain.ts
+import { protectedProcedure } from "../_core/trpc";
+import { z } from "zod";
+import * as db from "../db";
+
+export const myNewEndpoint = protectedProcedure
   .input(z.object({ id: z.number() }))
   .query(async ({ input, ctx }) => {
     // Access user via ctx.user
     return await db.getMyData(input.id);
-  }),
+  });
 ```
+
+If creating a new router file, register it in `server/routers.ts`.
 
 2. Add database function if needed in `server/db.ts`:
 
@@ -378,9 +410,9 @@ kubectl exec -it -n casuallease <pod> -- node -e "
 | State | TanStack Query, tRPC |
 | Backend | Express, tRPC, Node.js |
 | Database | PostgreSQL, Drizzle ORM |
-| Auth | JWT, bcrypt |
-| Maps | MapLibre GL, Amazon Location |
-| Storage | AWS S3 |
+| Auth | JWT (7-day sessions), bcrypt, OAuth fallback |
+| Maps | Google Maps (client), Amazon Location (server), MapLibre GL |
+| Storage | Forge API proxy (S3 SDK secondary) |
 | AI | AWS Bedrock (Claude, Stable Diffusion) |
 | Deployment | Docker, Kubernetes (EKS) |
 | CI/CD | GitHub Actions |

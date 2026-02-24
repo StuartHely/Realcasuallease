@@ -28,7 +28,8 @@ metadata:
     # -----------------------------------------------------------------------------
     # SSL/TLS Configuration
     # -----------------------------------------------------------------------------
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-southeast-2:315560623667:certificate/cca311fb-15c1-4af2-a9cb-b5ce4de53025
+    # Set via ACM_CERTIFICATE_ARN secret in CI/CD pipeline
+    alb.ingress.kubernetes.io/certificate-arn: REPLACE_WITH_ACM_CERTIFICATE_ARN
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
     alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
