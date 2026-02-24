@@ -193,10 +193,21 @@ export default function AdminMaps() {
     }
   };
 
-  const handleUploadMap = async () => {
+    const handleUploadMap = async () => {
     if (!mapImage || selectedCentreId === 0) {
       toast.error("Please select a centre and choose a map image");
       return;
+    }
+
+    // Validate floor has a name before upload
+    if (selectedFloorLevelId) {
+      const selectedFloor = floorLevels.find((f: any) => f.id === selectedFloorLevelId);
+      if (!selectedFloor?.levelName || selectedFloor.levelName.trim() === '') {
+        toast.error("⚠️ Please name this floor level before uploading", {
+          description: "Go to 'Add New Floor Level' section below to set a name first"
+        });
+        return;
+      }
     }
 
     const reader = new FileReader();

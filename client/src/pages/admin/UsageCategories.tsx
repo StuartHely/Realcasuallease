@@ -268,7 +268,7 @@ export default function UsageCategories() {
                 <SelectContent>
                   {sitesWithCategories.map((site) => (
                     <SelectItem key={site.id} value={site.id.toString()}>
-                      {site.siteNumber} - {site.description || "No description"}
+                      {site.siteNumber} - {site.description?.replace(/<[^>]*>/g, '') || "No description"}
                     </SelectItem>
                   ))}
                 </SelectContent>
