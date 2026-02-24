@@ -100,7 +100,13 @@ export const appRouter = router({
         if (!centre) throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
         return centre;
       }),
-    
+    getBySlug: publicProcedure
+      .input(z.object({ slug: z.string() }))
+      .query(async ({ input }) => {
+        const centre = await db.getShoppingCentreBySlug(input.slug);
+        if (!centre) throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+        return centre;
+      }),    
     getSites: publicProcedure
       .input(z.object({ centreId: z.number() }))
       .query(async ({ input }) => {

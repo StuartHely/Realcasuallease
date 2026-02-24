@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Save } from "lucide-react";
+import { cleanHtmlDescription } from "@/lib/htmlUtils";
 
 export default function AdminSiteAssignment() {
   const [, setLocation] = useLocation();
@@ -167,7 +168,7 @@ export default function AdminSiteAssignment() {
                       return (
                         <TableRow key={site.id}>
                           <TableCell className="font-medium">{site.siteNumber}</TableCell>
-                          <TableCell className="max-w-xs truncate">{site.description || "—"}</TableCell>
+                          <TableCell className="max-w-xs truncate">{cleanHtmlDescription(site.description) || "—"}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {site.size || "—"}
                           </TableCell>

@@ -294,7 +294,7 @@ export function EditCentreDialog({ centre, open, onOpenChange }: EditCentreDialo
                 id="state"
                 value={formData.state}
                 onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                placeholder="e.g., NSW, VIC, QLD"
+                placeholder="e.g., NSW, VIC, QLD, ACT, NT"
               />
             </div>
 

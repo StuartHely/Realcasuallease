@@ -297,6 +297,7 @@ export async function getShoppingCentreById(id: number) {
   };
 }
 
+
 export async function getShoppingCentresByState(state: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -324,6 +325,49 @@ export async function getNearbyCentres(centreId: number, radiusKm: number = 10) 
   const nearby = findNearbyCentres(allCentres, centreId, radiusKm);
   
   return nearby;
+}
+
+export async function getShoppingCentreBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const centres = await db
+    .select()
+    .from(shoppingCentres)
+    .where(eq(shoppingCentres.slug, slug))
+    .limit(1);
+  
+  if (!centres[0]) return null;
+  
+  // Get the first floor level's map image URL if it exists
+  const [firstFloor] = await db
+    .select({ mapImageUrl: floorLevels.mapImageUrl })
+    .from(floorLevels)
+    .where(eq(floorLevels.centreId, centres[0].id))
+    .orderBy(floorLevels.displayOrder)
+    .limit(1);
+  
+  return {
+    ...centres[0],
+    mapImageUrl: firstFloor?.mapImageUrl || centres[0].mapImageUrl,
+  };
+}
+
+export async function getShoppingCentreByIdOrSlug(idOrSlug: string | number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  // Try parsing as number first
+  const id = typeof idOrSlug === 'number' ? idOrSlug : parseInt(idOrSlug);
+  
+  if (!isNaN(id)) {
+    // It's a number, use ID lookup
+    return await getShoppingCentreById(id);
+  }
+  
+  // It's a slug, use slug lookup
+  return await getShoppingCentreBySlug(idOrSlug as string);
+
 }
 
 export async function searchShoppingCentres(query: string, stateFilter?: string) {
