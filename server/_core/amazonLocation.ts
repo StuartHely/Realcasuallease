@@ -49,7 +49,7 @@ export async function searchPlaces(
 
   const response = await client.send(command);
 
-  return (response.Results ?? []).map((result) => {
+  return (response.Results ?? []).map((result: { PlaceId?: string; Place?: { Label?: string; AddressNumber?: string; Street?: string; Municipality?: string; SubRegion?: string; Region?: string; PostalCode?: string; Geometry?: { Point?: number[] } } }) => {
     const place = result.Place!;
     return {
       placeId: result.PlaceId ?? "",
@@ -73,7 +73,7 @@ export async function getPlaceSuggestions(
 
   const response = await client.send(command);
 
-  return (response.Results ?? []).map((result) => ({
+  return (response.Results ?? []).map((result: { PlaceId?: string; Text?: string }) => ({
     placeId: result.PlaceId ?? "",
     text: result.Text ?? "",
     description: result.Text,

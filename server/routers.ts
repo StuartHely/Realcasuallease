@@ -1760,6 +1760,7 @@ export const appRouter = router({
     // Booking Approval Management
     getPendingApprovals: adminProcedure
       .query(async () => {
+        const { scanInsuranceDocument, validateInsurance } = await import('./insuranceScanner');
         const pendingBookings = await db.getBookingsByStatus('pending');
         
         // Get additional details for each booking
@@ -1865,6 +1866,29 @@ export const appRouter = router({
                 approvalReason = reasons.join('; ');
               }
               
+              // Scan insurance document if exists
+              let insuranceScan = null;
+              let insuranceValidation = null;
+              
+              if (customerProfile?.insuranceDocumentUrl) {
+                try {
+                  const scanResult = await scanInsuranceDocument(customerProfile.insuranceDocumentUrl);
+                  insuranceScan = scanResult;
+                  insuranceValidation = validateInsurance(scanResult);
+                } catch (error) {
+                  console.error('[getPendingApprovals] Error scanning insurance:', error);
+                  insuranceValidation = {
+                    valid: false,
+                    errors: ['Error scanning insurance document - manual review required']
+                  };
+                }
+              } else {
+                insuranceValidation = {
+                  valid: false,
+                  errors: ['No insurance document uploaded']
+                };
+              }
+              
               return {
                 ...booking,
                 centreName: centre?.name || 'Unknown Centre',
@@ -1875,6 +1899,9 @@ export const appRouter = router({
                 usageTypeName: usageType?.name,
                 approvalReason,
                 insuranceExpired,
+                insuranceScan,
+                insuranceValidation,
+                insuranceDocumentUrl: customerProfile?.insuranceDocumentUrl || null,
               };
             })
         );

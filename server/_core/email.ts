@@ -11,6 +11,7 @@ export interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
+  text?: string;
   attachments?: EmailAttachment[];
 }
 
@@ -44,6 +45,11 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
       subject: options.subject,
       html: options.html,
     };
+
+    // Add text version if provided
+    if (options.text) {
+      mailOptions.text = options.text;
+    }
 
     // Add attachments if provided
     if (options.attachments && options.attachments.length > 0) {
