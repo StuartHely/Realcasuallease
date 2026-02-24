@@ -1,11 +1,14 @@
-﻿import Fuse from 'fuse.js';
+﻿import Fuse, { FuseResult } from 'fuse.js';
 
 const STRICT_THRESHOLD = 0.3;
 
+type CentreItem = { id: number; name: string | null; suburb: string | null; state: string | null };
+type SiteItem = { siteId: number; siteNumber: string | null; description: string | null; centreName: string | null; suburb: string | null; categories: string[] };
+
 export async function fuzzySearchCentres(
   query: string,
-  centres: Array<{ id: number; name: string | null; suburb: string | null; state: string | null }>
-): Promise<Array<{ id: number; name: string | null; suburb: string | null; state: string | null; score: number }>> {
+  centres: Array<CentreItem>
+): Promise<Array<CentreItem & { score: number }>> {
   if (!query.trim()) return centres.map(c => ({ ...c, score: 1 }));
   const fuse = new Fuse(centres, {
     keys: [{ name: 'name', weight: 0.7 }, { name: 'suburb', weight: 0.3 }],
@@ -14,13 +17,13 @@ export async function fuzzySearchCentres(
     ignoreLocation: true,
     minMatchCharLength: 2,
   });
-  const results = fuse.search(query);
-  return results.map(result => ({ ...result.item, score: 1 - (result.score || 0) }));
+  const results: FuseResult<CentreItem>[] = fuse.search(query);
+  return results.map((result: FuseResult<CentreItem>) => ({ ...result.item, score: 1 - (result.score || 0) }));
 }
 
 export async function fuzzySearchSites(
   query: string,
-  sites: Array<{ siteId: number; siteNumber: string | null; description: string | null; centreName: string | null; suburb: string | null; categories: string[] }>
+  sites: Array<SiteItem>
 ): Promise<Array<{ siteId: number; score: number }>> {
   if (!query.trim()) return sites.map(s => ({ siteId: s.siteId, score: 1 }));
   const fuse = new Fuse(sites, {
@@ -30,6 +33,6 @@ export async function fuzzySearchSites(
     ignoreLocation: true,
     minMatchCharLength: 2,
   });
-  const results = fuse.search(query);
-  return results.map(result => ({ siteId: result.item.siteId, score: 1 - (result.score || 0) }));
+  const results: FuseResult<SiteItem>[] = fuse.search(query);
+  return results.map((result: FuseResult<SiteItem>) => ({ siteId: result.item.siteId, score: 1 - (result.score || 0) }));
 }

@@ -7,8 +7,8 @@ import { getSeasonalRatesForDateRange } from './seasonalRatesDb';
 
 interface Site {
   id: number;
-  pricePerDay: string | number;
-  pricePerWeek: string | number;
+  pricePerDay: string | number | null;
+  pricePerWeek: string | number | null;
   weekendPricePerDay?: string | number | null;
 }
 
@@ -29,8 +29,8 @@ export async function calculateBookingCost(
   startDate: Date,
   endDate: Date
 ): Promise<{ totalAmount: number; weekdayCount: number; weekendCount: number; seasonalDays?: { date: string; rate: number; name: string; isSeasonalRate: boolean }[] }> {
-  const basePricePerDay = Number(site.pricePerDay);
-  const pricePerWeek = Number(site.pricePerWeek);
+  const basePricePerDay = Number(site.pricePerDay ?? 150);
+  const pricePerWeek = Number(site.pricePerWeek ?? 750);
   const baseWeekendPricePerDay = site.weekendPricePerDay ? Number(site.weekendPricePerDay) : basePricePerDay;
 
   // Calculate total days (inclusive of both start and end dates)

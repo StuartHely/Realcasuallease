@@ -138,9 +138,9 @@ export async function getSiteAvailabilityGrid(
   sites: Array<{
     id: number;
     siteNumber: string;
-    pricePerDay: string;
+    pricePerDay: string | null;
     weekendPricePerDay: string | null;
-    pricePerWeek: string;
+    pricePerWeek: string | null;
     maxTables: number | null;
   }>;
   bookings: Array<{
