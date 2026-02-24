@@ -170,6 +170,7 @@ jobs:
           
           # Replace placeholder in deployment.yml before applying
           sed -i "s|PLACEHOLDER_IMAGE:latest|$IMAGE|g" k8s/deployment.yml
+          sed -i "s|REPLACE_WITH_ACM_CERTIFICATE_ARN|${{ secrets.ACM_CERTIFICATE_ARN }}|g" k8s/ingress.yml
           
           # Apply all Kubernetes manifests
           kubectl apply -f k8s/configmap.yml -n casuallease
@@ -191,17 +192,17 @@ jobs:
           POD=$(kubectl get pods -n casuallease -l app=casuallease -o jsonpath='{.items[0].metadata.name}')
           
           echo "Running database migrations on pod $POD..."
-          kubectl exec -n casuallease $POD -- node -e "
-            const { drizzle } = require('drizzle-orm/node-postgres');
-            const { migrate } = require('drizzle-orm/node-postgres/migrator');
+          kubectl exec -n casuallease $POD -- node --input-type=module -e "
+            import { drizzle } from 'drizzle-orm/node-postgres';
+            import { migrate } from 'drizzle-orm/node-postgres/migrator';
             const db = drizzle(process.env.DATABASE_URL);
-            migrate(db, { migrationsFolder: './drizzle' }).then(() => {
+            try {
+              await migrate(db, { migrationsFolder: './drizzle' });
               console.log('Migrations complete');
-              process.exit(0);
-            }).catch(err => {
+            } catch (err) {
               console.error('Migration failed:', err);
               process.exit(1);
-            });
+            }
           " || echo "Migration step skipped or failed - may need manual intervention"
           
           echo "Seeding admin user (idempotent)..."

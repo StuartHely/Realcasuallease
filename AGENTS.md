@@ -34,10 +34,19 @@ ssh-agent bash -c "ssh-add ~/.ssh/stuart_new && git push origin main"
 - Use existing Radix UI components from `@/components/ui/`
 
 ### Server
-- All API routes in `server/routers.ts` using tRPC
+- API routes split into domain-specific files in `server/routers/` (17 files)
+- `server/routers.ts` is a thin aggregator (~55 lines) that imports and merges all sub-routers
+- Sub-routers: `auth.ts`, `profile.ts`, `centres.ts`, `sites.ts`, `bookings.ts`, `search.ts`, `admin.ts`, `users.ts`, `usageCategories.ts`, `searchAnalytics.ts`, `systemConfig.ts`, `faqs.ts`, `dashboard.ts`, `budgets.ts`, `owners.ts`, `adminBooking.ts`, `assets.ts`
 - Database queries in `server/db.ts`
 - Core infrastructure in `server/_core/`
-- Use `publicProcedure`, `protectedProcedure`, or `adminProcedure`
+- Auth procedure hierarchy (defined in `server/_core/trpc.ts`):
+  - `publicProcedure` — anyone (no auth required)
+  - `protectedProcedure` — any logged-in user
+  - `ownerProcedure` — any non-customer role (all owner_* + mega_state_admin + mega_admin)
+  - `adminProcedure` — mega_admin or mega_state_admin only
+- Rate limiting on login: `server/_core/rateLimit.ts` (in-memory IP-based, 5 attempts per 15min)
+- JWT sessions last 7 days (`SESSION_MAX_AGE_MS` in `shared/const.ts`)
+- **Auth system:** Dual auth — password-based JWT (primary) with SDK/OAuth fallback. A future Cognito integration is planned to replace the custom JWT auth.
 
 ### Database
 - Schema in `drizzle/schema.ts`
@@ -49,14 +58,22 @@ ssh-agent bash -c "ssh-add ~/.ssh/stuart_new && git push origin main"
 
 ### Adding an API endpoint
 
+Add to the appropriate domain router file in `server/routers/`:
+
 ```typescript
-// server/routers.ts
-myEndpoint: protectedProcedure
+// server/routers/myDomain.ts
+import { protectedProcedure } from "../_core/trpc";
+import { z } from "zod";
+import * as db from "../db";
+
+export const myEndpoint = protectedProcedure
   .input(z.object({ id: z.number() }))
   .query(async ({ input, ctx }) => {
     return await db.getById(input.id);
-  }),
+  });
 ```
+
+Then register it in `server/routers.ts` if creating a new router file.
 
 ### Adding a database query
 
@@ -84,17 +101,19 @@ Then add to `client/src/App.tsx`:
 <Route path="/my-page" component={MyPage} />
 ```
 
-## AWS Services
+## AWS Services & Integrations
 
-All AWS integrations use the SDK and are in `server/_core/`:
+AWS integrations are in `server/_core/`. Storage uses a Forge API proxy, not direct S3 SDK calls.
 
 | Service | File | Usage |
 |---------|------|-------|
-| S3 | `storage.ts` | `storagePut()`, `storageGet()` |
-| Location | `amazonLocation.ts` | `geocode()`, `placesAutocomplete()` |
+| Storage (Forge proxy) | `server/storage.ts` | `storagePut()`, `storageGet()` — uses `BUILT_IN_FORGE_API_URL`/`BUILT_IN_FORGE_API_KEY`, NOT direct S3 SDK |
+| Location | `amazonLocation.ts` | `geocode()`, `placesAutocomplete()` — server-side geocoding & directions |
 | Bedrock LLM | `llm.ts` | `invokeLLM()` |
 | Bedrock Images | `imageGeneration.ts` | `generateImage()` |
 | Transcribe | `voiceTranscription.ts` | `transcribeAudio()` |
+
+**Maps:** Google Maps for the Australia overview map and address autocomplete (client-side). Amazon Location for geocoding and directions (server-side).
 
 ### Adding a new AWS service
 
@@ -125,6 +144,23 @@ ENV.awsRegion
 ENV.awsS3Bucket
 ```
 
+Key env vars (some undocumented in previous versions):
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `JWT_SECRET` | Secret for JWT token signing |
+| `BUILT_IN_FORGE_API_URL` | Storage proxy base URL (required for file storage) |
+| `BUILT_IN_FORGE_API_KEY` | Storage proxy API key (required for file storage) |
+| `OAUTH_SERVER_URL` | OAuth server for legacy auth |
+| `OWNER_OPEN_ID` | Owner OAuth identifier |
+| `AWS_REGION` | AWS region (default: `ap-southeast-2`) |
+| `AWS_S3_BUCKET` | S3 bucket name |
+| `AWS_ACCESS_KEY_ID` | AWS credentials (or use IRSA) |
+| `AWS_SECRET_ACCESS_KEY` | AWS credentials (or use IRSA) |
+
+Amazon Location defaults use `casuallease-*` prefix (e.g., `casuallease-place-index`).
+
 To add a new env var, update `server/_core/env.ts`.
 
 ## Database Schema
@@ -136,7 +172,7 @@ Key tables:
 - `bookings` - Reservations
 - `owners` - Centre owners
 
-Role hierarchy: `customer` < `owner_*` < `mega_admin`
+Role hierarchy: `customer` < `owner_*` < `mega_state_admin` < `mega_admin`
 
 ## Testing
 
@@ -144,12 +180,18 @@ Role hierarchy: `customer` < `owner_*` < `mega_admin`
 - Use Vitest
 - Mock DB with in-memory or test database
 
+## Scripts
+
+- Debug/test scripts are in `scripts/debug/` (68 files moved from root)
+- Utility scripts (seed, import) remain in `scripts/`
+
 ## Deployment
 
 - Push to `main` triggers GitHub Actions
 - Builds ARM64 Docker image
 - Deploys to EKS namespace `casuallease`
-- Runs migrations automatically
+- Runs migrations automatically (uses ESM imports, not `require()`)
+- `ingress.yml` ACM certificate ARN uses `REPLACE_WITH_ACM_CERTIFICATE_ARN` placeholder, sed-replaced from `secrets.ACM_CERTIFICATE_ARN` in CI
 
 ## Common Fixes
 
