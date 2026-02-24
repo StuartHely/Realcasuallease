@@ -1550,10 +1550,43 @@ export const appRouter = router({
         return { url };
       }),
 
+    uploadSitePanorama: adminProcedure
+      .input(z.object({
+        siteId: z.number(),
+        base64Image: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { processPanoramaImage } = await import('./imageProcessing');
+        const { url } = await processPanoramaImage(
+          input.base64Image,
+          input.siteId
+        );
+        
+        await db.updateSite(input.siteId, {
+          hasPanorama: true,
+          panoramaImageUrl: url,
+        });
+        
+        return { success: true, url };
+      }),
+
     deleteSite: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         return await db.deleteSite(input.id);
+      }),
+
+    removeSitePanorama: adminProcedure
+      .input(z.object({
+        siteId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateSite(input.siteId, {
+          hasPanorama: false,
+          panoramaImageUrl: null,
+        });
+        
+        return { success: true };
       }),
 
     // Map Management
@@ -2380,17 +2413,24 @@ export const appRouter = router({
           throw new TRPCError({ code: "FORBIDDEN", message: "Only MegaAdmin can upload logos" });
         }
 
-        const { storagePut } = await import('./storage');
-        
         // Extract base64 data
         const base64Data = input.base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
         const buffer = Buffer.from(base64Data, 'base64');
+
+        // Save locally to client/public/logos/
+        const fs = await import('fs/promises');
+        const path = await import('path');
         
-        // Store logo with fixed name based on logoId
-        const fileKey = `logos/${input.logoId}.png`;
-        const { url } = await storagePut(fileKey, buffer, 'image/png');
+        // Ensure logos directory exists
+        const logosDir = path.join(process.cwd(), 'client', 'public', 'logos');
+        await fs.mkdir(logosDir, { recursive: true });
         
-        // Store the URL in system config for this logo slot
+        // Save the file
+        const filePath = path.join(logosDir, `${input.logoId}.png`);
+        await fs.writeFile(filePath, buffer);
+        
+        // Store the local URL in system config
+        const url = `/logos/${input.logoId}.png`;
         await setConfigValue(`${input.logoId}_url`, url);
         
         return { success: true, url };
@@ -2527,6 +2567,25 @@ export const appRouter = router({
         );
 
       return owners;
+    }),
+
+    // Get rate validation alerts
+    getRateValidationAlerts: publicProcedure.query(async () => {
+      const { getRateValidationAlerts } = await import("./rateValidator");
+      return await getRateValidationAlerts();
+    }),
+
+    // Get last rate validation check time
+    getLastRateCheck: publicProcedure.query(async () => {
+      const { getLastRateCheck } = await import("./rateValidator");
+      return await getLastRateCheck();
+    }),
+
+    // Manually trigger rate validation (admin only)
+    triggerRateValidation: adminProcedure.mutation(async () => {
+      const { checkSiteRates } = await import("./rateValidator");
+      const alerts = await checkSiteRates();
+      return { alertCount: alerts.length, alerts };
     }),
   }),
 

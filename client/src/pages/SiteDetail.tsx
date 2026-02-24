@@ -382,7 +382,7 @@ export default function SiteDetail() {
               <CardContent className="space-y-4">
                 <div>
                   <h3 className="font-semibold mb-2">Description</h3>
-                  <p className="text-gray-600">{site.description}</p>
+                  <p className="text-gray-600">{site.description?.replace(/<[^>]*>/g, '')}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

@@ -48,31 +48,23 @@ export async function processSiteImage(
   siteId: number,
   slot: number
 ): Promise<{ url: string }> {
-  // Remove data URI prefix if present
   const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
   const imageBuffer = Buffer.from(base64Data, 'base64');
-
-  // Process image with sharp - resize to fit within 1200x800 while maintaining aspect ratio
   const processedImage = await sharp(imageBuffer)
     .resize(1200, 800, {
-      fit: 'inside', // Resize to fit within bounds, preserving aspect ratio
-      withoutEnlargement: true, // Don't upscale small images
+      fit: 'inside',
+      withoutEnlargement: true,
     })
     .webp({ quality: 85 })
     .toBuffer();
-
-  // Generate unique filename
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(7);
   const fileName = `site-${siteId}-slot${slot}-${timestamp}-${random}.webp`;
-  const fileKey = `sites/${siteId}/${fileName}`;
-
-  // Upload to S3
-  const { url } = await storagePut(
-    fileKey,
-    processedImage,
-    'image/webp'
-  );
-
+  const fs = await import('fs/promises');
+  const path = await import('path');
+  const imagesDir = path.join(process.cwd(), 'client', 'public', 'images', 'sites', siteId.toString());
+  await fs.mkdir(imagesDir, { recursive: true });
+  await fs.writeFile(path.join(imagesDir, fileName), processedImage);
+  const url = `/images/sites/${siteId}/${fileName}`;
   return { url };
 }

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SiteImageCarousel } from "@/components/SiteImageCarousel";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -70,6 +71,16 @@ export default function AdminSites() {
   const createMutation = trpc.admin.createSite.useMutation();
   const updateMutation = trpc.admin.updateSite.useMutation();
   const deleteMutation = trpc.admin.deleteSite.useMutation();
+  const uploadPanorama = trpc.admin.uploadSitePanorama.useMutation({
+    onSuccess: () => {
+      refetch();
+    }
+  });
+  const removePanorama = trpc.admin.removeSitePanorama.useMutation({
+    onSuccess: () => {
+      refetch();
+    }
+  });
   const uploadImageMutation = trpc.admin.uploadSiteImage.useMutation();
 
   const [formData, setFormData] = useState({
@@ -545,14 +556,14 @@ export default function AdminSites() {
                   </div>
                   <CardDescription><span dangerouslySetInnerHTML={{ __html: site.description || "No description" }} /></CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="w-full h-32 rounded-md overflow-hidden bg-gray-100">
-                    <ImageWithFallback
-                      src={site.imageUrl1}
-                      alt={`Site ${site.siteNumber}`}
-                      className="w-full h-full object-contain"
-                      containerClassName="w-full h-full"
-                      placeholder={{ type: "site", number: site.siteNumber || "", size: site.size || "", powered: site.powerAvailable === "Powered Site" || site.powerAvailable === "Power Available" }}
+                <CardContent>
+                  <div className="w-1/2 aspect-[3/2] rounded-md overflow-hidden mx-auto">
+                    <SiteImageCarousel
+                      images={[site.imageUrl1, site.imageUrl2, site.imageUrl3, site.imageUrl4]}
+                      siteNumber={site.siteNumber || ""}
+                      size={site.size || ""}
+                      powered={site.powerAvailable === "Powered Site" || site.powerAvailable === "Power Available"}
+                      className="w-full h-full"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
@@ -810,7 +821,77 @@ export default function AdminSites() {
                 )}
               </div>
             </div>
-            <DialogFooter>
+	    
+            {/* 360° Panorama Upload */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">360° Panorama Image</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Upload an equirectangular panorama image (2:1 aspect ratio recommended)
+              </p>
+              
+              {selectedSite?.panoramaImageUrl && (
+                           <div className="mb-4 relative">
+                  <img 
+                    src={selectedSite.panoramaImageUrl} 
+                    alt="Current panorama"
+                    className="w-full max-w-md h-32 object-cover rounded border"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={async () => {
+                      if (!selectedSite) return;
+                      try {
+                        await removePanorama.mutateAsync({ siteId: selectedSite.id });
+                        toast.success('Panorama removed');
+                        refetch();
+                      } catch (error) {
+                        toast.error('Failed to remove panorama');
+                      }
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              )}
+              
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file || !selectedSite) return;
+                  
+                  console.log('PANORAMA UPLOAD:', file.name, file.size);
+                  
+                  // Validate file size (20MB max)
+                  if (file.size > 20 * 1024 * 1024) {
+                    toast.error("Panorama image must be less than 20MB");
+                    return;
+                  }
+                  
+                  const reader = new FileReader();
+                  reader.onload = async (event) => {
+                    const base64 = event.target?.result as string;
+                    try {
+                      await uploadPanorama.mutateAsync({
+                        siteId: selectedSite.id,
+                        base64Image: base64,
+                      });
+                      toast.success('Panorama uploaded successfully');
+                      refetch();
+                    } catch (error) {
+                      toast.error('Failed to upload panorama');
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                }}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+            </div>
+             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
                 Cancel
               </Button>

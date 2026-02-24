@@ -72,9 +72,13 @@ async function startServer() {
   const { initializeReportScheduler } = await import('../reportScheduler');
   initializeReportScheduler();
 
-  // Initialize payment reminder scheduler
+    // Initialize payment reminder scheduler
   const { startPaymentReminderScheduler } = await import('../paymentReminderScheduler');
   startPaymentReminderScheduler();
+
+  // Initialize rate validation scheduler
+  const { startRateValidationScheduler } = await import('../rateValidationScheduler');
+  startRateValidationScheduler();
 }
 
 startServer().catch(console.error);

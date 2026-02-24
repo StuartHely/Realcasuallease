@@ -345,82 +345,31 @@ export async function searchShoppingCentres(query: string, stateFilter?: string)
     allCentres = await db.select().from(shoppingCentres);
   }
   
-  // Word-by-word matching - checks if significant words from query appear in target
-  const wordMatch = (query: string, target: string): { matches: boolean; score: number } => {
-    const queryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 1);
-    const targetLower = target.toLowerCase();
-    
-    // Count how many query words appear in target
-    let matchCount = 0;
-    for (const word of queryWords) {
-      if (targetLower.includes(word)) {
-        matchCount++;
-      }
-    }
-    
-    // Calculate match score (percentage of query words found)
-    const score = queryWords.length > 0 ? matchCount / queryWords.length : 0;
-    
-    // Consider it a match if at least one significant word matches
-    // and prioritize by how many words match
-    return { matches: matchCount > 0, score };
-  };
-  
-  // If query is empty but state filter is set, return all centres in that state
-  if (!centreQuery.trim() && stateFilter) {
-    return allCentres.filter(centre => centre.includeInMainSite);
-  }
-  
-  // Filter and score centres using word matching
-  const scoredCentres = allCentres
-    .filter(centre => centre.includeInMainSite)
-    .map(centre => {
-      const nameMatch = wordMatch(centreQuery, centre.name || '');
-      const suburbMatch = wordMatch(centreQuery, centre.suburb || '');
-      const bestScore = Math.max(nameMatch.score, suburbMatch.score);
-      const matches = nameMatch.matches || suburbMatch.matches;
-      return { centre, score: bestScore, matches };
-    })
-    .filter(item => item.matches)
-    .sort((a, b) => b.score - a.score); // Sort by best match first
-  
-  // If we have a high-confidence match (score >= 0.5), only return that centre
-  // This prevents showing multiple centres when user clearly specifies one
-  if (scoredCentres.length > 0 && scoredCentres[0].score >= 0.5) {
-    // Check if the top match is significantly better than others
-    const topScore = scoredCentres[0].score;
-    const significantlyBetterMatches = scoredCentres.filter(item => item.score >= topScore * 0.9);
-    
-    // If only one centre has a high score, return just that one
-    if (significantlyBetterMatches.length === 1 || topScore >= 0.7) {
-      return [scoredCentres[0].centre];
-    }
-  }
-  
-  return scoredCentres.map(item => item.centre);
+  if (!centreQuery.trim() && stateFilter) { return allCentres.filter(centre => centre.includeInMainSite); }
+  const { fuzzySearchCentres } = await import('./fuzzySearch');
+  const searchableCentres = allCentres.filter(c => c.includeInMainSite).map(c => ({ id: c.id, name: c.name, suburb: c.suburb, state: c.state }));
+  const fuzzyResults = await fuzzySearchCentres(centreQuery, searchableCentres);
+  const centreMap = new Map(allCentres.map(c => [c.id, c]));
+  const scoredCentres = fuzzyResults.map(r => ({ centre: centreMap.get(r.id)!, score: r.score })).filter(i => i.centre);
+  if (scoredCentres.length > 0 && scoredCentres[0].score >= 0.8) return [scoredCentres[0].centre];
+  return scoredCentres.map(i => i.centre);
 }
 
 export async function uploadCentreMap(centreId: number, imageData: string, fileName: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Import storage helper
-  const { storagePut } = await import("./storage");
-  
-  // Extract base64 data (remove data:image/xxx;base64, prefix if present)
-  const base64Data = imageData.includes(',') ? imageData.split(',')[1] : imageData;
+    const base64Data = imageData.includes(',') ? imageData.split(',')[1] : imageData;
   const buffer = Buffer.from(base64Data, 'base64');
-  
-  // Determine content type from fileName
   const ext = fileName.toLowerCase().split('.').pop();
-  const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
-  
-  // Generate unique file key
   const timestamp = Date.now();
-  const fileKey = `centres/maps/${centreId}-${timestamp}.${ext}`;
-  
-  // Upload to S3
-  const { url } = await storagePut(fileKey, buffer, contentType);
+  const fs = await import('fs/promises');
+  const path = await import('path');
+  const mapsDir = path.join(process.cwd(), 'client', 'public', 'maps', 'centres');
+  await fs.mkdir(mapsDir, { recursive: true });
+  const localFileName = `${centreId}-${timestamp}.${ext}`;
+  await fs.writeFile(path.join(mapsDir, localFileName), buffer);
+  const url = `/maps/centres/${localFileName}`;
   
   // Update centre with map URL
   await db.update(shoppingCentres)
@@ -1115,23 +1064,17 @@ export async function uploadFloorLevelMap(floorLevelId: number, imageData: strin
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Import storage helper
-  const { storagePut } = await import("./storage");
-  
-  // Extract base64 data
-  const base64Data = imageData.includes(',') ? imageData.split(',')[1] : imageData;
+    const base64Data = imageData.includes(',') ? imageData.split(',')[1] : imageData;
   const buffer = Buffer.from(base64Data, 'base64');
-  
-  // Determine content type
   const ext = fileName.toLowerCase().split('.').pop();
-  const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
-  
-  // Generate unique file key
   const timestamp = Date.now();
-  const fileKey = `centres/floor-maps/${floorLevelId}-${timestamp}.${ext}`;
-  
-  // Upload to S3
-  const { url } = await storagePut(fileKey, buffer, contentType);
+  const fs = await import('fs/promises');
+  const path = await import('path');
+  const mapsDir = path.join(process.cwd(), 'client', 'public', 'maps', 'floor-levels');
+  await fs.mkdir(mapsDir, { recursive: true });
+  const localFileName = `${floorLevelId}-${timestamp}.${ext}`;
+  await fs.writeFile(path.join(mapsDir, localFileName), buffer);
+  const url = `/maps/floor-levels/${localFileName}`;
   
   // Update floor level with new map URL
   await db.update(floorLevels)
@@ -1540,3 +1483,4 @@ export async function recordBookingCreated(bookingId: number, status: "pending" 
     reason: status === "confirmed" ? "Instant booking confirmed" : "Booking created - pending approval",
   });
 }
+
