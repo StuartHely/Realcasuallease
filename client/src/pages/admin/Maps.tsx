@@ -27,6 +27,7 @@ export default function AdminMaps() {
   const [newFloorName, setNewFloorName] = useState("");
   const canvasRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  const utils = trpc.useUtils();
 
   // Fetch centres
   const { data: centres = [] } = trpc.centres.list.useQuery();
@@ -114,6 +115,9 @@ export default function AdminMaps() {
   const saveMarkersMutation = trpc.admin.saveSiteMarkers.useMutation({
     onSuccess: () => {
       toast.success("Site markers saved successfully");
+      // Invalidate sites queries so the next load picks up saved positions
+      utils.centres.getSites.invalidate();
+      utils.admin.getSitesByFloorLevel.invalidate();
     },
     onError: (error: any) => {
       toast.error(`Failed to save markers: ${error.message}`);
@@ -152,25 +156,24 @@ export default function AdminMaps() {
         .filter((site: any) => site.mapMarkerX !== null && site.mapMarkerY !== null)
         .map((site: any) => ({
           siteId: site.id,
-          x: site.mapMarkerX,
-          y: site.mapMarkerY,
+          x: parseFloat(site.mapMarkerX),
+          y: parseFloat(site.mapMarkerY),
           siteNumber: site.siteNumber,
         }));
       
       setMarkers((prevMarkers) => {
-        const hasChanged = 
-          prevMarkers.length !== existingMarkers.length ||
-          existingMarkers.some((marker, idx) => 
-            prevMarkers[idx]?.siteId !== marker.siteId ||
-            prevMarkers[idx]?.x !== marker.x ||
-            prevMarkers[idx]?.y !== marker.y
-          );
-        return hasChanged ? existingMarkers : prevMarkers;
+        // Only overwrite if the set of markers or their DB positions actually changed
+        // (e.g. centre switch or fresh data after save). Never overwrite user edits
+        // just because the effect re-ran due to unrelated dependency changes.
+        const prevIds = prevMarkers.map(m => m.siteId).sort().join(',');
+        const newIds = existingMarkers.map(m => m.siteId).sort().join(',');
+        if (prevIds !== newIds) return existingMarkers;
+        return prevMarkers;
       });
     } else {
       setMarkers((prevMarkers) => prevMarkers.length > 0 ? [] : prevMarkers);
     }
-  }, [centre?.mapImageUrl, centre?.id, sites.length, selectedCentreId, selectedFloorLevelId, floorLevels]);
+  }, [centre?.mapImageUrl, centre?.id, sites.length, selectedCentreId, selectedFloorLevelId, floorLevels.length]);
 
   // Auto-select first floor level when floor levels are loaded
   useEffect(() => {

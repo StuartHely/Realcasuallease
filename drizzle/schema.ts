@@ -1,4 +1,4 @@
-import { integer, pgEnum, pgTable, text, timestamp, varchar, decimal, boolean, bigint, index, serial } from "drizzle-orm/pg-core";
+import { integer, pgEnum, pgTable, text, timestamp, varchar, decimal, boolean, bigint, index, serial, jsonb } from "drizzle-orm/pg-core";
 
 // =============================================================================
 // PostgreSQL Enums (defined before tables that use them)
@@ -472,6 +472,9 @@ export const searchAnalytics = pgTable("search_analytics", {
   clickedSuggestion: varchar("clickedSuggestion", { length: 255 }),
   searchDate: timestamp("searchDate").notNull(),
   ipAddress: varchar("ipAddress", { length: 45 }),
+  parsedIntent: jsonb("parsedIntent"),
+  parserUsed: varchar("parserUsed", { length: 20 }),
+  topResultScore: integer("topResultScore"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
   searchDateIdx: index("sa_searchDate_idx").on(table.searchDate),
@@ -481,6 +484,24 @@ export const searchAnalytics = pgTable("search_analytics", {
 
 export type SearchAnalytics = typeof searchAnalytics.$inferSelect;
 export type InsertSearchAnalytics = typeof searchAnalytics.$inferInsert;
+
+/**
+ * Cache for LLM-parsed search intents to avoid re-parsing identical queries
+ */
+export const searchIntentCache = pgTable("search_intent_cache", {
+  id: serial("id").primaryKey(),
+  queryHash: varchar("queryHash", { length: 64 }).notNull().unique(),
+  normalizedQuery: text("normalizedQuery").notNull(),
+  parsedIntent: jsonb("parsedIntent").notNull(),
+  hitCount: integer("hitCount").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastUsedAt: timestamp("lastUsedAt").defaultNow().notNull(),
+}, (table) => ({
+  queryHashIdx: index("sic_queryHash_idx").on(table.queryHash),
+}));
+
+export type SearchIntentCache = typeof searchIntentCache.$inferSelect;
+export type InsertSearchIntentCache = typeof searchIntentCache.$inferInsert;
 
 /**
  * Audit log for admin changes

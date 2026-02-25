@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays, Store, Zap, Layers, FileText } from "lucide-react";
+import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays, Store, Zap, Layers, FileText, Search as SearchIcon, Star, HelpCircle, DollarSign, ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, parse, addDays, isSameDay, subDays, isBefore, startOfDay } from "date-fns";
@@ -328,6 +328,84 @@ export default function Search() {
         {/* Search Summary */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-blue-900 mb-2">Search Results</h2>
+          
+          {/* Search Interpretation Banner */}
+          {data?.searchInterpretation && (
+            (() => {
+              const interp = data.searchInterpretation;
+              const hasMeaningfulInterpretation = interp.productCategory || interp.location || interp.state || interp.budget || interp.dateRange;
+              if (!hasMeaningfulInterpretation) return null;
+              
+              const parts: string[] = [];
+              if (interp.productCategory) {
+                parts.push(interp.productCategory.charAt(0).toUpperCase() + interp.productCategory.slice(1));
+              }
+              if (interp.location) {
+                const loc = interp.location + (interp.state ? `, ${interp.state}` : '');
+                parts.push(`in ${loc}`);
+              } else if (interp.state) {
+                parts.push(`in ${interp.state}`);
+              }
+              
+              return (
+                <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <SearchIcon className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-semibold text-blue-900">
+                        Showing: {parts.join(' ') || searchParams.query}
+                      </p>
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        {interp.productCategory && (
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                            Category: {interp.productCategory}
+                          </Badge>
+                        )}
+                        {(interp.location || interp.state) && (
+                          <Badge variant="secondary" className="bg-green-100 text-green-700">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {interp.location || interp.state}
+                          </Badge>
+                        )}
+                        {interp.dateRange ? (
+                          <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            {interp.dateRange.end
+                              ? `${interp.dateRange.start} to ${interp.dateRange.end}`
+                              : interp.dateRange.start}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            This week
+                          </Badge>
+                        )}
+                        {interp.budget && (
+                          <Badge variant="secondary" className="bg-amber-100 text-amber-700">
+                            <DollarSign className="h-3 w-3 mr-1" />
+                            {interp.budget.maxPerDay
+                              ? `Under $${interp.budget.maxPerDay}/day`
+                              : interp.budget.maxPerWeek
+                              ? `Under $${interp.budget.maxPerWeek}/week`
+                              : `Budget $${interp.budget.maxTotal}`}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-blue-600 hover:text-blue-800"
+                      onClick={() => setLocation("/")}
+                    >
+                      Edit Search
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()
+          )}
+
           <p className="text-gray-600">
             Searching for: <span className="font-semibold">{searchParams.query}</span> on{" "}
             <span className="font-semibold">{format(searchParams.date, "dd/MM/yyyy")}</span>
@@ -1679,24 +1757,37 @@ export default function Search() {
                       </p>
                     </div>
 
-                    {/* Site Details Below Heatmap */}
+                    {/* Site Details Below Heatmap — grouped by relevance */}
                     <div className="mt-8">
-                      <h3 className="text-lg font-semibold mb-4">Site Details</h3>
-                      <div className="grid md:grid-cols-2 gap-4">
                       {/* Date selection instruction */}
                       {dateSelection?.isSelecting && (
-                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="p-4 mb-4 bg-blue-50 border border-blue-200 rounded-lg">
                           <p className="text-blue-800 font-medium flex items-center gap-2">
                             <Calendar className="h-5 w-5" />
                             Click on another date in the calendar above to set your end date
                           </p>
                         </div>
                       )}
-                      {centreSites.map((site) => {
-                        const availability = data.availability.find((a) => a.siteId === site.id);
-                        const isExpanded = expandedSiteId === site.id;
-                        const hasSelectedDates = dateSelection?.siteId === site.id && dateSelection?.startDate && dateSelection?.endDate;
+                      {(() => {
+                        const scores = data.siteScores || {};
+                        const hasScores = Object.keys(scores).length > 0;
                         
+                        const bestMatches = hasScores
+                          ? centreSites.filter((s: any) => (scores[s.id]?.total ?? 0) >= 70)
+                          : centreSites;
+                        const goodMatches = hasScores
+                          ? centreSites.filter((s: any) => { const t = scores[s.id]?.total ?? 0; return t >= 40 && t < 70; })
+                          : [];
+                        const otherOptions = hasScores
+                          ? centreSites.filter((s: any) => (scores[s.id]?.total ?? 0) < 40)
+                          : [];
+                        
+                        const renderSiteCard = (site: any) => {
+                          const siteAvailability = data.availability.find((a: any) => a.siteId === site.id);
+                          const isExpanded = expandedSiteId === site.id;
+                          const hasSelectedDates = dateSelection?.siteId === site.id && dateSelection?.startDate && dateSelection?.endDate;
+                          const score = scores[site.id];
+
                         return (
                           <Card 
                             key={`site-detail-casual-${centre.id}-${site.id}`} 
@@ -1724,6 +1815,39 @@ export default function Search() {
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <CardTitle className="text-lg">Site {site.siteNumber}</CardTitle>
+                                    {/* Score badge */}
+                                    {score && hasScores && (
+                                      <Badge className={`${
+                                        score.total >= 70 ? 'bg-green-600 hover:bg-green-700' :
+                                        score.total >= 40 ? 'bg-amber-500 hover:bg-amber-600' :
+                                        'bg-gray-500 hover:bg-gray-600'
+                                      } text-white`}>
+                                        {score.total >= 70 ? '⭐ ' : ''}{score.total}/100
+                                      </Badge>
+                                    )}
+                                    {/* "Why this result?" tooltip */}
+                                    {score && score.reasons.length > 0 && (
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <button className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800">
+                                              <HelpCircle className="h-3.5 w-3.5" />
+                                              Why this result?
+                                            </button>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="bottom" className="max-w-xs">
+                                            <div className="space-y-1 text-xs">
+                                              {score.reasons.map((reason: string, i: number) => (
+                                                <p key={i}>{reason}</p>
+                                              ))}
+                                              <div className="border-t border-gray-200 pt-1 mt-1 text-[10px] text-gray-400">
+                                                Category {score.categoryMatch}/30 · Location {score.locationMatch}/25 · Availability {score.availability}/20 · Price {score.priceMatch}/15 · Size {score.sizeMatch}/10
+                                              </div>
+                                            </div>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    )}
                                     {/* Show selected dates badge */}
                                     {hasSelectedDates && (
                                       <Badge className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1">
@@ -1892,8 +2016,71 @@ export default function Search() {
                             </CardContent>
                           </Card>
                         );
-                      })}
-                      </div>
+                        };
+
+                        return (
+                          <>
+                            {/* Best Matches */}
+                            {bestMatches.length > 0 && (
+                              <div className="mb-6">
+                                {hasScores && (goodMatches.length > 0 || otherOptions.length > 0) && (
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <Star className="h-5 w-5 text-green-600" />
+                                    <h3 className="text-lg font-semibold text-green-800">Best Matches</h3>
+                                    <Badge className="bg-green-100 text-green-700">{bestMatches.length}</Badge>
+                                  </div>
+                                )}
+                                {!hasScores && (
+                                  <h3 className="text-lg font-semibold mb-4">Site Details</h3>
+                                )}
+                                <div className="grid md:grid-cols-2 gap-4">
+                                  {bestMatches.map(renderSiteCard)}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Good Matches */}
+                            {goodMatches.length > 0 && (
+                              <div className="mb-6">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <CheckCircle className="h-5 w-5 text-amber-500" />
+                                  <h3 className="text-lg font-semibold text-amber-700">Good Matches</h3>
+                                  <Badge className="bg-amber-100 text-amber-700">{goodMatches.length}</Badge>
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                  {goodMatches.map(renderSiteCard)}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Other Options — collapsed by default */}
+                            {otherOptions.length > 0 && (
+                              <div className="mb-6">
+                                <button
+                                  className="flex items-center gap-2 mb-3 group cursor-pointer"
+                                  onClick={(e) => {
+                                    const target = e.currentTarget.nextElementSibling;
+                                    if (target) {
+                                      target.classList.toggle('hidden');
+                                      e.currentTarget.querySelector('.chevron-icon')?.classList.toggle('rotate-180');
+                                    }
+                                  }}
+                                >
+                                  <Info className="h-5 w-5 text-gray-400" />
+                                  <h3 className="text-lg font-semibold text-gray-500">Other Options</h3>
+                                  <Badge className="bg-gray-100 text-gray-500">{otherOptions.length}</Badge>
+                                  <ChevronDown className="h-4 w-4 text-gray-400 transition-transform chevron-icon" />
+                                </button>
+                                <div className="hidden">
+                                  <div className="grid md:grid-cols-2 gap-4">
+                                    {otherOptions.map(renderSiteCard)}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                       
                       {/* Show "Show me all sized sites" link if size filter is active and results are filtered */}
                       {(() => {

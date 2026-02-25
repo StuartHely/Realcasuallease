@@ -82,9 +82,16 @@ export const adminRouter = router({
         postcode: z.string().optional(),
         description: z.string().optional(),
         includeInMainSite: z.boolean().optional(),
+        pdfUrl1: z.string().optional(),
+        pdfName1: z.string().optional(),
+        pdfUrl2: z.string().optional(),
+        pdfName2: z.string().optional(),
+        pdfUrl3: z.string().optional(),
+        pdfName3: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        return await db.updateShoppingCentre(input.id, input);
+        const { id, ...updates } = input;
+        return await db.updateShoppingCentre(id, updates);
       }),
 
     deleteCentre: adminProcedure
