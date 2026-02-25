@@ -311,7 +311,11 @@ export async function createAdminBooking(input: AdminBookingInput): Promise<{ bo
 
   const bookingId = result.id;
 
-  // Log the creation
+  // Record initial status in history (admin-created bookings start as "confirmed")
+  const { recordBookingCreated } = await import("./bookingStatusHelper");
+  await recordBookingCreated(bookingId, "confirmed", input.createdByAdminId, undefined);
+
+  // Log the creation to audit trail
   await db.insert(auditLog).values({
     userId: input.createdByAdminId,
     action: "admin_booking_create",
@@ -483,7 +487,8 @@ export async function getBookingAuditHistory(
 }
 
 /**
- * Cancel an admin booking
+ * Cancel an admin booking.
+ * Uses the centralized changeBookingStatus() so history is always recorded.
  */
 export async function cancelAdminBooking(
   bookingId: number,
@@ -506,19 +511,20 @@ export async function cancelAdminBooking(
     throw new Error("Booking not found");
   }
 
-  // Update booking status to cancelled
-  const existingComments = currentBooking.status === 'cancelled' ? '' : '';
+  // Use centralized status change — automatically records history
+  const { changeBookingStatus } = await import("./bookingStatusHelper");
   const newComment = reason ? `\n[Cancelled] ${reason}` : '';
-  
-  await db
-    .update(bookings)
-    .set({
-      status: "cancelled",
-      ...(reason && { adminComments: sql`CONCAT(COALESCE(${bookings.adminComments}, ''), ${newComment})` }),
-    })
-    .where(eq(bookings.id, bookingId));
+  await changeBookingStatus({
+    bookingId,
+    newStatus: "cancelled",
+    changedBy: adminUserId,
+    reason: reason || "Cancelled by admin",
+    additionalUpdates: reason
+      ? { adminComments: sql`CONCAT(COALESCE(${bookings.adminComments}, ''), ${newComment})` }
+      : undefined,
+  });
 
-  // Log the cancellation
+  // Also log to audit_log for admin audit trail
   await db.insert(auditLog).values({
     userId: adminUserId,
     action: "admin_booking_cancel",

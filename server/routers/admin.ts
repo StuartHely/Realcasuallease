@@ -594,8 +594,8 @@ export const adminRouter = router({
 
     rejectBooking: ownerProcedure
       .input(z.object({ bookingId: z.number(), reason: z.string().optional() }))
-      .mutation(async ({ input }) => {
-        await db.rejectBooking(input.bookingId, input.reason || "No reason provided");
+      .mutation(async ({ ctx, input }) => {
+        await db.rejectBooking(input.bookingId, input.reason || "No reason provided", ctx.user.id, ctx.user.name || undefined);
         
         const booking = await db.getBookingById(input.bookingId);
         const site = booking ? await db.getSiteById(booking.siteId) : null;

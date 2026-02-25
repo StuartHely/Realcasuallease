@@ -909,55 +909,31 @@ export async function getUnpaidInvoiceBookings() {
 }
 
 export async function approveBooking(bookingId: number, approvedBy: number, approvedByName?: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // Get booking to check payment method
-  const booking = await getBookingById(bookingId);
-  if (!booking) {
-    throw new Error("Booking not found");
-  }
-
-  const previousStatus = booking.status;
-  
-  await db.update(bookings).set({
-    status: "confirmed",
-    approvedBy,
-    approvedAt: new Date(),
-  }).where(eq(bookings.id, bookingId));
-  
-  // Record status history
-  await db.insert(bookingStatusHistory).values({
+  const { changeBookingStatus } = await import("./bookingStatusHelper");
+  await changeBookingStatus({
     bookingId,
-    previousStatus: previousStatus as "pending" | "confirmed" | "cancelled" | "completed" | "rejected",
     newStatus: "confirmed",
     changedBy: approvedBy,
-    changedByName: approvedByName || null,
+    changedByName: approvedByName,
     reason: "Booking approved",
+    additionalUpdates: {
+      approvedBy,
+      approvedAt: new Date(),
+    },
   });
 }
 
 export async function rejectBooking(bookingId: number, reason: string, rejectedBy?: number, rejectedByName?: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // Get booking to record previous status
-  const booking = await getBookingById(bookingId);
-  const previousStatus = booking?.status;
-
-  await db.update(bookings).set({
-    status: "rejected",
-    rejectionReason: reason,
-  }).where(eq(bookings.id, bookingId));
-  
-  // Record status history
-  await db.insert(bookingStatusHistory).values({
+  const { changeBookingStatus } = await import("./bookingStatusHelper");
+  await changeBookingStatus({
     bookingId,
-    previousStatus: previousStatus as "pending" | "confirmed" | "cancelled" | "completed" | "rejected" | undefined,
     newStatus: "rejected",
-    changedBy: rejectedBy || null,
-    changedByName: rejectedByName || null,
+    changedBy: rejectedBy,
+    changedByName: rejectedByName,
     reason,
+    additionalUpdates: {
+      rejectionReason: reason,
+    },
   });
 }
 
@@ -968,25 +944,13 @@ export async function updateBookingStatus(
   changedByName?: string,
   reason?: string
 ) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // Get booking to record previous status
-  const booking = await getBookingById(bookingId);
-  const previousStatus = booking?.status;
-
-  await db.update(bookings).set({
-    status,
-  }).where(eq(bookings.id, bookingId));
-  
-  // Record status history
-  await db.insert(bookingStatusHistory).values({
+  const { changeBookingStatus } = await import("./bookingStatusHelper");
+  await changeBookingStatus({
     bookingId,
-    previousStatus: previousStatus as "pending" | "confirmed" | "cancelled" | "completed" | "rejected" | undefined,
     newStatus: status,
-    changedBy: changedBy || null,
-    changedByName: changedByName || null,
-    reason: reason || `Status changed to ${status}`,
+    changedBy,
+    changedByName,
+    reason,
   });
 }
 
@@ -1512,19 +1476,11 @@ export async function getBookingStatusHistory(bookingId: number) {
 }
 
 /**
- * Record initial booking creation in status history
+ * Record initial booking creation in status history.
+ * Delegates to the centralized bookingStatusHelper.
  */
 export async function recordBookingCreated(bookingId: number, status: "pending" | "confirmed", createdBy?: number, createdByName?: string) {
-  const db = await getDb();
-  if (!db) return;
-  
-  await db.insert(bookingStatusHistory).values({
-    bookingId,
-    previousStatus: null,
-    newStatus: status,
-    changedBy: createdBy || null,
-    changedByName: createdByName || "System",
-    reason: status === "confirmed" ? "Instant booking confirmed" : "Booking created - pending approval",
-  });
+  const { recordBookingCreated: record } = await import("./bookingStatusHelper");
+  await record(bookingId, status, createdBy, createdByName);
 }
 

@@ -395,6 +395,17 @@ export const vacantShopBookingsRouter = router({
 
       await assetDb.updateVacantShopBooking(input.id, updateData);
 
+      // Log status change to audit trail
+      const { logAssetBookingStatusChange } = await import("../bookingStatusHelper");
+      await logAssetBookingStatusChange({
+        entityType: "vacant_shop_booking",
+        entityId: input.id,
+        previousStatus: booking.status,
+        newStatus: input.status,
+        changedBy: ctx.user.id,
+        reason: input.rejectionReason,
+      });
+
       // Send confirmation email
       if (input.status === "confirmed" && booking.customerEmail) {
         const shop = await assetDb.getVacantShopById(booking.vacantShopId);
@@ -585,6 +596,17 @@ export const thirdLineBookingsRouter = router({
       }
 
       await assetDb.updateThirdLineBooking(input.id, updateData);
+
+      // Log status change to audit trail
+      const { logAssetBookingStatusChange } = await import("../bookingStatusHelper");
+      await logAssetBookingStatusChange({
+        entityType: "third_line_booking",
+        entityId: input.id,
+        previousStatus: booking.status,
+        newStatus: input.status,
+        changedBy: ctx.user.id,
+        reason: input.rejectionReason,
+      });
 
       // Send confirmation email
       if (input.status === "confirmed" && booking.customerEmail) {
