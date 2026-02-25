@@ -166,18 +166,19 @@ export const searchRouter = router({
           const { getSearchSuggestions } = await import("../searchSuggestions");
           const suggestions = await getSearchSuggestions(searchQuery, 5);
           
-          // Log failed search
-          const { logSearch } = await import("../searchAnalyticsDb");
-          await logSearch({
-            userId: ctx.user?.id,
-            query: input.query,
-            centreName: enhancedQuery.centreName,
-            minSizeM2: enhancedQuery.minSizeM2,
-            productCategory: enhancedQuery.productCategory,
-            resultsCount: 0,
-            suggestionsShown: suggestions.length,
-            searchDate: input.date,
-          });
+          // Log failed search (fire-and-forget — never block results)
+          import("../searchAnalyticsDb").then(({ logSearch }) =>
+            logSearch({
+              userId: ctx.user?.id,
+              query: input.query,
+              centreName: enhancedQuery.centreName,
+              minSizeM2: enhancedQuery.minSizeM2,
+              productCategory: enhancedQuery.productCategory,
+              resultsCount: 0,
+              suggestionsShown: suggestions.length,
+              searchDate: input.date,
+            })
+          ).catch(() => {});
           
           return { 
             centres: [], 
@@ -390,29 +391,30 @@ export const searchRouter = router({
           : 0;
         const parserUsed = enhancedQuery !== parsedQuery ? 'llm' : 'rules';
 
-        // Log successful search
-        const { logSearch } = await import("../searchAnalyticsDb");
-        await logSearch({
-          userId: ctx.user?.id,
-          query: input.query,
-          centreName: enhancedQuery.centreName,
-          minSizeM2: enhancedQuery.minSizeM2,
-          productCategory: enhancedQuery.productCategory,
-          resultsCount: allSites.length,
-          suggestionsShown: 0,
-          searchDate: input.date,
-          parsedIntent: {
-            productCategory: enhancedQuery.productCategory || null,
-            location: enhancedQuery.centreName || enhancedQuery.matchedLocation || null,
-            state: enhancedQuery.stateFilter || null,
-            assetType: enhancedQuery.assetType || null,
-            maxPricePerDay: enhancedQuery.maxPricePerDay || null,
-            maxPricePerWeek: enhancedQuery.maxPricePerWeek || null,
-            maxBudget: enhancedQuery.maxBudget || null,
-          },
-          parserUsed,
-          topResultScore,
-        });
+        // Log successful search (fire-and-forget — never block results)
+        import("../searchAnalyticsDb").then(({ logSearch }) =>
+          logSearch({
+            userId: ctx.user?.id,
+            query: input.query,
+            centreName: enhancedQuery.centreName,
+            minSizeM2: enhancedQuery.minSizeM2,
+            productCategory: enhancedQuery.productCategory,
+            resultsCount: allSites.length,
+            suggestionsShown: 0,
+            searchDate: input.date,
+            parsedIntent: {
+              productCategory: enhancedQuery.productCategory || null,
+              location: enhancedQuery.centreName || enhancedQuery.matchedLocation || null,
+              state: enhancedQuery.stateFilter || null,
+              assetType: enhancedQuery.assetType || null,
+              maxPricePerDay: enhancedQuery.maxPricePerDay || null,
+              maxPricePerWeek: enhancedQuery.maxPricePerWeek || null,
+              maxBudget: enhancedQuery.maxBudget || null,
+            },
+            parserUsed,
+            topResultScore,
+          })
+        ).catch(() => {});
         
         // Fetch floor levels for the first centre to display floor plan map
         let floorLevels: any[] = [];
