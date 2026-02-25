@@ -15,6 +15,9 @@ export async function logSearch(params: {
   suggestionsShown?: number;
   searchDate: Date;
   ipAddress?: string;
+  parsedIntent?: Record<string, unknown>;
+  parserUsed?: string;
+  topResultScore?: number;
 }): Promise<void> {
   const db = await getDb();
   if (!db) return;
@@ -31,6 +34,9 @@ export async function logSearch(params: {
     suggestionClicked: false,
     searchDate: params.searchDate,
     ipAddress: params.ipAddress,
+    parsedIntent: params.parsedIntent,
+    parserUsed: params.parserUsed,
+    topResultScore: params.topResultScore,
   });
 }
 

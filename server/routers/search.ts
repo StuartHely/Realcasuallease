@@ -12,10 +12,45 @@ export const searchRouter = router({
         const { parseSearchQuery, siteMatchesRequirements } = await import("../../shared/queryParser");
         const parsedQuery = parseSearchQuery(input.query);
 
+        // --- Enhanced location matching ---
+        // If the rule-based parser couldn't find a location, try the location index
+        let enhancedQuery = parsedQuery;
+
+        if (!parsedQuery.centreName && !parsedQuery.matchedLocation) {
+          // Try LLM intent parsing for complex natural language
+          const { shouldUseLLM, parseIntentWithLLM, mergeLLMIntent } = await import("../intentParser");
+          if (shouldUseLLM(parsedQuery)) {
+            const llmIntent = await parseIntentWithLLM(input.query);
+            if (llmIntent) {
+              enhancedQuery = mergeLLMIntent(parsedQuery, llmIntent);
+            }
+          }
+        }
+
+        // Try area-based location matching if we have a location but no centre match
+        const { findCentresByArea } = await import("../locationIndex");
+        let areaCentres: any[] | null = null;
+
+        // Extract the area name — could be from rule parser or LLM
+        const areaQuery = enhancedQuery.centreName || enhancedQuery.matchedLocation || "";
+        if (areaQuery) {
+          const areaMatches = await findCentresByArea(areaQuery);
+          if (areaMatches.length > 0) {
+            areaCentres = areaMatches.map(m => ({
+              id: m.centreId,
+              name: m.centreName,
+              slug: m.slug,
+              suburb: m.suburb,
+              city: m.city,
+              state: m.state,
+            }));
+          }
+        }
+
         // If asset type is specified (VS or 3rdL), search only that type
-        if (parsedQuery.assetType === 'vacant_shop') {
-          const searchQuery = parsedQuery.centreName || input.query;
-          const centres = await db.searchShoppingCentres(searchQuery, parsedQuery.stateFilter);
+        if (enhancedQuery.assetType === 'vacant_shop') {
+          const searchQuery = enhancedQuery.centreName || input.query;
+          const centres = await db.searchShoppingCentres(searchQuery, enhancedQuery.stateFilter);
           if (centres.length === 0) {
             return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'vacant_shop', floorLevels: [] };
           }
@@ -29,17 +64,17 @@ export const searchRouter = router({
           return { centres, sites: allShops, availability: [], matchedSiteIds: [], assetType: 'vacant_shop', floorLevels };
         }
         
-        if (parsedQuery.assetType === 'third_line') {
-          const searchQuery = parsedQuery.centreName || input.query;
-          const centres = await db.searchShoppingCentres(searchQuery, parsedQuery.stateFilter);
+        if (enhancedQuery.assetType === 'third_line') {
+          const searchQuery = enhancedQuery.centreName || input.query;
+          const centres = await db.searchShoppingCentres(searchQuery, enhancedQuery.stateFilter);
           if (centres.length === 0) {
             return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'third_line', floorLevels: [] };
           }
           const allAssets: any[] = [];
           for (const centre of centres) {
             const assets = await assetDb.getThirdLineIncomeByCentre(centre.id);
-            const filtered = parsedQuery.thirdLineCategory 
-              ? assets.filter((a: any) => a.categoryName?.toLowerCase().includes(parsedQuery.thirdLineCategory!.toLowerCase()))
+            const filtered = enhancedQuery.thirdLineCategory 
+              ? assets.filter((a: any) => a.categoryName?.toLowerCase().includes(enhancedQuery.thirdLineCategory!.toLowerCase()))
               : assets;
             allAssets.push(...filtered.map((a: any) => ({ ...a, centreName: centre.name, assetType: 'third_line' })));
           }
@@ -50,16 +85,16 @@ export const searchRouter = router({
         
         // First, search for sites using the full query to find any matches
         // This allows description-based searches like "Waverley Outside Prouds" to work
-        const siteResults = await db.searchSitesWithCategory(input.query, parsedQuery.productCategory, parsedQuery.stateFilter);
+        const siteResults = await db.searchSitesWithCategory(input.query, enhancedQuery.productCategory, enhancedQuery.stateFilter);
         
         // Determine if query has site-specific keywords beyond just centre name
         const lowerQuery = input.query.toLowerCase();
         
         // Check for explicit site-specific patterns
         const hasSiteNumber = /site\s*\d+|#\d+|\bsite\b/i.test(lowerQuery);
-        const hasProductCategory = !!parsedQuery.productCategory;
-        const hasSizeRequirement = parsedQuery.minSizeM2 !== undefined;
-        const hasTableRequirement = parsedQuery.minTables !== undefined;
+        const hasProductCategory = !!enhancedQuery.productCategory;
+        const hasSizeRequirement = enhancedQuery.minSizeM2 !== undefined;
+        const hasTableRequirement = enhancedQuery.minTables !== undefined;
         
         // Check if the query contains more than just a centre name by looking at the actual
         // centre names from the site results. If the query is longer than the centre name,
@@ -81,16 +116,16 @@ export const searchRouter = router({
         
         // For centre search, use the extracted centre name if available
         // If centreName is empty string, keep it empty (don't fall back to original query)
-        const searchQuery = parsedQuery.centreName;
+        const searchQuery = enhancedQuery.centreName;
         
         // If we found specific sites with category filter, extract their centres
         let centres: any[] = [];
-        if (siteResults.length > 0 && parsedQuery.productCategory) {
+        if (siteResults.length > 0 && enhancedQuery.productCategory) {
           const centresMap = new Map();
           for (const result of siteResults) {
             if (!centresMap.has(result.site.centreId) && result.centre) {
               // Apply state filter if specified
-              if (!parsedQuery.stateFilter || result.centre.state === parsedQuery.stateFilter) {
+              if (!enhancedQuery.stateFilter || result.centre.state === enhancedQuery.stateFilter) {
                 centresMap.set(result.site.centreId, result.centre);
               }
             }
@@ -102,7 +137,28 @@ export const searchRouter = router({
         // If no centres found from category search, fall back to centre-only search
         // This handles cases like "Fashion in VIC" where VIC centres may not have fashion-approved sites
         if (centres.length === 0) {
-          centres = await db.searchShoppingCentres(searchQuery, parsedQuery.stateFilter);
+          centres = await db.searchShoppingCentres(searchQuery, enhancedQuery.stateFilter);
+        }
+
+        // If still no results and we have area matches, use those
+        if (centres.length === 0 && areaCentres && areaCentres.length > 0) {
+          centres = areaCentres;
+        }
+
+        // Fallback: if area search found nothing but we can infer a state, show all centres in that state
+        if (centres.length === 0 && !enhancedQuery.stateFilter && areaQuery) {
+          // Check if the area name maps to a known state
+          const AREA_STATE_MAP: Record<string, string> = {
+            brisbane: 'QLD', 'gold coast': 'QLD', 'sunshine coast': 'QLD',
+            cairns: 'QLD', townsville: 'QLD',
+            sydney: 'NSW', 'central coast': 'NSW', newcastle: 'NSW', wollongong: 'NSW',
+            melbourne: 'VIC', geelong: 'VIC',
+            perth: 'WA', adelaide: 'SA', hobart: 'TAS', darwin: 'NT', canberra: 'ACT',
+          };
+          const inferredState = AREA_STATE_MAP[areaQuery.toLowerCase()];
+          if (inferredState) {
+            centres = await db.searchShoppingCentres('', inferredState);
+          }
         }
         
         if (centres.length === 0) {
@@ -115,9 +171,9 @@ export const searchRouter = router({
           await logSearch({
             userId: ctx.user?.id,
             query: input.query,
-            centreName: parsedQuery.centreName,
-            minSizeM2: parsedQuery.minSizeM2,
-            productCategory: parsedQuery.productCategory,
+            centreName: enhancedQuery.centreName,
+            minSizeM2: enhancedQuery.minSizeM2,
+            productCategory: enhancedQuery.productCategory,
             resultsCount: 0,
             suggestionsShown: suggestions.length,
             searchDate: input.date,
@@ -150,7 +206,7 @@ export const searchRouter = router({
         
         // Track if any sites match the size requirement
         let hasMatchingSites = false;
-        const hasRequirements = parsedQuery.minSizeM2 !== undefined || parsedQuery.minTables !== undefined || parsedQuery.productCategory !== undefined;
+        const hasRequirements = enhancedQuery.minSizeM2 !== undefined || enhancedQuery.minTables !== undefined || enhancedQuery.productCategory !== undefined;
         
         // OPTIMIZED: Batch fetch all data in minimal queries
         const { getSearchDataOptimized } = await import("../dbOptimized");
@@ -170,7 +226,7 @@ export const searchRouter = router({
         );
         
         // Override sitesByCentre if we have category-filtered sites from searchSitesWithCategory
-        if (parsedQuery.productCategory) {
+        if (enhancedQuery.productCategory) {
           if (siteResults.length > 0) {
             // We have matching sites - only show those sites
             const tempSitesByCentre = new Map();
@@ -182,16 +238,14 @@ export const searchRouter = router({
               tempSitesByCentre.get(centreId)!.push(result.site);
             }
             sitesByCentre = tempSitesByCentre;
-          } else {
-            // Category was specified but NO sites match - clear all sites from centres
-            // This ensures sites without the requested category are excluded from results
-            sitesByCentre = new Map();
           }
+          // When no sites match the category, keep all sites — scoring will rank them
+          // lower for category mismatch, and they'll appear in "Other Options"
         }
         
         // First pass: check if any sites match the requirements and find closest match
         let closestMatch: { sizeM2: number; widthM: number; lengthM: number; difference: number } | null = null;
-        const requestedSizeM2 = parsedQuery.minSizeM2;
+        const requestedSizeM2 = enhancedQuery.minSizeM2;
         
         for (const centre of centres) {
           const sites = sitesByCentre.get(centre.id) || [];
@@ -199,7 +253,7 @@ export const searchRouter = router({
           // Check which sites match the requirements
           const sitesWithMatch = sites.map((site: any) => ({
             site,
-            matchesRequirements: siteMatchesRequirements(site, parsedQuery),
+            matchesRequirements: siteMatchesRequirements(site, enhancedQuery),
             sizeMatch: requestedSizeM2 ? (site.sizeM2 === requestedSizeM2 ? 'perfect' : site.sizeM2 > requestedSizeM2 ? 'larger' : 'smaller') : null
           }));
           
@@ -235,7 +289,7 @@ export const searchRouter = router({
           // Check which sites match the requirements
           const sitesWithMatch = sites.map((site: any) => ({
             site,
-            matchesRequirements: siteMatchesRequirements(site, parsedQuery),
+            matchesRequirements: siteMatchesRequirements(site, enhancedQuery),
             sizeMatch: requestedSizeM2 ? (site.sizeM2 === requestedSizeM2 ? 'perfect' : site.sizeM2 > requestedSizeM2 ? 'larger' : 'smaller') : null
           }));
           
@@ -269,23 +323,95 @@ export const searchRouter = router({
           }
         }
         
+        // Exclude sites that ONLY have free categories (Charity, Government) unless user explicitly searched for them
+        const isFreeCategorySearch = enhancedQuery.productCategory && 
+          ['charity', 'charities', 'government', 'community'].includes(enhancedQuery.productCategory.toLowerCase());
+
+        if (!isFreeCategorySearch) {
+          const filteredSites = [];
+          for (const site of allSites) {
+            const categories = siteCategories[site.id] || [];
+            if (categories.length === 0) {
+              filteredSites.push(site);
+            } else {
+              const hasPaidCategory = categories.some((cat: any) => !cat.isFree);
+              if (hasPaidCategory) {
+                filteredSites.push(site);
+              }
+            }
+          }
+          allSites.length = 0;
+          allSites.push(...filteredSites);
+        }
+
         // Return flag indicating if size requirement was met
         const sizeNotAvailable = hasRequirements && !hasMatchingSites;
         
-        // Return flag indicating if category filter returned no results
-        const categoryNotAvailable = !!parsedQuery.productCategory && siteResults.length === 0;
+        // Only flag category as unavailable if we have NO sites at all
+        // (when sites exist but don't match the category, scoring handles it via lower ranks)
+        const categoryNotAvailable = !!enhancedQuery.productCategory && siteResults.length === 0 && allSites.length === 0;
+
+        // --- Score and rank sites ---
+        const { scoreAndRankSites } = await import("../siteScoring");
+        const availabilityMap = new Map<number, { week1Available: boolean; week2Available: boolean }>();
+        for (const a of availability) {
+          availabilityMap.set(a.siteId, { week1Available: a.week1Available, week2Available: a.week2Available });
+        }
+        // Build a set of centre IDs that are an exact location match (from areaCentres or direct centre search)
+        const exactLocationCentreIds = new Set<number>(
+          (areaCentres || centres).map((c: any) => c.id),
+        );
+        const scored = scoreAndRankSites(
+          allSites,
+          siteCategories,
+          availabilityMap,
+          enhancedQuery,
+          exactLocationCentreIds,
+        );
+        // Replace allSites with sorted order
+        allSites.length = 0;
+        allSites.push(...scored.sites);
+
+        // Apply price filtering: if budget constraints are specified, filter out sites way over budget
+        if (enhancedQuery.maxPricePerDay || enhancedQuery.maxPricePerWeek || enhancedQuery.maxBudget) {
+          const filtered = allSites.filter((site: any) => {
+            const score = scored.scores[site.id];
+            return score ? score.priceMatch > 0 : true;
+          });
+          if (filtered.length > 0) {
+            allSites.length = 0;
+            allSites.push(...filtered);
+          }
+        }
         
+        // Compute top result score for analytics
+        const topResultScore = allSites.length > 0
+          ? (scored.scores[allSites[0].id]?.total ?? 0)
+          : 0;
+        const parserUsed = enhancedQuery !== parsedQuery ? 'llm' : 'rules';
+
         // Log successful search
         const { logSearch } = await import("../searchAnalyticsDb");
         await logSearch({
           userId: ctx.user?.id,
           query: input.query,
-          centreName: parsedQuery.centreName,
-          minSizeM2: parsedQuery.minSizeM2,
-          productCategory: parsedQuery.productCategory,
+          centreName: enhancedQuery.centreName,
+          minSizeM2: enhancedQuery.minSizeM2,
+          productCategory: enhancedQuery.productCategory,
           resultsCount: allSites.length,
           suggestionsShown: 0,
           searchDate: input.date,
+          parsedIntent: {
+            productCategory: enhancedQuery.productCategory || null,
+            location: enhancedQuery.centreName || enhancedQuery.matchedLocation || null,
+            state: enhancedQuery.stateFilter || null,
+            assetType: enhancedQuery.assetType || null,
+            maxPricePerDay: enhancedQuery.maxPricePerDay || null,
+            maxPricePerWeek: enhancedQuery.maxPricePerWeek || null,
+            maxBudget: enhancedQuery.maxBudget || null,
+          },
+          parserUsed,
+          topResultScore,
         });
         
         // Fetch floor levels for the first centre to display floor plan map
@@ -294,7 +420,34 @@ export const searchRouter = router({
           floorLevels = await db.getFloorLevelsByCentre(centres[0].id);
         }
         
-        return { centres, sites: allSites, availability, matchedSiteIds, sizeNotAvailable, categoryNotAvailable, closestMatch, siteCategories, floorLevels };
+        return {
+          centres,
+          sites: allSites,
+          availability,
+          matchedSiteIds,
+          sizeNotAvailable,
+          categoryNotAvailable,
+          closestMatch,
+          siteCategories,
+          siteScores: scored.scores,
+          floorLevels,
+          searchInterpretation: {
+            productCategory: enhancedQuery.productCategory || null,
+            location: enhancedQuery.centreName || enhancedQuery.matchedLocation || null,
+            state: enhancedQuery.stateFilter || null,
+            assetType: enhancedQuery.assetType || null,
+            dateRange: enhancedQuery.parsedDate ? {
+              start: enhancedQuery.parsedDate,
+              end: enhancedQuery.dateRangeEnd || null,
+            } : null,
+            budget: enhancedQuery.maxPricePerDay || enhancedQuery.maxPricePerWeek || enhancedQuery.maxBudget ? {
+              maxPerDay: enhancedQuery.maxPricePerDay || null,
+              maxPerWeek: enhancedQuery.maxPricePerWeek || null,
+              maxTotal: enhancedQuery.maxBudget || null,
+            } : null,
+            parserUsed,
+          },
+        };
       }),
     byNameAndDate: publicProcedure
       .input(z.object({

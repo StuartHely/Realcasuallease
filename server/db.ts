@@ -22,6 +22,37 @@ import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
+export function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+async function ensureUniqueSlug(slug: string, excludeId?: number): Promise<string> {
+  const database = await getDb();
+  if (!database) return slug;
+
+  let candidate = slug;
+  let counter = 1;
+
+  while (true) {
+    const existing = await database
+      .select({ id: shoppingCentres.id })
+      .from(shoppingCentres)
+      .where(eq(shoppingCentres.slug, candidate))
+      .limit(1);
+
+    if (existing.length === 0 || (excludeId !== undefined && existing[0].id === excludeId)) {
+      return candidate;
+    }
+
+    counter++;
+    candidate = `${slug}-${counter}`;
+  }
+}
+
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
@@ -315,6 +346,7 @@ export async function getNearbyCentres(centreId: number, radiusKm: number = 10) 
   const allCentres = await db.select({
     id: shoppingCentres.id,
     name: shoppingCentres.name,
+    slug: shoppingCentres.slug,
     latitude: shoppingCentres.latitude,
     longitude: shoppingCentres.longitude,
     address: shoppingCentres.address,
@@ -427,12 +459,20 @@ export async function createShoppingCentre(centre: InsertShoppingCentre) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
+  if (!centre.slug && centre.name) {
+    centre.slug = await ensureUniqueSlug(generateSlug(centre.name));
+  }
+
   return await db.insert(shoppingCentres).values(centre);
 }
 
 export async function updateShoppingCentre(id: number, updates: Partial<InsertShoppingCentre>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+
+  if (updates.name) {
+    updates.slug = await ensureUniqueSlug(generateSlug(updates.name), id);
+  }
 
   return await db.update(shoppingCentres).set(updates).where(eq(shoppingCentres.id, id));
 }
