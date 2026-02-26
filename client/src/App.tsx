@@ -6,6 +6,8 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import AuthGuard from "./components/AuthGuard";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Home from "./pages/Home";
 import Search from "./pages/Search";
 import Centres from "./pages/Centres";
@@ -56,14 +58,16 @@ import CustomerProfile from "./pages/admin/CustomerProfile";
 function Router() {
   return (
     <Switch>
-      {/* Login page - accessible without authentication */}
+      {/* Auth pages - accessible without authentication */}
       <Route path="/login" component={Login} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       
       {/* All other routes require authentication */}
       <Route path="/" component={Home} />
       <Route path="/search" component={Search} />
       <Route path="/centres" component={Centres} />
-      <Route path="/centre/:id" component={CentreDetail} />
+      <Route path="/centre/:slug" component={CentreDetail} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/portfolio" component={PortfolioDashboard} />
       <Route path="/admin/fy-budgets" component={FYBudgetManagement} />

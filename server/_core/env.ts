@@ -22,4 +22,8 @@ export const ENV = {
   smtpUser: process.env.SMTP_USER ?? "",
   smtpPass: process.env.SMTP_PASS ?? "",
   smtpFrom: process.env.SMTP_FROM ?? "",
+  // Stripe
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY || "",
+  // App URL for email links (password reset, etc.)
+  appUrl: process.env.APP_URL || "http://localhost:5173",
 };

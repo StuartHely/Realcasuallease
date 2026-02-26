@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -112,6 +112,14 @@ export default function Login() {
               )}
             </Button>
           </form>
+
+          <div className="text-center">
+            <Link href="/forgot-password">
+              <span className="text-sm text-blue-600 hover:underline cursor-pointer">
+                Forgot password?
+              </span>
+            </Link>
+          </div>
 
           <p className="text-xs text-center text-muted-foreground">
             By signing in, you agree to our Terms of Service and Privacy Policy.

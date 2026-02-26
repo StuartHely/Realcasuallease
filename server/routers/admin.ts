@@ -58,11 +58,11 @@ export const adminRouter = router({
     // Shopping Centre Management
     createCentre: adminProcedure
       .input(z.object({
-        name: z.string(),
-        address: z.string().optional(),
-        suburb: z.string().optional(),
-        state: z.string().optional(),
-        postcode: z.string().optional(),
+        name: z.string().trim(),
+        address: z.string().trim().optional(),
+        suburb: z.string().trim().optional(),
+        state: z.string().trim().toUpperCase().optional(),
+        postcode: z.string().trim().optional(),
         description: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
@@ -75,11 +75,11 @@ export const adminRouter = router({
     updateCentre: ownerProcedure
       .input(z.object({
         id: z.number(),
-        name: z.string(),
-        address: z.string().optional(),
-        suburb: z.string().optional(),
-        state: z.string().optional(),
-        postcode: z.string().optional(),
+        name: z.string().trim(),
+        address: z.string().trim().optional(),
+        suburb: z.string().trim().optional(),
+        state: z.string().trim().toUpperCase().optional(),
+        postcode: z.string().trim().optional(),
         description: z.string().optional(),
         includeInMainSite: z.boolean().optional(),
         pdfUrl1: z.string().optional(),
@@ -113,15 +113,17 @@ export const adminRouter = router({
         dailyRate: z.string(),
         weeklyRate: z.string(),
         weekendRate: z.string().optional(),
+        outgoingsPerDay: z.string().optional(),
         instantBooking: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { dailyRate, weeklyRate, weekendRate, ...rest } = input;
+        const { dailyRate, weeklyRate, weekendRate, outgoingsPerDay, ...rest } = input;
         return await db.createSite({
           ...rest,
           pricePerDay: dailyRate,
           pricePerWeek: weeklyRate,
           weekendPricePerDay: weekendRate || null,
+          outgoingsPerDay: outgoingsPerDay || null,
         });
       }),
 
@@ -137,6 +139,7 @@ export const adminRouter = router({
         dailyRate: z.string().optional(),
         weeklyRate: z.string().optional(),
         weekendRate: z.string().nullish(),
+        outgoingsPerDay: z.string().nullish(),
         instantBooking: z.boolean().optional(),
         imageUrl1: z.string().nullish(),
         imageUrl2: z.string().nullish(),
@@ -144,12 +147,13 @@ export const adminRouter = router({
         imageUrl4: z.string().nullish(),
       }))
       .mutation(async ({ input }) => {
-        const { id, dailyRate, weeklyRate, weekendRate, ...rest } = input;
+        const { id, dailyRate, weeklyRate, weekendRate, outgoingsPerDay, ...rest } = input;
         const data: any = { ...rest };
         
         if (dailyRate !== undefined) data.pricePerDay = dailyRate || null;
         if (weeklyRate !== undefined) data.pricePerWeek = weeklyRate || null;
         if (weekendRate !== undefined) data.weekendPricePerDay = weekendRate || null;
+        if (outgoingsPerDay !== undefined) data.outgoingsPerDay = outgoingsPerDay || null;
         
         console.log('[updateSite] Updating site:', { id, data });
         try {
@@ -756,10 +760,13 @@ export const adminRouter = router({
 
         const [newUser] = await dbInstance.insert(users).values({
           openId,
+          username: input.email,
+          passwordHash: hashedPassword,
           email: input.email,
           name: input.name,
           role: input.role,
           canPayByInvoice: input.canPayByInvoice,
+          loginMethod: 'password',
         }).returning({ id: users.id });
 
         if (input.companyName || input.insuranceCompany) {

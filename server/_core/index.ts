@@ -79,6 +79,10 @@ async function startServer() {
   // Initialize rate validation scheduler
   const { startRateValidationScheduler } = await import('../rateValidationScheduler');
   startRateValidationScheduler();
+
+  // Backfill slugs for any centres that don't have them yet
+  const { backfillCentreSlugs } = await import('../slugMigration');
+  backfillCentreSlugs().catch(err => console.error('[SlugMigration] Error:', err));
 }
 
 startServer().catch(console.error);

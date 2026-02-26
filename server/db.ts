@@ -16,7 +16,8 @@ import {
   transactions, InsertTransaction,
   systemConfig, InsertSystemConfig,
   auditLog, InsertAuditLog,
-  budgets
+  budgets,
+  passwordResetTokens
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -423,7 +424,7 @@ export async function searchShoppingCentres(query: string, stateFilter?: string)
   
   if (!centreQuery.trim() && stateFilter) { return allCentres.filter(centre => centre.includeInMainSite); }
   const { fuzzySearchCentres } = await import('./fuzzySearch');
-  const searchableCentres = allCentres.filter(c => c.includeInMainSite).map(c => ({ id: c.id, name: c.name, suburb: c.suburb, state: c.state }));
+  const searchableCentres = allCentres.filter(c => c.includeInMainSite).map(c => ({ id: c.id, name: c.name, suburb: c.suburb?.trim() ?? null, state: c.state }));
   const fuzzyResults = await fuzzySearchCentres(centreQuery, searchableCentres);
   const centreMap = new Map(allCentres.map(c => [c.id, c]));
   const scoredCentres = fuzzyResults.map(r => ({ centre: centreMap.get(r.id)!, score: r.score })).filter(i => i.centre);
@@ -1522,5 +1523,47 @@ export async function getBookingStatusHistory(bookingId: number) {
 export async function recordBookingCreated(bookingId: number, status: "pending" | "confirmed", createdBy?: number, createdByName?: string) {
   const { recordBookingCreated: record } = await import("./bookingStatusHelper");
   await record(bookingId, status, createdBy, createdByName);
+}
+
+// =============================================================================
+// Password Reset Tokens
+// =============================================================================
+
+export async function createPasswordResetToken(userId: number, token: string, expiresAt: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(passwordResetTokens).values({ userId, token, expiresAt });
+}
+
+export async function getValidPasswordResetToken(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db
+    .select({
+      id: passwordResetTokens.id,
+      userId: passwordResetTokens.userId,
+      token: passwordResetTokens.token,
+      expiresAt: passwordResetTokens.expiresAt,
+      usedAt: passwordResetTokens.usedAt,
+      email: users.email,
+      username: users.username,
+    })
+    .from(passwordResetTokens)
+    .innerJoin(users, eq(passwordResetTokens.userId, users.id))
+    .where(eq(passwordResetTokens.token, token))
+    .limit(1);
+  return row || null;
+}
+
+export async function markPasswordResetTokenUsed(tokenId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(passwordResetTokens).set({ usedAt: new Date() }).where(eq(passwordResetTokens.id, tokenId));
+}
+
+export async function updateUserPasswordHash(userId: number, passwordHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, userId));
 }
 

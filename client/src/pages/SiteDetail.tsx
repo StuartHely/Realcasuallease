@@ -80,7 +80,8 @@ export default function SiteDetail() {
   const createBookingMutation = trpc.bookings.create.useMutation({
     onSuccess: (data) => {
       const { costBreakdown, equipmentWarning, paymentMethod } = data;
-      const breakdownMessage = `\n\nCost Breakdown:\n${costBreakdown.weekdayCount} weekdays @ $${costBreakdown.weekdayRate}/day${costBreakdown.weekendCount > 0 ? `\n${costBreakdown.weekendCount} weekend days @ $${costBreakdown.weekendRate}/day` : ''}\nSubtotal: $${costBreakdown.subtotal.toFixed(2)}\nGST: $${costBreakdown.gstAmount.toFixed(2)}\nTotal: $${costBreakdown.total.toFixed(2)}`;
+      const outgoingsLine = costBreakdown.outgoingsPerDay > 0 ? `\nOutgoings: ${costBreakdown.weekdayCount + costBreakdown.weekendCount} days @ $${costBreakdown.outgoingsPerDay.toFixed(2)}/day = $${costBreakdown.totalOutgoings.toFixed(2)}` : '';
+      const breakdownMessage = `\n\nCost Breakdown:\n${costBreakdown.weekdayCount} weekdays @ $${costBreakdown.weekdayRate}/day${costBreakdown.weekendCount > 0 ? `\n${costBreakdown.weekendCount} weekend days @ $${costBreakdown.weekendRate}/day` : ''}\nSubtotal: $${costBreakdown.subtotal.toFixed(2)}${outgoingsLine}\nGST: $${costBreakdown.gstAmount.toFixed(2)}\nTotal: $${costBreakdown.total.toFixed(2)}`;
       
       const equipmentMessage = equipmentWarning ? `\n\n⚠️ ${equipmentWarning}` : '';
       
@@ -192,7 +193,7 @@ export default function SiteDetail() {
     setPendingBookingData(null);
     // Navigate back to centre calendar on the originally requested date
     if (site?.centreId && startDate) {
-      setLocation(`/centre/${site.centreId}?date=${startDate}`);
+      setLocation(`/centre/${centre?.slug || site.centreId}?date=${startDate}`);
     }
   };
 
@@ -428,6 +429,12 @@ export default function SiteDetail() {
                       <p className="text-sm text-gray-600">Weekly Rate</p>
                       <p className="text-lg font-semibold text-gray-700">${site.pricePerWeek}/week</p>
                     </div>
+                    {parseFloat(site.outgoingsPerDay || "0") > 0 && (
+                      <div className="pt-2 border-t">
+                        <p className="text-sm text-gray-600">Outgoings</p>
+                        <p className="text-lg font-semibold text-gray-700">${site.outgoingsPerDay}/day</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>

@@ -106,7 +106,10 @@ export default function VacantShopDetail() {
     const end = new Date(endDate);
     const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     const weeklyRate = shop.pricePerWeek ? parseFloat(shop.pricePerWeek.toString()) : 0;
-    const totalAmount = (weeklyRate * days / 7).toFixed(2);
+    const rentAmount = weeklyRate * days / 7;
+    const outgoingsPerDay = parseFloat(shop.outgoingsPerDay?.toString() || "0");
+    const totalOutgoings = outgoingsPerDay > 0 ? outgoingsPerDay * days : 0;
+    const totalAmount = (rentAmount + totalOutgoings).toFixed(2);
     const gstAmount = (parseFloat(totalAmount) * 0.1).toFixed(2);
     
     createEnquiryMutation.mutate({
@@ -331,6 +334,12 @@ export default function VacantShopDetail() {
                       <div>
                         <p className="text-sm text-gray-600">Monthly Rate</p>
                         <p className="text-2xl font-bold text-green-600">${shop.pricePerMonth}/month</p>
+                      </div>
+                    )}
+                    {parseFloat(shop.outgoingsPerDay?.toString() || "0") > 0 && (
+                      <div>
+                        <p className="text-sm text-gray-600">Outgoings</p>
+                        <p className="text-2xl font-bold text-green-600">${shop.outgoingsPerDay}/day</p>
                       </div>
                     )}
                   </div>

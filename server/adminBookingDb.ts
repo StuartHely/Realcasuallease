@@ -141,6 +141,7 @@ export async function getSiteAvailabilityGrid(
     pricePerDay: string | null;
     weekendPricePerDay: string | null;
     pricePerWeek: string | null;
+    outgoingsPerDay: string | null;
     maxTables: number | null;
   }>;
   bookings: Array<{
@@ -171,6 +172,7 @@ export async function getSiteAvailabilityGrid(
       pricePerDay: sites.pricePerDay,
       weekendPricePerDay: sites.weekendPricePerDay,
       pricePerWeek: sites.pricePerWeek,
+      outgoingsPerDay: sites.outgoingsPerDay,
       maxTables: sites.maxTables,
     })
     .from(sites)
@@ -487,8 +489,64 @@ export async function getBookingAuditHistory(
 }
 
 /**
- * Cancel an admin booking.
- * Uses the centralized changeBookingStatus() so history is always recorded.
+ * Get bookings with pending refunds (cancelled, paid, refund not yet processed)
+ */
+export async function getPendingRefundBookings(): Promise<
+  Array<{
+    bookingId: number;
+    bookingNumber: string;
+    customerName: string | null;
+    customerEmail: string | null;
+    centreName: string;
+    siteNumber: string;
+    startDate: Date;
+    endDate: Date;
+    totalAmount: string;
+    gstAmount: string;
+    paymentMethod: string;
+    stripePaymentIntentId: string | null;
+    refundPendingAt: Date | null;
+    cancelledAt: Date | null;
+  }>
+> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await db
+    .select({
+      bookingId: bookings.id,
+      bookingNumber: bookings.bookingNumber,
+      customerName: users.name,
+      customerEmail: users.email,
+      centreName: shoppingCentres.name,
+      siteNumber: sites.siteNumber,
+      startDate: bookings.startDate,
+      endDate: bookings.endDate,
+      totalAmount: bookings.totalAmount,
+      gstAmount: bookings.gstAmount,
+      paymentMethod: bookings.paymentMethod,
+      stripePaymentIntentId: bookings.stripePaymentIntentId,
+      refundPendingAt: bookings.refundPendingAt,
+      cancelledAt: bookings.cancelledAt,
+    })
+    .from(bookings)
+    .innerJoin(users, eq(bookings.customerId, users.id))
+    .innerJoin(sites, eq(bookings.siteId, sites.id))
+    .innerJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
+    .where(
+      and(
+        sql`${bookings.refundPendingAt} IS NOT NULL`,
+        eq(bookings.refundStatus, "pending"),
+      ),
+    )
+    .orderBy(desc(bookings.cancelledAt));
+
+  return results;
+}
+
+/**
+ * @deprecated Use `cancelBooking()` from `cancellationService.ts` instead.
+ * This function does not create reversal transactions, send emails, or process refunds.
  */
 export async function cancelAdminBooking(
   bookingId: number,

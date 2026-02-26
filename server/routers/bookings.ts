@@ -77,20 +77,24 @@ export const bookingsRouter = router({
 
         // Determine if approval is needed based on usage categories
         let requiresApproval = false;
+
+        // If the site has NO categories configured at all, force manual approval
+        const { getApprovedCategoriesForSite } = await import("../usageCategoriesDb");
+        const siteApprovedCategories = await getApprovedCategoriesForSite(input.siteId);
+        if (siteApprovedCategories.length === 0) {
+          requiresApproval = true;
+        }
         
-        if (input.usageCategoryId) {
+        if (!requiresApproval && input.usageCategoryId) {
           // Check if additional text was provided (triggers manual approval)
           if (input.additionalCategoryText && input.additionalCategoryText.trim().length > 0) {
             requiresApproval = true;
           } else {
             // Check if category is approved for this site
-            const { isCategoryApprovedForSite, getApprovedCategoriesForSite } = await import("../usageCategoriesDb");
-            const approvedCategories = await getApprovedCategoriesForSite(input.siteId);
+            const { isCategoryApprovedForSite } = await import("../usageCategoriesDb");
             
-            // If no approvals exist (empty), treat as all approved (default behavior - skip duplicate check)
-            if (approvedCategories.length === 0) {
-              // Default all approved - no additional checks needed
-              requiresApproval = false;
+            if (siteApprovedCategories.length === 0) {
+              requiresApproval = true;
             } else {
               // Approvals exist - check if this specific category is approved
               const isApproved = await isCategoryApprovedForSite(input.siteId, input.usageCategoryId);
@@ -222,6 +226,8 @@ export const bookingsRouter = router({
             weekendCount,
             weekdayRate: Number(site.pricePerDay),
             weekendRate: site.weekendPricePerDay ? Number(site.weekendPricePerDay) : Number(site.pricePerDay),
+            outgoingsPerDay: site.outgoingsPerDay ? Number(site.outgoingsPerDay) : 0,
+            totalOutgoings: (site.outgoingsPerDay ? Number(site.outgoingsPerDay) : 0) * (weekdayCount + weekendCount),
             subtotal: totalAmount,
             gstAmount,
             total: totalAmount + gstAmount,
@@ -250,11 +256,16 @@ export const bookingsRouter = router({
         const gstRate = gstValue ? Number(gstValue) / 100 : 0.1;
         const gstAmount = totalAmount * gstRate;
 
+        const outgoingsPerDay = site.outgoingsPerDay ? Number(site.outgoingsPerDay) : 0;
+        const totalOutgoings = outgoingsPerDay * (weekdayCount + weekendCount);
+
         return {
           weekdayCount,
           weekendCount,
           weekdayRate: Number(site.pricePerDay),
           weekendRate: site.weekendPricePerDay ? Number(site.weekendPricePerDay) : Number(site.pricePerDay),
+          outgoingsPerDay,
+          totalOutgoings,
           subtotal: totalAmount,
           gstAmount,
           gstPercentage: gstRate * 100, // Return current GST percentage

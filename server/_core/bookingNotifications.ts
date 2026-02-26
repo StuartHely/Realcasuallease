@@ -704,3 +704,123 @@ The Casual Lease Team
   console.log(`[Email] Sent insurance unreadable email to ${customer.email} for booking ${bookingNumber}`);
 }
 
+/**
+ * Send booking cancellation email to customer
+ */
+export async function sendBookingCancellationEmail(params: {
+  bookingNumber: string;
+  customerName: string;
+  customerEmail: string;
+  centreName: string;
+  siteNumber: string;
+  startDate: Date;
+  endDate: Date;
+  totalAmount: string | number;
+  companyName?: string;
+  tradingName?: string;
+  cancellationReason?: string;
+  refundStatus: string;
+}): Promise<void> {
+  const { sendEmail } = await import('./email');
+
+  const startDateStr = new Date(params.startDate).toLocaleDateString("en-AU", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const endDateStr = new Date(params.endDate).toLocaleDateString("en-AU", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const businessName = params.tradingName || params.companyName;
+  const amount = Number(params.totalAmount).toFixed(2);
+
+  let refundStatement = "";
+  let refundStatementText = "";
+  switch (params.refundStatus) {
+    case "not_required":
+      refundStatement = "No payment was received for this booking so no refund is applicable.";
+      refundStatementText = refundStatement;
+      break;
+    case "processed":
+      refundStatement = `A full refund of $${amount} (including GST) has been initiated to your original payment method. Please allow 5–10 business days for the refund to appear.`;
+      refundStatementText = refundStatement;
+      break;
+    case "pending":
+    case "manual":
+    default:
+      refundStatement = `Your booking was paid and a refund is being arranged. Our team will be in contact regarding the refund of $${amount}.`;
+      refundStatementText = refundStatement;
+      break;
+  }
+
+  const subject = `Booking Cancellation: ${params.bookingNumber}`;
+
+  const htmlBody = `
+    <h2>Booking Cancellation</h2>
+    
+    <p>Dear ${params.customerName},</p>
+    
+    <p>We are writing to confirm that the following booking has been cancelled.</p>
+    
+    <h3>Booking Details</h3>
+    <ul>
+      <li><strong>Booking Number:</strong> ${params.bookingNumber}</li>
+      ${businessName ? `<li><strong>Business:</strong> ${businessName}</li>` : ""}
+      <li><strong>Location:</strong> ${params.centreName} — Site ${params.siteNumber}</li>
+      <li><strong>Dates:</strong> ${startDateStr} to ${endDateStr}</li>
+      <li><strong>Amount:</strong> $${amount}</li>
+    </ul>
+    
+    ${params.cancellationReason ? `
+    <h3>Reason for Cancellation</h3>
+    <p>${params.cancellationReason}</p>
+    ` : ""}
+    
+    <h3>Refund</h3>
+    <p>${refundStatement}</p>
+    
+    <p>If you have any questions, please contact us.</p>
+    
+    <p>Best regards,<br>
+    The Casual Lease Team</p>
+  `;
+
+  const textBody = `
+Booking Cancellation
+
+Dear ${params.customerName},
+
+We are writing to confirm that the following booking has been cancelled.
+
+Booking Details:
+- Booking Number: ${params.bookingNumber}
+${businessName ? `- Business: ${businessName}` : ""}
+- Location: ${params.centreName} — Site ${params.siteNumber}
+- Dates: ${startDateStr} to ${endDateStr}
+- Amount: $${amount}
+${params.cancellationReason ? `\nReason for Cancellation:\n${params.cancellationReason}` : ""}
+
+Refund:
+${refundStatementText}
+
+If you have any questions, please contact us.
+
+Best regards,
+The Casual Lease Team
+  `.trim();
+
+  await sendEmail({
+    to: params.customerEmail,
+    subject,
+    html: htmlBody,
+    text: textBody,
+  });
+
+  console.log(`[Email] Sent cancellation email to ${params.customerEmail} for booking ${params.bookingNumber}`);
+}
+

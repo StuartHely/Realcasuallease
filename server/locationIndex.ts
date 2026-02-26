@@ -99,9 +99,9 @@ async function ensureIndex(): Promise<LocationEntry[]> {
     centreId: r.id,
     centreName: r.name,
     slug: r.slug ?? null,
-    suburb: r.suburb ?? null,
-    city: r.city ?? null,
-    state: r.state ?? null,
+    suburb: r.suburb?.trim() ?? null,
+    city: r.city?.trim() ?? null,
+    state: r.state?.trim() ?? null,
     postcode: r.postcode ?? null,
     latitude: r.latitude ? parseFloat(r.latitude) : null,
     longitude: r.longitude ? parseFloat(r.longitude) : null,
@@ -167,12 +167,8 @@ export async function findCentresByArea(areaQuery: string): Promise<LocationEntr
     return index.filter((entry) => matchesAlias(entry, alias));
   }
 
-  // Fallback: partial match on suburb or city
-  return index.filter((entry) => {
-    const suburb = entry.suburb?.toLowerCase() ?? "";
-    const city = entry.city?.toLowerCase() ?? "";
-    return suburb.includes(normalised) || city.includes(normalised);
-  });
+  // Fallback: use fuzzy suburb/city matching (handles typos)
+  return findCentresBySuburbOrCity(areaQuery);
 }
 
 /**
@@ -204,8 +200,8 @@ export async function findCentresBySuburbOrCity(query: string): Promise<Location
   const normalised = query.trim().toLowerCase();
 
   return index.filter((entry) => {
-    const suburb = entry.suburb?.toLowerCase() ?? "";
-    const city = entry.city?.toLowerCase() ?? "";
+    const suburb = entry.suburb?.trim().toLowerCase() ?? "";
+    const city = entry.city?.trim().toLowerCase() ?? "";
 
     // Exact partial match
     if (suburb.includes(normalised) || city.includes(normalised)) return true;

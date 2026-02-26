@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation, useSearch } from "wouter";
 import AdminLayout from "@/components/AdminLayout";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,6 +23,7 @@ import { cn } from "@/lib/utils";
 export default function AdminBooking() {
   const [, setLocation] = useLocation();
   const searchString = useSearch();
+  const { user } = useAuth();
   
   // Parse URL parameters
   const urlParams = useMemo(() => {
@@ -147,9 +150,26 @@ export default function AdminBooking() {
     onSuccess: (data) => {
       toast.success(`Booking ${data.bookingNumber} cancelled successfully!`);
       utils.adminBooking.getAvailabilityGrid.invalidate();
+      utils.adminBooking.getPendingRefunds.invalidate();
       setShowCancelDialog(false);
       setEditingBookingId(null);
       setCancelReason("");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  // Pending refunds (mega admin only)
+  const isMegaAdmin = user?.role === 'mega_admin' || user?.role === 'mega_state_admin';
+  const { data: pendingRefunds } = trpc.adminBooking.getPendingRefunds.useQuery(
+    undefined,
+    { enabled: isMegaAdmin },
+  );
+  const processRefundMutation = trpc.adminBooking.processRefund.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Refund ${data.refundStatus === 'processed' ? 'processed via Stripe' : 'marked as manually refunded'}`);
+      utils.adminBooking.getPendingRefunds.invalidate();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -339,6 +359,61 @@ export default function AdminBooking() {
           <p className="text-muted-foreground">Create bookings on behalf of customers</p>
         </div>
 
+        {/* Pending Refunds Banner (mega admin only) */}
+        {isMegaAdmin && pendingRefunds && pendingRefunds.length > 0 && (
+          <Card className="border-amber-300 bg-amber-50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2 text-amber-800">
+                <AlertTriangle className="h-5 w-5" />
+                Refunds Pending — {pendingRefunds.length} cancelled booking{pendingRefunds.length !== 1 ? 's' : ''} require refund processing
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-amber-200">
+                      <th className="text-left py-2 pr-4 font-medium">Booking</th>
+                      <th className="text-left py-2 pr-4 font-medium">Customer</th>
+                      <th className="text-left py-2 pr-4 font-medium">Centre / Site</th>
+                      <th className="text-left py-2 pr-4 font-medium">Cancelled</th>
+                      <th className="text-right py-2 pr-4 font-medium">Amount</th>
+                      <th className="text-left py-2 pr-4 font-medium">Payment</th>
+                      <th className="text-right py-2 font-medium">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingRefunds.map((refund: any) => (
+                      <tr key={refund.bookingId} className="border-b border-amber-100">
+                        <td className="py-2 pr-4 font-medium">{refund.bookingNumber}</td>
+                        <td className="py-2 pr-4">{refund.customerName}</td>
+                        <td className="py-2 pr-4">{refund.centreName} — Site {refund.siteNumber}</td>
+                        <td className="py-2 pr-4">{refund.cancelledAt ? format(new Date(refund.cancelledAt), 'dd/MM/yyyy') : '—'}</td>
+                        <td className="py-2 pr-4 text-right">${Number(refund.totalAmount).toFixed(2)}</td>
+                        <td className="py-2 pr-4">
+                          <Badge variant="outline" className={refund.stripePaymentIntentId ? 'border-blue-300 text-blue-700' : 'border-gray-300 text-gray-600'}>
+                            {refund.stripePaymentIntentId ? 'Stripe' : 'Invoice'}
+                          </Badge>
+                        </td>
+                        <td className="py-2 text-right">
+                          <Button
+                            size="sm"
+                            variant={refund.stripePaymentIntentId ? "default" : "outline"}
+                            disabled={processRefundMutation.isPending}
+                            onClick={() => processRefundMutation.mutate({ bookingId: refund.bookingId })}
+                          >
+                            {processRefundMutation.isPending ? 'Processing...' : refund.stripePaymentIntentId ? 'Process Refund' : 'Mark as Refunded'}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Centre Selection */}
         <Card>
           <CardHeader>
@@ -441,6 +516,9 @@ export default function AdminBooking() {
                               <div>${site.pricePerDay}/day</div>
                               {site.weekendPricePerDay && <div>${site.weekendPricePerDay}/wknd</div>}
                               <div>${site.pricePerWeek}/wk</div>
+                              {parseFloat(site.outgoingsPerDay || "0") > 0 && (
+                                <p className="text-xs text-muted-foreground">Outgoings: ${site.outgoingsPerDay}/day</p>
+                              )}
                             </td>
                             {daysInMonth.map((day) => {
                               const booking = getBookingForDay(site.id, day);
@@ -631,12 +709,15 @@ export default function AdminBooking() {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>Weekdays: {costPreview.weekdayCount} × ${costPreview.pricePerDay}</div>
                         <div>Weekends: {costPreview.weekendCount} × ${costPreview.weekendPricePerDay || costPreview.pricePerDay}</div>
-                        <div>Subtotal: ${costPreview.totalAmount.toFixed(2)}</div>
-                        <div>GST ({costPreview.gstPercentage}%): ${costPreview.gstAmount.toFixed(2)}</div>
+                        <div>Rent Subtotal: ${costPreview.totalAmount.toFixed(2)}</div>
+                        {costPreview.outgoingsPerDay > 0 && (
+                          <div>Outgoings: {costPreview.weekdayCount + costPreview.weekendCount} days × ${costPreview.outgoingsPerDay}/day = ${(costPreview.outgoingsPerDay * (costPreview.weekdayCount + costPreview.weekendCount)).toFixed(2)}</div>
+                        )}
+                        <div>GST ({costPreview.gstPercentage}%): ${((costPreview.totalAmount + costPreview.outgoingsPerDay * (costPreview.weekdayCount + costPreview.weekendCount)) * costPreview.gstPercentage / 100).toFixed(2)}</div>
                       </div>
                       <div className="pt-2 border-t">
                         <div className="font-semibold text-lg">
-                          Calculated Total: ${costPreview.totalAmount.toFixed(2)} + GST
+                          Calculated Total: ${(costPreview.totalAmount + costPreview.outgoingsPerDay * (costPreview.weekdayCount + costPreview.weekendCount)).toFixed(2)} + GST
                         </div>
                       </div>
                     </div>

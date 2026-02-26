@@ -90,7 +90,7 @@ export function NearbyCentres({ centreId, centreName, radiusKm = 10 }: NearbyCen
       <CardContent>
         <div className="grid gap-3">
           {nearbyCentres.map((centre) => (
-            <Link key={centre.id} href={`/centre/${centre.id}`}>
+            <Link key={centre.id} href={`/centre/${centre.slug || centre.id}`}>
               <div className="flex items-start justify-between p-3 rounded-lg border hover:bg-accent hover:border-accent-foreground transition-colors cursor-pointer">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">

@@ -21,8 +21,8 @@ type AssetType = "casual_leasing" | "vacant_shops" | "third_line" | "all";
 
 export default function CentreDetail() {
   const [, setLocation] = useLocation();
-  const [, params] = useRoute("/centre/:id");
-  const centreId = params?.id ? parseInt(params.id) : 0;
+  const [, params] = useRoute("/centre/:slug");
+  const slugOrId = params?.slug || "";
   const [assetType, setAssetType] = useState<AssetType>("casual_leasing");
   const [selectedVSId, setSelectedVSId] = useState<number | null>(null);
   const [selected3rdLId, setSelected3rdLId] = useState<number | null>(null);
@@ -38,10 +38,12 @@ export default function CentreDetail() {
   const calendarStartDate = useMemo(() => startOfWeek(new Date(), { weekStartsOn: 1 }), []);
   const calendarEndDate = useMemo(() => addMonths(new Date(), 3), []);
 
-  const { data: centre, isLoading: centreLoading } = trpc.centres.getById.useQuery(
-    { id: centreId },
-    { enabled: centreId > 0 }
+  const { data: centre, isLoading: centreLoading } = trpc.centres.getBySlugOrId.useQuery(
+    { idOrSlug: slugOrId },
+    { enabled: !!slugOrId }
   );
+
+  const centreId = centre?.id || 0;
 
   // Casual Leasing Sites
   const { data: sites = [], isLoading: sitesLoading } = trpc.centres.getSites.useQuery(
@@ -443,7 +445,7 @@ export default function CentreDetail() {
                 <p className="text-gray-600">
                   <span className="font-semibold text-gray-900">{mapAssets.length}</span>{" "}
                   {assetType === "all" ? "total assets" : getAssetTypeLabel(assetType).toLowerCase()}{" "}
-                  available
+                  locations available
                 </p>
               </div>
               {assetType === "casual_leasing" && (

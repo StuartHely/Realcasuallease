@@ -87,8 +87,17 @@ export const customerProfiles = pgTable("customer_profiles", {
 export const owners = pgTable("owners", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
+  companyAbn: varchar("companyAbn", { length: 20 }),
+  contactName: varchar("contactName", { length: 255 }),
+  contactTitle: varchar("contactTitle", { length: 100 }),
+  address: varchar("address", { length: 500 }),
   email: varchar("email", { length: 320 }),
   phone: varchar("phone", { length: 20 }),
+  secondaryContactName: varchar("secondaryContactName", { length: 255 }),
+  secondaryContactTitle: varchar("secondaryContactTitle", { length: 100 }),
+  secondaryAddress: varchar("secondaryAddress", { length: 500 }),
+  secondaryEmail: varchar("secondaryEmail", { length: 320 }),
+  secondaryPhone: varchar("secondaryPhone", { length: 20 }),
   bankName: varchar("bankName", { length: 255 }),
   bankAccountName: varchar("bankAccountName", { length: 255 }),
   bankBsb: varchar("bankBsb", { length: 10 }),
@@ -193,6 +202,7 @@ export const sites = pgTable("sites", {
   pricePerDay: decimal("pricePerDay", { precision: 10, scale: 2 }),
   pricePerWeek: decimal("pricePerWeek", { precision: 10, scale: 2 }),
   weekendPricePerDay: decimal("weekendPricePerDay", { precision: 10, scale: 2 }),
+  outgoingsPerDay: decimal("outgoingsPerDay", { precision: 10, scale: 2 }),
   instantBooking: boolean("instantBooking").default(true).notNull(),
   imageUrl1: text("imageUrl1"),
   imageUrl2: text("imageUrl2"),
@@ -278,6 +288,9 @@ export const bookings = pgTable("bookings", {
   stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
   paymentMethod: paymentMethodEnum("paymentMethod").default("stripe").notNull(),
   paidAt: timestamp("paidAt"),
+  cancelledAt: timestamp("cancelledAt"),
+  refundStatus: varchar("refundStatus", { length: 50 }),
+  refundPendingAt: timestamp("refundPendingAt"),
   paymentRecordedBy: integer("paymentRecordedBy").references(() => users.id),
   paymentDueDate: timestamp("paymentDueDate"), // For invoice bookings - when payment is due
   remindersSent: integer("remindersSent").default(0).notNull(), // Count of payment reminders sent
@@ -332,6 +345,7 @@ export const transactions = pgTable("transactions", {
   platformFee: decimal("platformFee", { precision: 12, scale: 2 }).notNull(),
   remitted: boolean("remitted").default(false).notNull(),
   remittedAt: timestamp("remittedAt"),
+  gstAdjustmentNoteNumber: varchar("gstAdjustmentNoteNumber", { length: 50 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
   bookingIdIdx: index("tx_bookingId_idx").on(table.bookingId),
@@ -547,6 +561,7 @@ export const vacantShops = pgTable("vacant_shops", {
   imageUrl2: text("imageUrl2"),
   pricePerWeek: decimal("pricePerWeek", { precision: 10, scale: 2 }),
   pricePerMonth: decimal("pricePerMonth", { precision: 10, scale: 2 }),
+  outgoingsPerDay: decimal("outgoingsPerDay", { precision: 10, scale: 2 }),
   floorLevelId: integer("floorLevelId").references(() => floorLevels.id, { onDelete: "set null" }),
   mapMarkerX: decimal("mapMarkerX", { precision: 5, scale: 2 }),
   mapMarkerY: decimal("mapMarkerY", { precision: 5, scale: 2 }),
@@ -574,6 +589,7 @@ export const thirdLineIncome = pgTable("third_line_income", {
   imageUrl2: text("imageUrl2"),
   pricePerWeek: decimal("pricePerWeek", { precision: 10, scale: 2 }),
   pricePerMonth: decimal("pricePerMonth", { precision: 10, scale: 2 }),
+  outgoingsPerDay: decimal("outgoingsPerDay", { precision: 10, scale: 2 }),
   floorLevelId: integer("floorLevelId").references(() => floorLevels.id, { onDelete: "set null" }),
   mapMarkerX: decimal("mapMarkerX", { precision: 5, scale: 2 }),
   mapMarkerY: decimal("mapMarkerY", { precision: 5, scale: 2 }),
@@ -662,9 +678,26 @@ export const thirdLineBookings = pgTable("third_line_bookings", {
 }));
 
 // =============================================================================
+// Password Reset Tokens
+// =============================================================================
+
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  usedAt: timestamp("usedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("prt_userId_idx").on(table.userId),
+}));
+
+// =============================================================================
 // Type Exports
 // =============================================================================
 
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type InsertPasswordResetToken = typeof passwordResetTokens.$inferInsert;
 export type ThirdLineCategory = typeof thirdLineCategories.$inferSelect;
 export type InsertThirdLineCategory = typeof thirdLineCategories.$inferInsert;
 export type VacantShop = typeof vacantShops.$inferSelect;

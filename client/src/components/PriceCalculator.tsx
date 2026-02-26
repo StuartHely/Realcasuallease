@@ -153,9 +153,17 @@ export function PriceCalculator({ siteId, startDate, endDate }: PriceCalculatorP
         {/* Total Calculation */}
         <div className="pt-3 border-t border-blue-300 space-y-1">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Subtotal</span>
+            <span className="text-gray-600">Rent Subtotal</span>
             <span className="font-medium">${preview.subtotal.toFixed(2)}</span>
           </div>
+          {preview.outgoingsPerDay > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">
+                Outgoings ({totalDays} day{totalDays > 1 ? 's' : ''} @ ${preview.outgoingsPerDay.toFixed(2)}/day)
+              </span>
+              <span className="font-medium">${preview.totalOutgoings.toFixed(2)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">GST (10%)</span>
             <span className="font-medium">${preview.gstAmount.toFixed(2)}</span>

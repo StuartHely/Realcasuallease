@@ -839,6 +839,11 @@ export default function Search() {
                                 <p className="text-sm">
                                   <span className="font-semibold">Price:</span> ${shop.pricePerWeek}/week or ${shop.pricePerMonth}/month
                                 </p>
+                                {parseFloat(shop.outgoingsPerDay || "0") > 0 && (
+                                  <p className="text-sm">
+                                    <span className="font-semibold">Outgoings:</span> ${shop.outgoingsPerDay}/day
+                                  </p>
+                                )}
                               </div>
                             </div>
                             
@@ -882,14 +887,22 @@ export default function Search() {
                                       const days = Math.ceil((dateSelection.endDate.getTime() - dateSelection.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
                                       const weeks = Math.ceil(days / 7);
                                       const subtotal = weeks * (shop.pricePerWeek || 0);
-                                      const gst = subtotal * 0.1;
-                                      const total = subtotal + gst;
+                                      const outgoingsRate = parseFloat(shop.outgoingsPerDay || "0");
+                                      const totalOutgoings = outgoingsRate * days;
+                                      const gst = (subtotal + totalOutgoings) * 0.1;
+                                      const total = subtotal + totalOutgoings + gst;
                                       return (
                                         <>
                                           <div className="flex items-center gap-3">
                                             <span className="text-sm font-medium text-gray-700 w-24">Subtotal:</span>
                                             <span className="text-sm">${subtotal.toFixed(2)} ({weeks} week{weeks > 1 ? 's' : ''})</span>
                                           </div>
+                                          {totalOutgoings > 0 && (
+                                            <div className="flex items-center gap-3">
+                                              <span className="text-sm font-medium text-gray-700 w-24">Outgoings:</span>
+                                              <span className="text-sm">{days} × ${outgoingsRate.toFixed(2)} = ${totalOutgoings.toFixed(2)}</span>
+                                            </div>
+                                          )}
                                           <div className="flex items-center gap-3">
                                             <span className="text-sm font-medium text-gray-700 w-24">GST (10%):</span>
                                             <span className="text-sm">${gst.toFixed(2)}</span>
@@ -1216,6 +1229,11 @@ export default function Search() {
                                 <p className="text-sm">
                                   <span className="font-semibold">Price:</span> ${asset.pricePerWeek}/week or ${asset.pricePerMonth}/month
                                 </p>
+                                {parseFloat(asset.outgoingsPerDay || "0") > 0 && (
+                                  <p className="text-sm">
+                                    <span className="font-semibold">Outgoings:</span> ${asset.outgoingsPerDay}/day
+                                  </p>
+                                )}
                               </div>
                             </div>
                             
@@ -1259,14 +1277,22 @@ export default function Search() {
                                       const days = Math.ceil((dateSelection.endDate.getTime() - dateSelection.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
                                       const weeks = Math.ceil(days / 7);
                                       const subtotal = weeks * (asset.pricePerWeek || 0);
-                                      const gst = subtotal * 0.1;
-                                      const total = subtotal + gst;
+                                      const outgoingsRate = parseFloat(asset.outgoingsPerDay || "0");
+                                      const totalOutgoings = outgoingsRate * days;
+                                      const gst = (subtotal + totalOutgoings) * 0.1;
+                                      const total = subtotal + totalOutgoings + gst;
                                       return (
                                         <>
                                           <div className="flex items-center gap-3">
                                             <span className="text-sm font-medium text-gray-700 w-24">Subtotal:</span>
                                             <span className="text-sm">${subtotal.toFixed(2)} ({weeks} week{weeks > 1 ? 's' : ''})</span>
                                           </div>
+                                          {totalOutgoings > 0 && (
+                                            <div className="flex items-center gap-3">
+                                              <span className="text-sm font-medium text-gray-700 w-24">Outgoings:</span>
+                                              <span className="text-sm">{days} × ${outgoingsRate.toFixed(2)} = ${totalOutgoings.toFixed(2)}</span>
+                                            </div>
+                                          )}
                                           <div className="flex items-center gap-3">
                                             <span className="text-sm font-medium text-gray-700 w-24">GST (10%):</span>
                                             <span className="text-sm">${gst.toFixed(2)}</span>
@@ -1914,6 +1940,11 @@ export default function Search() {
                                     {site.weekendPricePerDay && ` (Mon-Fri), $${site.weekendPricePerDay}/day (Sat-Sun)`}
                                     {' '}or ${site.pricePerWeek}/week
                                   </p>
+                                  {parseFloat(site.outgoingsPerDay || "0") > 0 && (
+                                    <p className="text-sm">
+                                      <span className="font-semibold">Outgoings:</span> ${site.outgoingsPerDay}/day
+                                    </p>
+                                  )}
                                   {site.restrictions && (
                                     <p className="text-sm">
                                       <span className="font-semibold">Restrictions:</span> {site.restrictions}
@@ -1969,8 +2000,10 @@ export default function Search() {
                                             const weekdayRate = Number(site.pricePerDay) || 0;
                                             const weekendRate = Number(site.weekendRate) || weekdayRate;
                                             const subtotal = (weekdays * weekdayRate) + (weekends * weekendRate);
-                                            const gst = subtotal * 0.1;
-                                            const total = subtotal + gst;
+                                            const outgoingsRate = parseFloat(site.outgoingsPerDay || "0");
+                                            const totalOutgoings = outgoingsRate * totalDays;
+                                            const gst = (subtotal + totalOutgoings) * 0.1;
+                                            const total = subtotal + totalOutgoings + gst;
                                             return (
                                               <>
                                                 <p><span className="text-gray-600">Duration:</span> {totalDays} day{totalDays > 1 ? 's' : ''}</p>
@@ -1978,6 +2011,7 @@ export default function Search() {
                                                 {weekends > 0 && <p><span className="text-gray-600">Weekends:</span> {weekends} × ${weekendRate.toFixed(2)} = ${(weekends * weekendRate).toFixed(2)}</p>}
                                                 <div className="border-t border-gray-200 mt-2 pt-2">
                                                   <p><span className="text-gray-600">Subtotal:</span> ${subtotal.toFixed(2)}</p>
+                                                  {totalOutgoings > 0 && <p><span className="text-gray-600">Outgoings:</span> {totalDays} × ${outgoingsRate.toFixed(2)} = ${totalOutgoings.toFixed(2)}</p>}
                                                   <p><span className="text-gray-600">GST (10%):</span> ${gst.toFixed(2)}</p>
                                                   <p className="font-semibold text-blue-700"><span className="text-gray-700">Total:</span> ${total.toFixed(2)}</p>
                                                 </div>

@@ -1,4 +1,4 @@
-import { ownerProcedure, router } from "../_core/trpc";
+import { ownerProcedure, adminProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -388,7 +388,18 @@ export const dashboardRouter = router({
           data: pdfBuffer.toString('base64'),
           filename: `Budget_Report_FY${input.financialYear - 1}-${input.financialYear}.pdf`,
           mimeType: 'application/pdf',
-        };
-      }
-    }),
-});
+          };
+          }
+          }),
+
+          // Check for cancellations that affect a closed financial period
+          getCancellationsAffectingPeriod: adminProcedure
+            .input(z.object({
+              periodStart: z.date(),
+              periodEnd: z.date(),
+            }))
+            .query(async ({ input }) => {
+              const { getRecentCancellationsAffectingPeriod } = await import('../dashboardDb');
+              return await getRecentCancellationsAffectingPeriod(input.periodStart, input.periodEnd);
+            }),
+          });

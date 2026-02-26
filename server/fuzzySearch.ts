@@ -1,6 +1,6 @@
 ﻿import Fuse, { FuseResult } from 'fuse.js';
 
-const STRICT_THRESHOLD = 0.3;
+const STRICT_THRESHOLD = 0.4;
 
 type CentreItem = { id: number; name: string | null; suburb: string | null; state: string | null };
 type SiteItem = { siteId: number; siteNumber: string | null; description: string | null; centreName: string | null; suburb: string | null; categories: string[] };

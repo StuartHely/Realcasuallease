@@ -17,8 +17,17 @@ import { WeeklyReportSettingsDialog } from "@/components/WeeklyReportSettingsDia
 interface Owner {
   id: number;
   name: string;
+  companyAbn: string | null;
+  contactName: string | null;
+  contactTitle: string | null;
+  address: string | null;
   email: string | null;
   phone: string | null;
+  secondaryContactName: string | null;
+  secondaryContactTitle: string | null;
+  secondaryAddress: string | null;
+  secondaryEmail: string | null;
+  secondaryPhone: string | null;
   bankName: string | null;
   bankAccountName: string | null;
   bankBsb: string | null;
@@ -47,8 +56,17 @@ export default function AdminOwners() {
   
   const [formData, setFormData] = useState<Partial<Owner>>({
     name: "",
+    companyAbn: "",
+    contactName: "",
+    contactTitle: "",
+    address: "",
     email: "",
     phone: "",
+    secondaryContactName: "",
+    secondaryContactTitle: "",
+    secondaryAddress: "",
+    secondaryEmail: "",
+    secondaryPhone: "",
     bankName: "",
     bankAccountName: "",
     bankBsb: "",
@@ -101,8 +119,17 @@ export default function AdminOwners() {
   const resetForm = () => {
     setFormData({
       name: "",
+      companyAbn: "",
+      contactName: "",
+      contactTitle: "",
+      address: "",
       email: "",
       phone: "",
+      secondaryContactName: "",
+      secondaryContactTitle: "",
+      secondaryAddress: "",
+      secondaryEmail: "",
+      secondaryPhone: "",
       bankName: "",
       bankAccountName: "",
       bankBsb: "",
@@ -134,13 +161,22 @@ export default function AdminOwners() {
 
   const handleSubmitCreate = () => {
     if (!formData.name) {
-      toast.error("Owner name is required");
+      toast.error("Company name is required");
       return;
     }
     createOwnerMutation.mutate({
       name: formData.name,
+      companyAbn: formData.companyAbn || null,
+      contactName: formData.contactName || null,
+      contactTitle: formData.contactTitle || null,
+      address: formData.address || null,
       email: formData.email || null,
       phone: formData.phone || null,
+      secondaryContactName: formData.secondaryContactName || null,
+      secondaryContactTitle: formData.secondaryContactTitle || null,
+      secondaryAddress: formData.secondaryAddress || null,
+      secondaryEmail: formData.secondaryEmail || null,
+      secondaryPhone: formData.secondaryPhone || null,
       bankName: formData.bankName || null,
       bankAccountName: formData.bankAccountName || null,
       bankBsb: formData.bankBsb || null,
@@ -164,8 +200,17 @@ export default function AdminOwners() {
     updateOwnerMutation.mutate({
       id: selectedOwner.id,
       name: formData.name,
+      companyAbn: formData.companyAbn || null,
+      contactName: formData.contactName || null,
+      contactTitle: formData.contactTitle || null,
+      address: formData.address || null,
       email: formData.email || null,
       phone: formData.phone || null,
+      secondaryContactName: formData.secondaryContactName || null,
+      secondaryContactTitle: formData.secondaryContactTitle || null,
+      secondaryAddress: formData.secondaryAddress || null,
+      secondaryEmail: formData.secondaryEmail || null,
+      secondaryPhone: formData.secondaryPhone || null,
       bankName: formData.bankName || null,
       bankAccountName: formData.bankAccountName || null,
       bankBsb: formData.bankBsb || null,
@@ -242,7 +287,7 @@ export default function AdminOwners() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Owner Name</TableHead>
+                    <TableHead>Company Name</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Bank Details</TableHead>
                     <TableHead>Commission</TableHead>
@@ -396,37 +441,91 @@ export default function AdminOwners() {
               <TabsTrigger value="bank">Bank Details</TabsTrigger>
               <TabsTrigger value="emails">Email Settings</TabsTrigger>
             </TabsList>
-            <TabsContent value="basic" className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Owner Name *</Label>
-                  <Input id="name" value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+            <TabsContent value="basic" className="space-y-6 mt-4">
+              <div>
+                <Label className="text-base font-semibold">Company Details</Label>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Company Name *</Label>
+                    <Input id="name" value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="companyAbn">Company ABN</Label>
+                    <Input id="companyAbn" value={formData.companyAbn || ""} onChange={(e) => setFormData({ ...formData, companyAbn: e.target.value })} />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={formData.email || ""} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-base font-semibold">Primary Contact</Label>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="contactName">Contact Name</Label>
+                    <Input id="contactName" value={formData.contactName || ""} onChange={(e) => setFormData({ ...formData, contactName: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contactTitle">Contact Title</Label>
+                    <Input id="contactTitle" value={formData.contactTitle || ""} onChange={(e) => setFormData({ ...formData, contactTitle: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Input id="address" value={formData.address || ""} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" value={formData.email || ""} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input id="phone" value={formData.phone || ""} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" value={formData.phone || ""} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-base font-semibold">Secondary Contact</Label>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="secondaryContactName">Contact Name</Label>
+                    <Input id="secondaryContactName" value={formData.secondaryContactName || ""} onChange={(e) => setFormData({ ...formData, secondaryContactName: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="secondaryContactTitle">Contact Title</Label>
+                    <Input id="secondaryContactTitle" value={formData.secondaryContactTitle || ""} onChange={(e) => setFormData({ ...formData, secondaryContactTitle: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="secondaryAddress">Address</Label>
+                    <Input id="secondaryAddress" value={formData.secondaryAddress || ""} onChange={(e) => setFormData({ ...formData, secondaryAddress: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="secondaryEmail">Email</Label>
+                    <Input id="secondaryEmail" type="email" value={formData.secondaryEmail || ""} onChange={(e) => setFormData({ ...formData, secondaryEmail: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="secondaryPhone">Phone</Label>
+                    <Input id="secondaryPhone" value={formData.secondaryPhone || ""} onChange={(e) => setFormData({ ...formData, secondaryPhone: e.target.value })} />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="commission">Commission %</Label>
-                  <Input id="commission" type="number" step="0.01" value={formData.commissionPercentage || "0.00"} onChange={(e) => setFormData({ ...formData, commissionPercentage: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="monthlyFee">Monthly Fee ($)</Label>
-                  <Input id="monthlyFee" type="number" step="0.01" value={formData.monthlyFee || "0.00"} onChange={(e) => setFormData({ ...formData, monthlyFee: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="remittanceType">Remittance Type</Label>
-                  <Select value={formData.remittanceType} onValueChange={(v: "per_booking" | "monthly") => setFormData({ ...formData, remittanceType: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="per_booking">Per Booking</SelectItem>
-                    </SelectContent>
-                  </Select>
+              </div>
+              <div>
+                <Label className="text-base font-semibold">Fees & Commission</Label>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="commission">Commission %</Label>
+                    <Input id="commission" type="number" step="0.01" value={formData.commissionPercentage || "0.00"} onChange={(e) => setFormData({ ...formData, commissionPercentage: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="monthlyFee">Monthly Fee ($)</Label>
+                    <Input id="monthlyFee" type="number" step="0.01" value={formData.monthlyFee || "0.00"} onChange={(e) => setFormData({ ...formData, monthlyFee: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="remittanceType">Remittance Type</Label>
+                    <Select value={formData.remittanceType} onValueChange={(v: "per_booking" | "monthly") => setFormData({ ...formData, remittanceType: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="per_booking">Per Booking</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             </TabsContent>
@@ -495,37 +594,91 @@ export default function AdminOwners() {
               <TabsTrigger value="bank">Bank Details</TabsTrigger>
               <TabsTrigger value="emails">Email Settings</TabsTrigger>
             </TabsList>
-            <TabsContent value="basic" className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-name">Owner Name *</Label>
-                  <Input id="edit-name" value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+            <TabsContent value="basic" className="space-y-6 mt-4">
+              <div>
+                <Label className="text-base font-semibold">Company Details</Label>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-name">Company Name *</Label>
+                    <Input id="edit-name" value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-companyAbn">Company ABN</Label>
+                    <Input id="edit-companyAbn" value={formData.companyAbn || ""} onChange={(e) => setFormData({ ...formData, companyAbn: e.target.value })} />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-email">Email</Label>
-                  <Input id="edit-email" type="email" value={formData.email || ""} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-base font-semibold">Primary Contact</Label>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-contactName">Contact Name</Label>
+                    <Input id="edit-contactName" value={formData.contactName || ""} onChange={(e) => setFormData({ ...formData, contactName: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-contactTitle">Contact Title</Label>
+                    <Input id="edit-contactTitle" value={formData.contactTitle || ""} onChange={(e) => setFormData({ ...formData, contactTitle: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-address">Address</Label>
+                    <Input id="edit-address" value={formData.address || ""} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-email">Email</Label>
+                    <Input id="edit-email" type="email" value={formData.email || ""} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-phone">Phone</Label>
+                    <Input id="edit-phone" value={formData.phone || ""} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-phone">Phone</Label>
-                  <Input id="edit-phone" value={formData.phone || ""} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-base font-semibold">Secondary Contact</Label>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-secondaryContactName">Contact Name</Label>
+                    <Input id="edit-secondaryContactName" value={formData.secondaryContactName || ""} onChange={(e) => setFormData({ ...formData, secondaryContactName: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-secondaryContactTitle">Contact Title</Label>
+                    <Input id="edit-secondaryContactTitle" value={formData.secondaryContactTitle || ""} onChange={(e) => setFormData({ ...formData, secondaryContactTitle: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-secondaryAddress">Address</Label>
+                    <Input id="edit-secondaryAddress" value={formData.secondaryAddress || ""} onChange={(e) => setFormData({ ...formData, secondaryAddress: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-secondaryEmail">Email</Label>
+                    <Input id="edit-secondaryEmail" type="email" value={formData.secondaryEmail || ""} onChange={(e) => setFormData({ ...formData, secondaryEmail: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-secondaryPhone">Phone</Label>
+                    <Input id="edit-secondaryPhone" value={formData.secondaryPhone || ""} onChange={(e) => setFormData({ ...formData, secondaryPhone: e.target.value })} />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-commission">Commission %</Label>
-                  <Input id="edit-commission" type="number" step="0.01" value={formData.commissionPercentage || "0.00"} onChange={(e) => setFormData({ ...formData, commissionPercentage: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-monthlyFee">Monthly Fee ($)</Label>
-                  <Input id="edit-monthlyFee" type="number" step="0.01" value={formData.monthlyFee || "0.00"} onChange={(e) => setFormData({ ...formData, monthlyFee: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-remittanceType">Remittance Type</Label>
-                  <Select value={formData.remittanceType} onValueChange={(v: "per_booking" | "monthly") => setFormData({ ...formData, remittanceType: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="per_booking">Per Booking</SelectItem>
-                    </SelectContent>
-                  </Select>
+              </div>
+              <div>
+                <Label className="text-base font-semibold">Fees & Commission</Label>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-commission">Commission %</Label>
+                    <Input id="edit-commission" type="number" step="0.01" value={formData.commissionPercentage || "0.00"} onChange={(e) => setFormData({ ...formData, commissionPercentage: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-monthlyFee">Monthly Fee ($)</Label>
+                    <Input id="edit-monthlyFee" type="number" step="0.01" value={formData.monthlyFee || "0.00"} onChange={(e) => setFormData({ ...formData, monthlyFee: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-remittanceType">Remittance Type</Label>
+                    <Select value={formData.remittanceType} onValueChange={(v: "per_booking" | "monthly") => setFormData({ ...formData, remittanceType: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="per_booking">Per Booking</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             </TabsContent>

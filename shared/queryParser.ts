@@ -128,7 +128,7 @@ function extractProductCategory(query: string): string | undefined {
     // Books & Stationery
     'books', 'book', 'stationery', 'calendars', 'calendar', 'news',
     // Art & Craft
-    'art', 'craft', 'handmade', 'hobbies', 'hobby', 'photography',
+    'art', 'craft', 'handmade', 'hobbies', 'hobby', 'photography', 'picture', 'pictures', 'display', 'displays', 'frame', 'frames', 'framing', 'canvas',
     // Beauty & Cosmetics
     'beauty', 'cosmetics', 'cosmetic', 'skincare', 'makeup', 'salon', 'barber',
     // Health & Wellness
@@ -297,12 +297,19 @@ const locationAliases: Record<string, string[]> = {
   'eastgate bondi junction': ['bondi', 'bondi junction', 'eastgate'],
   'campbelltown mall': ['campbelltown', 'campbelltown mall'],
   'carnes hill marketplace': ['carnes hill', 'carnes'],
-  'highlands marketplace': ['highlands', 'highland'],
+  'highlands marketplace': ['highlands', 'highland', 'mittagong'],
   'waverley gardens': ['waverley', 'waverly'],
   'pacific square': ['pacific', 'maroubra'],
   'macarthur square': ['macarthur'],
   'westfield': ['westfield'],
   'stockland': ['stockland'],
+  'bass hill plaza': ['bass hill'],
+  'kallangur fair shopping centre': ['kallangur', 'kallangur fair'],
+  'chisholm village shopping centre': ['chisholm', 'chisholm village'],
+  'deagon marketplace': ['deagon'],
+  'kogarah town centre': ['kogarah'],
+  'rockdale plaza': ['rockdale'],
+  'wanneroo central': ['wanneroo'],
 };
 
 /**
@@ -367,7 +374,7 @@ function extractCentreName(query: string): string {
   let centreName = query;
   
   // Remove common filler words that don't help with location matching
-  centreName = centreName.replace(/\b(i'm\s+looking\s+for|i\s+want\s+to|want\s+to|looking\s+for|need\s+to|would\s+like\s+to|can\s+i|where\s+can\s+i|i\s+need|where\s+is|show\s+me|any\s+available|do\s+you\s+have|is\s+there|are\s+there|sell|buy|rent|lease|find|get|have|put|place|set\s+up|open|start|promote|showcase|display|run|operate|host|launch|market|advertise|store|stall|shop|stand|booth|space|spot|area|site|centres?|shopping\s+centres?|malls?|plazas?|available|spots?|spaces?|options?|locations?)\b/gi, '');
+  centreName = centreName.replace(/\b(i'm\s+looking\s+for|i\s+want\s+to|want\s+to|looking\s+for|need\s+to|would\s+like\s+to|can\s+i|where\s+can\s+i|i\s+need|where\s+is|show\s+me|any\s+available|do\s+you\s+have|is\s+there|are\s+there|sell|buy|rent|lease|leasing|find|get|have|put|place|set\s+up|open|start|promote|showcase|display|run|operate|host|launch|market|advertise|store|stall|shop|stand|booth|space|spot|area|site|centres?|shopping\s+centres?|malls?|plazas?|available|spots?|spaces?|options?|locations?)\b/gi, '');
 
   // Remove budget/price patterns so they don't pollute the centre name
   centreName = centreName.replace(/(?:under|less\s+than|max(?:imum)?|budget\s*(?:of|is|:)?)\s*\$\d+(?:\.\d+)?(?:\s*(?:per\s*)?(?:day|daily|week|weekly|month|monthly))?/gi, '');
@@ -406,7 +413,7 @@ function extractCentreName(query: string): string {
     // Books & Stationery
     'books', 'book', 'stationery', 'calendars', 'calendar', 'news',
     // Art & Craft
-    'art', 'craft', 'handmade', 'hobbies', 'hobby', 'photography',
+    'art', 'craft', 'handmade', 'hobbies', 'hobby', 'photography', 'picture', 'pictures', 'display', 'displays', 'frame', 'frames', 'framing', 'canvas',
     // Beauty & Cosmetics
     'beauty', 'cosmetics', 'cosmetic', 'skincare', 'makeup', 'salon', 'barber',
     // Health & Wellness

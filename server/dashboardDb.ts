@@ -478,3 +478,44 @@ export async function getSiteBreakdown(
   // Sort by variance (worst performers first)
   return breakdown.sort((a, b) => a.variance - b.variance);
 }
+
+/**
+ * Get cancellations that affect a closed period's financial figures.
+ * Finds bookings that belonged to the period but were cancelled after the period ended.
+ */
+export async function getRecentCancellationsAffectingPeriod(
+  periodStart: Date,
+  periodEnd: Date,
+): Promise<{
+  count: number;
+  totalAmount: number;
+  gstAmount: number;
+}> {
+  const db = await getDb();
+  if (!db) return { count: 0, totalAmount: 0, gstAmount: 0 };
+
+  const results = await db
+    .select({
+      count: sql<number>`COUNT(*)::int`,
+      totalAmount: sql<number>`COALESCE(SUM(${bookings.totalAmount}::numeric), 0)`,
+      gstAmount: sql<number>`COALESCE(SUM(${bookings.gstAmount}::numeric), 0)`,
+    })
+    .from(bookings)
+    .where(
+      and(
+        eq(bookings.status, "cancelled"),
+        // Cancelled after the period ended
+        sql`${bookings.cancelledAt} > ${periodEnd}`,
+        // The booking originally belonged to the period
+        gte(bookings.startDate, periodStart),
+        lte(bookings.startDate, periodEnd),
+      ),
+    );
+
+  const row = results[0];
+  return {
+    count: Number(row?.count ?? 0),
+    totalAmount: Number(row?.totalAmount ?? 0),
+    gstAmount: Number(row?.gstAmount ?? 0),
+  };
+}
