@@ -16,6 +16,7 @@ import { dashboardRouter } from "./routers/dashboard";
 import { budgetsRouter } from "./routers/budgets";
 import { ownersRouter } from "./routers/owners";
 import { adminBookingRouter } from "./routers/adminBooking";
+import { portfoliosRouter } from "./routers/portfolios";
 import {
   thirdLineCategoriesRouter,
   vacantShopsRouter,
@@ -50,6 +51,7 @@ export const appRouter = router({
   thirdLineBookings: thirdLineBookingsRouter,
   adminBooking: adminBookingRouter,
   owners: ownersRouter,
+  portfolios: portfoliosRouter,
 });
 
 export type AppRouter = typeof appRouter;

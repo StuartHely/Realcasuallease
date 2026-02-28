@@ -1,7 +1,7 @@
 import { sendEmail } from './_core/email';
 import { notifyOwner } from './_core/notification';
 import { generateInvoicePDF } from './invoiceGenerator';
-import { getBookingById, getSiteById, getShoppingCentreById, getUserById } from './db';
+import { getBookingById, getSiteById, getShoppingCentreById, getUserById, resolveRemittanceBankAccount } from './db';
 
 /**
  * Send invoice email to customer after booking approval
@@ -37,6 +37,13 @@ export async function sendInvoiceEmail(bookingId: number): Promise<boolean> {
     const customer = await getUserById(booking.customerId);
     if (!customer || !customer.email) {
       console.error('[Invoice Email] Customer or email not found:', booking.customerId);
+      return false;
+    }
+
+    // Resolve bank account — abort if none configured
+    const bankAccount = await resolveRemittanceBankAccount(site.centreId);
+    if (!bankAccount) {
+      console.error('[Invoice Email] No bank account configured for centre:', site.centreId);
       return false;
     }
 
@@ -98,10 +105,9 @@ export async function sendInvoiceEmail(bookingId: number): Promise<boolean> {
         
         <div style="margin: 20px 0;">
           <h4 style="color: #123047;">Payment Details</h4>
-          <p style="margin: 5px 0;"><strong>Bank:</strong> [Bank Name]</p>
-          <p style="margin: 5px 0;"><strong>BSB:</strong> [BSB Number]</p>
-          <p style="margin: 5px 0;"><strong>Account Number:</strong> [Account Number]</p>
-          <p style="margin: 5px 0;"><strong>Account Name:</strong> Casual Lease Pty Ltd</p>
+          <p style="margin: 5px 0;"><strong>BSB:</strong> ${bankAccount.bankBsb}</p>
+          <p style="margin: 5px 0;"><strong>Account Number:</strong> ${bankAccount.bankAccountNumber}</p>
+          <p style="margin: 5px 0;"><strong>Account Name:</strong> ${bankAccount.bankAccountName}</p>
         </div>
         
         <p>If you have any questions about this invoice, please don't hesitate to contact us.</p>

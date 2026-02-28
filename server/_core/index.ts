@@ -32,6 +32,9 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  // Stripe webhook must be registered BEFORE global JSON parser (needs raw body)
+  const { registerStripeWebhook } = await import("./stripeWebhook");
+  registerStripeWebhook(app);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -79,6 +82,10 @@ async function startServer() {
   // Initialize rate validation scheduler
   const { startRateValidationScheduler } = await import('../rateValidationScheduler');
   startRateValidationScheduler();
+
+  // Backfill slugs for any centres that don't have them yet
+  const { backfillCentreSlugs } = await import('../slugMigration');
+  backfillCentreSlugs().catch(err => console.error('[SlugMigration] Error:', err));
 }
 
 startServer().catch(console.error);

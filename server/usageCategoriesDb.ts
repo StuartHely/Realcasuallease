@@ -125,6 +125,34 @@ export async function createUsageCategory(name: string, isFree: boolean, display
 }
 
 /**
+ * Get all usage categories (including inactive) ordered by displayOrder
+ */
+export async function getAllUsageCategoriesIncludingInactive() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(usageCategories)
+    .orderBy(usageCategories.displayOrder);
+}
+
+/**
+ * Update an existing usage category
+ */
+export async function updateUsageCategory(id: number, data: { name?: string; isFree?: boolean; displayOrder?: number; isActive?: boolean }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(usageCategories).set(data).where(eq(usageCategories.id, id));
+}
+
+/**
+ * Delete a usage category
+ */
+export async function deleteUsageCategory(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(usageCategories).where(eq(usageCategories.id, id));
+}
+
+/**
  * Apply category approvals to all sites in a centre
  */
 export async function applyApprovalsToAllSitesInCentre(centreId: number, categoryIds: number[]) {
@@ -194,3 +222,5 @@ export async function getCategoryUsageStats() {
     bookingCount: bookingCounts.get(cat.id) || 0,
   }));
 }
+
+

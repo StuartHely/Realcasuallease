@@ -58,33 +58,52 @@ export const adminRouter = router({
     // Shopping Centre Management
     createCentre: adminProcedure
       .input(z.object({
-        name: z.string(),
-        address: z.string().optional(),
-        suburb: z.string().optional(),
-        state: z.string().optional(),
-        postcode: z.string().optional(),
+        ownerId: z.number(),
+        name: z.string().trim(),
+        address: z.string().trim().optional(),
+        suburb: z.string().trim().optional(),
+        state: z.string().trim().toUpperCase().optional(),
+        postcode: z.string().trim().optional(),
         description: z.string().optional(),
+        paymentMode: z.enum(["stripe", "stripe_with_exceptions", "invoice_only"]).default("stripe_with_exceptions"),
+        portfolioId: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
+        // Force invoice_only if the owner is an agency
+        const owner = await db.getOwnerById(input.ownerId);
+        const paymentMode = owner?.isAgency ? "invoice_only" : input.paymentMode;
+
         return await db.createShoppingCentre({
           ...input,
-          ownerId: 1,
+          paymentMode,
         });
       }),
 
     updateCentre: ownerProcedure
       .input(z.object({
         id: z.number(),
-        name: z.string(),
-        address: z.string().optional(),
-        suburb: z.string().optional(),
-        state: z.string().optional(),
-        postcode: z.string().optional(),
+        name: z.string().trim(),
+        address: z.string().trim().optional(),
+        suburb: z.string().trim().optional(),
+        state: z.string().trim().toUpperCase().optional(),
+        postcode: z.string().trim().optional(),
         description: z.string().optional(),
         includeInMainSite: z.boolean().optional(),
+        paymentMode: z.enum(["stripe", "stripe_with_exceptions", "invoice_only"]).optional(),
+        portfolioId: z.number().nullable().optional(),
+        bankBsb: z.string().nullable().optional(),
+        bankAccountNumber: z.string().nullable().optional(),
+        bankAccountName: z.string().nullable().optional(),
+        pdfUrl1: z.string().optional(),
+        pdfName1: z.string().optional(),
+        pdfUrl2: z.string().optional(),
+        pdfName2: z.string().optional(),
+        pdfUrl3: z.string().optional(),
+        pdfName3: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        return await db.updateShoppingCentre(input.id, input);
+        const { id, ...updates } = input;
+        return await db.updateShoppingCentre(id, updates);
       }),
 
     deleteCentre: adminProcedure
@@ -106,15 +125,17 @@ export const adminRouter = router({
         dailyRate: z.string(),
         weeklyRate: z.string(),
         weekendRate: z.string().optional(),
+        outgoingsPerDay: z.string().optional(),
         instantBooking: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { dailyRate, weeklyRate, weekendRate, ...rest } = input;
+        const { dailyRate, weeklyRate, weekendRate, outgoingsPerDay, ...rest } = input;
         return await db.createSite({
           ...rest,
           pricePerDay: dailyRate,
           pricePerWeek: weeklyRate,
           weekendPricePerDay: weekendRate || null,
+          outgoingsPerDay: outgoingsPerDay || null,
         });
       }),
 
@@ -130,6 +151,7 @@ export const adminRouter = router({
         dailyRate: z.string().optional(),
         weeklyRate: z.string().optional(),
         weekendRate: z.string().nullish(),
+        outgoingsPerDay: z.string().nullish(),
         instantBooking: z.boolean().optional(),
         imageUrl1: z.string().nullish(),
         imageUrl2: z.string().nullish(),
@@ -137,20 +159,20 @@ export const adminRouter = router({
         imageUrl4: z.string().nullish(),
       }))
       .mutation(async ({ input }) => {
-        const { id, dailyRate, weeklyRate, weekendRate, ...rest } = input;
+        const { id, dailyRate, weeklyRate, weekendRate, outgoingsPerDay, maxTables, ...rest } = input;
         const data: any = { ...rest };
         
         if (dailyRate !== undefined) data.pricePerDay = dailyRate || null;
         if (weeklyRate !== undefined) data.pricePerWeek = weeklyRate || null;
         if (weekendRate !== undefined) data.weekendPricePerDay = weekendRate || null;
+        if (outgoingsPerDay !== undefined) data.outgoingsPerDay = outgoingsPerDay || null;
+        if (maxTables !== undefined) data.maxTables = (maxTables != null && !isNaN(maxTables)) ? maxTables : null;
         
-        console.log('[updateSite] Updating site:', { id, data });
         try {
           const result = await db.updateSite(id, data);
-          console.log('[updateSite] Success:', result);
           return result;
         } catch (error: any) {
-          console.error('[updateSite] Error:', error.message, error.stack);
+          console.error('[updateSite] Error:', error.message, { id, data });
           throw error;
         }
       }),
@@ -674,27 +696,32 @@ export const adminRouter = router({
 
     // Invoice Dashboard
     getInvoiceStats: ownerProcedure
-      .query(async () => {
+      .input(z.object({
+        paymentMode: z.enum(['all', 'invoice', 'stripe']).optional(),
+      }))
+      .query(async ({ input }) => {
         const { getInvoiceStats } = await import('../invoiceDashboardDb');
-        return await getInvoiceStats();
+        return await getInvoiceStats(input.paymentMode);
       }),
 
     getInvoiceList: ownerProcedure
       .input(z.object({
         filter: z.enum(['all', 'outstanding', 'overdue', 'paid']).default('all'),
+        paymentMode: z.enum(['all', 'invoice', 'stripe']).optional(),
       }))
       .query(async ({ input }) => {
         const { getInvoiceList } = await import('../invoiceDashboardDb');
-        return await getInvoiceList(input.filter);
+        return await getInvoiceList(input.filter, input.paymentMode);
       }),
 
     getPaymentHistory: ownerProcedure
       .input(z.object({
         searchTerm: z.string().optional(),
+        paymentMode: z.enum(['all', 'invoice', 'stripe']).optional(),
       }))
       .query(async ({ input }) => {
         const { getPaymentHistory } = await import('../invoiceDashboardDb');
-        return await getPaymentHistory(input.searchTerm);
+        return await getPaymentHistory(input.searchTerm, input.paymentMode);
       }),
 
     // User Registration
@@ -705,6 +732,7 @@ export const adminRouter = router({
         password: z.string().min(8),
         role: z.enum([
           'customer',
+          'owner_viewer',
           'owner_centre_manager',
           'owner_marketing_manager',
           'owner_regional_admin',
@@ -713,6 +741,7 @@ export const adminRouter = router({
           'mega_state_admin',
           'mega_admin'
         ]).default('customer'),
+        assignedOwnerId: z.number().nullable().optional(),
         canPayByInvoice: z.boolean().default(false),
         companyName: z.string().optional(),
         tradingName: z.string().optional(),
@@ -749,10 +778,14 @@ export const adminRouter = router({
 
         const [newUser] = await dbInstance.insert(users).values({
           openId,
+          username: input.email,
+          passwordHash: hashedPassword,
           email: input.email,
           name: input.name,
           role: input.role,
+          assignedOwnerId: input.assignedOwnerId ?? null,
           canPayByInvoice: input.canPayByInvoice,
+          loginMethod: 'password',
         }).returning({ id: users.id });
 
         if (input.companyName || input.insuranceCompany) {
@@ -786,6 +819,7 @@ export const adminRouter = router({
         name: z.string().optional(),
         role: z.enum([
           'customer',
+          'owner_viewer',
           'owner_centre_manager',
           'owner_marketing_manager',
           'owner_regional_admin',
@@ -794,6 +828,7 @@ export const adminRouter = router({
           'mega_state_admin',
           'mega_admin'
         ]).optional(),
+        assignedOwnerId: z.number().nullable().optional(),
         assignedState: z.string().nullable().optional(),
         canPayByInvoice: z.boolean().optional(),
         companyName: z.string().optional(),
@@ -826,6 +861,7 @@ export const adminRouter = router({
         if (input.email) userUpdates.email = input.email;
         if (input.name) userUpdates.name = input.name;
         if (input.role) userUpdates.role = input.role;
+        if (input.assignedOwnerId !== undefined) userUpdates.assignedOwnerId = input.assignedOwnerId;
         if (input.assignedState !== undefined) userUpdates.assignedState = input.assignedState || null;
         if (input.canPayByInvoice !== undefined) userUpdates.canPayByInvoice = input.canPayByInvoice;
 

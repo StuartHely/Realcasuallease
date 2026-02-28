@@ -78,6 +78,7 @@ export const vacantShopsRouter = router({
       imageUrl2: z.string().optional(),
       pricePerWeek: z.string().optional(),
       pricePerMonth: z.string().optional(),
+      outgoingsPerDay: z.string().optional(),
       floorLevelId: z.number().nullable().optional(),
       mapMarkerX: z.string().nullable().optional(),
       mapMarkerY: z.string().nullable().optional(),
@@ -100,6 +101,7 @@ export const vacantShopsRouter = router({
       imageUrl2: z.string().optional(),
       pricePerWeek: z.string().optional(),
       pricePerMonth: z.string().optional(),
+      outgoingsPerDay: z.string().optional(),
       floorLevelId: z.number().nullable().optional(),
       mapMarkerX: z.string().nullable().optional(),
       mapMarkerY: z.string().nullable().optional(),
@@ -172,6 +174,7 @@ export const thirdLineIncomeRouter = router({
       imageUrl2: z.string().optional(),
       pricePerWeek: z.string().optional(),
       pricePerMonth: z.string().optional(),
+      outgoingsPerDay: z.string().optional(),
       floorLevelId: z.number().nullable().optional(),
       mapMarkerX: z.string().nullable().optional(),
       mapMarkerY: z.string().nullable().optional(),
@@ -194,6 +197,7 @@ export const thirdLineIncomeRouter = router({
       imageUrl2: z.string().optional(),
       pricePerWeek: z.string().optional(),
       pricePerMonth: z.string().optional(),
+      outgoingsPerDay: z.string().optional(),
       floorLevelId: z.number().nullable().optional(),
       mapMarkerX: z.string().nullable().optional(),
       mapMarkerY: z.string().nullable().optional(),
@@ -245,6 +249,85 @@ export const assetsRouter = router({
 });
 
 export const vacantShopBookingsRouter = router({
+  myBookings: protectedProcedure.query(async ({ ctx }) => {
+    return await assetDb.getVacantShopBookingsByCustomerId(ctx.user.id);
+  }),
+
+  createCheckoutSession: protectedProcedure
+    .input(z.object({ bookingId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const booking = await assetDb.getVacantShopBookingById(input.bookingId);
+      if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
+      if (booking.customerId !== ctx.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your booking" });
+      }
+      if (booking.paymentMethod !== "stripe") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This booking does not use Stripe payment" });
+      }
+      if (booking.paidAt) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Booking is already paid" });
+      }
+      if (booking.status === "cancelled" || booking.status === "rejected") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot pay for a cancelled or rejected booking" });
+      }
+
+      const shop = await assetDb.getVacantShopById(booking.vacantShopId);
+      const centre = shop ? await db.getShoppingCentreById(shop.centreId) : null;
+      const customer = await db.getUserById(ctx.user.id);
+
+      const totalWithGst = Math.round(
+        (Number(booking.totalAmount) + Number(booking.gstAmount)) * 100
+      );
+
+      const { createCheckoutSession } = await import("../stripeService");
+      const session = await createCheckoutSession({
+        bookingId: booking.id,
+        bookingNumber: booking.bookingNumber,
+        bookingType: "vacant_shop",
+        customerEmail: customer?.email || "",
+        centreName: centre?.name || "Shopping Centre",
+        assetLabel: `Shop ${shop?.shopNumber || ""}`,
+        totalAmountCents: totalWithGst,
+        startDate: booking.startDate,
+        endDate: booking.endDate,
+      });
+
+      return { url: session.url };
+    }),
+
+  customerCancel: protectedProcedure
+    .input(z.object({
+      bookingId: z.number(),
+      reason: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const booking = await assetDb.getVacantShopBookingById(input.bookingId);
+      if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
+      if (booking.customerId !== ctx.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your booking" });
+      }
+      if (booking.status === "cancelled" || booking.status === "rejected") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Booking is already cancelled" });
+      }
+      if (booking.status === "completed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Completed bookings cannot be cancelled" });
+      }
+
+      await assetDb.updateVacantShopBooking(input.bookingId, { status: "cancelled" });
+
+      const { logAssetBookingStatusChange } = await import("../bookingStatusHelper");
+      await logAssetBookingStatusChange({
+        entityType: "vacant_shop_booking",
+        entityId: input.bookingId,
+        previousStatus: booking.status,
+        newStatus: "cancelled",
+        changedBy: ctx.user.id,
+        reason: input.reason || "Cancelled by customer",
+      });
+
+      return { success: true, bookingNumber: booking.bookingNumber };
+    }),
+
   list: ownerProcedure
     .input(z.object({
       status: z.enum(["pending", "confirmed", "cancelled", "completed", "rejected"]).optional(),
@@ -306,12 +389,7 @@ export const vacantShopBookingsRouter = router({
       startDate: z.date(),
       endDate: z.date(),
       totalAmount: z.string(),
-      gstAmount: z.string(),
-      gstPercentage: z.string(),
-      ownerAmount: z.string(),
-      platformFee: z.string(),
       customerNotes: z.string().optional(),
-      paymentMethod: z.enum(["stripe", "invoice"]).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       // Check availability first
@@ -331,8 +409,30 @@ export const vacantShopBookingsRouter = router({
       // Generate booking number
       const bookingNumber = await assetDb.generateVacantShopBookingNumber(input.vacantShopId);
 
-      // Get shop details for email
+      // Get shop details for email and payment mode resolution
       const shop = await assetDb.getVacantShopById(input.vacantShopId);
+      const centre = shop ? await db.getShoppingCentreById(shop.centreId) : null;
+
+      // Calculate GST from system config
+      const { getConfigValue } = await import("../systemConfigDb");
+      const gstValue = await getConfigValue("gst_percentage");
+      const gstRate = gstValue ? Number(gstValue) / 100 : 0.1;
+      const totalAmountNum = Number(input.totalAmount);
+      const gstAmount = totalAmountNum * gstRate;
+
+      // Calculate owner/platform fee split from owner's VS commission
+      const owner = centre ? await db.getOwnerById(centre.ownerId) : null;
+      const commissionRate = owner ? Number(owner.commissionVs ?? owner.commissionPercentage) / 100 : 0;
+      const platformFee = totalAmountNum * commissionRate;
+      const ownerAmount = totalAmountNum - platformFee;
+
+      // Resolve payment method server-side
+      const currentUser = await db.getUserById(ctx.user.id);
+      const { resolvePaymentMethod } = await import("../paymentModeHelper");
+      const paymentMethod = resolvePaymentMethod(
+        centre?.paymentMode || "stripe",
+        currentUser?.canPayByInvoice || false,
+      );
 
       const id = await assetDb.createVacantShopBooking({
         bookingNumber,
@@ -341,13 +441,13 @@ export const vacantShopBookingsRouter = router({
         startDate: input.startDate,
         endDate: input.endDate,
         totalAmount: input.totalAmount,
-        gstAmount: input.gstAmount,
-        gstPercentage: input.gstPercentage,
-        ownerAmount: input.ownerAmount,
-        platformFee: input.platformFee,
+        gstAmount: gstAmount.toFixed(2),
+        gstPercentage: (gstRate * 100).toFixed(2),
+        ownerAmount: ownerAmount.toFixed(2),
+        platformFee: platformFee.toFixed(2),
         customerNotes: input.customerNotes,
         customerEmail: ctx.user.email || undefined,
-        paymentMethod: input.paymentMethod || "stripe",
+        paymentMethod,
         status: "pending",
         requiresApproval: false,
       });
@@ -367,7 +467,7 @@ export const vacantShopBookingsRouter = router({
         );
       }
 
-      return { id, bookingNumber };
+      return { id, bookingNumber, paymentMethod };
     }),
 
   updateStatus: ownerProcedure
@@ -423,6 +523,11 @@ export const vacantShopBookingsRouter = router({
         );
       }
 
+      // Fire-and-forget invoice dispatch when confirmed
+      if (input.status === "confirmed") {
+        import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(input.id)).catch(() => {});
+      }
+
       // Send rejection email
       if (input.status === "rejected" && booking.customerEmail && input.rejectionReason) {
         const shop = await assetDb.getVacantShopById(booking.vacantShopId);
@@ -445,6 +550,85 @@ export const vacantShopBookingsRouter = router({
 });
 
 export const thirdLineBookingsRouter = router({
+  myBookings: protectedProcedure.query(async ({ ctx }) => {
+    return await assetDb.getThirdLineBookingsByCustomerId(ctx.user.id);
+  }),
+
+  createCheckoutSession: protectedProcedure
+    .input(z.object({ bookingId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const booking = await assetDb.getThirdLineBookingById(input.bookingId);
+      if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
+      if (booking.customerId !== ctx.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your booking" });
+      }
+      if (booking.paymentMethod !== "stripe") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This booking does not use Stripe payment" });
+      }
+      if (booking.paidAt) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Booking is already paid" });
+      }
+      if (booking.status === "cancelled" || booking.status === "rejected") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot pay for a cancelled or rejected booking" });
+      }
+
+      const asset = await assetDb.getThirdLineIncomeById(booking.thirdLineIncomeId);
+      const centre = asset ? await db.getShoppingCentreById(asset.centreId) : null;
+      const customer = await db.getUserById(ctx.user.id);
+
+      const totalWithGst = Math.round(
+        (Number(booking.totalAmount) + Number(booking.gstAmount)) * 100
+      );
+
+      const { createCheckoutSession } = await import("../stripeService");
+      const session = await createCheckoutSession({
+        bookingId: booking.id,
+        bookingNumber: booking.bookingNumber,
+        bookingType: "third_line",
+        customerEmail: customer?.email || "",
+        centreName: centre?.name || "Shopping Centre",
+        assetLabel: `Asset ${asset?.assetNumber || ""}`,
+        totalAmountCents: totalWithGst,
+        startDate: booking.startDate,
+        endDate: booking.endDate,
+      });
+
+      return { url: session.url };
+    }),
+
+  customerCancel: protectedProcedure
+    .input(z.object({
+      bookingId: z.number(),
+      reason: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const booking = await assetDb.getThirdLineBookingById(input.bookingId);
+      if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
+      if (booking.customerId !== ctx.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your booking" });
+      }
+      if (booking.status === "cancelled" || booking.status === "rejected") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Booking is already cancelled" });
+      }
+      if (booking.status === "completed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Completed bookings cannot be cancelled" });
+      }
+
+      await assetDb.updateThirdLineBooking(input.bookingId, { status: "cancelled" });
+
+      const { logAssetBookingStatusChange } = await import("../bookingStatusHelper");
+      await logAssetBookingStatusChange({
+        entityType: "third_line_booking",
+        entityId: input.bookingId,
+        previousStatus: booking.status,
+        newStatus: "cancelled",
+        changedBy: ctx.user.id,
+        reason: input.reason || "Cancelled by customer",
+      });
+
+      return { success: true, bookingNumber: booking.bookingNumber };
+    }),
+
   list: ownerProcedure
     .input(z.object({
       status: z.enum(["pending", "confirmed", "cancelled", "completed", "rejected"]).optional(),
@@ -506,12 +690,7 @@ export const thirdLineBookingsRouter = router({
       startDate: z.date(),
       endDate: z.date(),
       totalAmount: z.string(),
-      gstAmount: z.string(),
-      gstPercentage: z.string(),
-      ownerAmount: z.string(),
-      platformFee: z.string(),
       customerNotes: z.string().optional(),
-      paymentMethod: z.enum(["stripe", "invoice"]).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       // Check availability first
@@ -531,8 +710,30 @@ export const thirdLineBookingsRouter = router({
       // Generate booking number
       const bookingNumber = await assetDb.generateThirdLineBookingNumber(input.thirdLineIncomeId);
 
-      // Get asset details for email
+      // Get asset details for email and payment mode resolution
       const asset = await assetDb.getThirdLineIncomeById(input.thirdLineIncomeId);
+      const centre = asset ? await db.getShoppingCentreById(asset.centreId) : null;
+
+      // Calculate GST from system config
+      const { getConfigValue } = await import("../systemConfigDb");
+      const gstValue = await getConfigValue("gst_percentage");
+      const gstRate = gstValue ? Number(gstValue) / 100 : 0.1;
+      const totalAmountNum = Number(input.totalAmount);
+      const gstAmount = totalAmountNum * gstRate;
+
+      // Calculate owner/platform fee split from owner's TLI commission
+      const owner = centre ? await db.getOwnerById(centre.ownerId) : null;
+      const commissionRate = owner ? Number(owner.commissionTli ?? owner.commissionPercentage) / 100 : 0;
+      const platformFee = totalAmountNum * commissionRate;
+      const ownerAmount = totalAmountNum - platformFee;
+
+      // Resolve payment method server-side
+      const currentUser = await db.getUserById(ctx.user.id);
+      const { resolvePaymentMethod } = await import("../paymentModeHelper");
+      const paymentMethod = resolvePaymentMethod(
+        centre?.paymentMode || "stripe",
+        currentUser?.canPayByInvoice || false,
+      );
 
       const id = await assetDb.createThirdLineBooking({
         bookingNumber,
@@ -541,13 +742,13 @@ export const thirdLineBookingsRouter = router({
         startDate: input.startDate,
         endDate: input.endDate,
         totalAmount: input.totalAmount,
-        gstAmount: input.gstAmount,
-        gstPercentage: input.gstPercentage,
-        ownerAmount: input.ownerAmount,
-        platformFee: input.platformFee,
+        gstAmount: gstAmount.toFixed(2),
+        gstPercentage: (gstRate * 100).toFixed(2),
+        ownerAmount: ownerAmount.toFixed(2),
+        platformFee: platformFee.toFixed(2),
         customerNotes: input.customerNotes,
         customerEmail: ctx.user.email || undefined,
-        paymentMethod: input.paymentMethod || "stripe",
+        paymentMethod,
         status: "pending",
         requiresApproval: false,
       });
@@ -569,7 +770,7 @@ export const thirdLineBookingsRouter = router({
         );
       }
 
-      return { id, bookingNumber };
+      return { id, bookingNumber, paymentMethod };
     }),
 
   updateStatus: ownerProcedure
@@ -624,6 +825,11 @@ export const thirdLineBookingsRouter = router({
           booking.totalAmount,
           asset?.categoryName || undefined
         );
+      }
+
+      // Fire-and-forget invoice dispatch when confirmed
+      if (input.status === "confirmed") {
+        import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(input.id)).catch(() => {});
       }
 
       // Send rejection email

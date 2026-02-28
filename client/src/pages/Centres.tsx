@@ -175,7 +175,7 @@ export default function Centres() {
                   <Card
                     key={centre.id}
                     className="shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
-                    onClick={() => setLocation(`/centre/${centre.id}`)}
+                    onClick={() => setLocation(`/centre/${centre.slug || centre.id}`)}
                   >
                     <CardHeader>
                       <CardTitle className="text-xl text-blue-900">{centre.name}</CardTitle>
@@ -197,7 +197,7 @@ export default function Centres() {
                         className="w-full bg-blue-600 hover:bg-blue-700"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setLocation(`/centre/${centre.id}`);
+                          setLocation(`/centre/${centre.slug || centre.id}`);
                         }}
                       >
                         View Details

@@ -238,4 +238,39 @@ export const systemConfigRouter = router({
     const alerts = await checkSiteRates();
     return { alertCount: alerts.length, alerts };
   }),
+
+  // Get SMTP configuration status (admin only)
+  getSmtpStatus: adminProcedure.query(async () => {
+    const { ENV } = await import("../_core/env");
+    return {
+      configured: !!(ENV.smtpHost && ENV.smtpUser && ENV.smtpPass && ENV.smtpFrom),
+      host: ENV.smtpHost || "(not set)",
+      port: ENV.smtpPort,
+      secure: ENV.smtpSecure,
+      from: ENV.smtpFrom || "(not set)",
+      appUrl: ENV.appUrl || "(not set)",
+    };
+  }),
+
+  // Send test email (admin only)
+  sendTestEmail: adminProcedure
+    .input(z.object({ to: z.string().email() }))
+    .mutation(async ({ input }) => {
+      const { sendEmail } = await import("../_core/email");
+      const success = await sendEmail({
+        to: input.to,
+        subject: "Real Casual Leasing — SMTP Test Email",
+        html: `
+          <h2>SMTP Configuration Test</h2>
+          <p>This is a test email from Real Casual Leasing.</p>
+          <p>If you're reading this, your SMTP configuration is working correctly.</p>
+          <p style="color: #666; font-size: 12px;">Sent at: ${new Date().toLocaleString("en-AU", { timeZone: "Australia/Sydney" })}</p>
+        `,
+        text: "SMTP Configuration Test\n\nThis is a test email from Real Casual Leasing.\nIf you're reading this, your SMTP configuration is working correctly.",
+      });
+      if (!success) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to send test email. Check SMTP configuration." });
+      }
+      return { success: true };
+    }),
 });

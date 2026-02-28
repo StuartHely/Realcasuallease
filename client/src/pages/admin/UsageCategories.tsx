@@ -3,83 +3,156 @@ import { trpc } from "@/lib/trpc";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "sonner";
-import { Loader2, Plus, BarChart3 } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { Loader2, Plus, Pencil, Trash2, GripVertical, BarChart3 } from "lucide-react";
 
 export default function UsageCategories() {
   const [selectedCentreId, setSelectedCentreId] = useState<number | null>(null);
   const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [allTickedOverride, setAllTickedOverride] = useState(false);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryIsFree, setNewCategoryIsFree] = useState(false);
-  
 
-  
+  // CRUD dialog state
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    isFree: false,
+    displayOrder: 0,
+    isActive: true,
+  });
+
+  const utils = trpc.useUtils();
+
   // Queries
   const { data: centres } = trpc.centres.list.useQuery();
   const { data: categories } = trpc.usageCategories.list.useQuery();
+  const { data: allCategories, isLoading: allCategoriesLoading } = trpc.usageCategories.listAll.useQuery();
   const { data: sitesWithCategories, refetch: refetchSites } = trpc.usageCategories.getSitesWithCategories.useQuery(
     { centreId: selectedCentreId! },
     { enabled: !!selectedCentreId }
   );
-  
-  // Mutations
+
+  // CRUD Mutations
+  const createCategoryMutation = trpc.usageCategories.createCategory.useMutation({
+    onSuccess: () => {
+      toast.success("Category created successfully");
+      setIsDialogOpen(false);
+      resetForm();
+      utils.usageCategories.listAll.invalidate();
+      utils.usageCategories.list.invalidate();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const updateCategoryMutation = trpc.usageCategories.updateCategory.useMutation({
+    onSuccess: () => {
+      toast.success("Category updated successfully");
+      setIsDialogOpen(false);
+      resetForm();
+      utils.usageCategories.listAll.invalidate();
+      utils.usageCategories.list.invalidate();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const deleteCategoryMutation = trpc.usageCategories.deleteCategory.useMutation({
+    onSuccess: () => {
+      toast.success("Category deleted successfully");
+      utils.usageCategories.listAll.invalidate();
+      utils.usageCategories.list.invalidate();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  // Site approval mutations
   const setApprovedMutation = trpc.usageCategories.setApprovedCategories.useMutation({
     onSuccess: () => {
       toast.success("Approved categories updated successfully");
       refetchSites();
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError: (error) => toast.error(error.message),
   });
-  
+
   const applyToAllSitesMutation = trpc.usageCategories.applyToAllSites.useMutation({
     onSuccess: (data) => {
       toast.success(`Applied to ${data.sitesUpdated} sites in this centre`);
       refetchSites();
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError: (error) => toast.error(error.message),
   });
-  
-  const createCategoryMutation = trpc.usageCategories.createCategory.useMutation({
-    onSuccess: () => {
-      toast.success("Category created successfully");
-      setShowAddDialog(false);
-      setNewCategoryName("");
-      setNewCategoryIsFree(false);
-      // Refetch categories list
-      window.location.reload();
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
-  
+
+  // CRUD helpers
+  const resetForm = () => {
+    setFormData({ name: "", isFree: false, displayOrder: 0, isActive: true });
+    setEditingCategory(null);
+  };
+
+  const handleOpenDialog = (category?: any) => {
+    if (category) {
+      setEditingCategory(category);
+      setFormData({
+        name: category.name,
+        isFree: category.isFree ?? false,
+        displayOrder: category.displayOrder || 0,
+        isActive: category.isActive ?? true,
+      });
+    } else {
+      resetForm();
+      if (allCategories && allCategories.length > 0) {
+        const maxOrder = Math.max(...allCategories.map((c: any) => c.displayOrder || 0));
+        setFormData((prev) => ({ ...prev, displayOrder: maxOrder + 1 }));
+      }
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = () => {
+    if (!formData.name.trim()) {
+      toast.error("Category name is required");
+      return;
+    }
+
+    if (editingCategory) {
+      updateCategoryMutation.mutate({ id: editingCategory.id, ...formData });
+    } else {
+      createCategoryMutation.mutate({
+        name: formData.name.trim(),
+        isFree: formData.isFree,
+        displayOrder: formData.displayOrder,
+      });
+    }
+  };
+
+  const handleDelete = (id: number, name: string) => {
+    if (confirm(`Are you sure you want to delete "${name}"? This may affect existing site approvals and bookings.`)) {
+      deleteCategoryMutation.mutate({ id });
+    }
+  };
+
   // Get sorted centres
   const sortedCentres = centres?.sort((a, b) => a.name.localeCompare(b.name)) || [];
-  
+
   // Check if all sites in the selected centre have identical category approvals
   const allSitesHaveSameApprovals = useMemo(() => {
     if (!sitesWithCategories || sitesWithCategories.length === 0) return false;
-    
+
     const firstSiteCategories = sitesWithCategories[0].approvedCategoryIds.sort((a: number, b: number) => a - b);
-    
+
     return sitesWithCategories.every(site => {
       const siteCategories = site.approvedCategoryIds.sort((a: number, b: number) => a - b);
       return JSON.stringify(siteCategories) === JSON.stringify(firstSiteCategories);
     });
   }, [sitesWithCategories]);
-  
+
   // Handle centre selection
   const handleCentreChange = (centreId: string) => {
     setSelectedCentreId(parseInt(centreId));
@@ -87,39 +160,34 @@ export default function UsageCategories() {
     setSelectedCategories([]);
     setAllTickedOverride(false);
   };
-  
+
   // Handle site selection
   const handleSiteChange = (siteId: string) => {
     const id = parseInt(siteId);
     setSelectedSiteId(id);
-    
-    // Load existing approved categories for this site
+
     const site = sitesWithCategories?.find(s => s.id === id);
     if (site && categories) {
-      // If no approvals exist yet (empty array), default to all approved
       if (site.approvedCategoryIds.length === 0) {
         setSelectedCategories(categories.map(c => c.id));
         setAllTickedOverride(false);
       } else {
         setSelectedCategories(site.approvedCategoryIds);
-        // Check if all categories are selected
         setAllTickedOverride(site.approvedCategoryIds.length === categories.length);
       }
     }
   };
-  
+
   // Handle "untick all" checkbox
   const handleUntickAll = (checked: boolean) => {
     setAllTickedOverride(!checked);
     if (checked) {
-      // Untick all
       setSelectedCategories([]);
     } else {
-      // Tick all
       setSelectedCategories(categories?.map(c => c.id) || []);
     }
   };
-  
+
   // Handle individual category toggle
   const handleCategoryToggle = (categoryId: number, checked: boolean) => {
     if (checked) {
@@ -127,242 +195,315 @@ export default function UsageCategories() {
     } else {
       setSelectedCategories(prev => prev.filter(id => id !== categoryId));
     }
-    
-    // Update "all ticked" state
-    const newCount = checked 
-      ? selectedCategories.length + 1 
+
+    const newCount = checked
+      ? selectedCategories.length + 1
       : selectedCategories.length - 1;
     setAllTickedOverride(newCount === categories?.length);
   };
-  
+
   // Handle save
   const handleSave = () => {
     if (!selectedSiteId) {
       toast.error("Please select a site");
       return;
     }
-    
+
     setApprovedMutation.mutate({
       siteId: selectedSiteId,
       categoryIds: selectedCategories,
     });
   };
-  
+
   // Handle apply to all sites
   const handleApplyToAll = () => {
     if (!selectedCentreId) {
       toast.error("Please select a centre");
       return;
     }
-    
+
     applyToAllSitesMutation.mutate({
       centreId: selectedCentreId,
       categoryIds: selectedCategories,
     });
   };
-  
-  // Handle create category
-  const handleCreateCategory = () => {
-    if (!newCategoryName.trim()) {
-      toast.error("Please enter a category name");
-      return;
-    }
-    
-    // Get next display order
-    const maxOrder = categories ? Math.max(...categories.map(c => c.displayOrder)) : 0;
-    
-    createCategoryMutation.mutate({
-      name: newCategoryName.trim(),
-      isFree: newCategoryIsFree,
-      displayOrder: maxOrder + 1,
-    });
-  };
-  
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Usage Categories Management</CardTitle>
-              <CardDescription>
-                Manage which usage categories are approved for each site. All categories are ticked by default.
-                Untick individual categories or use "Untick All" to deselect everything.
-              </CardDescription>
+        {/* Section 1: Categories CRUD Table */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Usage Categories ({allCategories?.length || 0})</CardTitle>
+              <Button onClick={() => handleOpenDialog()}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Category
+              </Button>
             </div>
-            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Category
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add New Usage Category</DialogTitle>
-                  <DialogDescription>
-                    Create a new usage category that will be available across all sites.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="category-name">Category Name</Label>
-                    <Input
-                      id="category-name"
-                      value={newCategoryName}
-                      onChange={(e) => setNewCategoryName(e.target.value)}
-                      placeholder="e.g., Custom Category"
-                    />
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="is-free"
-                      checked={newCategoryIsFree}
-                      onCheckedChange={(checked) => setNewCategoryIsFree(checked as boolean)}
-                    />
-                    <Label htmlFor="is-free" className="cursor-pointer">
-                      This is a free category (no charge)
-                    </Label>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button
-                    onClick={handleCreateCategory}
-                    disabled={createCategoryMutation.isPending}
-                  >
-                    {createCategoryMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Create Category
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Centre Selection */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Shopping Centre</label>
-            <Select value={selectedCentreId?.toString() || ""} onValueChange={handleCentreChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a shopping centre" />
-              </SelectTrigger>
-              <SelectContent>
-                {sortedCentres.map((centre) => (
-                  <SelectItem key={centre.id} value={centre.id.toString()}>
-                    {centre.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {/* Site Selection */}
-          {selectedCentreId && sitesWithCategories && (
+          </CardHeader>
+          <CardContent>
+            {allCategoriesLoading ? (
+              <div className="text-center py-8 text-muted-foreground">Loading categories...</div>
+            ) : allCategories && allCategories.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">Order</TableHead>
+                    <TableHead>Category Name</TableHead>
+                    <TableHead className="w-24">Free?</TableHead>
+                    <TableHead className="w-24">Status</TableHead>
+                    <TableHead className="w-32 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allCategories.map((category: any) => (
+                    <TableRow key={category.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <GripVertical className="h-4 w-4" />
+                          {category.displayOrder}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{category.name}</TableCell>
+                      <TableCell>
+                        {category.isFree ? (
+                          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">FREE</Badge>
+                        ) : (
+                          <Badge variant="secondary">Paid</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={category.isActive ? "default" : "secondary"}>
+                          {category.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOpenDialog(category)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(category.id, category.name)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No categories found. Add your first category to get started.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Add/Edit Dialog */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingCategory ? "Edit Category" : "Add Category"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Category Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., Retail, Charities (Free)"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="isFree"
+                  checked={formData.isFree}
+                  onCheckedChange={(checked) => setFormData({ ...formData, isFree: checked as boolean })}
+                />
+                <Label htmlFor="isFree" className="cursor-pointer">
+                  This is a free category (no charge)
+                </Label>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="displayOrder">Display Order</Label>
+                <Input
+                  id="displayOrder"
+                  type="number"
+                  value={formData.displayOrder}
+                  onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 0 })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Lower numbers appear first in dropdown lists
+                </p>
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="isActive">Active</Label>
+                <Switch
+                  id="isActive"
+                  checked={formData.isActive}
+                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={createCategoryMutation.isPending || updateCategoryMutation.isPending}
+              >
+                {editingCategory ? "Update" : "Create"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Section 2: Site Category Approvals */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Site Category Approvals</CardTitle>
+            <CardDescription>
+              Manage which usage categories are approved for each site. All categories are ticked by default.
+              Untick individual categories or use "Untick All" to deselect everything.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Centre Selection */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Site</label>
-              <Select value={selectedSiteId?.toString() || ""} onValueChange={handleSiteChange}>
+              <label className="text-sm font-medium">Shopping Centre</label>
+              <Select value={selectedCentreId?.toString() || ""} onValueChange={handleCentreChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a site" />
+                  <SelectValue placeholder="Select a shopping centre" />
                 </SelectTrigger>
                 <SelectContent>
-                  {sitesWithCategories.map((site) => (
-                    <SelectItem key={site.id} value={site.id.toString()}>
-                      {site.siteNumber} - {site.description?.replace(/<[^>]*>/g, '') || "No description"}
+                  {sortedCentres.map((centre) => (
+                    <SelectItem key={centre.id} value={centre.id.toString()}>
+                      {centre.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              
-              {/* Consistency Indicator */}
-              {allSitesHaveSameApprovals && sitesWithCategories.length > 1 && (
-                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-800 font-medium flex items-center gap-2">
-                    <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    All sites in this centre have the same usage approvals
-                  </p>
-                </div>
-              )}
             </div>
-          )}
-          
-          {/* Categories Checkboxes */}
-          {selectedSiteId && categories && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">Approved Categories</label>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="untick-all"
-                    checked={selectedCategories.length === 0}
-                    onCheckedChange={handleUntickAll}
-                  />
-                  <label htmlFor="untick-all" className="text-sm cursor-pointer">
-                    Untick All
-                  </label>
-                </div>
+
+            {/* Site Selection */}
+            {selectedCentreId && sitesWithCategories && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Site</label>
+                <Select value={selectedSiteId?.toString() || ""} onValueChange={handleSiteChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a site" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sitesWithCategories.map((site) => (
+                      <SelectItem key={site.id} value={site.id.toString()}>
+                        {site.siteNumber} - {site.description?.replace(/<[^>]*>/g, '') || "No description"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Consistency Indicator */}
+                {allSitesHaveSameApprovals && sitesWithCategories.length > 1 && (
+                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-800 font-medium flex items-center gap-2">
+                      <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      All sites in this centre have the same usage approvals
+                    </p>
+                  </div>
+                )}
               </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 border rounded-lg max-h-96 overflow-y-auto">
-                {categories.map((category) => (
-                  <div key={category.id} className="flex items-center space-x-2">
+            )}
+
+            {/* Categories Checkboxes */}
+            {selectedSiteId && categories && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Approved Categories</label>
+                  <div className="flex items-center space-x-2">
                     <Checkbox
-                      id={`category-${category.id}`}
-                      checked={selectedCategories.includes(category.id)}
-                      onCheckedChange={(checked) => handleCategoryToggle(category.id, checked as boolean)}
+                      id="untick-all"
+                      checked={selectedCategories.length === 0}
+                      onCheckedChange={handleUntickAll}
                     />
-                    <label htmlFor={`category-${category.id}`} className="text-sm cursor-pointer">
-                      {category.name}
-                      {category.isFree && <span className="ml-1 text-green-600 font-semibold">(FREE)</span>}
+                    <label htmlFor="untick-all" className="text-sm cursor-pointer">
+                      Untick All
                     </label>
                   </div>
-                ))}
-              </div>
-              
-              <div className="flex justify-between items-center pt-4">
-                <p className="text-sm text-muted-foreground">
-                  {selectedCategories.length} of {categories.length} categories selected
-                </p>
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={handleApplyToAll}
-                    disabled={applyToAllSitesMutation.isPending}
-                    variant="outline"
-                  >
-                    {applyToAllSitesMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Apply to All Sites in Centre
-                  </Button>
-                  <Button 
-                    onClick={handleSave}
-                    disabled={setApprovedMutation.isPending}
-                  >
-                    {setApprovedMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save for This Site
-                  </Button>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 border rounded-lg max-h-96 overflow-y-auto">
+                  {categories.map((category) => (
+                    <div key={category.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`category-${category.id}`}
+                        checked={selectedCategories.includes(category.id)}
+                        onCheckedChange={(checked) => handleCategoryToggle(category.id, checked as boolean)}
+                      />
+                      <label htmlFor={`category-${category.id}`} className="text-sm cursor-pointer">
+                        {category.name}
+                        {category.isFree && <span className="ml-1 text-green-600 font-semibold">(FREE)</span>}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-between items-center pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    {selectedCategories.length} of {categories.length} categories selected
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleApplyToAll}
+                      disabled={applyToAllSitesMutation.isPending}
+                      variant="outline"
+                    >
+                      {applyToAllSitesMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Apply to All Sites in Centre
+                    </Button>
+                    <Button
+                      onClick={handleSave}
+                      disabled={setApprovedMutation.isPending}
+                    >
+                      {setApprovedMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Save for This Site
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      {/* Category Usage Stats */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Category Usage Statistics
-          </CardTitle>
-          <CardDescription>
-            Shows how many sites allow each category and how many bookings have used each category.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <CategoryUsageStats />
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Section 3: Category Usage Stats */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Category Usage Statistics
+            </CardTitle>
+            <CardDescription>
+              Shows how many sites allow each category and how many bookings have used each category.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CategoryUsageStats />
+          </CardContent>
+        </Card>
       </div>
     </AdminLayout>
   );
@@ -371,7 +512,7 @@ export default function UsageCategories() {
 // Separate component for usage stats to handle its own loading state
 function CategoryUsageStats() {
   const { data: stats, isLoading } = trpc.usageCategories.getUsageStats.useQuery();
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -379,20 +520,20 @@ function CategoryUsageStats() {
       </div>
     );
   }
-  
+
   if (!stats || stats.length === 0) {
     return <p className="text-muted-foreground">No category data available.</p>;
   }
-  
+
   // Sort by booking count descending, then by site count
   const sortedStats = [...stats].sort((a, b) => {
     if (b.bookingCount !== a.bookingCount) return b.bookingCount - a.bookingCount;
     return b.siteCount - a.siteCount;
   });
-  
+
   const maxBookings = Math.max(...stats.map(s => s.bookingCount), 1);
   const maxSites = Math.max(...stats.map(s => s.siteCount), 1);
-  
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-4 text-sm font-medium text-muted-foreground border-b pb-2">
@@ -409,7 +550,7 @@ function CategoryUsageStats() {
             </div>
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-gray-100 rounded-full h-2">
-                <div 
+                <div
                   className="bg-blue-500 h-2 rounded-full transition-all"
                   style={{ width: `${(cat.siteCount / maxSites) * 100}%` }}
                 />
@@ -418,7 +559,7 @@ function CategoryUsageStats() {
             </div>
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-gray-100 rounded-full h-2">
-                <div 
+                <div
                   className="bg-green-500 h-2 rounded-full transition-all"
                   style={{ width: `${(cat.bookingCount / maxBookings) * 100}%` }}
                 />

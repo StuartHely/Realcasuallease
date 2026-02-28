@@ -5,6 +5,7 @@ import {
   InsertUser, users, 
   customerProfiles, InsertCustomerProfile,
   owners, InsertOwner,
+  portfolios,
   floorLevels, InsertFloorLevel,
   shoppingCentres, InsertShoppingCentre,
   sites, InsertSite,
@@ -16,11 +17,43 @@ import {
   transactions, InsertTransaction,
   systemConfig, InsertSystemConfig,
   auditLog, InsertAuditLog,
-  budgets
+  budgets,
+  passwordResetTokens
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+
+export function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+async function ensureUniqueSlug(slug: string, excludeId?: number): Promise<string> {
+  const database = await getDb();
+  if (!database) return slug;
+
+  let candidate = slug;
+  let counter = 1;
+
+  while (true) {
+    const existing = await database
+      .select({ id: shoppingCentres.id })
+      .from(shoppingCentres)
+      .where(eq(shoppingCentres.slug, candidate))
+      .limit(1);
+
+    if (existing.length === 0 || (excludeId !== undefined && existing[0].id === excludeId)) {
+      return candidate;
+    }
+
+    counter++;
+    candidate = `${slug}-${counter}`;
+  }
+}
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
@@ -121,7 +154,7 @@ export async function createUserWithPassword(userData: {
   passwordHash: string;
   name?: string | null;
   email?: string | null;
-  role?: "customer" | "owner_centre_manager" | "owner_marketing_manager" | "owner_regional_admin" | "owner_state_admin" | "owner_super_admin" | "mega_state_admin" | "mega_admin";
+  role?: "customer" | "owner_viewer" | "owner_centre_manager" | "owner_marketing_manager" | "owner_regional_admin" | "owner_state_admin" | "owner_super_admin" | "mega_state_admin" | "mega_admin";
   loginMethod?: string;
 }): Promise<void> {
   const db = await getDb();
@@ -315,6 +348,7 @@ export async function getNearbyCentres(centreId: number, radiusKm: number = 10) 
   const allCentres = await db.select({
     id: shoppingCentres.id,
     name: shoppingCentres.name,
+    slug: shoppingCentres.slug,
     latitude: shoppingCentres.latitude,
     longitude: shoppingCentres.longitude,
     address: shoppingCentres.address,
@@ -391,7 +425,7 @@ export async function searchShoppingCentres(query: string, stateFilter?: string)
   
   if (!centreQuery.trim() && stateFilter) { return allCentres.filter(centre => centre.includeInMainSite); }
   const { fuzzySearchCentres } = await import('./fuzzySearch');
-  const searchableCentres = allCentres.filter(c => c.includeInMainSite).map(c => ({ id: c.id, name: c.name, suburb: c.suburb, state: c.state }));
+  const searchableCentres = allCentres.filter(c => c.includeInMainSite).map(c => ({ id: c.id, name: c.name, suburb: c.suburb?.trim() ?? null, state: c.state }));
   const fuzzyResults = await fuzzySearchCentres(centreQuery, searchableCentres);
   const centreMap = new Map(allCentres.map(c => [c.id, c]));
   const scoredCentres = fuzzyResults.map(r => ({ centre: centreMap.get(r.id)!, score: r.score })).filter(i => i.centre);
@@ -427,12 +461,20 @@ export async function createShoppingCentre(centre: InsertShoppingCentre) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
+  if (!centre.slug && centre.name) {
+    centre.slug = await ensureUniqueSlug(generateSlug(centre.name));
+  }
+
   return await db.insert(shoppingCentres).values(centre);
 }
 
 export async function updateShoppingCentre(id: number, updates: Partial<InsertShoppingCentre>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+
+  if (updates.name) {
+    updates.slug = await ensureUniqueSlug(generateSlug(updates.name), id);
+  }
 
   return await db.update(shoppingCentres).set(updates).where(eq(shoppingCentres.id, id));
 }
@@ -656,10 +698,7 @@ export async function updateSite(id: number, updates: Partial<InsertSite>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  // Log the raw input for debugging
-  console.log("[updateSite] Input:", JSON.stringify({ id, updates }, null, 2));
-  
-  // Clean up the updates object - remove undefined values and convert types
+  // Clean up the updates object - remove undefined values
   const cleanUpdates: Record<string, any> = {};
   for (const [key, value] of Object.entries(updates)) {
     if (value !== undefined) {
@@ -667,29 +706,15 @@ export async function updateSite(id: number, updates: Partial<InsertSite>) {
     }
   }
   
-  console.log("[updateSite] Clean updates:", JSON.stringify(cleanUpdates, null, 2));
-  
   if (Object.keys(cleanUpdates).length === 0) {
-    console.log("[updateSite] No updates to apply");
     return { rowsAffected: 0 };
   }
 
   try {
     const result = await db.update(sites).set(cleanUpdates).where(eq(sites.id, id));
-    console.log("[updateSite] Success, result:", result);
     return result;
   } catch (error: any) {
-    console.error("[updateSite] Failed to update site:", {
-      siteId: id,
-      cleanUpdates,
-      errorMessage: error.message,
-      errorCode: error.code,
-      errorErrno: error.errno,
-      sqlState: error.sqlState,
-      sqlMessage: error.sqlMessage,
-      sql: error.sql,
-      stack: error.stack
-    });
+    console.error("[updateSite] Failed:", { siteId: id, cleanUpdates, error: error.message });
     throw new Error(`Failed to update site: ${error.message}`);
   }
 }
@@ -786,6 +811,11 @@ export async function getBookingsByCustomerId(customerId: number) {
       customUsage: bookings.customUsage,
       tablesRequested: bookings.tablesRequested,
       chairsRequested: bookings.chairsRequested,
+      paymentMethod: bookings.paymentMethod,
+      paidAt: bookings.paidAt,
+      cancelledAt: bookings.cancelledAt,
+      rejectionReason: bookings.rejectionReason,
+      recurrenceGroupId: bookings.recurrenceGroupId,
     })
     .from(bookings)
     .innerJoin(sites, eq(bookings.siteId, sites.id))
@@ -1482,5 +1512,127 @@ export async function getBookingStatusHistory(bookingId: number) {
 export async function recordBookingCreated(bookingId: number, status: "pending" | "confirmed", createdBy?: number, createdByName?: string) {
   const { recordBookingCreated: record } = await import("./bookingStatusHelper");
   await record(bookingId, status, createdBy, createdByName);
+}
+
+// =============================================================================
+// Password Reset Tokens
+// =============================================================================
+
+export async function createPasswordResetToken(userId: number, token: string, expiresAt: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(passwordResetTokens).values({ userId, token, expiresAt });
+}
+
+export async function getValidPasswordResetToken(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db
+    .select({
+      id: passwordResetTokens.id,
+      userId: passwordResetTokens.userId,
+      token: passwordResetTokens.token,
+      expiresAt: passwordResetTokens.expiresAt,
+      usedAt: passwordResetTokens.usedAt,
+      email: users.email,
+      username: users.username,
+    })
+    .from(passwordResetTokens)
+    .innerJoin(users, eq(passwordResetTokens.userId, users.id))
+    .where(eq(passwordResetTokens.token, token))
+    .limit(1);
+  return row || null;
+}
+
+export async function markPasswordResetTokenUsed(tokenId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(passwordResetTokens).set({ usedAt: new Date() }).where(eq(passwordResetTokens.id, tokenId));
+}
+
+export async function updateUserPasswordHash(userId: number, passwordHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, userId));
+}
+
+/**
+ * Resolve bank account details for remittance.
+ * Priority: centre-level → portfolio-level → owner-level.
+ * Returns the most specific non-null bank account, or null if none exists.
+ */
+export async function resolveRemittanceBankAccount(centreId: number): Promise<{
+  bankBsb: string;
+  bankAccountNumber: string;
+  bankAccountName: string;
+  resolvedFrom: "centre" | "portfolio" | "owner";
+} | null> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [centre] = await db
+    .select({
+      bankBsb: shoppingCentres.bankBsb,
+      bankAccountNumber: shoppingCentres.bankAccountNumber,
+      bankAccountName: shoppingCentres.bankAccountName,
+      portfolioId: shoppingCentres.portfolioId,
+      ownerId: shoppingCentres.ownerId,
+    })
+    .from(shoppingCentres)
+    .where(eq(shoppingCentres.id, centreId));
+
+  if (!centre) return null;
+
+  // Check centre-level override
+  if (centre.bankBsb && centre.bankAccountNumber && centre.bankAccountName) {
+    return {
+      bankBsb: centre.bankBsb,
+      bankAccountNumber: centre.bankAccountNumber,
+      bankAccountName: centre.bankAccountName,
+      resolvedFrom: "centre",
+    };
+  }
+
+  // Check portfolio-level
+  if (centre.portfolioId) {
+    const [portfolio] = await db
+      .select({
+        bankBsb: portfolios.bankBsb,
+        bankAccountNumber: portfolios.bankAccountNumber,
+        bankAccountName: portfolios.bankAccountName,
+      })
+      .from(portfolios)
+      .where(eq(portfolios.id, centre.portfolioId));
+
+    if (portfolio?.bankBsb && portfolio?.bankAccountNumber && portfolio?.bankAccountName) {
+      return {
+        bankBsb: portfolio.bankBsb,
+        bankAccountNumber: portfolio.bankAccountNumber,
+        bankAccountName: portfolio.bankAccountName,
+        resolvedFrom: "portfolio",
+      };
+    }
+  }
+
+  // Fall back to owner-level
+  const [owner] = await db
+    .select({
+      bankBsb: owners.bankBsb,
+      bankAccountNumber: owners.bankAccountNumber,
+      bankAccountName: owners.bankAccountName,
+    })
+    .from(owners)
+    .where(eq(owners.id, centre.ownerId));
+
+  if (owner?.bankBsb && owner?.bankAccountNumber && owner?.bankAccountName) {
+    return {
+      bankBsb: owner.bankBsb,
+      bankAccountNumber: owner.bankAccountNumber,
+      bankAccountName: owner.bankAccountName,
+      resolvedFrom: "owner",
+    };
+  }
+
+  return null;
 }
 

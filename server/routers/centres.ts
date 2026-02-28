@@ -27,7 +27,14 @@ export const centresRouter = router({
       const centre = await db.getShoppingCentreBySlug(input.slug);
       if (!centre) throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
       return centre;
-    }),    
+    }),
+  getBySlugOrId: publicProcedure
+    .input(z.object({ idOrSlug: z.string() }))
+    .query(async ({ input }) => {
+      const centre = await db.getShoppingCentreByIdOrSlug(input.idOrSlug);
+      if (!centre) throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+      return centre;
+    }),
   getSites: publicProcedure
     .input(z.object({ centreId: z.number() }))
     .query(async ({ input }) => {
@@ -35,7 +42,7 @@ export const centresRouter = router({
     }),
   
   getByState: publicProcedure
-    .input(z.object({ state: z.string() }))
+    .input(z.object({ state: z.string().trim().toUpperCase() }))
     .query(async ({ input }) => {
       return await db.getShoppingCentresByState(input.state);
     }),
@@ -92,13 +99,13 @@ export const centresRouter = router({
   update: ownerProcedure
     .input(z.object({
       id: z.number(),
-      name: z.string().min(1).optional(),
-      address: z.string().optional(),
-      suburb: z.string().optional(),
-      state: z.string().optional(),
-      postcode: z.string().optional(),
+      name: z.string().trim().min(1).optional(),
+      address: z.string().trim().optional(),
+      suburb: z.string().trim().optional(),
+      state: z.string().trim().toUpperCase().optional(),
+      postcode: z.string().trim().optional(),
       description: z.string().optional(),
-      contactPhone: z.string().optional(),
+      contactPhone: z.string().trim().optional(),
       contactEmail: z.string().email().optional(),
       operatingHours: z.string().optional(),
       policies: z.string().optional(),

@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation, useSearch } from "wouter";
 import AdminLayout from "@/components/AdminLayout";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,6 +23,7 @@ import { cn } from "@/lib/utils";
 export default function AdminBooking() {
   const [, setLocation] = useLocation();
   const searchString = useSearch();
+  const { user } = useAuth();
   
   // Parse URL parameters
   const urlParams = useMemo(() => {
@@ -52,7 +55,7 @@ export default function AdminBooking() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [tablesRequested, setTablesRequested] = useState(0);
   const [chairsRequested, setChairsRequested] = useState(0);
-  const [invoiceOverride, setInvoiceOverride] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"stripe" | "invoice">("stripe");
   const [adminComments, setAdminComments] = useState("");
   const [overrideAmount, setOverrideAmount] = useState<string>("");
   const [showAllDetails, setShowAllDetails] = useState(false);
@@ -103,6 +106,19 @@ export default function AdminBooking() {
     { enabled: !!selectedSiteId && !!selectedStartDate && !!selectedEndDate }
   );
 
+  // Auto-set payment method based on centre's payment mode
+  useEffect(() => {
+    if (costPreview?.paymentMode) {
+      if (costPreview.paymentMode === "invoice_only") {
+        setSelectedPaymentMethod("invoice");
+      } else if (costPreview.paymentMode === "stripe") {
+        setSelectedPaymentMethod("stripe");
+      } else if (costPreview.paymentMode === "stripe_with_exceptions") {
+        setSelectedPaymentMethod("stripe");
+      }
+    }
+  }, [costPreview?.paymentMode]);
+
   const utils = trpc.useUtils();
 
   const createBookingMutation = trpc.adminBooking.create.useMutation({
@@ -117,7 +133,7 @@ export default function AdminBooking() {
       setSelectedUserId(null);
       setTablesRequested(0);
       setChairsRequested(0);
-      setInvoiceOverride(false);
+      setSelectedPaymentMethod("stripe");
       setAdminComments("");
       setOverrideAmount("");
       setShowConfirmDialog(false);
@@ -147,9 +163,26 @@ export default function AdminBooking() {
     onSuccess: (data) => {
       toast.success(`Booking ${data.bookingNumber} cancelled successfully!`);
       utils.adminBooking.getAvailabilityGrid.invalidate();
+      utils.adminBooking.getPendingRefunds.invalidate();
       setShowCancelDialog(false);
       setEditingBookingId(null);
       setCancelReason("");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  // Pending refunds (mega admin only)
+  const isMegaAdmin = user?.role === 'mega_admin' || user?.role === 'mega_state_admin';
+  const { data: pendingRefunds } = trpc.adminBooking.getPendingRefunds.useQuery(
+    undefined,
+    { enabled: isMegaAdmin },
+  );
+  const processRefundMutation = trpc.adminBooking.processRefund.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Refund ${data.refundStatus === 'processed' ? 'processed via Stripe' : 'marked as manually refunded'}`);
+      utils.adminBooking.getPendingRefunds.invalidate();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -307,6 +340,11 @@ export default function AdminBooking() {
         <div className="font-bold truncate">
           T:{booking.tablesRequested} C:{booking.chairsRequested}
         </div>
+        {booking.paymentMethod === "invoice" && (
+          <div className={booking.paidAt ? "text-green-600 font-bold" : "text-amber-600 font-bold"}>
+            {booking.paidAt ? "✓ PAID" : "⚠ UNPAID"}
+          </div>
+        )}
       </div>
     );
   };
@@ -326,7 +364,7 @@ export default function AdminBooking() {
       totalAmount: finalAmount,
       tablesRequested,
       chairsRequested,
-      invoiceOverride,
+      paymentMethod: selectedPaymentMethod,
       adminComments: adminComments || undefined,
     });
   };
@@ -338,6 +376,61 @@ export default function AdminBooking() {
           <h1 className="text-3xl font-bold">Admin Booking</h1>
           <p className="text-muted-foreground">Create bookings on behalf of customers</p>
         </div>
+
+        {/* Pending Refunds Banner (mega admin only) */}
+        {isMegaAdmin && pendingRefunds && pendingRefunds.length > 0 && (
+          <Card className="border-amber-300 bg-amber-50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2 text-amber-800">
+                <AlertTriangle className="h-5 w-5" />
+                Refunds Pending — {pendingRefunds.length} cancelled booking{pendingRefunds.length !== 1 ? 's' : ''} require refund processing
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-amber-200">
+                      <th className="text-left py-2 pr-4 font-medium">Booking</th>
+                      <th className="text-left py-2 pr-4 font-medium">Customer</th>
+                      <th className="text-left py-2 pr-4 font-medium">Centre / Site</th>
+                      <th className="text-left py-2 pr-4 font-medium">Cancelled</th>
+                      <th className="text-right py-2 pr-4 font-medium">Amount</th>
+                      <th className="text-left py-2 pr-4 font-medium">Payment</th>
+                      <th className="text-right py-2 font-medium">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingRefunds.map((refund: any) => (
+                      <tr key={refund.bookingId} className="border-b border-amber-100">
+                        <td className="py-2 pr-4 font-medium">{refund.bookingNumber}</td>
+                        <td className="py-2 pr-4">{refund.customerName}</td>
+                        <td className="py-2 pr-4">{refund.centreName} — Site {refund.siteNumber}</td>
+                        <td className="py-2 pr-4">{refund.cancelledAt ? format(new Date(refund.cancelledAt), 'dd/MM/yyyy') : '—'}</td>
+                        <td className="py-2 pr-4 text-right">${Number(refund.totalAmount).toFixed(2)}</td>
+                        <td className="py-2 pr-4">
+                          <Badge variant="outline" className={refund.stripePaymentIntentId ? 'border-blue-300 text-blue-700' : 'border-gray-300 text-gray-600'}>
+                            {refund.stripePaymentIntentId ? 'Stripe' : 'Invoice'}
+                          </Badge>
+                        </td>
+                        <td className="py-2 text-right">
+                          <Button
+                            size="sm"
+                            variant={refund.stripePaymentIntentId ? "default" : "outline"}
+                            disabled={processRefundMutation.isPending}
+                            onClick={() => processRefundMutation.mutate({ bookingId: refund.bookingId })}
+                          >
+                            {processRefundMutation.isPending ? 'Processing...' : refund.stripePaymentIntentId ? 'Process Refund' : 'Mark as Refunded'}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Centre Selection */}
         <Card>
@@ -404,6 +497,8 @@ export default function AdminBooking() {
                     <div className="w-4 h-4 bg-red-100 border border-red-300 rounded" /> Booked
                     <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded ml-2" /> Selected
                     <div className="w-4 h-4 bg-green-50 border border-green-200 rounded ml-2" /> Available
+                    <div className="w-auto h-4 bg-green-200 text-green-800 text-[9px] font-bold px-1 rounded ml-2 flex items-center">PAID</div>
+                    <div className="w-auto h-4 bg-amber-200 text-amber-800 text-[9px] font-bold px-1 rounded ml-2 flex items-center">UNPAID</div>
                   </div>
                 </div>
               </CardHeader>
@@ -441,6 +536,9 @@ export default function AdminBooking() {
                               <div>${site.pricePerDay}/day</div>
                               {site.weekendPricePerDay && <div>${site.weekendPricePerDay}/wknd</div>}
                               <div>${site.pricePerWeek}/wk</div>
+                              {parseFloat(site.outgoingsPerDay || "0") > 0 && (
+                                <p className="text-xs text-muted-foreground">Outgoings: ${site.outgoingsPerDay}/day</p>
+                              )}
                             </td>
                             {daysInMonth.map((day) => {
                               const booking = getBookingForDay(site.id, day);
@@ -465,6 +563,18 @@ export default function AdminBooking() {
                                             <div className="font-bold truncate">{booking.companyName || booking.customerName}</div>
                                             <div className="truncate">{booking.productCategory}</div>
                                             <div className="font-bold">T:{booking.tablesRequested} C:{booking.chairsRequested}</div>
+                                          </div>
+                                        )}
+                                        {booking && booking.paymentMethod === "invoice" && (
+                                          <div className={cn(
+                                            "text-[9px] font-bold px-0.5 rounded text-center mt-0.5",
+                                            booking.paidAt
+                                              ? "bg-green-200 text-green-800"
+                                              : booking.status === "confirmed"
+                                                ? "bg-amber-200 text-amber-800"
+                                                : ""
+                                          )}>
+                                            {booking.paidAt ? "PAID" : booking.status === "confirmed" ? "UNPAID" : ""}
                                           </div>
                                         )}
                                       </td>
@@ -631,12 +741,15 @@ export default function AdminBooking() {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>Weekdays: {costPreview.weekdayCount} × ${costPreview.pricePerDay}</div>
                         <div>Weekends: {costPreview.weekendCount} × ${costPreview.weekendPricePerDay || costPreview.pricePerDay}</div>
-                        <div>Subtotal: ${costPreview.totalAmount.toFixed(2)}</div>
-                        <div>GST ({costPreview.gstPercentage}%): ${costPreview.gstAmount.toFixed(2)}</div>
+                        <div>Rent Subtotal: ${costPreview.totalAmount.toFixed(2)}</div>
+                        {costPreview.outgoingsPerDay > 0 && (
+                          <div>Outgoings: {costPreview.weekdayCount + costPreview.weekendCount} days × ${costPreview.outgoingsPerDay}/day = ${(costPreview.outgoingsPerDay * (costPreview.weekdayCount + costPreview.weekendCount)).toFixed(2)}</div>
+                        )}
+                        <div>GST ({costPreview.gstPercentage}%): ${((costPreview.totalAmount + costPreview.outgoingsPerDay * (costPreview.weekdayCount + costPreview.weekendCount)) * costPreview.gstPercentage / 100).toFixed(2)}</div>
                       </div>
                       <div className="pt-2 border-t">
                         <div className="font-semibold text-lg">
-                          Calculated Total: ${costPreview.totalAmount.toFixed(2)} + GST
+                          Calculated Total: ${(costPreview.totalAmount + costPreview.outgoingsPerDay * (costPreview.weekdayCount + costPreview.weekendCount)).toFixed(2)} + GST
                         </div>
                       </div>
                     </div>
@@ -658,19 +771,25 @@ export default function AdminBooking() {
                     </div>
                   </div>
 
-                  {/* Invoice Override */}
-                  {selectedUser && !selectedUser.canPayByInvoice && (
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id="invoiceOverride"
-                        checked={invoiceOverride}
-                        onCheckedChange={(checked) => setInvoiceOverride(!!checked)}
-                      />
-                      <Label htmlFor="invoiceOverride" className="cursor-pointer">
-                        Override to Invoice (for phone requests or $0 admin blocks)
-                      </Label>
-                    </div>
-                  )}
+                  {/* Payment Method */}
+                  <div>
+                    <Label>Payment Method</Label>
+                    <select
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      value={selectedPaymentMethod}
+                      onChange={(e) => setSelectedPaymentMethod(e.target.value as "stripe" | "invoice")}
+                      disabled={costPreview?.paymentMode === "invoice_only"}
+                    >
+                      <option value="stripe">Stripe</option>
+                      <option value="invoice">Invoice</option>
+                    </select>
+                    {costPreview?.paymentMode && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        <Info className="h-3 w-3 inline mr-1" />
+                        Centre payment mode: {costPreview.paymentMode === "invoice_only" ? "Invoice Only" : costPreview.paymentMode === "stripe_with_exceptions" ? "Stripe with Invoice Exceptions" : "Stripe"}
+                      </p>
+                    )}
+                  </div>
 
                   {/* Admin Comments */}
                   <div>
@@ -757,7 +876,7 @@ export default function AdminBooking() {
                 <div><strong>Customer:</strong> {selectedUser?.companyName || selectedUser?.name}</div>
                 <div><strong>Email:</strong> {selectedUser?.email}</div>
                 <div><strong>Tables/Chairs:</strong> {tablesRequested} / {chairsRequested}</div>
-                <div><strong>Payment:</strong> {invoiceOverride || selectedUser?.canPayByInvoice ? "Invoice" : "Stripe"}</div>
+                <div><strong>Payment:</strong> {selectedPaymentMethod === "invoice" ? "Invoice" : "Stripe"}</div>
                 <div className="pt-2 border-t font-semibold text-lg">
                   <strong>Total:</strong> ${finalAmount.toFixed(2)} + GST
                 </div>
@@ -888,8 +1007,21 @@ function EditBookingContent({
 }) {
   const [showPriceBreakdown, setShowPriceBreakdown] = useState(false);
   const [datesChanged, setDatesChanged] = useState(false);
-  const { data: bookingDetails, isLoading } = trpc.adminBooking.getBookingDetails.useQuery({ bookingId });
-  const { data: statusHistory } = trpc.adminBooking.getStatusHistory.useQuery({ bookingId });
+  const { data: bookingDetails, isLoading, refetch: refetchDetails } = trpc.adminBooking.getBookingDetails.useQuery({ bookingId });
+  const { data: statusHistory, refetch: refetchHistory } = trpc.adminBooking.getStatusHistory.useQuery({ bookingId });
+  const utils = trpc.useUtils();
+
+  const convertToInvoiceMutation = trpc.adminBooking.convertToInvoice.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Booking ${data.bookingNumber} converted to invoice payment.`);
+      refetchDetails();
+      refetchHistory();
+      utils.adminBooking.getAvailabilityGrid.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Conversion failed: " + error.message);
+    },
+  });
   
   // Calculate price when dates change
   const { data: calculatedPrice, isLoading: isPriceLoading } = trpc.adminBooking.calculatePrice.useQuery(
@@ -939,6 +1071,30 @@ function EditBookingContent({
           bookingDetails.status === "cancelled" && "bg-red-100 text-red-800",
           bookingDetails.status === "pending" && "bg-yellow-100 text-yellow-800"
         )}>{bookingDetails.status}</span></div>
+        <div className="flex items-center gap-2">
+          <strong>Payment:</strong>
+          <span className={cn(
+            "px-2 py-0.5 rounded text-xs font-medium",
+            bookingDetails.paymentMethod === "stripe" && "bg-blue-100 text-blue-800",
+            bookingDetails.paymentMethod === "invoice" && "bg-amber-100 text-amber-800"
+          )}>{bookingDetails.paymentMethod === "stripe" ? "STRIPE" : "INVOICE"}</span>
+          {bookingDetails.paidAt && <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">PAID</span>}
+          {!bookingDetails.paidAt && <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">UNPAID</span>}
+        </div>
+        {bookingDetails.status === "confirmed" && bookingDetails.paymentMethod === "stripe" && !bookingDetails.paidAt && (
+          <div className="pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-amber-700 border-amber-300 hover:bg-amber-50"
+              onClick={() => convertToInvoiceMutation.mutate({ bookingId })}
+              disabled={convertToInvoiceMutation.isPending}
+            >
+              <DollarSign className="h-3 w-3 mr-1" />
+              {convertToInvoiceMutation.isPending ? "Converting..." : "Convert to Invoice"}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Editable Dates */}

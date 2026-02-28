@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, MapPin, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { PriceCalculator } from "@/components/PriceCalculator";
 
@@ -77,32 +77,43 @@ export default function SiteDetail() {
     }
   }, [site?.id, currentImageIndex]);
 
+  const checkoutMutation = trpc.bookings.createCheckoutSession.useMutation({
+    onSuccess: (data) => {
+      window.location.href = data.url;
+    },
+    onError: (error) => {
+      toast.error("Payment redirect failed: " + error.message);
+    },
+  });
+
   const createBookingMutation = trpc.bookings.create.useMutation({
     onSuccess: (data) => {
       const { costBreakdown, equipmentWarning, paymentMethod } = data;
-      const breakdownMessage = `\n\nCost Breakdown:\n${costBreakdown.weekdayCount} weekdays @ $${costBreakdown.weekdayRate}/day${costBreakdown.weekendCount > 0 ? `\n${costBreakdown.weekendCount} weekend days @ $${costBreakdown.weekendRate}/day` : ''}\nSubtotal: $${costBreakdown.subtotal.toFixed(2)}\nGST: $${costBreakdown.gstAmount.toFixed(2)}\nTotal: $${costBreakdown.total.toFixed(2)}`;
+      const outgoingsLine = costBreakdown.outgoingsPerDay > 0 ? `\nOutgoings: ${costBreakdown.weekdayCount + costBreakdown.weekendCount} days @ $${costBreakdown.outgoingsPerDay.toFixed(2)}/day = $${costBreakdown.totalOutgoings.toFixed(2)}` : '';
+      const breakdownMessage = `\n\nCost Breakdown:\n${costBreakdown.weekdayCount} weekdays @ $${costBreakdown.weekdayRate}/day${costBreakdown.weekendCount > 0 ? `\n${costBreakdown.weekendCount} weekend days @ $${costBreakdown.weekendRate}/day` : ''}\nSubtotal: $${costBreakdown.subtotal.toFixed(2)}${outgoingsLine}\nGST: $${costBreakdown.gstAmount.toFixed(2)}\nTotal: $${costBreakdown.total.toFixed(2)}`;
       
       const equipmentMessage = equipmentWarning ? `\n\n⚠️ ${equipmentWarning}` : '';
       
-      // Different messages for invoice vs Stripe bookings
-      let successMessage: string;
-      
       if (paymentMethod === 'invoice') {
         // Invoice booking messages
+        let successMessage: string;
         if (data.requiresApproval) {
           successMessage = "Booking request submitted! You should be advised if your request has been approved within 3 days." + breakdownMessage + equipmentMessage;
         } else {
           successMessage = "Booking confirmed! Booking number: " + data.bookingNumber + "\n\nAn invoice will be sent to your email shortly." + breakdownMessage + equipmentMessage;
         }
+        toast.success(successMessage);
+        setLocation("/my-bookings");
       } else {
-        // Stripe booking messages (existing logic)
-        successMessage = data.requiresApproval
-          ? "Booking request submitted! Awaiting approval." + breakdownMessage + equipmentMessage
-          : "Booking confirmed! Booking number: " + data.bookingNumber + breakdownMessage + equipmentMessage;
+        // Stripe booking — redirect to checkout if auto-confirmed (no approval needed)
+        if (!data.requiresApproval) {
+          toast.info("Redirecting to payment...");
+          checkoutMutation.mutate({ bookingId: data.bookingId });
+        } else {
+          toast.success("Booking request submitted! You'll be able to pay once approved." + breakdownMessage + equipmentMessage);
+          setLocation("/my-bookings");
+        }
       }
-      
-      toast.success(successMessage);
-      setLocation("/my-bookings");
     },
     onError: (error) => {
       toast.error("Booking failed: " + error.message);
@@ -192,7 +203,7 @@ export default function SiteDetail() {
     setPendingBookingData(null);
     // Navigate back to centre calendar on the originally requested date
     if (site?.centreId && startDate) {
-      setLocation(`/centre/${site.centreId}?date=${startDate}`);
+      setLocation(`/centre/${centre?.slug || site.centreId}?date=${startDate}`);
     }
   };
 
@@ -428,6 +439,12 @@ export default function SiteDetail() {
                       <p className="text-sm text-gray-600">Weekly Rate</p>
                       <p className="text-lg font-semibold text-gray-700">${site.pricePerWeek}/week</p>
                     </div>
+                    {parseFloat(site.outgoingsPerDay || "0") > 0 && (
+                      <div className="pt-2 border-t">
+                        <p className="text-sm text-gray-600">Outgoings</p>
+                        <p className="text-lg font-semibold text-gray-700">${site.outgoingsPerDay}/day</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -557,12 +574,22 @@ export default function SiteDetail() {
                       />
                     )}
 
+                    {centre?.paymentMode === "invoice_only" && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+                        <FileText className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-blue-800">
+                          This centre processes payments by invoice. You will receive an invoice once your booking is confirmed.
+                        </p>
+                      </div>
+                    )}
+
                     <Button
                       onClick={handleBooking}
                       disabled={createBookingMutation.isPending}
                       className="w-full bg-blue-600 hover:bg-blue-700"
                     >
-                      {createBookingMutation.isPending ? "Processing..." : "Confirm Booking"}
+                      {createBookingMutation.isPending ? "Processing..." : 
+                        centre?.paymentMode === "invoice_only" ? "Submit Booking Request" : "Confirm Booking"}
                     </Button>
                   </>
                 )}

@@ -45,6 +45,7 @@ export function findNearbyCentres(
   centres: Array<{
     id: number;
     name: string;
+    slug?: string | null;
     latitude: string | null;
     longitude: string | null;
     address?: string | null;
@@ -55,6 +56,7 @@ export function findNearbyCentres(
 ): Array<{
   id: number;
   name: string;
+  slug: string | null;
   address: string | null;
   state: string | null;
   latitude: string;
@@ -91,6 +93,7 @@ export function findNearbyCentres(
       return {
         id: c.id,
         name: c.name,
+        slug: c.slug || null,
         address: c.address || null,
         state: c.state || null,
         latitude: c.latitude!,

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,10 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { RefreshCw, Bell, Download, FileSpreadsheet, FileText, Building2 } from "lucide-react";
+import { RefreshCw, Bell, Download, FileSpreadsheet, FileText, Building2, AlertTriangle, X } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useLocation } from "wouter";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import { toast } from "sonner";
 
 // Rate Validation Alerts Component
@@ -188,6 +188,18 @@ export default function PortfolioDashboard() {
     state: selectedState,
   });
   
+  // Closed-period cancellation warning
+  const [dismissedCancellationWarning, setDismissedCancellationWarning] = useState(false);
+  const periodDates = useMemo(() => {
+    const s = startOfMonth(new Date(selectedYear, selectedMonth - 1, 1));
+    const e = endOfMonth(s);
+    return { periodStart: s, periodEnd: e };
+  }, [selectedYear, selectedMonth]);
+  const { data: cancellationWarning } = trpc.dashboard.getCancellationsAffectingPeriod.useQuery(
+    periodDates,
+    { enabled: periodDates.periodEnd < new Date() },
+  );
+
   const { data: annualBreakdown, isLoading: isLoadingAnnualBreakdown } = trpc.dashboard.getCentreBreakdown.useQuery({
     financialYear: selectedFY,
     breakdownType: 'annual',
@@ -408,6 +420,30 @@ export default function PortfolioDashboard() {
              
         {/* Rate Validation Alerts */}
         <RateValidationAlerts />
+
+        {/* Closed-period cancellation warning */}
+        {cancellationWarning && cancellationWarning.count > 0 && !dismissedCancellationWarning && (
+          <div className="mx-6 lg:mx-8 mt-4">
+            <div className="p-4 bg-amber-50 border border-amber-300 rounded-lg flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-amber-800 font-medium">
+                  Warning — {cancellationWarning.count} booking{cancellationWarning.count !== 1 ? 's' : ''} totalling ${cancellationWarning.totalAmount.toFixed(2)} (incl. GST ${cancellationWarning.gstAmount.toFixed(2)}) were confirmed during this period but have since been cancelled.
+                </p>
+                <p className="text-amber-700 text-sm mt-1">
+                  The figures below reflect current booking status and do not include these cancelled bookings. If this period has already been reported or remitted, a manual adjustment may be required.
+                </p>
+              </div>
+              <button
+                onClick={() => setDismissedCancellationWarning(true)}
+                className="text-amber-500 hover:text-amber-700 flex-shrink-0"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Main Content */}
         <div className="p-6 lg:p-8">
           {/* KPI Grid - Top 60% */}
