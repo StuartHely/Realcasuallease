@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2, Plus, Pencil, Trash2, Mail, DollarSign, Users, Search, Building } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { WeeklyReportSettingsDialog } from "@/components/WeeklyReportSettingsDialog";
@@ -43,6 +44,8 @@ interface Owner {
   remittanceEmail3: string | null;
   remittanceEmail4: string | null;
   remittanceEmail5: string | null;
+  isAgency: boolean;
+  parentAgencyId: number | null;
 }
 
 export default function AdminOwners() {
@@ -82,6 +85,8 @@ export default function AdminOwners() {
     remittanceEmail3: "",
     remittanceEmail4: "",
     remittanceEmail5: "",
+    isAgency: false,
+    parentAgencyId: null,
   });
 
   const { data: owners, isLoading: ownersLoading, refetch: refetchOwners } = trpc.owners.list.useQuery();
@@ -145,6 +150,8 @@ export default function AdminOwners() {
       remittanceEmail3: "",
       remittanceEmail4: "",
       remittanceEmail5: "",
+      isAgency: false,
+      parentAgencyId: null,
     });
   };
 
@@ -192,6 +199,8 @@ export default function AdminOwners() {
       remittanceEmail3: formData.remittanceEmail3 || null,
       remittanceEmail4: formData.remittanceEmail4 || null,
       remittanceEmail5: formData.remittanceEmail5 || null,
+      isAgency: formData.isAgency || false,
+      parentAgencyId: formData.parentAgencyId || null,
     });
   };
 
@@ -226,6 +235,8 @@ export default function AdminOwners() {
       remittanceEmail3: formData.remittanceEmail3 || null,
       remittanceEmail4: formData.remittanceEmail4 || null,
       remittanceEmail5: formData.remittanceEmail5 || null,
+      isAgency: formData.isAgency || false,
+      parentAgencyId: formData.parentAgencyId || null,
     });
   };
 
@@ -300,7 +311,10 @@ export default function AdminOwners() {
                     const ownerCentres = getCentresForOwner(owner.id);
                     return (
                       <TableRow key={owner.id}>
-                        <TableCell className="font-medium">{owner.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {owner.name}
+                          {owner.isAgency && <Badge variant="outline" className="ml-2 text-xs">Agency</Badge>}
+                        </TableCell>
                         <TableCell>
                           <div className="text-sm">
                             {owner.email && <div>{owner.email}</div>}
@@ -456,6 +470,39 @@ export default function AdminOwners() {
                 </div>
               </div>
               <div>
+                <Label className="text-base font-semibold">Agency Settings</Label>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div className="flex items-center gap-3 p-3 border rounded-lg">
+                    <Switch
+                      id="isAgency"
+                      checked={!!formData.isAgency}
+                      onCheckedChange={(checked) => setFormData({ ...formData, isAgency: checked, parentAgencyId: checked ? null : formData.parentAgencyId })}
+                    />
+                    <div>
+                      <Label htmlFor="isAgency">Is Agency</Label>
+                      <p className="text-xs text-muted-foreground">This owner manages centres on behalf of others</p>
+                    </div>
+                  </div>
+                  {!formData.isAgency && (
+                    <div className="space-y-2">
+                      <Label>Managed By Agency</Label>
+                      <Select
+                        value={formData.parentAgencyId?.toString() || "none"}
+                        onValueChange={(v) => setFormData({ ...formData, parentAgencyId: v === "none" ? null : parseInt(v) })}
+                      >
+                        <SelectTrigger><SelectValue placeholder="No agency" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No agency</SelectItem>
+                          {owners?.filter((o: any) => o.isAgency && o.id !== selectedOwner?.id).map((o: any) => (
+                            <SelectItem key={o.id} value={o.id.toString()}>{o.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
                 <Label className="text-base font-semibold">Primary Contact</Label>
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   <div className="space-y-2">
@@ -606,6 +653,39 @@ export default function AdminOwners() {
                     <Label htmlFor="edit-companyAbn">Company ABN</Label>
                     <Input id="edit-companyAbn" value={formData.companyAbn || ""} onChange={(e) => setFormData({ ...formData, companyAbn: e.target.value })} />
                   </div>
+                </div>
+              </div>
+              <div>
+                <Label className="text-base font-semibold">Agency Settings</Label>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div className="flex items-center gap-3 p-3 border rounded-lg">
+                    <Switch
+                      id="edit-isAgency"
+                      checked={!!formData.isAgency}
+                      onCheckedChange={(checked) => setFormData({ ...formData, isAgency: checked, parentAgencyId: checked ? null : formData.parentAgencyId })}
+                    />
+                    <div>
+                      <Label htmlFor="edit-isAgency">Is Agency</Label>
+                      <p className="text-xs text-muted-foreground">This owner manages centres on behalf of others</p>
+                    </div>
+                  </div>
+                  {!formData.isAgency && (
+                    <div className="space-y-2">
+                      <Label>Managed By Agency</Label>
+                      <Select
+                        value={formData.parentAgencyId?.toString() || "none"}
+                        onValueChange={(v) => setFormData({ ...formData, parentAgencyId: v === "none" ? null : parseInt(v) })}
+                      >
+                        <SelectTrigger><SelectValue placeholder="No agency" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No agency</SelectItem>
+                          {owners?.filter((o: any) => o.isAgency && o.id !== selectedOwner?.id).map((o: any) => (
+                            <SelectItem key={o.id} value={o.id.toString()}>{o.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
               </div>
               <div>

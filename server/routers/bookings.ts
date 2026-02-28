@@ -160,9 +160,11 @@ export const bookingsRouter = router({
           }
         }
 
-        // Check if user can pay by invoice
+        // Resolve payment method from centre payment mode + user eligibility
         const currentUser = await db.getUserByOpenId(ctx.user.openId);
         const canPayByInvoice = currentUser?.canPayByInvoice || false;
+        const { resolvePaymentMethod } = await import("../paymentModeHelper");
+        const paymentMethod = resolvePaymentMethod(centre.paymentMode, canPayByInvoice);
 
         // Check insurance expiry date
         const customerProfile = await db.getCustomerProfileByUserId(ctx.user.id);
@@ -180,7 +182,7 @@ export const bookingsRouter = router({
         }
 
         // Calculate payment due date for invoice bookings (7 days from booking creation)
-        const paymentDueDate = canPayByInvoice ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null;
+        const paymentDueDate = paymentMethod === "invoice" ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null;
 
         // Create booking
         const result = await db.createBooking({
@@ -198,7 +200,7 @@ export const bookingsRouter = router({
           gstPercentage: (gstRate * 100).toFixed(2), // Store GST percentage at time of booking
           ownerAmount: ownerAmount.toFixed(2),
           platformFee: platformFee.toFixed(2),
-          paymentMethod: canPayByInvoice ? "invoice" : "stripe",
+          paymentMethod,
           paymentDueDate: paymentDueDate,
           status: requiresApproval ? "pending" : (site.instantBooking ? "confirmed" : "pending"),
           requiresApproval,
@@ -212,6 +214,11 @@ export const bookingsRouter = router({
         const initialStatus = requiresApproval ? "pending" : (site.instantBooking ? "confirmed" : "pending");
         await db.recordBookingCreated(bookingId, initialStatus as "pending" | "confirmed", ctx.user.id, ctx.user.name || undefined);
 
+        // Fire-and-forget invoice dispatch for auto-confirmed bookings
+        if (initialStatus === "confirmed") {
+          import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(bookingId)).catch(() => {});
+        }
+
         return {
           bookingId,
           bookingNumber,
@@ -219,7 +226,7 @@ export const bookingsRouter = router({
           requiresApproval,
           insuranceExpired,
           canPayByInvoice,
-          paymentMethod: canPayByInvoice ? "invoice" as const : "stripe" as const,
+          paymentMethod,
           equipmentWarning,
           costBreakdown: {
             weekdayCount,
@@ -336,6 +343,9 @@ export const bookingsRouter = router({
             tradingName: customerProfile?.tradingName || undefined,
           });
         }
+
+        // Fire-and-forget invoice dispatch after approval
+        import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(input.bookingId)).catch(() => {});
         
         return { success: true };
       }),

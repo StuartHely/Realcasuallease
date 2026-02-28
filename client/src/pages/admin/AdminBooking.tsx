@@ -55,7 +55,7 @@ export default function AdminBooking() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [tablesRequested, setTablesRequested] = useState(0);
   const [chairsRequested, setChairsRequested] = useState(0);
-  const [invoiceOverride, setInvoiceOverride] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"stripe" | "invoice">("stripe");
   const [adminComments, setAdminComments] = useState("");
   const [overrideAmount, setOverrideAmount] = useState<string>("");
   const [showAllDetails, setShowAllDetails] = useState(false);
@@ -106,6 +106,19 @@ export default function AdminBooking() {
     { enabled: !!selectedSiteId && !!selectedStartDate && !!selectedEndDate }
   );
 
+  // Auto-set payment method based on centre's payment mode
+  useEffect(() => {
+    if (costPreview?.paymentMode) {
+      if (costPreview.paymentMode === "invoice_only") {
+        setSelectedPaymentMethod("invoice");
+      } else if (costPreview.paymentMode === "stripe") {
+        setSelectedPaymentMethod("stripe");
+      } else if (costPreview.paymentMode === "stripe_with_exceptions") {
+        setSelectedPaymentMethod("stripe");
+      }
+    }
+  }, [costPreview?.paymentMode]);
+
   const utils = trpc.useUtils();
 
   const createBookingMutation = trpc.adminBooking.create.useMutation({
@@ -120,7 +133,7 @@ export default function AdminBooking() {
       setSelectedUserId(null);
       setTablesRequested(0);
       setChairsRequested(0);
-      setInvoiceOverride(false);
+      setSelectedPaymentMethod("stripe");
       setAdminComments("");
       setOverrideAmount("");
       setShowConfirmDialog(false);
@@ -327,6 +340,11 @@ export default function AdminBooking() {
         <div className="font-bold truncate">
           T:{booking.tablesRequested} C:{booking.chairsRequested}
         </div>
+        {booking.paymentMethod === "invoice" && (
+          <div className={booking.paidAt ? "text-green-600 font-bold" : "text-amber-600 font-bold"}>
+            {booking.paidAt ? "✓ PAID" : "⚠ UNPAID"}
+          </div>
+        )}
       </div>
     );
   };
@@ -346,7 +364,7 @@ export default function AdminBooking() {
       totalAmount: finalAmount,
       tablesRequested,
       chairsRequested,
-      invoiceOverride,
+      paymentMethod: selectedPaymentMethod,
       adminComments: adminComments || undefined,
     });
   };
@@ -479,6 +497,8 @@ export default function AdminBooking() {
                     <div className="w-4 h-4 bg-red-100 border border-red-300 rounded" /> Booked
                     <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded ml-2" /> Selected
                     <div className="w-4 h-4 bg-green-50 border border-green-200 rounded ml-2" /> Available
+                    <div className="w-auto h-4 bg-green-200 text-green-800 text-[9px] font-bold px-1 rounded ml-2 flex items-center">PAID</div>
+                    <div className="w-auto h-4 bg-amber-200 text-amber-800 text-[9px] font-bold px-1 rounded ml-2 flex items-center">UNPAID</div>
                   </div>
                 </div>
               </CardHeader>
@@ -543,6 +563,18 @@ export default function AdminBooking() {
                                             <div className="font-bold truncate">{booking.companyName || booking.customerName}</div>
                                             <div className="truncate">{booking.productCategory}</div>
                                             <div className="font-bold">T:{booking.tablesRequested} C:{booking.chairsRequested}</div>
+                                          </div>
+                                        )}
+                                        {booking && booking.paymentMethod === "invoice" && (
+                                          <div className={cn(
+                                            "text-[9px] font-bold px-0.5 rounded text-center mt-0.5",
+                                            booking.paidAt
+                                              ? "bg-green-200 text-green-800"
+                                              : booking.status === "confirmed"
+                                                ? "bg-amber-200 text-amber-800"
+                                                : ""
+                                          )}>
+                                            {booking.paidAt ? "PAID" : booking.status === "confirmed" ? "UNPAID" : ""}
                                           </div>
                                         )}
                                       </td>
@@ -739,19 +771,25 @@ export default function AdminBooking() {
                     </div>
                   </div>
 
-                  {/* Invoice Override */}
-                  {selectedUser && !selectedUser.canPayByInvoice && (
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id="invoiceOverride"
-                        checked={invoiceOverride}
-                        onCheckedChange={(checked) => setInvoiceOverride(!!checked)}
-                      />
-                      <Label htmlFor="invoiceOverride" className="cursor-pointer">
-                        Override to Invoice (for phone requests or $0 admin blocks)
-                      </Label>
-                    </div>
-                  )}
+                  {/* Payment Method */}
+                  <div>
+                    <Label>Payment Method</Label>
+                    <select
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      value={selectedPaymentMethod}
+                      onChange={(e) => setSelectedPaymentMethod(e.target.value as "stripe" | "invoice")}
+                      disabled={costPreview?.paymentMode === "invoice_only"}
+                    >
+                      <option value="stripe">Stripe</option>
+                      <option value="invoice">Invoice</option>
+                    </select>
+                    {costPreview?.paymentMode && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        <Info className="h-3 w-3 inline mr-1" />
+                        Centre payment mode: {costPreview.paymentMode === "invoice_only" ? "Invoice Only" : costPreview.paymentMode === "stripe_with_exceptions" ? "Stripe with Invoice Exceptions" : "Stripe"}
+                      </p>
+                    )}
+                  </div>
 
                   {/* Admin Comments */}
                   <div>
@@ -838,7 +876,7 @@ export default function AdminBooking() {
                 <div><strong>Customer:</strong> {selectedUser?.companyName || selectedUser?.name}</div>
                 <div><strong>Email:</strong> {selectedUser?.email}</div>
                 <div><strong>Tables/Chairs:</strong> {tablesRequested} / {chairsRequested}</div>
-                <div><strong>Payment:</strong> {invoiceOverride || selectedUser?.canPayByInvoice ? "Invoice" : "Stripe"}</div>
+                <div><strong>Payment:</strong> {selectedPaymentMethod === "invoice" ? "Invoice" : "Stripe"}</div>
                 <div className="pt-2 border-t font-semibold text-lg">
                   <strong>Total:</strong> ${finalAmount.toFixed(2)} + GST
                 </div>

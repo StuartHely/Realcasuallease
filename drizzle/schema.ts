@@ -6,6 +6,7 @@ import { integer, pgEnum, pgTable, text, timestamp, varchar, decimal, boolean, b
 
 export const roleEnum = pgEnum("role", [
   "customer",
+  "owner_viewer",
   "owner_centre_manager",
   "owner_marketing_manager",
   "owner_regional_admin",
@@ -24,6 +25,8 @@ export const bookingStatusEnum = pgEnum("booking_status", ["pending", "confirmed
 export const paymentMethodEnum = pgEnum("payment_method", ["stripe", "invoice"]);
 
 export const transactionTypeEnum = pgEnum("transaction_type", ["booking", "cancellation", "monthly_fee"]);
+
+export const paymentModeEnum = pgEnum("payment_mode", ["stripe", "stripe_with_exceptions", "invoice_only"]);
 
 // =============================================================================
 // Tables
@@ -46,6 +49,7 @@ export const users = pgTable("users", {
   assignedState: varchar("assignedState", { length: 3 }), // For state_admin roles: NSW, VIC, QLD, etc.
   allocatedLogoId: varchar("allocated_logo_id", { length: 20 }), // For owners: which logo to use (logo_1, logo_2, etc.)
   canPayByInvoice: boolean("canPayByInvoice").default(false).notNull(),
+  assignedOwnerId: integer("assignedOwnerId").references(() => owners.id, { onDelete: "set null" }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -87,6 +91,8 @@ export const customerProfiles = pgTable("customer_profiles", {
 export const owners = pgTable("owners", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
+  isAgency: boolean("isAgency").default(false).notNull(),
+  parentAgencyId: integer("parentAgencyId").references((): any => owners.id, { onDelete: "set null" }),
   companyAbn: varchar("companyAbn", { length: 20 }),
   contactName: varchar("contactName", { length: 255 }),
   contactTitle: varchar("contactTitle", { length: 100 }),
@@ -118,6 +124,22 @@ export const owners = pgTable("owners", {
 });
 
 /**
+ * Portfolios - groups of centres under an owner
+ */
+export const portfolios = pgTable("portfolios", {
+  id: serial("id").primaryKey(),
+  ownerId: integer("ownerId").notNull().references(() => owners.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  bankBsb: varchar("bankBsb", { length: 10 }),
+  bankAccountNumber: varchar("bankAccountNumber", { length: 20 }),
+  bankAccountName: varchar("bankAccountName", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+}, (table) => ({
+  ownerIdIdx: index("portfolio_ownerId_idx").on(table.ownerId),
+}));
+
+/**
  * Floor levels for multi-level shopping centres
  */
 export const floorLevels = pgTable("floor_levels", {
@@ -140,6 +162,8 @@ export const floorLevels = pgTable("floor_levels", {
 export const shoppingCentres = pgTable("shopping_centres", {
   id: serial("id").primaryKey(),
   ownerId: integer("ownerId").notNull().references(() => owners.id, { onDelete: "cascade" }),
+  portfolioId: integer("portfolioId").references(() => portfolios.id, { onDelete: "set null" }),
+  paymentMode: paymentModeEnum("paymentMode").default("stripe_with_exceptions").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   slug: varchar("slug", { length: 255 }).unique(),
   centreCode: varchar("centreCode", { length: 50 }),
@@ -180,10 +204,15 @@ export const shoppingCentres = pgTable("shopping_centres", {
   pdfName2: varchar("pdfName2", { length: 255 }),
   pdfUrl3: text("pdfUrl3"),
   pdfName3: varchar("pdfName3", { length: 255 }),
+  // Centre-level bank account override (most specific in resolution chain)
+  bankBsb: varchar("bankBsb", { length: 10 }),
+  bankAccountNumber: varchar("bankAccountNumber", { length: 20 }),
+  bankAccountName: varchar("bankAccountName", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
   ownerIdIdx: index("centre_ownerId_idx").on(table.ownerId),
+  portfolioIdIdx: index("centre_portfolioId_idx").on(table.portfolioId),
   nameIdx: index("centre_name_idx").on(table.name),
 }));
 
@@ -301,7 +330,7 @@ export const bookings = pgTable("bookings", {
   lastReminderSent: timestamp("lastReminderSent"),
   adminComments: text("adminComments"), // Internal admin notes, never shown on invoices/emails
   createdByAdmin: integer("createdByAdmin").references(() => users.id), // If booking was created by admin on behalf of user
-  invoiceOverride: boolean("invoiceOverride").default(false).notNull(), // Override Stripe user to pay by invoice for this booking
+  invoiceDispatchedAt: timestamp("invoiceDispatchedAt"), // Set when invoice PDF is generated and emailed
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
@@ -737,5 +766,7 @@ export type VacantShopBooking = typeof vacantShopBookings.$inferSelect;
 export type InsertVacantShopBooking = typeof vacantShopBookings.$inferInsert;
 export type ThirdLineBooking = typeof thirdLineBookings.$inferSelect;
 export type InsertThirdLineBooking = typeof thirdLineBookings.$inferInsert;
+export type Portfolio = typeof portfolios.$inferSelect;
+export type InsertPortfolio = typeof portfolios.$inferInsert;
 export type FAQ = typeof faqs.$inferSelect;
 export type InsertFAQ = typeof faqs.$inferInsert;

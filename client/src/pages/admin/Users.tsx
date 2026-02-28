@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
@@ -24,8 +26,9 @@ export default function AdminUsers() {
     email: "",
     name: "",
     password: "",
-    role: "customer" as "customer" | "owner_centre_manager" | "owner_marketing_manager" | "owner_regional_admin" | "owner_state_admin" | "owner_super_admin" | "mega_state_admin" | "mega_admin",
+    role: "customer" as "customer" | "owner_viewer" | "owner_centre_manager" | "owner_marketing_manager" | "owner_regional_admin" | "owner_state_admin" | "owner_super_admin" | "mega_state_admin" | "mega_admin",
     canPayByInvoice: false,
+    assignedOwnerId: null as number | null,
     // Company details
     companyName: "",
     tradingName: "",
@@ -50,6 +53,7 @@ export default function AdminUsers() {
   
   const { data: users, isLoading, refetch } = trpc.users.list.useQuery();
   const { data: usageCategories } = trpc.usageCategories.list.useQuery();
+  const { data: owners } = trpc.owners.list.useQuery();
   const utils = trpc.useUtils();
   
   // Email validation helper
@@ -148,6 +152,7 @@ export default function AdminUsers() {
         password: "",
         role: "customer",
         canPayByInvoice: false,
+        assignedOwnerId: null,
         companyName: "",
         tradingName: "",
         companyWebsite: "",
@@ -193,6 +198,7 @@ export default function AdminUsers() {
       name: editingFullUser.name,
       role: editingFullUser.role,
       assignedState: editingFullUser.assignedState,
+      assignedOwnerId: editingFullUser.assignedOwnerId,
       canPayByInvoice: editingFullUser.canPayByInvoice,
       companyName: editingFullUser.profile?.companyName || '',
       tradingName: editingFullUser.profile?.tradingName || '',
@@ -221,6 +227,10 @@ export default function AdminUsers() {
       toast.error("Please fix email validation errors");
       return;
     }
+    if (newUserData.role === "owner_viewer" && !newUserData.assignedOwnerId) {
+      toast.error("Please select an assigned owner for Owner Viewer role");
+      return;
+    }
     registerUserMutation.mutate(newUserData);
   };
 
@@ -246,6 +256,7 @@ export default function AdminUsers() {
   };
 
   const getRoleBadgeColor = (role: string) => {
+    if (role === "owner_viewer") return "bg-teal-100 text-teal-800";
     if (role.includes("admin")) return "bg-purple-100 text-purple-800";
     if (role.includes("manager")) return "bg-blue-100 text-blue-800";
     if (role.includes("owner")) return "bg-green-100 text-green-800";
@@ -325,9 +336,16 @@ export default function AdminUsers() {
                       <TableCell>{user.profile?.productCategory || "—"}</TableCell>
                       <TableCell>{user.email || "—"}</TableCell>
                       <TableCell>
-                        <Badge className={getRoleBadgeColor(user.role)} variant="secondary">
-                          {user.role.replace(/_/g, " ")}
-                        </Badge>
+                        <div className="flex flex-col gap-1">
+                          <Badge className={getRoleBadgeColor(user.role)} variant="secondary">
+                            {user.role.replace(/_/g, " ")}
+                          </Badge>
+                          {user.role === "owner_viewer" && (
+                            <span className="text-xs text-muted-foreground">
+                              {owners?.find((o: any) => o.id === user.assignedOwnerId)?.name || "No owner assigned"}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {user.canPayByInvoice ? (
@@ -500,10 +518,11 @@ export default function AdminUsers() {
                 <select
                   id="role"
                   value={newUserData.role}
-                  onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value as any })}
+                  onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value as any, assignedOwnerId: null })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="customer">Customer</option>
+                  <option value="owner_viewer">Owner - Viewer</option>
                   <option value="owner_centre_manager">Owner - Centre Manager</option>
                   <option value="owner_marketing_manager">Owner - Marketing Manager</option>
                   <option value="owner_regional_admin">Owner - Regional Admin</option>
@@ -513,6 +532,22 @@ export default function AdminUsers() {
                   <option value="mega_admin">Mega - Admin</option>
                 </select>
               </div>
+              {newUserData.role === "owner_viewer" && (
+              <div className="space-y-2">
+                <Label>Assigned Owner *</Label>
+                <Select
+                  value={newUserData.assignedOwnerId?.toString() || ""}
+                  onValueChange={(v) => setNewUserData({ ...newUserData, assignedOwnerId: v ? parseInt(v) : null })}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select owner..." /></SelectTrigger>
+                  <SelectContent>
+                    {owners?.map((o: any) => (
+                      <SelectItem key={o.id} value={o.id.toString()}>{o.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              )}
               <div className="flex items-start gap-3">
                 <Checkbox
                   id="canPayByInvoice-new"
@@ -698,10 +733,11 @@ export default function AdminUsers() {
                 <label className="text-sm font-medium">Role</label>
                 <select
                   value={editingFullUser.role}
-                  onChange={(e) => setEditingFullUser({ ...editingFullUser, role: e.target.value })}
+                  onChange={(e) => setEditingFullUser({ ...editingFullUser, role: e.target.value, assignedOwnerId: null })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="customer">Customer</option>
+                  <option value="owner_viewer">Owner - Viewer</option>
                   <option value="owner_centre_manager">Owner - Centre Manager</option>
                   <option value="owner_marketing_manager">Owner - Marketing Manager</option>
                   <option value="owner_regional_admin">Owner - Regional Admin</option>
@@ -711,6 +747,22 @@ export default function AdminUsers() {
                   <option value="mega_admin">Mega - Admin</option>
                 </select>
               </div>
+              {editingFullUser.role === 'owner_viewer' && (
+                <div className="space-y-2">
+                  <Label>Assigned Owner *</Label>
+                  <Select
+                    value={editingFullUser.assignedOwnerId?.toString() || ""}
+                    onValueChange={(v) => setEditingFullUser({ ...editingFullUser, assignedOwnerId: v ? parseInt(v) : null })}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Select owner..." /></SelectTrigger>
+                    <SelectContent>
+                      {owners?.map((o: any) => (
+                        <SelectItem key={o.id} value={o.id.toString()}>{o.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               {(editingFullUser.role === 'mega_state_admin' || editingFullUser.role === 'owner_state_admin') && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Assigned State</label>

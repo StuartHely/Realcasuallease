@@ -16,6 +16,8 @@ export const ownersRouter = router({
   create: adminProcedure
     .input(z.object({
       name: z.string().trim().min(1),
+      isAgency: z.boolean().default(false),
+      parentAgencyId: z.number().nullable().optional(),
       companyAbn: z.string().trim().nullable(),
       contactName: z.string().trim().nullable(),
       contactTitle: z.string().trim().nullable(),
@@ -52,6 +54,8 @@ export const ownersRouter = router({
     .input(z.object({
       id: z.number(),
       name: z.string().trim().min(1),
+      isAgency: z.boolean().optional(),
+      parentAgencyId: z.number().nullable().optional(),
       companyAbn: z.string().trim().nullable(),
       contactName: z.string().trim().nullable(),
       contactTitle: z.string().trim().nullable(),

@@ -315,7 +315,6 @@ export const vacantShopBookingsRouter = router({
       ownerAmount: z.string(),
       platformFee: z.string(),
       customerNotes: z.string().optional(),
-      paymentMethod: z.enum(["stripe", "invoice"]).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       // Check availability first
@@ -335,8 +334,17 @@ export const vacantShopBookingsRouter = router({
       // Generate booking number
       const bookingNumber = await assetDb.generateVacantShopBookingNumber(input.vacantShopId);
 
-      // Get shop details for email
+      // Get shop details for email and payment mode resolution
       const shop = await assetDb.getVacantShopById(input.vacantShopId);
+      const centre = shop ? await db.getShoppingCentreById(shop.centreId) : null;
+
+      // Resolve payment method server-side
+      const currentUser = await db.getUserById(ctx.user.id);
+      const { resolvePaymentMethod } = await import("../paymentModeHelper");
+      const paymentMethod = resolvePaymentMethod(
+        centre?.paymentMode || "stripe",
+        currentUser?.canPayByInvoice || false,
+      );
 
       const id = await assetDb.createVacantShopBooking({
         bookingNumber,
@@ -351,7 +359,7 @@ export const vacantShopBookingsRouter = router({
         platformFee: input.platformFee,
         customerNotes: input.customerNotes,
         customerEmail: ctx.user.email || undefined,
-        paymentMethod: input.paymentMethod || "stripe",
+        paymentMethod,
         status: "pending",
         requiresApproval: false,
       });
@@ -425,6 +433,11 @@ export const vacantShopBookingsRouter = router({
           booking.endDate,
           booking.totalAmount
         );
+      }
+
+      // Fire-and-forget invoice dispatch when confirmed
+      if (input.status === "confirmed") {
+        import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(input.id)).catch(() => {});
       }
 
       // Send rejection email
@@ -515,7 +528,6 @@ export const thirdLineBookingsRouter = router({
       ownerAmount: z.string(),
       platformFee: z.string(),
       customerNotes: z.string().optional(),
-      paymentMethod: z.enum(["stripe", "invoice"]).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       // Check availability first
@@ -535,8 +547,17 @@ export const thirdLineBookingsRouter = router({
       // Generate booking number
       const bookingNumber = await assetDb.generateThirdLineBookingNumber(input.thirdLineIncomeId);
 
-      // Get asset details for email
+      // Get asset details for email and payment mode resolution
       const asset = await assetDb.getThirdLineIncomeById(input.thirdLineIncomeId);
+      const centre = asset ? await db.getShoppingCentreById(asset.centreId) : null;
+
+      // Resolve payment method server-side
+      const currentUser = await db.getUserById(ctx.user.id);
+      const { resolvePaymentMethod } = await import("../paymentModeHelper");
+      const paymentMethod = resolvePaymentMethod(
+        centre?.paymentMode || "stripe",
+        currentUser?.canPayByInvoice || false,
+      );
 
       const id = await assetDb.createThirdLineBooking({
         bookingNumber,
@@ -551,7 +572,7 @@ export const thirdLineBookingsRouter = router({
         platformFee: input.platformFee,
         customerNotes: input.customerNotes,
         customerEmail: ctx.user.email || undefined,
-        paymentMethod: input.paymentMethod || "stripe",
+        paymentMethod,
         status: "pending",
         requiresApproval: false,
       });
@@ -628,6 +649,11 @@ export const thirdLineBookingsRouter = router({
           booking.totalAmount,
           asset?.categoryName || undefined
         );
+      }
+
+      // Fire-and-forget invoice dispatch when confirmed
+      if (input.status === "confirmed") {
+        import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(input.id)).catch(() => {});
       }
 
       // Send rejection email

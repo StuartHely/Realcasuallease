@@ -28,18 +28,21 @@ export default function AdminCentres() {
   const pdfInputRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
   
   const { data: centres, refetch } = trpc.centres.list.useQuery();
+  const { data: ownersList } = trpc.owners.list.useQuery();
   const createMutation = trpc.admin.createCentre.useMutation();
   const updateMutation = trpc.admin.updateCentre.useMutation();
   const deleteMutation = trpc.admin.deleteCentre.useMutation();
   const uploadPdfMutation = trpc.centres.uploadPdf.useMutation();
 
   const [formData, setFormData] = useState({
+    ownerId: 0,
     name: "",
     address: "",
     suburb: "",
     state: "",
     postcode: "",
     description: "",
+    paymentMode: "stripe_with_exceptions" as "stripe" | "stripe_with_exceptions" | "invoice_only",
     includeInMainSite: true,
     pdfUrl1: "",
     pdfName1: "",
@@ -47,16 +50,21 @@ export default function AdminCentres() {
     pdfName2: "",
     pdfUrl3: "",
     pdfName3: "",
+    bankBsb: "",
+    bankAccountNumber: "",
+    bankAccountName: "",
   });
 
   const resetForm = () => {
     setFormData({
+      ownerId: 0,
       name: "",
       address: "",
       suburb: "",
       state: "",
       postcode: "",
       description: "",
+      paymentMode: "stripe_with_exceptions",
       includeInMainSite: true,
       pdfUrl1: "",
       pdfName1: "",
@@ -64,6 +72,9 @@ export default function AdminCentres() {
       pdfName2: "",
       pdfUrl3: "",
       pdfName3: "",
+      bankBsb: "",
+      bankAccountNumber: "",
+      bankAccountName: "",
     });
   };
 
@@ -83,12 +94,14 @@ export default function AdminCentres() {
   const handleEdit = (centre: any) => {
     setSelectedCentre(centre);
     setFormData({
+      ownerId: centre.ownerId || 0,
       name: centre.name,
       address: centre.address || "",
       suburb: centre.suburb || "",
       state: centre.state || "",
       postcode: centre.postcode || "",
       description: centre.description || "",
+      paymentMode: centre.paymentMode || "stripe_with_exceptions",
       includeInMainSite: centre.includeInMainSite ?? true,
       pdfUrl1: centre.pdfUrl1 || "",
       pdfName1: centre.pdfName1 || "",
@@ -96,6 +109,9 @@ export default function AdminCentres() {
       pdfName2: centre.pdfName2 || "",
       pdfUrl3: centre.pdfUrl3 || "",
       pdfName3: centre.pdfName3 || "",
+      bankBsb: centre.bankBsb || "",
+      bankAccountNumber: centre.bankAccountNumber || "",
+      bankAccountName: centre.bankAccountName || "",
     });
     setIsEditOpen(true);
   };
@@ -256,6 +272,38 @@ export default function AdminCentres() {
                       rows={3}
                     />
                   </div>
+
+                  {/* Owner Selection */}
+                  <div className="grid gap-2">
+                    <Label htmlFor="ownerId">Owner *</Label>
+                    <select
+                      id="ownerId"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={formData.ownerId || ""}
+                      onChange={(e) => setFormData({ ...formData, ownerId: parseInt(e.target.value) || 0 })}
+                      required
+                    >
+                      <option value="">Select owner...</option>
+                      {ownersList?.map((o: any) => (
+                        <option key={o.id} value={o.id}>{o.name}{o.isAgency ? " (Agency)" : ""}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Payment Mode */}
+                  <div className="grid gap-2">
+                    <Label htmlFor="paymentMode">Payment Mode</Label>
+                    <select
+                      id="paymentMode"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={formData.paymentMode}
+                      onChange={(e) => setFormData({ ...formData, paymentMode: e.target.value as any })}
+                    >
+                      <option value="stripe">Stripe Payments</option>
+                      <option value="stripe_with_exceptions">Stripe with Invoice Exceptions</option>
+                      <option value="invoice_only">Invoice Only</option>
+                    </select>
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
@@ -334,6 +382,54 @@ export default function AdminCentres() {
                   <p className="text-xs text-muted-foreground">
                     Select text and click Bold, Italic, or Underline to format
                   </p>
+                </div>
+
+                {/* Payment Mode */}
+                <div className="grid gap-2">
+                  <Label>Payment Mode</Label>
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={formData.paymentMode}
+                    onChange={(e) => setFormData({ ...formData, paymentMode: e.target.value as any })}
+                  >
+                    <option value="stripe">Stripe Payments</option>
+                    <option value="stripe_with_exceptions">Stripe with Invoice Exceptions</option>
+                    <option value="invoice_only">Invoice Only</option>
+                  </select>
+                </div>
+
+                {/* Bank Account Override */}
+                <div className="grid gap-4 pt-4 border-t">
+                  <Label className="text-base font-semibold">Bank Account Override</Label>
+                  <p className="text-sm text-muted-foreground -mt-2">
+                    Override the owner's default bank account for this centre's invoices
+                  </p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="grid gap-2">
+                      <Label>BSB</Label>
+                      <Input
+                        value={(formData as any).bankBsb || ""}
+                        onChange={(e) => setFormData({ ...formData, bankBsb: e.target.value } as any)}
+                        placeholder="e.g. 062-000"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Account Number</Label>
+                      <Input
+                        value={(formData as any).bankAccountNumber || ""}
+                        onChange={(e) => setFormData({ ...formData, bankAccountNumber: e.target.value } as any)}
+                        placeholder="e.g. 12345678"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Account Name</Label>
+                      <Input
+                        value={(formData as any).bankAccountName || ""}
+                        onChange={(e) => setFormData({ ...formData, bankAccountName: e.target.value } as any)}
+                        placeholder="e.g. Company Pty Ltd"
+                      />
+                    </div>
+                  </div>
                 </div>
                 
                 {/* PDF Upload Section */}
@@ -459,6 +555,9 @@ export default function AdminCentres() {
                   <div className="flex items-center gap-1">
                     {!centre.includeInMainSite && (
                       <span className="text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded">Hidden</span>
+                    )}
+                    {centre.paymentMode === "invoice_only" && (
+                      <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded">Invoice Only</span>
                     )}
                     <Button
                       variant="ghost"

@@ -1,4 +1,4 @@
-import { ownerProcedure, adminProcedure, router } from "../_core/trpc";
+import { protectedProcedure, ownerProcedure, adminProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -401,5 +401,182 @@ export const dashboardRouter = router({
             .query(async ({ input }) => {
               const { getRecentCancellationsAffectingPeriod } = await import('../dashboardDb');
               return await getRecentCancellationsAffectingPeriod(input.periodStart, input.periodEnd);
+            }),
+
+          getOwnerViewerMetrics: protectedProcedure
+            .input(z.object({
+              month: z.number().min(1).max(12),
+              year: z.number(),
+            }))
+            .query(async ({ input, ctx }) => {
+              if (ctx.user.role !== 'owner_viewer') {
+                throw new TRPCError({ code: 'FORBIDDEN', message: 'This endpoint is for owner_viewer users only' });
+              }
+
+              const { getUserById, getDb } = await import('../db');
+              const currentUser = await getUserById(ctx.user.id);
+              if (!currentUser?.assignedOwnerId) {
+                throw new TRPCError({ code: 'FORBIDDEN', message: 'No owner assigned to your account' });
+              }
+              const { shoppingCentres, sites, bookings } = await import('../../drizzle/schema');
+              const { eq, and, gte, lte, inArray, sql, count } = await import('drizzle-orm');
+
+              const dbInstance = await getDb();
+              if (!dbInstance) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+              // Get centres for this owner
+              const centres = await dbInstance.select({
+                id: shoppingCentres.id,
+                name: shoppingCentres.name,
+              }).from(shoppingCentres)
+                .where(eq(shoppingCentres.ownerId, currentUser.assignedOwnerId));
+
+              if (centres.length === 0) return { centres: [] };
+
+              const centreIds = centres.map(c => c.id);
+
+              // Get all sites for these centres
+              const allSites = await dbInstance.select({
+                id: sites.id,
+                centreId: sites.centreId,
+              }).from(sites)
+                .where(inArray(sites.centreId, centreIds));
+
+              const siteIds = allSites.length > 0 ? allSites.map(s => s.id) : [-1];
+
+              // Month boundaries
+              const monthStart = new Date(input.year, input.month - 1, 1);
+              const monthEnd = new Date(input.year, input.month, 0, 23, 59, 59);
+              const daysInMonth = new Date(input.year, input.month, 0).getDate();
+
+              // Get bookings for these sites in the month
+              const monthBookings = siteIds[0] !== -1 ? await dbInstance.select({
+                id: bookings.id,
+                siteId: bookings.siteId,
+                status: bookings.status,
+                startDate: bookings.startDate,
+                endDate: bookings.endDate,
+              }).from(bookings)
+                .where(and(
+                  inArray(bookings.siteId, siteIds),
+                  lte(bookings.startDate, monthEnd),
+                  gte(bookings.endDate, monthStart),
+                )) : [];
+
+              // Build per-centre metrics
+              const sitesByCentre = new Map<number, number[]>();
+              for (const s of allSites) {
+                if (!sitesByCentre.has(s.centreId)) sitesByCentre.set(s.centreId, []);
+                sitesByCentre.get(s.centreId)!.push(s.id);
+              }
+
+              const centreMetrics = centres.map(centre => {
+                const centreSiteIds = sitesByCentre.get(centre.id) || [];
+                const centreBookings = monthBookings.filter(b => centreSiteIds.includes(b.siteId));
+
+                const pending = centreBookings.filter(b => b.status === 'pending').length;
+                const confirmed = centreBookings.filter(b => b.status === 'confirmed').length;
+                const cancelled = centreBookings.filter(b => b.status === 'cancelled' || b.status === 'rejected').length;
+
+                // Calculate occupancy: confirmed booked days / (sites * days in month)
+                let bookedDays = 0;
+                for (const b of centreBookings.filter(b => b.status === 'confirmed')) {
+                  const bStart = new Date(Math.max(new Date(b.startDate).getTime(), monthStart.getTime()));
+                  const bEnd = new Date(Math.min(new Date(b.endDate).getTime(), monthEnd.getTime()));
+                  const days = Math.max(0, Math.ceil((bEnd.getTime() - bStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+                  bookedDays += days;
+                }
+                const totalSlots = centreSiteIds.length * daysInMonth;
+                const occupancyPercent = totalSlots > 0 ? Math.round((bookedDays / totalSlots) * 100) : 0;
+
+                return {
+                  centreId: centre.id,
+                  centreName: centre.name,
+                  siteCount: centreSiteIds.length,
+                  totalBookings: centreBookings.length,
+                  pending,
+                  confirmed,
+                  cancelled,
+                  occupancyPercent,
+                  bookedDays,
+                };
+              });
+
+              return { centres: centreMetrics };
+            }),
+
+          getRemittanceReport: adminProcedure
+            .input(z.object({
+              month: z.number().min(1).max(12),
+              year: z.number(),
+            }))
+            .query(async ({ input }) => {
+              const { getRemittanceReport } = await import('../remittanceDb');
+              return await getRemittanceReport(input.month, input.year);
+            }),
+
+          exportRemittanceExcel: adminProcedure
+            .input(z.object({
+              month: z.number().min(1).max(12),
+              year: z.number(),
+            }))
+            .mutation(async ({ input }) => {
+              const { getRemittanceReport } = await import('../remittanceDb');
+              const report = await getRemittanceReport(input.month, input.year);
+
+              const ExcelJS = await import('exceljs');
+              const workbook = new ExcelJS.Workbook();
+              const sheet = workbook.addWorksheet('Remittance Report');
+
+              sheet.addRow([`Month-End Remittance Report - ${input.month}/${input.year}`]);
+              sheet.addRow([]);
+              sheet.addRow(['Owner', 'Portfolio', 'Centre', 'Bank BSB', 'Bank Account', 'Bank Name', 'Booking #', 'Customer', 'Asset Type', 'Asset', 'Start Date', 'End Date', 'Amount (ex GST)', 'GST', 'Total', 'Owner Amount', 'Platform Fee', 'Payment Method', 'Paid']);
+
+              for (const owner of report.owners) {
+                for (const portfolio of owner.portfolios) {
+                  for (const centre of portfolio.centres) {
+                    for (const booking of centre.bookings) {
+                      sheet.addRow([
+                        owner.ownerName, portfolio.portfolioName, centre.centreName,
+                        centre.bankDetails?.bsb || '', centre.bankDetails?.accountNumber || '', centre.bankDetails?.accountName || '',
+                        booking.bookingNumber, booking.customerName, booking.assetType, booking.assetIdentifier,
+                        new Date(booking.startDate).toLocaleDateString('en-AU'),
+                        new Date(booking.endDate).toLocaleDateString('en-AU'),
+                        booking.totalAmount.toFixed(2), booking.gstAmount.toFixed(2),
+                        (booking.totalAmount + booking.gstAmount).toFixed(2),
+                        booking.ownerAmount.toFixed(2), booking.platformFee.toFixed(2),
+                        booking.paymentMethod, booking.paidAt ? 'Yes' : 'No',
+                      ]);
+                    }
+                    sheet.addRow(['', '', `${centre.centreName} Subtotal`, '', '', '', '', '', '', '', '', '',
+                      centre.subtotal.totalAmount.toFixed(2), centre.subtotal.gstAmount.toFixed(2),
+                      (centre.subtotal.totalAmount + centre.subtotal.gstAmount).toFixed(2),
+                      centre.subtotal.ownerAmount.toFixed(2), centre.subtotal.platformFee.toFixed(2), '', '']);
+                  }
+                  sheet.addRow(['', `${portfolio.portfolioName} Subtotal`, '', '', '', '', '', '', '', '', '', '',
+                    portfolio.subtotal.totalAmount.toFixed(2), portfolio.subtotal.gstAmount.toFixed(2),
+                    (portfolio.subtotal.totalAmount + portfolio.subtotal.gstAmount).toFixed(2),
+                    portfolio.subtotal.ownerAmount.toFixed(2), portfolio.subtotal.platformFee.toFixed(2), '', '']);
+                }
+                sheet.addRow([`${owner.ownerName} Subtotal`, '', '', '', '', '', '', '', '', '', '', '',
+                  owner.subtotal.totalAmount.toFixed(2), owner.subtotal.gstAmount.toFixed(2),
+                  (owner.subtotal.totalAmount + owner.subtotal.gstAmount).toFixed(2),
+                  owner.subtotal.ownerAmount.toFixed(2), owner.subtotal.platformFee.toFixed(2), '', '']);
+                sheet.addRow([]);
+              }
+
+              sheet.addRow(['GRAND TOTAL', '', '', '', '', '', '', '', '', '', '', '',
+                report.grandTotal.totalAmount.toFixed(2), report.grandTotal.gstAmount.toFixed(2),
+                (report.grandTotal.totalAmount + report.grandTotal.gstAmount).toFixed(2),
+                report.grandTotal.ownerAmount.toFixed(2), report.grandTotal.platformFee.toFixed(2), '', '']);
+
+              sheet.columns.forEach(col => { col.width = 18; });
+
+              const buffer = await workbook.xlsx.writeBuffer();
+              return {
+                data: Buffer.from(buffer as ArrayBuffer).toString('base64'),
+                filename: `Remittance_Report_${input.year}_${String(input.month).padStart(2, '0')}.xlsx`,
+                mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              };
             }),
           });

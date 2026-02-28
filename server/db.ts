@@ -5,6 +5,7 @@ import {
   InsertUser, users, 
   customerProfiles, InsertCustomerProfile,
   owners, InsertOwner,
+  portfolios,
   floorLevels, InsertFloorLevel,
   shoppingCentres, InsertShoppingCentre,
   sites, InsertSite,
@@ -153,7 +154,7 @@ export async function createUserWithPassword(userData: {
   passwordHash: string;
   name?: string | null;
   email?: string | null;
-  role?: "customer" | "owner_centre_manager" | "owner_marketing_manager" | "owner_regional_admin" | "owner_state_admin" | "owner_super_admin" | "mega_state_admin" | "mega_admin";
+  role?: "customer" | "owner_viewer" | "owner_centre_manager" | "owner_marketing_manager" | "owner_regional_admin" | "owner_state_admin" | "owner_super_admin" | "mega_state_admin" | "mega_admin";
   loginMethod?: string;
 }): Promise<void> {
   const db = await getDb();
@@ -1565,5 +1566,85 @@ export async function updateUserPasswordHash(userId: number, passwordHash: strin
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, userId));
+}
+
+/**
+ * Resolve bank account details for remittance.
+ * Priority: centre-level → portfolio-level → owner-level.
+ * Returns the most specific non-null bank account, or null if none exists.
+ */
+export async function resolveRemittanceBankAccount(centreId: number): Promise<{
+  bankBsb: string;
+  bankAccountNumber: string;
+  bankAccountName: string;
+  resolvedFrom: "centre" | "portfolio" | "owner";
+} | null> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [centre] = await db
+    .select({
+      bankBsb: shoppingCentres.bankBsb,
+      bankAccountNumber: shoppingCentres.bankAccountNumber,
+      bankAccountName: shoppingCentres.bankAccountName,
+      portfolioId: shoppingCentres.portfolioId,
+      ownerId: shoppingCentres.ownerId,
+    })
+    .from(shoppingCentres)
+    .where(eq(shoppingCentres.id, centreId));
+
+  if (!centre) return null;
+
+  // Check centre-level override
+  if (centre.bankBsb && centre.bankAccountNumber && centre.bankAccountName) {
+    return {
+      bankBsb: centre.bankBsb,
+      bankAccountNumber: centre.bankAccountNumber,
+      bankAccountName: centre.bankAccountName,
+      resolvedFrom: "centre",
+    };
+  }
+
+  // Check portfolio-level
+  if (centre.portfolioId) {
+    const [portfolio] = await db
+      .select({
+        bankBsb: portfolios.bankBsb,
+        bankAccountNumber: portfolios.bankAccountNumber,
+        bankAccountName: portfolios.bankAccountName,
+      })
+      .from(portfolios)
+      .where(eq(portfolios.id, centre.portfolioId));
+
+    if (portfolio?.bankBsb && portfolio?.bankAccountNumber && portfolio?.bankAccountName) {
+      return {
+        bankBsb: portfolio.bankBsb,
+        bankAccountNumber: portfolio.bankAccountNumber,
+        bankAccountName: portfolio.bankAccountName,
+        resolvedFrom: "portfolio",
+      };
+    }
+  }
+
+  // Fall back to owner-level
+  const [owner] = await db
+    .select({
+      bankBsb: owners.bankBsb,
+      bankAccountNumber: owners.bankAccountNumber,
+      bankAccountName: owners.bankAccountName,
+    })
+    .from(owners)
+    .where(eq(owners.id, centre.ownerId));
+
+  if (owner?.bankBsb && owner?.bankAccountNumber && owner?.bankAccountName) {
+    return {
+      bankBsb: owner.bankBsb,
+      bankAccountNumber: owner.bankAccountNumber,
+      bankAccountName: owner.bankAccountName,
+      resolvedFrom: "owner",
+    };
+  }
+
+  return null;
 }
 

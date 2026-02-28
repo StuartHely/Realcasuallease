@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, MapPin, Calendar, ChevronLeft, ChevronRight, X, Store } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, ChevronLeft, ChevronRight, X, Store, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
@@ -122,7 +122,6 @@ export default function VacantShopDetail() {
       ownerAmount: totalAmount,
       platformFee: "0",
       customerNotes: enquiryMessage || undefined,
-      paymentMethod: "invoice",
     });
   };
 
@@ -424,6 +423,15 @@ export default function VacantShopDetail() {
                         rows={4}
                       />
                     </div>
+
+                    {centre?.paymentMode === "invoice_only" && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+                        <FileText className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-blue-800">
+                          This centre processes payments by invoice. You will receive an invoice once your booking is confirmed.
+                        </p>
+                      </div>
+                    )}
 
                     <Button
                       onClick={handleEnquiry}

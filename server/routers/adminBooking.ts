@@ -88,6 +88,7 @@ export const adminBookingRouter = router({
         weekendPricePerDay: site.weekendPricePerDay ? Number(site.weekendPricePerDay) : null,
         pricePerWeek: Number(site.pricePerWeek),
         outgoingsPerDay: site.outgoingsPerDay ? Number(site.outgoingsPerDay) : 0,
+        paymentMode: centre.paymentMode,
       };
     }),
 
@@ -102,7 +103,7 @@ export const adminBookingRouter = router({
       totalAmount: z.number(),
       tablesRequested: z.number().default(0),
       chairsRequested: z.number().default(0),
-      invoiceOverride: z.boolean().default(false),
+      paymentMethod: z.enum(["stripe", "invoice"]).default("stripe"),
       adminComments: z.string().optional(),
       usageCategoryId: z.number().optional(),
       additionalCategoryText: z.string().optional(),
@@ -146,7 +147,7 @@ export const adminBookingRouter = router({
       const randomSeq = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
       const bookingNumber = `${centreCode}-${dateStr}-${randomSeq}`;
 
-      // Create booking
+      // Create booking — admin explicitly selects payment method
       const { bookingId } = await createAdminBooking({
         centreId: input.centreId,
         siteId: input.siteId,
@@ -160,8 +161,7 @@ export const adminBookingRouter = router({
         platformFee: platformFee.toFixed(2),
         tablesRequested: input.tablesRequested,
         chairsRequested: input.chairsRequested,
-        paymentMethod: customer.canPayByInvoice ? 'invoice' : 'stripe',
-        invoiceOverride: input.invoiceOverride,
+        paymentMethod: input.paymentMethod,
         adminComments: input.adminComments,
         usageCategoryId: input.usageCategoryId,
         additionalCategoryText: input.additionalCategoryText,
@@ -189,6 +189,9 @@ export const adminBookingRouter = router({
       } catch (emailError) {
         console.error('Failed to send confirmation email:', emailError);
       }
+
+      // Fire-and-forget invoice dispatch — admin bookings are always confirmed
+      import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(bookingId)).catch(() => {});
 
       return { bookingId, bookingNumber };
     }),

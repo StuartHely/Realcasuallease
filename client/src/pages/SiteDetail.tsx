@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, MapPin, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { PriceCalculator } from "@/components/PriceCalculator";
 
@@ -564,12 +564,22 @@ export default function SiteDetail() {
                       />
                     )}
 
+                    {centre?.paymentMode === "invoice_only" && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+                        <FileText className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-blue-800">
+                          This centre processes payments by invoice. You will receive an invoice once your booking is confirmed.
+                        </p>
+                      </div>
+                    )}
+
                     <Button
                       onClick={handleBooking}
                       disabled={createBookingMutation.isPending}
                       className="w-full bg-blue-600 hover:bg-blue-700"
                     >
-                      {createBookingMutation.isPending ? "Processing..." : "Confirm Booking"}
+                      {createBookingMutation.isPending ? "Processing..." : 
+                        centre?.paymentMode === "invoice_only" ? "Submit Booking Request" : "Confirm Booking"}
                     </Button>
                   </>
                 )}

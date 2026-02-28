@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 // Select imports removed - using buttons instead
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, Building2, ArrowLeft, Calendar, DollarSign, Ruler, Zap, Store, Layers, ChevronLeft, ChevronRight, CheckCircle, XCircle, Info } from "lucide-react";
+import { MapPin, Building2, ArrowLeft, Calendar, DollarSign, Ruler, Zap, Store, Layers, ChevronLeft, ChevronRight, CheckCircle, XCircle, Info, FileText } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { format, addMonths, startOfWeek, addDays, isSameDay, getDaysInMonth, startOfMonth, getDay } from "date-fns";
 import InteractiveMap from "@/components/InteractiveMap";
@@ -148,7 +148,6 @@ export default function CentreDetail() {
       gstPercentage: gstPercentage.toFixed(2),
       ownerAmount: ownerAmount.toFixed(2),
       platformFee: platformFee.toFixed(2),
-      paymentMethod: "invoice",
     });
   };
 
@@ -179,7 +178,6 @@ export default function CentreDetail() {
       gstPercentage: gstPercentage.toFixed(2),
       ownerAmount: ownerAmount.toFixed(2),
       platformFee: platformFee.toFixed(2),
-      paymentMethod: "invoice",
     });
   };
 
@@ -356,6 +354,14 @@ export default function CentreDetail() {
             </div>
           </CardHeader>
           <CardContent>
+            {centre.paymentMode === "invoice_only" && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2 mb-6">
+                <FileText className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-blue-800">
+                  This centre processes payments by invoice. You will receive an invoice once your booking is confirmed.
+                </p>
+              </div>
+            )}
             {/* Asset Type Selector - Buttons */}
             <div className="mb-6">
               <div className="flex items-center gap-2 flex-wrap">

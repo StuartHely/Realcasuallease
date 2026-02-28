@@ -53,6 +53,9 @@ import OwnerApprovals from "./pages/OwnerApprovals";
 import OwnerCentres from "./pages/OwnerCentres";
 import AdminEnquiries from "./pages/AdminEnquiries";
 import AdminBooking from "./pages/admin/AdminBooking";
+import Portfolios from "./pages/admin/Portfolios";
+import OwnerViewerDashboard from "./pages/admin/OwnerViewerDashboard";
+import RemittanceReport from "./pages/admin/RemittanceReport";
 import CustomerProfile from "./pages/admin/CustomerProfile";
 
 function Router() {
@@ -102,6 +105,9 @@ function Router() {
       <Route path="/admin/payments" component={Payments} />
       <Route path="/admin/invoice-dashboard" component={InvoiceDashboard} />
       <Route path="/admin/owners" component={AdminOwners} />
+      <Route path="/admin/portfolios" component={Portfolios} />
+      <Route path="/admin/owner-viewer" component={OwnerViewerDashboard} />
+      <Route path="/admin/remittance" component={RemittanceReport} />
       <Route path="/admin/financials" component={AdminFinancials} />
       <Route path="/admin/audit" component={AdminAudit} />
       <Route path="/admin/settings" component={AdminSettings} />

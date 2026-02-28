@@ -98,6 +98,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
           { icon: DollarSign, label: "Budget Management", path: "/admin/fy-budgets" },
           { icon: DollarSign, label: "Financial Reports", path: "/admin/financials" },
           { icon: DollarSign, label: "Invoice Dashboard", path: "/admin/invoice-dashboard" },
+          { icon: FileText, label: "Remittance Report", path: "/admin/remittance" },
           { icon: DollarSign, label: "Record Payments", path: "/admin/payments" },
         ],
       },
@@ -106,6 +107,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
         items: [
           { icon: Users, label: "Users", path: "/admin/users" },
           { icon: Users, label: "Owners & Managers", path: "/admin/owners" },
+          { icon: Building2, label: "Portfolios", path: "/admin/portfolios" },
           { icon: FileText, label: "Manage FAQs", path: "/admin/manage-faq" },
           { icon: Image, label: "Logo Management", path: "/admin/logo-management" },
           { icon: Building2, label: "Owner Logo Allocation", path: "/admin/owner-logo-allocation" },
@@ -139,6 +141,18 @@ const getMenuSections = (userRole: string): MenuSection[] => {
           { icon: MapPin, label: "Casual Leasing Sites", path: "/admin/sites" },
           { icon: Calendar, label: "Bookings", path: "/admin/bookings" },
           { icon: DollarSign, label: "Reports", path: "/admin/financials" },
+        ],
+      },
+    ];
+  }
+
+  // Owner viewer - read-only dashboard
+  if (userRole === "owner_viewer") {
+    return [
+      {
+        title: "Overview",
+        items: [
+          { icon: LayoutDashboard, label: "Dashboard", path: "/admin/owner-viewer" },
         ],
       },
     ];
@@ -198,7 +212,10 @@ export default function AdminLayout({
     if (!loading && user && user.role === "customer") {
       setLocation("/");
     }
-  }, [loading, user, setLocation]);
+    if (!loading && user && user.role === "owner_viewer" && location === "/admin") {
+      setLocation("/admin/owner-viewer");
+    }
+  }, [loading, user, location, setLocation]);
 
   if (loading) {
     return <DashboardLayoutSkeleton />;
