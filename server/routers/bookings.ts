@@ -47,7 +47,8 @@ export const bookingsRouter = router({
         const owner = await db.getOwnerById(centre.ownerId);
         if (!owner) throw new TRPCError({ code: "NOT_FOUND", message: "Owner not found" });
 
-        const platformFee = totalAmount * (Number(owner.commissionPercentage) / 100);
+        const commissionPct = Number(owner.commissionCl ?? owner.commissionPercentage);
+        const platformFee = totalAmount * (commissionPct / 100);
         const ownerAmount = totalAmount - platformFee;
 
         // Generate booking number with abbreviated centre code: {CODE}-{YYYYMMDD}-{SEQ}
@@ -285,6 +286,77 @@ export const bookingsRouter = router({
       return await db.getBookingsByCustomerId(ctx.user.id);
     }),
 
+    createCheckoutSession: protectedProcedure
+      .input(z.object({ bookingId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const booking = await db.getBookingById(input.bookingId);
+        if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
+        if (booking.customerId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not your booking" });
+        }
+        if (booking.paymentMethod !== "stripe") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "This booking does not use Stripe payment" });
+        }
+        if (booking.paidAt) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Booking is already paid" });
+        }
+        if (booking.status === "cancelled" || booking.status === "rejected") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot pay for a cancelled or rejected booking" });
+        }
+
+        const site = await db.getSiteById(booking.siteId);
+        const centre = site ? await db.getShoppingCentreById(site.centreId) : null;
+        const customer = await db.getUserById(ctx.user.id);
+
+        const totalWithGst = Math.round(
+          (Number(booking.totalAmount) + Number(booking.gstAmount)) * 100
+        );
+
+        const { createCheckoutSession } = await import("../stripeService");
+        const session = await createCheckoutSession({
+          bookingId: booking.id,
+          bookingNumber: booking.bookingNumber,
+          bookingType: "site",
+          customerEmail: customer?.email || "",
+          centreName: centre?.name || "Shopping Centre",
+          assetLabel: `Site ${site?.siteNumber || ""}`,
+          totalAmountCents: totalWithGst,
+          startDate: booking.startDate,
+          endDate: booking.endDate,
+        });
+
+        return { url: session.url };
+      }),
+
+    customerCancel: protectedProcedure
+      .input(z.object({
+        bookingId: z.number(),
+        reason: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const booking = await db.getBookingById(input.bookingId);
+        if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
+        if (booking.customerId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not your booking" });
+        }
+        if (booking.status === "cancelled" || booking.status === "rejected") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Booking is already cancelled" });
+        }
+        if (booking.status === "completed") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Completed bookings cannot be cancelled" });
+        }
+
+        const { cancelBooking } = await import("../cancellationService");
+        const result = await cancelBooking({
+          bookingId: input.bookingId,
+          adminUserId: ctx.user.id,
+          reason: input.reason || "Cancelled by customer",
+          performRefund: false, // Customer cancellations never auto-refund; admin reviews
+        });
+
+        return result;
+      }),
+
     getById: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input, ctx }) => {
@@ -323,28 +395,80 @@ export const bookingsRouter = router({
 
         await db.approveBooking(input.bookingId, ctx.user.id, ctx.user.name || undefined);
         
-        // Send confirmation email to customer
+        // Send appropriate email based on payment method
         const site = await db.getSiteById(booking.siteId);
         const centre = site ? await db.getShoppingCentreById(site.centreId) : null;
         const customer = await db.getUserById(booking.customerId);
         const customerProfile = customer ? await db.getCustomerProfileByUserId(customer.id) : null;
         
         if (customer && site && centre) {
-          await sendBookingConfirmationEmail({
-            bookingNumber: booking.bookingNumber,
-            customerName: customer.name || "Customer",
-            customerEmail: customer.email || "",
-            centreName: centre.name,
-            siteNumber: site.siteNumber,
-            startDate: booking.startDate,
-            endDate: booking.endDate,
-            totalAmount: booking.totalAmount,
-            companyName: customerProfile?.companyName || undefined,
-            tradingName: customerProfile?.tradingName || undefined,
-          });
+          if (booking.paymentMethod === "stripe") {
+            // Stripe booking: send approval email with payment link
+            try {
+              const { createCheckoutSession } = await import("../stripeService");
+              const totalWithGst = Math.round(
+                (Number(booking.totalAmount) + Number(booking.gstAmount)) * 100
+              );
+              const session = await createCheckoutSession({
+                bookingId: booking.id,
+                bookingNumber: booking.bookingNumber,
+                bookingType: "site",
+                customerEmail: customer.email || "",
+                centreName: centre.name,
+                assetLabel: `Site ${site.siteNumber}`,
+                totalAmountCents: totalWithGst,
+                startDate: booking.startDate,
+                endDate: booking.endDate,
+              });
+              const { sendStripeApprovalEmail } = await import("../_core/bookingNotifications");
+              await sendStripeApprovalEmail({
+                bookingNumber: booking.bookingNumber,
+                customerName: customer.name || "Customer",
+                customerEmail: customer.email || "",
+                centreName: centre.name,
+                siteNumber: site.siteNumber,
+                startDate: booking.startDate,
+                endDate: booking.endDate,
+                totalAmount: booking.totalAmount,
+                gstAmount: booking.gstAmount,
+                paymentUrl: session.url,
+                companyName: customerProfile?.companyName || undefined,
+                tradingName: customerProfile?.tradingName || undefined,
+              });
+            } catch (emailError) {
+              console.error("[Approve] Failed to send Stripe approval email:", emailError);
+              // Still send generic confirmation as fallback
+              await sendBookingConfirmationEmail({
+                bookingNumber: booking.bookingNumber,
+                customerName: customer.name || "Customer",
+                customerEmail: customer.email || "",
+                centreName: centre.name,
+                siteNumber: site.siteNumber,
+                startDate: booking.startDate,
+                endDate: booking.endDate,
+                totalAmount: booking.totalAmount,
+                companyName: customerProfile?.companyName || undefined,
+                tradingName: customerProfile?.tradingName || undefined,
+              });
+            }
+          } else {
+            // Invoice booking: send generic confirmation
+            await sendBookingConfirmationEmail({
+              bookingNumber: booking.bookingNumber,
+              customerName: customer.name || "Customer",
+              customerEmail: customer.email || "",
+              centreName: centre.name,
+              siteNumber: site.siteNumber,
+              startDate: booking.startDate,
+              endDate: booking.endDate,
+              totalAmount: booking.totalAmount,
+              companyName: customerProfile?.companyName || undefined,
+              tradingName: customerProfile?.tradingName || undefined,
+            });
+          }
         }
 
-        // Fire-and-forget invoice dispatch after approval
+        // Fire-and-forget invoice dispatch after approval (only fires for invoice bookings)
         import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(input.bookingId)).catch(() => {});
         
         return { success: true };
@@ -559,5 +683,217 @@ export const bookingsRouter = router({
             ? "Insurance uploaded successfully and booking moved to pending for review" 
             : "Insurance uploaded but has issues - please correct and re-upload",
         };
+      }),
+
+    // Create recurring bookings — generates multiple individual bookings linked by recurrenceGroupId
+    createRecurring: protectedProcedure
+      .input(z.object({
+        siteId: z.number(),
+        usageCategoryId: z.number().optional(),
+        additionalCategoryText: z.string().optional(),
+        startDate: z.date(),
+        endDate: z.date(),
+        recurrenceType: z.enum(["weekly", "fortnightly", "monthly"]),
+        recurrenceEndDate: z.date(),
+        tablesRequested: z.number().optional().default(0),
+        chairsRequested: z.number().optional().default(0),
+        bringingOwnTables: z.boolean().optional().default(false),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const site = await db.getSiteById(input.siteId);
+        if (!site) throw new TRPCError({ code: "NOT_FOUND", message: "Site not found" });
+
+        const centre = await db.getShoppingCentreById(site.centreId);
+        if (!centre) throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+
+        const owner = await db.getOwnerById(centre.ownerId);
+        if (!owner) throw new TRPCError({ code: "NOT_FOUND", message: "Owner not found" });
+
+        // Generate all occurrence date pairs
+        const durationMs = input.endDate.getTime() - input.startDate.getTime();
+        const occurrences: { start: Date; end: Date }[] = [];
+        let cursor = new Date(input.startDate);
+
+        while (cursor <= input.recurrenceEndDate) {
+          const occEnd = new Date(cursor.getTime() + durationMs);
+          if (occEnd > input.recurrenceEndDate) break;
+          occurrences.push({ start: new Date(cursor), end: occEnd });
+
+          if (input.recurrenceType === "weekly") {
+            cursor.setDate(cursor.getDate() + 7);
+          } else if (input.recurrenceType === "fortnightly") {
+            cursor.setDate(cursor.getDate() + 14);
+          } else {
+            cursor.setMonth(cursor.getMonth() + 1);
+          }
+        }
+
+        if (occurrences.length === 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "No occurrences fall within the date range" });
+        }
+        if (occurrences.length > 52) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Maximum 52 occurrences per recurring booking" });
+        }
+
+        // Check availability for all occurrences
+        const conflicts: string[] = [];
+        for (const occ of occurrences) {
+          const existing = await db.getBookingsBySiteId(input.siteId, occ.start, occ.end);
+          if (existing.length > 0) {
+            conflicts.push(`${occ.start.toISOString().split("T")[0]} to ${occ.end.toISOString().split("T")[0]}`);
+          }
+        }
+        if (conflicts.length > 0) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: `Site is already booked for: ${conflicts.slice(0, 5).join(", ")}${conflicts.length > 5 ? ` and ${conflicts.length - 5} more` : ""}`,
+          });
+        }
+
+        // Shared values
+        const { getConfigValue } = await import("../systemConfigDb");
+        const gstValue = await getConfigValue("gst_percentage");
+        const gstRate = gstValue ? Number(gstValue) / 100 : 0.1;
+        const commissionPct = Number(owner.commissionCl ?? owner.commissionPercentage);
+        const { getCentreCodeForBooking } = await import("../centreCodeHelper");
+        const centreCode = getCentreCodeForBooking(centre);
+        const { randomUUID } = await import("crypto");
+        const recurrenceGroupId = randomUUID();
+
+        const currentUser = await db.getUserByOpenId(ctx.user.openId);
+        const canPayByInvoice = currentUser?.canPayByInvoice || false;
+        const { resolvePaymentMethod } = await import("../paymentModeHelper");
+        const paymentMethod = resolvePaymentMethod(centre.paymentMode, canPayByInvoice);
+
+        // Create each booking
+        const created: { bookingId: number; bookingNumber: string; totalAmount: number }[] = [];
+
+        for (const occ of occurrences) {
+          const { totalAmount, weekdayCount, weekendCount } = await import("../bookingCalculation").then(m =>
+            m.calculateBookingCost(site, occ.start, occ.end)
+          );
+
+          const gstAmount = totalAmount * gstRate;
+          const platformFee = totalAmount * (commissionPct / 100);
+          const ownerAmount = totalAmount - platformFee;
+
+          const dateStr = occ.start.toISOString().split("T")[0].replace(/-/g, "");
+          const seq = Math.floor(Math.random() * 1000).toString().padStart(3, "0");
+          const bookingNumber = `${centreCode}-${dateStr}-${seq}`;
+
+          const paymentDueDate = paymentMethod === "invoice" ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null;
+
+          const result = await db.createBooking({
+            bookingNumber,
+            siteId: input.siteId,
+            customerId: ctx.user.id,
+            usageCategoryId: input.usageCategoryId,
+            additionalCategoryText: input.additionalCategoryText,
+            startDate: occ.start,
+            endDate: occ.end,
+            totalAmount: totalAmount.toFixed(2),
+            gstAmount: gstAmount.toFixed(2),
+            gstPercentage: (gstRate * 100).toFixed(2),
+            ownerAmount: ownerAmount.toFixed(2),
+            platformFee: platformFee.toFixed(2),
+            paymentMethod,
+            paymentDueDate,
+            status: site.instantBooking ? "confirmed" : "pending",
+            requiresApproval: !site.instantBooking,
+            tablesRequested: input.tablesRequested || 0,
+            chairsRequested: input.chairsRequested || 0,
+            bringingOwnTables: input.bringingOwnTables || false,
+            recurrenceGroupId,
+          });
+
+          const bookingId = result[0].id;
+          const initialStatus = site.instantBooking ? "confirmed" : "pending";
+          await db.recordBookingCreated(bookingId, initialStatus as "pending" | "confirmed", ctx.user.id, ctx.user.name || undefined);
+
+          if (initialStatus === "confirmed") {
+            import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(bookingId)).catch(() => {});
+          }
+
+          created.push({ bookingId, bookingNumber, totalAmount });
+        }
+
+        // Fire-and-forget: notify owner about the recurring series
+        const { sendNewBookingNotificationToOwner } = await import("../_core/bookingNotifications");
+        sendNewBookingNotificationToOwner({
+          bookingNumber: `${created[0].bookingNumber} (${created.length} recurring)`,
+          customerName: ctx.user.name || "",
+          customerEmail: ctx.user.email || "",
+          siteNumber: site.siteNumber,
+          centreName: centre.name,
+          startDate: input.startDate,
+          endDate: input.recurrenceEndDate,
+          totalAmount: created.reduce((s, c) => s + c.totalAmount, 0).toFixed(2),
+        }).catch(() => {});
+
+        return {
+          recurrenceGroupId,
+          count: created.length,
+          bookings: created,
+          grandTotal: created.reduce((s, c) => s + c.totalAmount, 0),
+        };
+      }),
+
+    // Get all bookings in a recurring group
+    getRecurringGroup: protectedProcedure
+      .input(z.object({ recurrenceGroupId: z.string() }))
+      .query(async ({ input, ctx }) => {
+        const { getDb } = await import("../db");
+        const { bookings: bookingsTable, sites: sitesTable, shoppingCentres: centresTable } = await import("../../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        const dbInstance = await getDb();
+        if (!dbInstance) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+        const results = await dbInstance
+          .select({
+            id: bookingsTable.id,
+            bookingNumber: bookingsTable.bookingNumber,
+            startDate: bookingsTable.startDate,
+            endDate: bookingsTable.endDate,
+            totalAmount: bookingsTable.totalAmount,
+            status: bookingsTable.status,
+            paidAt: bookingsTable.paidAt,
+            siteNumber: sitesTable.siteNumber,
+            centreName: centresTable.name,
+          })
+          .from(bookingsTable)
+          .innerJoin(sitesTable, eq(bookingsTable.siteId, sitesTable.id))
+          .innerJoin(centresTable, eq(sitesTable.centreId, centresTable.id))
+          .where(and(
+            eq(bookingsTable.recurrenceGroupId, input.recurrenceGroupId),
+            eq(bookingsTable.customerId, ctx.user.id),
+          ))
+          .orderBy(bookingsTable.startDate);
+
+        return results;
+      }),
+
+    // Cancel all future bookings in a recurring group
+    cancelRecurringFuture: protectedProcedure
+      .input(z.object({ recurrenceGroupId: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const { getDb } = await import("../db");
+        const { bookings: bookingsTable } = await import("../../drizzle/schema");
+        const { eq, and, gte, or } = await import("drizzle-orm");
+        const dbInstance = await getDb();
+        if (!dbInstance) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+        const now = new Date();
+        const result = await dbInstance
+          .update(bookingsTable)
+          .set({ status: "cancelled", cancelledAt: now })
+          .where(and(
+            eq(bookingsTable.recurrenceGroupId, input.recurrenceGroupId),
+            eq(bookingsTable.customerId, ctx.user.id),
+            gte(bookingsTable.startDate, now),
+            or(eq(bookingsTable.status, "pending"), eq(bookingsTable.status, "confirmed")),
+          ))
+          .returning({ id: bookingsTable.id });
+
+        return { cancelled: result.length };
       }),
 });

@@ -3008,3 +3008,35 @@
 
 ## Feature Enhancement (Feb 11, 2025 - Floor Plan Zoom)
 - [x] Add zoom in/out controls to floor plan maps for better marker visibility
+
+## Per-Asset-Type Commission Rates (Feb 28, 2026)
+- [x] Add commissionCl, commissionVs, commissionTli columns to owners table (nullable, falls back to commissionPercentage)
+- [x] Update bookings.ts (CL), adminBooking.ts (CL preview/create/update), assets.ts (VS/TLI) to use type-specific rates
+- [x] Update owners router create/update schemas with new fields
+- [x] Update Owners.tsx form with 3 commission inputs (Casual Leasing %, Vacant Shops %, Third Line Income %)
+- [x] Update owners list table to display all 3 rates
+- [x] Migration applied to database
+
+## Bug Fixes (Feb 28, 2026)
+- [x] Fix seasonal rate $0 bug — createSeasonalRate used truthiness check (rate ? ... : null) which stored 0 as null; fixed to use != null
+- [x] Fix Search.tsx booking estimate using wrong field name (site.weekendRate → site.weekendPricePerDay)
+- [x] Fix site update error — extract maxTables from destructuring, add NaN guard before DB write
+- [x] Clean up verbose debug logging in updateSite (db.ts and admin.ts)
+- [ ] S3 image 403s — infrastructure issue (CloudFront/S3 bucket policy); code-level proxy+placeholder fallback already in place
+
+## Recurring Bookings (Phase 9 - Feb 28, 2026)
+- [x] Add recurrenceGroupId column to bookings table (varchar(50), nullable)
+- [x] Create bookings.createRecurring procedure — generates all instances, checks availability, links by groupId
+- [x] Supports weekly, fortnightly, monthly recurrence with max 52 occurrences
+- [x] Each instance gets its own pricing (seasonal rates, commission split)
+- [x] Create bookings.getRecurringGroup procedure — fetch all bookings in a series
+- [x] Create bookings.cancelRecurringFuture procedure — cancel all future bookings in a group
+- [x] Add recurrenceGroupId to getBookingsByCustomerId return data
+- [x] Add RECURRING badge (indigo) to MyBookings booking cards
+- [x] Add "Cancel All Future" button for recurring bookings with confirmation dialog
+- [x] Migration applied to database
+
+## AI Chat Assistant (Phase 8 - Pending)
+- [ ] Wire AIChatBox component into a live page (component exists at client/src/components/AIChatBox.tsx)
+- [ ] Create backend ai.chat tRPC endpoint connected to Bedrock LLM (server/_core/llm.ts)
+- [ ] Connect chat to search/booking context so assistant can find spaces and answer questions

@@ -110,6 +110,9 @@ export const owners = pgTable("owners", {
   bankAccountNumber: varchar("bankAccountNumber", { length: 20 }),
   monthlyFee: decimal("monthlyFee", { precision: 10, scale: 2 }).default("0.00").notNull(),
   commissionPercentage: decimal("commissionPercentage", { precision: 5, scale: 2 }).default("0.00").notNull(),
+  commissionCl: decimal("commissionCl", { precision: 5, scale: 2 }),
+  commissionVs: decimal("commissionVs", { precision: 5, scale: 2 }),
+  commissionTli: decimal("commissionTli", { precision: 5, scale: 2 }),
   remittanceType: remittanceTypeEnum("remittanceType").default("monthly").notNull(),
   invoiceEmail1: varchar("invoiceEmail1", { length: 320 }),
   invoiceEmail2: varchar("invoiceEmail2", { length: 320 }),
@@ -331,6 +334,7 @@ export const bookings = pgTable("bookings", {
   adminComments: text("adminComments"), // Internal admin notes, never shown on invoices/emails
   createdByAdmin: integer("createdByAdmin").references(() => users.id), // If booking was created by admin on behalf of user
   invoiceDispatchedAt: timestamp("invoiceDispatchedAt"), // Set when invoice PDF is generated and emailed
+  recurrenceGroupId: varchar("recurrenceGroupId", { length: 50 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({

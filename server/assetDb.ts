@@ -422,6 +422,36 @@ export async function getVacantShopBookingById(id: number) {
   return booking;
 }
 
+export async function getVacantShopBookingsByCustomerId(customerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { desc } = await import("drizzle-orm");
+  return db
+    .select({
+      id: vacantShopBookings.id,
+      bookingNumber: vacantShopBookings.bookingNumber,
+      vacantShopId: vacantShopBookings.vacantShopId,
+      shopNumber: vacantShops.shopNumber,
+      centreName: shoppingCentres.name,
+      centreId: shoppingCentres.id,
+      startDate: vacantShopBookings.startDate,
+      endDate: vacantShopBookings.endDate,
+      totalAmount: vacantShopBookings.totalAmount,
+      gstAmount: vacantShopBookings.gstAmount,
+      status: vacantShopBookings.status,
+      requiresApproval: vacantShopBookings.requiresApproval,
+      paymentMethod: vacantShopBookings.paymentMethod,
+      paidAt: vacantShopBookings.paidAt,
+      rejectionReason: vacantShopBookings.rejectionReason,
+      createdAt: vacantShopBookings.createdAt,
+    })
+    .from(vacantShopBookings)
+    .innerJoin(vacantShops, eq(vacantShopBookings.vacantShopId, vacantShops.id))
+    .innerJoin(shoppingCentres, eq(vacantShops.centreId, shoppingCentres.id))
+    .where(eq(vacantShopBookings.customerId, customerId))
+    .orderBy(desc(vacantShopBookings.createdAt));
+}
+
 // Generate booking number with centre code
 export async function generateVacantShopBookingNumber(vacantShopId: number): Promise<string> {
   const db = await getDb();
@@ -544,6 +574,38 @@ export async function getThirdLineBookingById(id: number) {
     .from(thirdLineBookings)
     .where(eq(thirdLineBookings.id, id));
   return booking;
+}
+
+export async function getThirdLineBookingsByCustomerId(customerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { desc } = await import("drizzle-orm");
+  return db
+    .select({
+      id: thirdLineBookings.id,
+      bookingNumber: thirdLineBookings.bookingNumber,
+      thirdLineIncomeId: thirdLineBookings.thirdLineIncomeId,
+      assetNumber: thirdLineIncome.assetNumber,
+      categoryName: thirdLineCategories.name,
+      centreName: shoppingCentres.name,
+      centreId: shoppingCentres.id,
+      startDate: thirdLineBookings.startDate,
+      endDate: thirdLineBookings.endDate,
+      totalAmount: thirdLineBookings.totalAmount,
+      gstAmount: thirdLineBookings.gstAmount,
+      status: thirdLineBookings.status,
+      requiresApproval: thirdLineBookings.requiresApproval,
+      paymentMethod: thirdLineBookings.paymentMethod,
+      paidAt: thirdLineBookings.paidAt,
+      rejectionReason: thirdLineBookings.rejectionReason,
+      createdAt: thirdLineBookings.createdAt,
+    })
+    .from(thirdLineBookings)
+    .innerJoin(thirdLineIncome, eq(thirdLineBookings.thirdLineIncomeId, thirdLineIncome.id))
+    .innerJoin(shoppingCentres, eq(thirdLineIncome.centreId, shoppingCentres.id))
+    .leftJoin(thirdLineCategories, eq(thirdLineIncome.categoryId, thirdLineCategories.id))
+    .where(eq(thirdLineBookings.customerId, customerId))
+    .orderBy(desc(thirdLineBookings.createdAt));
 }
 
 // Generate booking number with centre code

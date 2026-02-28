@@ -35,6 +35,9 @@ interface Owner {
   bankAccountNumber: string | null;
   monthlyFee: string;
   commissionPercentage: string;
+  commissionCl: string | null;
+  commissionVs: string | null;
+  commissionTli: string | null;
   remittanceType: "per_booking" | "monthly";
   invoiceEmail1: string | null;
   invoiceEmail2: string | null;
@@ -76,6 +79,9 @@ export default function AdminOwners() {
     bankAccountNumber: "",
     monthlyFee: "0.00",
     commissionPercentage: "0.00",
+    commissionCl: null,
+    commissionVs: null,
+    commissionTli: null,
     remittanceType: "monthly",
     invoiceEmail1: "",
     invoiceEmail2: "",
@@ -141,6 +147,9 @@ export default function AdminOwners() {
       bankAccountNumber: "",
       monthlyFee: "0.00",
       commissionPercentage: "0.00",
+      commissionCl: null,
+      commissionVs: null,
+      commissionTli: null,
       remittanceType: "monthly",
       invoiceEmail1: "",
       invoiceEmail2: "",
@@ -190,6 +199,9 @@ export default function AdminOwners() {
       bankAccountNumber: formData.bankAccountNumber || null,
       monthlyFee: formData.monthlyFee || "0.00",
       commissionPercentage: formData.commissionPercentage || "0.00",
+      commissionCl: formData.commissionCl || null,
+      commissionVs: formData.commissionVs || null,
+      commissionTli: formData.commissionTli || null,
       remittanceType: formData.remittanceType || "monthly",
       invoiceEmail1: formData.invoiceEmail1 || null,
       invoiceEmail2: formData.invoiceEmail2 || null,
@@ -226,6 +238,9 @@ export default function AdminOwners() {
       bankAccountNumber: formData.bankAccountNumber || null,
       monthlyFee: formData.monthlyFee || "0.00",
       commissionPercentage: formData.commissionPercentage || "0.00",
+      commissionCl: formData.commissionCl || null,
+      commissionVs: formData.commissionVs || null,
+      commissionTli: formData.commissionTli || null,
       remittanceType: formData.remittanceType || "monthly",
       invoiceEmail1: formData.invoiceEmail1 || null,
       invoiceEmail2: formData.invoiceEmail2 || null,
@@ -334,8 +349,10 @@ export default function AdminOwners() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="text-sm">
-                            <div>{owner.commissionPercentage}%</div>
+                          <div className="text-sm space-y-0.5">
+                            <div>CL: {owner.commissionCl ?? owner.commissionPercentage}%</div>
+                            <div>VS: {owner.commissionVs ?? owner.commissionPercentage}%</div>
+                            <div>TLI: {owner.commissionTli ?? owner.commissionPercentage}%</div>
                             <div className="text-muted-foreground">
                               Fee: ${owner.monthlyFee}/mo
                             </div>
@@ -556,8 +573,16 @@ export default function AdminOwners() {
                 <Label className="text-base font-semibold">Fees & Commission</Label>
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   <div className="space-y-2">
-                    <Label htmlFor="commission">Commission %</Label>
-                    <Input id="commission" type="number" step="0.01" value={formData.commissionPercentage || "0.00"} onChange={(e) => setFormData({ ...formData, commissionPercentage: e.target.value })} />
+                    <Label htmlFor="commissionCl">Casual Leasing %</Label>
+                    <Input id="commissionCl" type="number" step="0.01" placeholder={formData.commissionPercentage || "0.00"} value={formData.commissionCl ?? ""} onChange={(e) => setFormData({ ...formData, commissionCl: e.target.value || null })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="commissionVs">Vacant Shops %</Label>
+                    <Input id="commissionVs" type="number" step="0.01" placeholder={formData.commissionPercentage || "0.00"} value={formData.commissionVs ?? ""} onChange={(e) => setFormData({ ...formData, commissionVs: e.target.value || null })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="commissionTli">Third Line Income %</Label>
+                    <Input id="commissionTli" type="number" step="0.01" placeholder={formData.commissionPercentage || "0.00"} value={formData.commissionTli ?? ""} onChange={(e) => setFormData({ ...formData, commissionTli: e.target.value || null })} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="monthlyFee">Monthly Fee ($)</Label>
@@ -742,8 +767,16 @@ export default function AdminOwners() {
                 <Label className="text-base font-semibold">Fees & Commission</Label>
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-commission">Commission %</Label>
-                    <Input id="edit-commission" type="number" step="0.01" value={formData.commissionPercentage || "0.00"} onChange={(e) => setFormData({ ...formData, commissionPercentage: e.target.value })} />
+                    <Label htmlFor="edit-commissionCl">Casual Leasing %</Label>
+                    <Input id="edit-commissionCl" type="number" step="0.01" placeholder={formData.commissionPercentage || "0.00"} value={formData.commissionCl ?? ""} onChange={(e) => setFormData({ ...formData, commissionCl: e.target.value || null })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-commissionVs">Vacant Shops %</Label>
+                    <Input id="edit-commissionVs" type="number" step="0.01" placeholder={formData.commissionPercentage || "0.00"} value={formData.commissionVs ?? ""} onChange={(e) => setFormData({ ...formData, commissionVs: e.target.value || null })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-commissionTli">Third Line Income %</Label>
+                    <Input id="edit-commissionTli" type="number" step="0.01" placeholder={formData.commissionPercentage || "0.00"} value={formData.commissionTli ?? ""} onChange={(e) => setFormData({ ...formData, commissionTli: e.target.value || null })} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-monthlyFee">Monthly Fee ($)</Label>

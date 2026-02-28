@@ -1007,8 +1007,21 @@ function EditBookingContent({
 }) {
   const [showPriceBreakdown, setShowPriceBreakdown] = useState(false);
   const [datesChanged, setDatesChanged] = useState(false);
-  const { data: bookingDetails, isLoading } = trpc.adminBooking.getBookingDetails.useQuery({ bookingId });
-  const { data: statusHistory } = trpc.adminBooking.getStatusHistory.useQuery({ bookingId });
+  const { data: bookingDetails, isLoading, refetch: refetchDetails } = trpc.adminBooking.getBookingDetails.useQuery({ bookingId });
+  const { data: statusHistory, refetch: refetchHistory } = trpc.adminBooking.getStatusHistory.useQuery({ bookingId });
+  const utils = trpc.useUtils();
+
+  const convertToInvoiceMutation = trpc.adminBooking.convertToInvoice.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Booking ${data.bookingNumber} converted to invoice payment.`);
+      refetchDetails();
+      refetchHistory();
+      utils.adminBooking.getAvailabilityGrid.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Conversion failed: " + error.message);
+    },
+  });
   
   // Calculate price when dates change
   const { data: calculatedPrice, isLoading: isPriceLoading } = trpc.adminBooking.calculatePrice.useQuery(
@@ -1058,6 +1071,30 @@ function EditBookingContent({
           bookingDetails.status === "cancelled" && "bg-red-100 text-red-800",
           bookingDetails.status === "pending" && "bg-yellow-100 text-yellow-800"
         )}>{bookingDetails.status}</span></div>
+        <div className="flex items-center gap-2">
+          <strong>Payment:</strong>
+          <span className={cn(
+            "px-2 py-0.5 rounded text-xs font-medium",
+            bookingDetails.paymentMethod === "stripe" && "bg-blue-100 text-blue-800",
+            bookingDetails.paymentMethod === "invoice" && "bg-amber-100 text-amber-800"
+          )}>{bookingDetails.paymentMethod === "stripe" ? "STRIPE" : "INVOICE"}</span>
+          {bookingDetails.paidAt && <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">PAID</span>}
+          {!bookingDetails.paidAt && <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">UNPAID</span>}
+        </div>
+        {bookingDetails.status === "confirmed" && bookingDetails.paymentMethod === "stripe" && !bookingDetails.paidAt && (
+          <div className="pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-amber-700 border-amber-300 hover:bg-amber-50"
+              onClick={() => convertToInvoiceMutation.mutate({ bookingId })}
+              disabled={convertToInvoiceMutation.isPending}
+            >
+              <DollarSign className="h-3 w-3 mr-1" />
+              {convertToInvoiceMutation.isPending ? "Converting..." : "Convert to Invoice"}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Editable Dates */}

@@ -74,13 +74,27 @@ export default function VacantShopDetail() {
     shop?.imageUrl2,
   ].filter(Boolean) as string[];
 
+  const vsCheckoutMutation = trpc.vacantShopBookings.createCheckoutSession.useMutation({
+    onSuccess: (data) => {
+      window.location.href = data.url;
+    },
+    onError: (error: any) => {
+      toast.error("Payment redirect failed: " + error.message);
+    },
+  });
+
   const createEnquiryMutation = trpc.vacantShopBookings.create.useMutation({
     onSuccess: (data: any) => {
-      toast.success(`Enquiry submitted! Booking number: ${data.bookingNumber}`);
-      setStartDate("");
-      setEndDate("");
-      setEnquiryMessage("");
-      setLocation("/my-bookings");
+      if (data.paymentMethod === "stripe") {
+        toast.info("Redirecting to payment...");
+        vsCheckoutMutation.mutate({ bookingId: data.id });
+      } else {
+        toast.success(`Enquiry submitted! Booking number: ${data.bookingNumber}`);
+        setStartDate("");
+        setEndDate("");
+        setEnquiryMessage("");
+        setLocation("/my-bookings");
+      }
     },
     onError: (error: any) => {
       toast.error("Enquiry failed: " + error.message);
@@ -110,17 +124,12 @@ export default function VacantShopDetail() {
     const outgoingsPerDay = parseFloat(shop.outgoingsPerDay?.toString() || "0");
     const totalOutgoings = outgoingsPerDay > 0 ? outgoingsPerDay * days : 0;
     const totalAmount = (rentAmount + totalOutgoings).toFixed(2);
-    const gstAmount = (parseFloat(totalAmount) * 0.1).toFixed(2);
     
     createEnquiryMutation.mutate({
       vacantShopId: shopId,
       startDate: start,
       endDate: end,
       totalAmount,
-      gstAmount,
-      gstPercentage: "10",
-      ownerAmount: totalAmount,
-      platformFee: "0",
       customerNotes: enquiryMessage || undefined,
     });
   };

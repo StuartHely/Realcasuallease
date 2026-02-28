@@ -2,7 +2,7 @@ import { notifyOwner } from "./notification";
 
 /**
  * Email notification helper for booking status updates
- * Uses the built-in notification API to send emails to customers and owners
+ * Uses SMTP (nodemailer) for customer emails and Forge API for owner notifications
  */
 
 interface BookingDetails {
@@ -24,6 +24,8 @@ interface BookingDetails {
  */
 export async function sendBookingConfirmationEmail(booking: BookingDetails): Promise<boolean> {
   try {
+    const { sendEmail } = await import('./email');
+
     const startDateStr = new Date(booking.startDate).toLocaleDateString("en-AU", {
       weekday: "long",
       year: "numeric",
@@ -38,20 +40,41 @@ export async function sendBookingConfirmationEmail(booking: BookingDetails): Pro
       day: "numeric",
     });
 
-    // Use trading name if available, otherwise company name
     const businessName = booking.tradingName || booking.companyName;
-    
-    const emailContent = `
+
+    const subject = `Booking Confirmed: ${booking.bookingNumber}`;
+
+    const htmlBody = `
+      <h2>Booking Confirmed</h2>
+      <p>Dear ${booking.customerName},</p>
+      <p>Great news! Your booking has been approved and confirmed.</p>
+      <h3>Booking Details</h3>
+      <ul>
+        <li><strong>Booking Number:</strong> ${booking.bookingNumber}</li>
+        ${businessName ? `<li><strong>Business:</strong> ${businessName}</li>` : ""}
+        <li><strong>Location:</strong> ${booking.centreName} — Site ${booking.siteNumber}</li>
+        <li><strong>Dates:</strong> ${startDateStr} to ${endDateStr}</li>
+        ${booking.categoryName ? `<li><strong>Category:</strong> ${booking.categoryName}</li>` : ""}
+        <li><strong>Total Amount:</strong> $${Number(booking.totalAmount).toFixed(2)}</li>
+      </ul>
+      <p>Your booking is now confirmed. Please arrive at the site on the start date and check in with the shopping centre management.</p>
+      <p>If you have any questions, please contact us.</p>
+      <p>Best regards,<br>The Casual Lease Team</p>
+    `;
+
+    const textBody = `
+Booking Confirmed
+
 Dear ${booking.customerName},
 
 Great news! Your booking has been approved and confirmed.
 
-**Booking Details:**
+Booking Details:
 - Booking Number: ${booking.bookingNumber}
 ${businessName ? `- Business: ${businessName}` : ""}
-- Location: ${booking.centreName} - Site ${booking.siteNumber}
+- Location: ${booking.centreName} — Site ${booking.siteNumber}
 - Dates: ${startDateStr} to ${endDateStr}
-${booking.categoryName ? `- Business Category: ${booking.categoryName}` : ""}
+${booking.categoryName ? `- Category: ${booking.categoryName}` : ""}
 - Total Amount: $${Number(booking.totalAmount).toFixed(2)}
 
 Your booking is now confirmed. Please arrive at the site on the start date and check in with the shopping centre management.
@@ -59,17 +82,18 @@ Your booking is now confirmed. Please arrive at the site on the start date and c
 If you have any questions, please contact us.
 
 Best regards,
-Casual Lease Team
+The Casual Lease Team
     `.trim();
 
-    // For now, use notifyOwner to send to owner (customer email will be implemented later)
-    // In production, this would send directly to customer email
-    await notifyOwner({
-      title: `Booking Confirmed: ${booking.bookingNumber}`,
-      content: `Customer: ${booking.customerEmail}\n\n${emailContent}`,
+    const result = await sendEmail({
+      to: booking.customerEmail,
+      subject,
+      html: htmlBody,
+      text: textBody,
     });
 
-    return true;
+    console.log(`[Email] Sent booking confirmation to ${booking.customerEmail}`);
+    return result;
   } catch (error) {
     console.error("[BookingNotifications] Failed to send confirmation email:", error);
     return false;
@@ -84,6 +108,8 @@ export async function sendBookingRejectionEmail(
   rejectionReason: string
 ): Promise<boolean> {
   try {
+    const { sendEmail } = await import('./email');
+
     const startDateStr = new Date(booking.startDate).toLocaleDateString("en-AU", {
       weekday: "long",
       year: "numeric",
@@ -98,38 +124,60 @@ export async function sendBookingRejectionEmail(
       day: "numeric",
     });
 
-    // Use trading name if available, otherwise company name
     const businessName = booking.tradingName || booking.companyName;
-    
-    const emailContent = `
+
+    const subject = `Booking Rejected: ${booking.bookingNumber}`;
+
+    const htmlBody = `
+      <h2>Booking Rejected</h2>
+      <p>Dear ${booking.customerName},</p>
+      <p>We regret to inform you that your booking request has been declined.</p>
+      <h3>Booking Details</h3>
+      <ul>
+        <li><strong>Booking Number:</strong> ${booking.bookingNumber}</li>
+        ${businessName ? `<li><strong>Business:</strong> ${businessName}</li>` : ""}
+        <li><strong>Location:</strong> ${booking.centreName} — Site ${booking.siteNumber}</li>
+        <li><strong>Dates:</strong> ${startDateStr} to ${endDateStr}</li>
+        ${booking.categoryName ? `<li><strong>Category:</strong> ${booking.categoryName}</li>` : ""}
+      </ul>
+      <h3>Reason for Rejection</h3>
+      <p>${rejectionReason}</p>
+      <p>We apologize for any inconvenience. Please feel free to search for alternative spaces or contact us if you have any questions.</p>
+      <p>Best regards,<br>The Casual Lease Team</p>
+    `;
+
+    const textBody = `
+Booking Rejected
+
 Dear ${booking.customerName},
 
 We regret to inform you that your booking request has been declined.
 
-**Booking Details:**
+Booking Details:
 - Booking Number: ${booking.bookingNumber}
 ${businessName ? `- Business: ${businessName}` : ""}
-- Location: ${booking.centreName} - Site ${booking.siteNumber}
+- Location: ${booking.centreName} — Site ${booking.siteNumber}
 - Dates: ${startDateStr} to ${endDateStr}
-${booking.categoryName ? `- Business Category: ${booking.categoryName}` : ""}
+${booking.categoryName ? `- Category: ${booking.categoryName}` : ""}
 
-**Reason for Rejection:**
+Reason for Rejection:
 ${rejectionReason}
 
 We apologize for any inconvenience. Please feel free to search for alternative spaces or contact us if you have any questions.
 
 Best regards,
-Casual Lease Team
+The Casual Lease Team
     `.trim();
 
-    // For now, use notifyOwner to send to owner (customer email will be implemented later)
-    // In production, this would send directly to customer email
-    await notifyOwner({
-      title: `Booking Rejected: ${booking.bookingNumber}`,
-      content: `Customer: ${booking.customerEmail}\n\n${emailContent}`,
+    const result = await sendEmail({
+      to: booking.customerEmail,
+      subject,
+      html: htmlBody,
+      text: textBody,
     });
 
-    return true;
+    console.log(`[Email] Sent booking rejection to ${booking.customerEmail}`);
+    return result;
   } catch (error) {
     console.error("[BookingNotifications] Failed to send rejection email:", error);
     return false;
@@ -153,9 +201,8 @@ export async function sendNewBookingNotificationToOwner(booking: BookingDetails)
       day: "numeric",
     });
 
-    // Use trading name if available, otherwise company name
     const businessName = booking.tradingName || booking.companyName;
-    
+
     await notifyOwner({
       title: `New Booking Requires Approval: ${booking.bookingNumber}`,
       content: `
@@ -171,6 +218,47 @@ ${booking.categoryName ? `**Category:** ${booking.categoryName}` : ""}
 Please review and approve or reject this booking in your dashboard.
       `.trim(),
     });
+
+    try {
+      const { sendEmail } = await import('./email');
+      const { ENV } = await import('./env');
+      const adminEmail = ENV.smtpFrom;
+      if (adminEmail) {
+        const subject = `New Booking Requires Approval: ${booking.bookingNumber}`;
+        const htmlBody = `
+          <h2>New Booking Requires Approval</h2>
+          <p>A new booking is pending your approval:</p>
+          <ul>
+            <li><strong>Customer:</strong> ${booking.customerName} (${booking.customerEmail})</li>
+            ${businessName ? `<li><strong>Business:</strong> ${businessName}</li>` : ""}
+            <li><strong>Location:</strong> ${booking.centreName} — Site ${booking.siteNumber}</li>
+            <li><strong>Dates:</strong> ${startDateStr} to ${endDateStr}</li>
+            ${booking.categoryName ? `<li><strong>Category:</strong> ${booking.categoryName}</li>` : ""}
+            <li><strong>Amount:</strong> $${Number(booking.totalAmount).toFixed(2)}</li>
+          </ul>
+          <p>Please review and approve or reject this booking in your dashboard.</p>
+        `;
+        const textBody = `
+New Booking Requires Approval
+
+A new booking is pending your approval:
+
+- Customer: ${booking.customerName} (${booking.customerEmail})
+${businessName ? `- Business: ${businessName}` : ""}
+- Location: ${booking.centreName} — Site ${booking.siteNumber}
+- Dates: ${startDateStr} to ${endDateStr}
+${booking.categoryName ? `- Category: ${booking.categoryName}` : ""}
+- Amount: $${Number(booking.totalAmount).toFixed(2)}
+
+Please review and approve or reject this booking in your dashboard.
+        `.trim();
+
+        await sendEmail({ to: adminEmail, subject, html: htmlBody, text: textBody });
+        console.log(`[Email] Sent owner notification fallback to ${adminEmail}`);
+      }
+    } catch {
+      // SMTP fallback is best-effort; notifyOwner already succeeded
+    }
 
     return true;
   } catch (error) {
@@ -193,6 +281,8 @@ export async function sendVacantShopEnquiryEmail(
   message: string
 ): Promise<boolean> {
   try {
+    const { sendEmail } = await import('./email');
+
     const startDateStr = new Date(startDate).toLocaleDateString("en-AU", {
       weekday: "long",
       year: "numeric",
@@ -207,31 +297,54 @@ export async function sendVacantShopEnquiryEmail(
       day: "numeric",
     });
 
-    const emailContent = `
+    const subject = `Vacant Shop Enquiry Received: ${shopName} at ${centreName}`;
+
+    const htmlBody = `
+      <h2>Vacant Shop Enquiry Received</h2>
+      <p>Dear ${customerName},</p>
+      <p>Thank you for your enquiry about the Vacant Shop at ${centreName}.</p>
+      <h3>Shop Details</h3>
+      <ul>
+        <li><strong>Shop:</strong> ${shopName}</li>
+        <li><strong>Location:</strong> ${centreName}</li>
+        <li><strong>Requested Dates:</strong> ${startDateStr} to ${endDateStr}</li>
+      </ul>
+      <h3>Your Message</h3>
+      <p>${message || "No additional message provided"}</p>
+      <p>We have received your enquiry and will get back to you shortly with availability and pricing information.</p>
+      <p>Best regards,<br>The Real Casual Leasing Team</p>
+    `;
+
+    const textBody = `
+Vacant Shop Enquiry Received
+
 Dear ${customerName},
 
 Thank you for your enquiry about the Vacant Shop at ${centreName}.
 
-**Shop Details:**
+Shop Details:
 - Shop: ${shopName}
 - Location: ${centreName}
 - Requested Dates: ${startDateStr} to ${endDateStr}
 
-**Your Message:**
+Your Message:
 ${message || "No additional message provided"}
 
 We have received your enquiry and will get back to you shortly with availability and pricing information.
 
 Best regards,
-Real Casual Leasing Team
+The Real Casual Leasing Team
     `.trim();
 
-    await notifyOwner({
-      title: `New Vacant Shop Enquiry: ${shopName} at ${centreName}`,
-      content: `Customer: ${customerEmail}\n\n${emailContent}`,
+    const result = await sendEmail({
+      to: customerEmail,
+      subject,
+      html: htmlBody,
+      text: textBody,
     });
 
-    return true;
+    console.log(`[Email] Sent vacant shop enquiry confirmation to ${customerEmail}`);
+    return result;
   } catch (error) {
     console.error("[BookingNotifications] Failed to send VS enquiry email:", error);
     return false;
@@ -252,6 +365,8 @@ export async function sendThirdLineEnquiryEmail(
   message: string
 ): Promise<boolean> {
   try {
+    const { sendEmail } = await import('./email');
+
     const startDateStr = new Date(startDate).toLocaleDateString("en-AU", {
       weekday: "long",
       year: "numeric",
@@ -266,32 +381,56 @@ export async function sendThirdLineEnquiryEmail(
       day: "numeric",
     });
 
-    const emailContent = `
+    const subject = `Third Line Enquiry Received: ${assetName} (${category}) at ${centreName}`;
+
+    const htmlBody = `
+      <h2>Third Line Income Enquiry Received</h2>
+      <p>Dear ${customerName},</p>
+      <p>Thank you for your enquiry about the ${category} at ${centreName}.</p>
+      <h3>Asset Details</h3>
+      <ul>
+        <li><strong>Asset:</strong> ${assetName}</li>
+        <li><strong>Category:</strong> ${category}</li>
+        <li><strong>Location:</strong> ${centreName}</li>
+        <li><strong>Requested Dates:</strong> ${startDateStr} to ${endDateStr}</li>
+      </ul>
+      <h3>Your Message</h3>
+      <p>${message || "No additional message provided"}</p>
+      <p>We have received your enquiry and will get back to you shortly with availability and pricing information.</p>
+      <p>Best regards,<br>The Real Casual Leasing Team</p>
+    `;
+
+    const textBody = `
+Third Line Income Enquiry Received
+
 Dear ${customerName},
 
 Thank you for your enquiry about the ${category} at ${centreName}.
 
-**Asset Details:**
+Asset Details:
 - Asset: ${assetName}
 - Category: ${category}
 - Location: ${centreName}
 - Requested Dates: ${startDateStr} to ${endDateStr}
 
-**Your Message:**
+Your Message:
 ${message || "No additional message provided"}
 
 We have received your enquiry and will get back to you shortly with availability and pricing information.
 
 Best regards,
-Real Casual Leasing Team
+The Real Casual Leasing Team
     `.trim();
 
-    await notifyOwner({
-      title: `New Third Line Enquiry: ${assetName} (${category}) at ${centreName}`,
-      content: `Customer: ${customerEmail}\n\n${emailContent}`,
+    const result = await sendEmail({
+      to: customerEmail,
+      subject,
+      html: htmlBody,
+      text: textBody,
     });
 
-    return true;
+    console.log(`[Email] Sent third line enquiry confirmation to ${customerEmail}`);
+    return result;
   } catch (error) {
     console.error("[BookingNotifications] Failed to send 3rdL enquiry email:", error);
     return false;
@@ -313,6 +452,8 @@ export async function sendVSThirdLineConfirmationEmail(
   category?: string
 ): Promise<boolean> {
   try {
+    const { sendEmail } = await import('./email');
+
     const startDateStr = new Date(startDate).toLocaleDateString("en-AU", {
       weekday: "long",
       year: "numeric",
@@ -329,15 +470,36 @@ export async function sendVSThirdLineConfirmationEmail(
 
     const assetTypeLabel = assetType === 'vacant_shop' ? 'Vacant Shop' : 'Third Line Income';
 
-    const emailContent = `
+    const subject = `${assetTypeLabel} Booking Confirmed: ${assetName}`;
+
+    const htmlBody = `
+      <h2>${assetTypeLabel} Booking Confirmed</h2>
+      <p>Dear ${customerName},</p>
+      <p>Great news! Your ${assetTypeLabel} booking has been approved and confirmed.</p>
+      <h3>Booking Details</h3>
+      <ul>
+        <li><strong>Asset:</strong> ${assetName}</li>
+        <li><strong>Location:</strong> ${centreName}</li>
+        ${category ? `<li><strong>Category:</strong> ${category}</li>` : ""}
+        <li><strong>Dates:</strong> ${startDateStr} to ${endDateStr}</li>
+        <li><strong>Total Amount:</strong> $${Number(totalAmount).toFixed(2)}</li>
+      </ul>
+      <p>Your booking is now confirmed. Please contact the shopping centre management for check-in details.</p>
+      <p>If you have any questions, please contact us.</p>
+      <p>Best regards,<br>The Real Casual Leasing Team</p>
+    `;
+
+    const textBody = `
+${assetTypeLabel} Booking Confirmed
+
 Dear ${customerName},
 
 Great news! Your ${assetTypeLabel} booking has been approved and confirmed.
 
-**Booking Details:**
+Booking Details:
 - Asset: ${assetName}
 - Location: ${centreName}
-${category ? `- Category: ${category}` : ''}
+${category ? `- Category: ${category}` : ""}
 - Dates: ${startDateStr} to ${endDateStr}
 - Total Amount: $${Number(totalAmount).toFixed(2)}
 
@@ -346,15 +508,18 @@ Your booking is now confirmed. Please contact the shopping centre management for
 If you have any questions, please contact us.
 
 Best regards,
-Real Casual Leasing Team
+The Real Casual Leasing Team
     `.trim();
 
-    await notifyOwner({
-      title: `${assetTypeLabel} Booking Confirmed: ${assetName}`,
-      content: `Customer: ${customerEmail}\n\n${emailContent}`,
+    const result = await sendEmail({
+      to: customerEmail,
+      subject,
+      html: htmlBody,
+      text: textBody,
     });
 
-    return true;
+    console.log(`[Email] Sent ${assetTypeLabel} confirmation to ${customerEmail}`);
+    return result;
   } catch (error) {
     console.error("[BookingNotifications] Failed to send confirmation email:", error);
     return false;
@@ -378,6 +543,8 @@ export async function sendPaymentReceiptEmail(booking: {
   paidAt: Date;
 }): Promise<boolean> {
   try {
+    const { sendEmail } = await import('./email');
+
     const startDateStr = new Date(booking.startDate).toLocaleDateString("en-AU", {
       weekday: "long",
       year: "numeric",
@@ -399,23 +566,48 @@ export async function sendPaymentReceiptEmail(booking: {
       day: "numeric",
     });
 
-    // Use trading name if available, otherwise company name
     const businessName = booking.tradingName || booking.companyName;
-    
-    const emailContent = `
+
+    const subject = `Payment Receipt: ${booking.bookingNumber}`;
+
+    const htmlBody = `
+      <h2>Payment Receipt</h2>
+      <p>Dear ${booking.customerName},</p>
+      <p>Thank you for your payment. This is your receipt for the completed transaction.</p>
+      <h3>Payment Details</h3>
+      <ul>
+        <li><strong>Receipt Number:</strong> ${booking.bookingNumber}</li>
+        <li><strong>Payment Date:</strong> ${paidAtStr}</li>
+        <li><strong>Amount Paid:</strong> $${Number(booking.totalAmount).toFixed(2)}</li>
+      </ul>
+      <h3>Booking Details</h3>
+      <ul>
+        <li><strong>Booking Number:</strong> ${booking.bookingNumber}</li>
+        ${businessName ? `<li><strong>Business:</strong> ${businessName}</li>` : ""}
+        <li><strong>Location:</strong> ${booking.centreName} — Site ${booking.siteNumber}</li>
+        <li><strong>Dates:</strong> ${startDateStr} to ${endDateStr}</li>
+      </ul>
+      <p>Your payment has been successfully processed. Please keep this receipt for your records.</p>
+      <p>If you have any questions, please contact us.</p>
+      <p>Best regards,<br>The Casual Lease Team</p>
+    `;
+
+    const textBody = `
+Payment Receipt
+
 Dear ${booking.customerName},
 
 Thank you for your payment. This is your receipt for the completed transaction.
 
-**Payment Receipt**
+Payment Details:
 - Receipt Number: ${booking.bookingNumber}
 - Payment Date: ${paidAtStr}
 - Amount Paid: $${Number(booking.totalAmount).toFixed(2)}
 
-**Booking Details:**
+Booking Details:
 - Booking Number: ${booking.bookingNumber}
 ${businessName ? `- Business: ${businessName}` : ""}
-- Location: ${booking.centreName} - Site ${booking.siteNumber}
+- Location: ${booking.centreName} — Site ${booking.siteNumber}
 - Dates: ${startDateStr} to ${endDateStr}
 
 Your payment has been successfully processed. Please keep this receipt for your records.
@@ -423,15 +615,18 @@ Your payment has been successfully processed. Please keep this receipt for your 
 If you have any questions, please contact us.
 
 Best regards,
-Casual Lease Team
+The Casual Lease Team
     `.trim();
 
-    await notifyOwner({
-      title: `Payment Receipt: ${booking.bookingNumber}`,
-      content: `Customer: ${booking.customerEmail}\n\n${emailContent}`,
+    const result = await sendEmail({
+      to: booking.customerEmail,
+      subject,
+      html: htmlBody,
+      text: textBody,
     });
 
-    return true;
+    console.log(`[Email] Sent payment receipt to ${booking.customerEmail}`);
+    return result;
   } catch (error) {
     console.error("[BookingNotifications] Failed to send payment receipt email:", error);
     return false;
@@ -453,6 +648,8 @@ export async function sendVSThirdLineRejectionEmail(
   category?: string
 ): Promise<boolean> {
   try {
+    const { sendEmail } = await import('./email');
+
     const startDateStr = new Date(startDate).toLocaleDateString("en-AU", {
       weekday: "long",
       year: "numeric",
@@ -469,32 +666,56 @@ export async function sendVSThirdLineRejectionEmail(
 
     const assetTypeLabel = assetType === 'vacant_shop' ? 'Vacant Shop' : 'Third Line Income';
 
-    const emailContent = `
+    const subject = `${assetTypeLabel} Booking Rejected: ${assetName}`;
+
+    const htmlBody = `
+      <h2>${assetTypeLabel} Booking Rejected</h2>
+      <p>Dear ${customerName},</p>
+      <p>We regret to inform you that your ${assetTypeLabel} booking request has been declined.</p>
+      <h3>Booking Details</h3>
+      <ul>
+        <li><strong>Asset:</strong> ${assetName}</li>
+        <li><strong>Location:</strong> ${centreName}</li>
+        ${category ? `<li><strong>Category:</strong> ${category}</li>` : ""}
+        <li><strong>Dates:</strong> ${startDateStr} to ${endDateStr}</li>
+      </ul>
+      <h3>Reason for Rejection</h3>
+      <p>${rejectionReason}</p>
+      <p>We apologize for any inconvenience. Please feel free to search for alternative spaces or contact us if you have any questions.</p>
+      <p>Best regards,<br>The Real Casual Leasing Team</p>
+    `;
+
+    const textBody = `
+${assetTypeLabel} Booking Rejected
+
 Dear ${customerName},
 
 We regret to inform you that your ${assetTypeLabel} booking request has been declined.
 
-**Booking Details:**
+Booking Details:
 - Asset: ${assetName}
 - Location: ${centreName}
-${category ? `- Category: ${category}` : ''}
+${category ? `- Category: ${category}` : ""}
 - Dates: ${startDateStr} to ${endDateStr}
 
-**Reason for Rejection:**
+Reason for Rejection:
 ${rejectionReason}
 
 We apologize for any inconvenience. Please feel free to search for alternative spaces or contact us if you have any questions.
 
 Best regards,
-Real Casual Leasing Team
+The Real Casual Leasing Team
     `.trim();
 
-    await notifyOwner({
-      title: `${assetTypeLabel} Booking Rejected: ${assetName}`,
-      content: `Customer: ${customerEmail}\n\n${emailContent}`,
+    const result = await sendEmail({
+      to: customerEmail,
+      subject,
+      html: htmlBody,
+      text: textBody,
     });
 
-    return true;
+    console.log(`[Email] Sent ${assetTypeLabel} rejection to ${customerEmail}`);
+    return result;
   } catch (error) {
     console.error("[BookingNotifications] Failed to send rejection email:", error);
     return false;
@@ -822,5 +1043,102 @@ The Casual Lease Team
   });
 
   console.log(`[Email] Sent cancellation email to ${params.customerEmail} for booking ${params.bookingNumber}`);
+}
+
+/**
+ * Send approval email for a Stripe booking, prompting the customer to pay
+ */
+export async function sendStripeApprovalEmail(params: {
+  bookingNumber: string;
+  customerName: string;
+  customerEmail: string;
+  centreName: string;
+  siteNumber: string;
+  startDate: Date;
+  endDate: Date;
+  totalAmount: string | number;
+  gstAmount: string | number;
+  paymentUrl: string;
+  companyName?: string;
+  tradingName?: string;
+}): Promise<void> {
+  const { sendEmail } = await import('./email');
+
+  const startDateStr = new Date(params.startDate).toLocaleDateString("en-AU", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const endDateStr = new Date(params.endDate).toLocaleDateString("en-AU", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const businessName = params.tradingName || params.companyName;
+  const totalExGst = Number(params.totalAmount).toFixed(2);
+  const gst = Number(params.gstAmount).toFixed(2);
+  const totalIncGst = (Number(params.totalAmount) + Number(params.gstAmount)).toFixed(2);
+
+  const subject = `Booking Approved — Payment Required: ${params.bookingNumber}`;
+
+  const htmlBody = `
+    <h2>Booking Approved — Payment Required</h2>
+    
+    <p>Dear ${params.customerName},</p>
+    
+    <p>Great news! Your booking has been approved. Please complete payment to confirm your booking.</p>
+    
+    <h3>Booking Details</h3>
+    <ul>
+      <li><strong>Booking Number:</strong> ${params.bookingNumber}</li>
+      ${businessName ? `<li><strong>Business:</strong> ${businessName}</li>` : ""}
+      <li><strong>Location:</strong> ${params.centreName} — Site ${params.siteNumber}</li>
+      <li><strong>Dates:</strong> ${startDateStr} to ${endDateStr}</li>
+      <li><strong>Total:</strong> $${totalExGst} + $${gst} GST = <strong>$${totalIncGst} inc GST</strong></li>
+    </ul>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${params.paymentUrl}" style="background-color: #2563eb; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold; display: inline-block;">Pay Now</a>
+    </div>
+    
+    <p style="font-size: 14px; color: #555;">If you would prefer to pay by bank transfer, please contact us and we can arrange an alternative payment method for you.</p>
+    
+    <p>Best regards,<br>
+    The Casual Lease Team</p>
+  `;
+
+  const textBody = `
+Booking Approved — Payment Required
+
+Dear ${params.customerName},
+
+Great news! Your booking has been approved. Please complete payment to confirm your booking.
+
+Booking Details:
+- Booking Number: ${params.bookingNumber}
+${businessName ? `- Business: ${businessName}` : ""}
+- Location: ${params.centreName} — Site ${params.siteNumber}
+- Dates: ${startDateStr} to ${endDateStr}
+- Total: $${totalExGst} + $${gst} GST = $${totalIncGst} inc GST
+
+Pay now: ${params.paymentUrl}
+
+If you would prefer to pay by bank transfer, please contact us and we can arrange an alternative payment method for you.
+
+Best regards,
+The Casual Lease Team
+  `.trim();
+
+  await sendEmail({
+    to: params.customerEmail,
+    subject,
+    html: htmlBody,
+    text: textBody,
+  });
+
+  console.log(`[Email] Sent stripe approval email to ${params.customerEmail} for booking ${params.bookingNumber}`);
 }
 

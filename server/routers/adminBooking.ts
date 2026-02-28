@@ -72,7 +72,8 @@ export const adminBookingRouter = router({
       const owner = await db.getOwnerById(centre.ownerId);
       if (!owner) throw new TRPCError({ code: 'NOT_FOUND', message: 'Owner not found' });
 
-      const platformFee = totalAmount * (Number(owner.commissionPercentage) / 100);
+      const commissionPct = Number(owner.commissionCl ?? owner.commissionPercentage);
+      const platformFee = totalAmount * (commissionPct / 100);
       const ownerAmount = totalAmount - platformFee;
 
       return {
@@ -137,7 +138,8 @@ export const adminBookingRouter = router({
       const gstValue = await getConfigValue('gst_percentage');
       const gstRate = gstValue ? Number(gstValue) / 100 : 0.1;
       const gstAmount = input.totalAmount * gstRate;
-      const platformFee = input.totalAmount * (Number(owner.commissionPercentage) / 100);
+      const commissionPct = Number(owner.commissionCl ?? owner.commissionPercentage);
+      const platformFee = input.totalAmount * (commissionPct / 100);
       const ownerAmount = input.totalAmount - platformFee;
 
       // Generate booking number
@@ -251,7 +253,8 @@ export const adminBookingRouter = router({
         const gstValue = await getConfigValue('gst_percentage');
         const gstRate = gstValue ? Number(gstValue) / 100 : 0.1;
         gstAmount = (updates.totalAmount * gstRate).toFixed(2);
-        platformFee = (updates.totalAmount * (Number(owner.commissionPercentage) / 100)).toFixed(2);
+        const commissionPct = Number(owner.commissionCl ?? owner.commissionPercentage);
+        platformFee = (updates.totalAmount * (commissionPct / 100)).toFixed(2);
         ownerAmount = (updates.totalAmount - Number(platformFee)).toFixed(2);
       }
 
@@ -454,5 +457,78 @@ export const adminBookingRouter = router({
 
         return { success: true, refundStatus: 'manual' };
       }
+    }),
+
+  // Convert a confirmed Stripe booking (unpaid) to invoice payment method
+  convertToInvoice: ownerProcedure
+    .input(z.object({ bookingId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const booking = await db.getBookingById(input.bookingId);
+      if (!booking) throw new TRPCError({ code: 'NOT_FOUND', message: 'Booking not found' });
+
+      if (booking.status !== 'confirmed') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Booking must be in confirmed status to convert' });
+      }
+      if (booking.paymentMethod !== 'stripe') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Booking is not a Stripe booking' });
+      }
+      if (booking.paidAt !== null) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Booking has already been paid' });
+      }
+
+      // Step 1: Cancel Stripe PaymentIntent if one exists
+      if (booking.stripePaymentIntentId) {
+        try {
+          const Stripe = (await import('stripe')).default;
+          const { ENV } = await import('../_core/env');
+          const stripe = new Stripe(ENV.stripeSecretKey);
+          await stripe.paymentIntents.cancel(booking.stripePaymentIntentId);
+        } catch (stripeError: any) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: `Failed to cancel Stripe PaymentIntent: ${stripeError.message || 'Unknown error'}`,
+          });
+        }
+      }
+
+      // Step 2: Update booking record
+      const { getDb } = await import('../db');
+      const { bookings, bookingStatusHistory, auditLog } = await import('../../drizzle/schema');
+      const { eq } = await import('drizzle-orm');
+      const dbConn = await getDb();
+      if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database connection failed' });
+
+      await dbConn.update(bookings)
+        .set({ paymentMethod: 'invoice', invoiceDispatchedAt: null })
+        .where(eq(bookings.id, input.bookingId));
+
+      // Step 3: Record status history entry
+      const changedByUser = await db.getUserById(ctx.user.id);
+      await dbConn.insert(bookingStatusHistory).values({
+        bookingId: input.bookingId,
+        previousStatus: booking.status,
+        newStatus: booking.status,
+        reason: 'Payment method converted from Stripe to invoice',
+        changedBy: ctx.user.id,
+        changedByName: changedByUser?.name || 'Unknown',
+      });
+
+      // Step 4: Audit log entry
+      await dbConn.insert(auditLog).values({
+        userId: ctx.user.id,
+        action: 'payment_method_converted',
+        entityType: 'booking',
+        entityId: input.bookingId,
+        changes: JSON.stringify({
+          bookingNumber: booking.bookingNumber,
+          previousPaymentMethod: 'stripe',
+          newPaymentMethod: 'invoice',
+        }),
+      });
+
+      // Step 5: Fire-and-forget invoice dispatch
+      import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(input.bookingId)).catch(() => {});
+
+      return { success: true, bookingNumber: booking.bookingNumber };
     }),
 });

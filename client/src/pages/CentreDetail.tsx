@@ -134,20 +134,12 @@ export default function CentreDetail() {
     const weeks = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)));
     const weeklyRate = selectedShop?.pricePerWeek ? Number(selectedShop.pricePerWeek) : 500;
     const totalAmount = weeklyRate * weeks;
-    const gstPercentage = 10;
-    const gstAmount = totalAmount * (gstPercentage / 100);
-    const platformFee = totalAmount * 0.05; // 5% platform fee
-    const ownerAmount = totalAmount - platformFee;
     
     createVSBooking.mutate({
       vacantShopId: selectedVSId,
       startDate,
       endDate,
       totalAmount: totalAmount.toFixed(2),
-      gstAmount: gstAmount.toFixed(2),
-      gstPercentage: gstPercentage.toFixed(2),
-      ownerAmount: ownerAmount.toFixed(2),
-      platformFee: platformFee.toFixed(2),
     });
   };
 
@@ -164,20 +156,12 @@ export default function CentreDetail() {
     const weeks = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)));
     const weeklyRate = selectedAsset?.pricePerWeek ? Number(selectedAsset.pricePerWeek) : 200;
     const totalAmount = weeklyRate * weeks;
-    const gstPercentage = 10;
-    const gstAmount = totalAmount * (gstPercentage / 100);
-    const platformFee = totalAmount * 0.05;
-    const ownerAmount = totalAmount - platformFee;
     
     create3rdLBooking.mutate({
       thirdLineIncomeId: selected3rdLId,
       startDate,
       endDate,
       totalAmount: totalAmount.toFixed(2),
-      gstAmount: gstAmount.toFixed(2),
-      gstPercentage: gstPercentage.toFixed(2),
-      ownerAmount: ownerAmount.toFixed(2),
-      platformFee: platformFee.toFixed(2),
     });
   };
 

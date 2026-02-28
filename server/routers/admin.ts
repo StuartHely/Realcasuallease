@@ -159,21 +159,20 @@ export const adminRouter = router({
         imageUrl4: z.string().nullish(),
       }))
       .mutation(async ({ input }) => {
-        const { id, dailyRate, weeklyRate, weekendRate, outgoingsPerDay, ...rest } = input;
+        const { id, dailyRate, weeklyRate, weekendRate, outgoingsPerDay, maxTables, ...rest } = input;
         const data: any = { ...rest };
         
         if (dailyRate !== undefined) data.pricePerDay = dailyRate || null;
         if (weeklyRate !== undefined) data.pricePerWeek = weeklyRate || null;
         if (weekendRate !== undefined) data.weekendPricePerDay = weekendRate || null;
         if (outgoingsPerDay !== undefined) data.outgoingsPerDay = outgoingsPerDay || null;
+        if (maxTables !== undefined) data.maxTables = (maxTables != null && !isNaN(maxTables)) ? maxTables : null;
         
-        console.log('[updateSite] Updating site:', { id, data });
         try {
           const result = await db.updateSite(id, data);
-          console.log('[updateSite] Success:', result);
           return result;
         } catch (error: any) {
-          console.error('[updateSite] Error:', error.message, error.stack);
+          console.error('[updateSite] Error:', error.message, { id, data });
           throw error;
         }
       }),

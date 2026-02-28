@@ -72,13 +72,27 @@ export default function ThirdLineDetail() {
     asset?.imageUrl2,
   ].filter(Boolean) as string[];
 
+  const tlCheckoutMutation = trpc.thirdLineBookings.createCheckoutSession.useMutation({
+    onSuccess: (data) => {
+      window.location.href = data.url;
+    },
+    onError: (error: any) => {
+      toast.error("Payment redirect failed: " + error.message);
+    },
+  });
+
   const createEnquiryMutation = trpc.thirdLineBookings.create.useMutation({
     onSuccess: (data: any) => {
-      toast.success(`Enquiry submitted! Booking number: ${data.bookingNumber}`);
-      setStartDate("");
-      setEndDate("");
-      setEnquiryMessage("");
-      setLocation("/my-bookings");
+      if (data.paymentMethod === "stripe") {
+        toast.info("Redirecting to payment...");
+        tlCheckoutMutation.mutate({ bookingId: data.id });
+      } else {
+        toast.success(`Enquiry submitted! Booking number: ${data.bookingNumber}`);
+        setStartDate("");
+        setEndDate("");
+        setEnquiryMessage("");
+        setLocation("/my-bookings");
+      }
     },
     onError: (error: any) => {
       toast.error("Enquiry failed: " + error.message);
@@ -108,17 +122,12 @@ export default function ThirdLineDetail() {
     const outgoingsPerDay = parseFloat(asset.outgoingsPerDay?.toString() || "0");
     const totalOutgoings = outgoingsPerDay > 0 ? outgoingsPerDay * days : 0;
     const totalAmount = (rentAmount + totalOutgoings).toFixed(2);
-    const gstAmount = (parseFloat(totalAmount) * 0.1).toFixed(2);
     
     createEnquiryMutation.mutate({
       thirdLineIncomeId: assetId,
       startDate: start,
       endDate: end,
       totalAmount,
-      gstAmount,
-      gstPercentage: "10",
-      ownerAmount: totalAmount,
-      platformFee: "0",
       customerNotes: enquiryMessage || undefined,
     });
   };

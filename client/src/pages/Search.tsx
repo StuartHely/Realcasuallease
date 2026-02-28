@@ -1998,7 +1998,7 @@ export default function Search() {
                                             }
                                             const totalDays = weekdays + weekends;
                                             const weekdayRate = Number(site.pricePerDay) || 0;
-                                            const weekendRate = Number(site.weekendRate) || weekdayRate;
+                                            const weekendRate = Number(site.weekendPricePerDay) || weekdayRate;
                                             const subtotal = (weekdays * weekdayRate) + (weekends * weekendRate);
                                             const outgoingsRate = parseFloat(site.outgoingsPerDay || "0");
                                             const totalOutgoings = outgoingsRate * totalDays;

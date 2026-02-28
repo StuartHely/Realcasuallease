@@ -77,6 +77,15 @@ export default function SiteDetail() {
     }
   }, [site?.id, currentImageIndex]);
 
+  const checkoutMutation = trpc.bookings.createCheckoutSession.useMutation({
+    onSuccess: (data) => {
+      window.location.href = data.url;
+    },
+    onError: (error) => {
+      toast.error("Payment redirect failed: " + error.message);
+    },
+  });
+
   const createBookingMutation = trpc.bookings.create.useMutation({
     onSuccess: (data) => {
       const { costBreakdown, equipmentWarning, paymentMethod } = data;
@@ -85,25 +94,26 @@ export default function SiteDetail() {
       
       const equipmentMessage = equipmentWarning ? `\n\n⚠️ ${equipmentWarning}` : '';
       
-      // Different messages for invoice vs Stripe bookings
-      let successMessage: string;
-      
       if (paymentMethod === 'invoice') {
         // Invoice booking messages
+        let successMessage: string;
         if (data.requiresApproval) {
           successMessage = "Booking request submitted! You should be advised if your request has been approved within 3 days." + breakdownMessage + equipmentMessage;
         } else {
           successMessage = "Booking confirmed! Booking number: " + data.bookingNumber + "\n\nAn invoice will be sent to your email shortly." + breakdownMessage + equipmentMessage;
         }
+        toast.success(successMessage);
+        setLocation("/my-bookings");
       } else {
-        // Stripe booking messages (existing logic)
-        successMessage = data.requiresApproval
-          ? "Booking request submitted! Awaiting approval." + breakdownMessage + equipmentMessage
-          : "Booking confirmed! Booking number: " + data.bookingNumber + breakdownMessage + equipmentMessage;
+        // Stripe booking — redirect to checkout if auto-confirmed (no approval needed)
+        if (!data.requiresApproval) {
+          toast.info("Redirecting to payment...");
+          checkoutMutation.mutate({ bookingId: data.bookingId });
+        } else {
+          toast.success("Booking request submitted! You'll be able to pay once approved." + breakdownMessage + equipmentMessage);
+          setLocation("/my-bookings");
+        }
       }
-      
-      toast.success(successMessage);
-      setLocation("/my-bookings");
     },
     onError: (error) => {
       toast.error("Booking failed: " + error.message);
