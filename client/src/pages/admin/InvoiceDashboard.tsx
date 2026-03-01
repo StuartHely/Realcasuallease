@@ -14,15 +14,17 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DollarSign, AlertCircle, Clock, CheckCircle, Download, Search } from 'lucide-react';
 
 export default function InvoiceDashboard() {
   const [filter, setFilter] = useState<'all' | 'outstanding' | 'overdue' | 'paid'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [paymentMode, setPaymentMode] = useState<'all' | 'invoice' | 'stripe'>('all');
 
-  const { data: stats, isLoading: statsLoading } = trpc.admin.getInvoiceStats.useQuery();
-  const { data: invoices, isLoading: invoicesLoading } = trpc.admin.getInvoiceList.useQuery({ filter });
-  const { data: paymentHistory, isLoading: historyLoading } = trpc.admin.getPaymentHistory.useQuery({ searchTerm });
+  const { data: stats, isLoading: statsLoading } = trpc.admin.getInvoiceStats.useQuery({ paymentMode });
+  const { data: invoices, isLoading: invoicesLoading } = trpc.admin.getInvoiceList.useQuery({ filter, paymentMode });
+  const { data: paymentHistory, isLoading: historyLoading } = trpc.admin.getPaymentHistory.useQuery({ searchTerm, paymentMode });
 
   const formatCurrency = (amount: string | number) => {
     return new Intl.NumberFormat('en-AU', {
@@ -42,7 +44,7 @@ export default function InvoiceDashboard() {
   const exportToCSV = () => {
     if (!invoices || invoices.length === 0) return;
 
-    const headers = ['Booking Number', 'Customer', 'Company', 'Centre', 'Site', 'Start Date', 'End Date', 'Amount', 'Due Date', 'Days Until Due', 'Status'];
+    const headers = ['Booking Number', 'Customer', 'Company', 'Centre', 'Site', 'Start Date', 'End Date', 'Amount', 'Payment Mode', 'Due Date', 'Days Until Due', 'Status'];
     const rows = invoices.map(inv => [
       inv.bookingNumber,
       inv.customerName,
@@ -52,6 +54,7 @@ export default function InvoiceDashboard() {
       formatDate(inv.startDate),
       formatDate(inv.endDate),
       formatCurrency(Number(inv.totalAmount) + Number(inv.gstAmount)),
+      inv.paymentMethod === 'invoice' ? 'Invoice' : 'Stripe',
       inv.dueDate ? formatDate(inv.dueDate) : '',
       inv.daysUntilDue.toString(),
       inv.status,
@@ -166,7 +169,7 @@ export default function InvoiceDashboard() {
                     </Button>
                   </div>
                 </div>
-                <div className="flex gap-2 mt-4">
+                <div className="flex flex-wrap items-center gap-2 mt-4">
                   <Button
                     variant={filter === 'all' ? 'default' : 'outline'}
                     size="sm"
@@ -195,6 +198,17 @@ export default function InvoiceDashboard() {
                   >
                     Paid
                   </Button>
+
+                  <Select value={paymentMode} onValueChange={(v) => setPaymentMode(v as any)}>
+                    <SelectTrigger className="w-[150px] h-8">
+                      <SelectValue placeholder="Payment Mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Modes</SelectItem>
+                      <SelectItem value="invoice">Invoice Only</SelectItem>
+                      <SelectItem value="stripe">Stripe Only</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardHeader>
               <CardContent>
@@ -212,6 +226,7 @@ export default function InvoiceDashboard() {
                           <TableHead>Company</TableHead>
                           <TableHead>Location</TableHead>
                           <TableHead>Amount</TableHead>
+                          <TableHead>Mode</TableHead>
                           <TableHead>Due Date</TableHead>
                           <TableHead>Status</TableHead>
                         </TableRow>
@@ -235,6 +250,11 @@ export default function InvoiceDashboard() {
                             </TableCell>
                             <TableCell className="font-medium">
                               {formatCurrency(Number(invoice.totalAmount) + Number(invoice.gstAmount))}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={invoice.paymentMethod === 'invoice' ? 'secondary' : 'default'} className="text-xs">
+                                {invoice.paymentMethod === 'invoice' ? 'Invoice' : 'Stripe'}
+                              </Badge>
                             </TableCell>
                             <TableCell>
                               <div>

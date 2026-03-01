@@ -15,6 +15,9 @@ export interface ParsedQuery {
   matchedLocation?: string; // The location alias that was matched (e.g., "bondi")
   matchedCentreName?: string; // The full centre name from alias (e.g., "eastgate bondi junction")
   stateFilter?: string; // Australian state code (NSW, VIC, QLD, SA, WA, TAS, NT, ACT)
+  maxPricePerDay?: number;
+  maxPricePerWeek?: number;
+  maxBudget?: number;
 }
 
 /**
@@ -125,7 +128,7 @@ function extractProductCategory(query: string): string | undefined {
     // Books & Stationery
     'books', 'book', 'stationery', 'calendars', 'calendar', 'news',
     // Art & Craft
-    'art', 'craft', 'handmade', 'hobbies', 'hobby', 'photography',
+    'art', 'craft', 'handmade', 'hobbies', 'hobby', 'photography', 'picture', 'pictures', 'display', 'displays', 'frame', 'frames', 'framing', 'canvas',
     // Beauty & Cosmetics
     'beauty', 'cosmetics', 'cosmetic', 'skincare', 'makeup', 'salon', 'barber',
     // Health & Wellness
@@ -155,6 +158,48 @@ function extractProductCategory(query: string): string | undefined {
   }
   
   return undefined;
+}
+
+/**
+ * Extract budget/price constraints from query
+ * Supports: "under $200/day", "less than $500/week", "budget of $2000", "$150 a day", "max $300"
+ */
+function extractBudget(query: string): { maxPricePerDay?: number; maxPricePerWeek?: number; maxBudget?: number } {
+  const result: { maxPricePerDay?: number; maxPricePerWeek?: number; maxBudget?: number } = {};
+
+  // "under $200/day", "less than $200 per day", "under $200 daily", "$150 a day", "$150/day"
+  const dayPattern = /(?:(?:under|less\s+than|max(?:imum)?)\s+)?\$(\d+(?:\.\d+)?)\s*(?:\/|per\s*|a\s+)(?:day|daily)/i;
+  const dayMatch = query.match(dayPattern);
+  if (dayMatch) {
+    result.maxPricePerDay = parseFloat(dayMatch[1]);
+  }
+
+  // "under $500/week", "less than $500 per week", "under $500 weekly"
+  const weekPattern = /(?:(?:under|less\s+than|max(?:imum)?)\s+)?\$(\d+(?:\.\d+)?)\s*(?:\/|per\s*|a\s+)(?:week|weekly)/i;
+  const weekMatch = query.match(weekPattern);
+  if (weekMatch) {
+    result.maxPricePerWeek = parseFloat(weekMatch[1]);
+  }
+
+  // "budget of $2000", "budget $2000", "max $2000" (no day/week qualifier)
+  if (!result.maxPricePerDay && !result.maxPricePerWeek) {
+    const budgetPattern = /(?:budget\s*(?:of|is|:)?\s*|max(?:imum)?\s+)\$(\d+(?:\.\d+)?)\b/i;
+    const budgetMatch = query.match(budgetPattern);
+    if (budgetMatch) {
+      result.maxBudget = parseFloat(budgetMatch[1]);
+    }
+  }
+
+  // Also catch "under $X" without day/week (treat as budget)
+  if (!result.maxPricePerDay && !result.maxPricePerWeek && !result.maxBudget) {
+    const underPattern = /(?:under|less\s+than)\s+\$(\d+(?:\.\d+)?)\b(?!\s*(?:\/|per\s*|a\s+)(?:day|daily|week|weekly|month|monthly))/i;
+    const underMatch = query.match(underPattern);
+    if (underMatch) {
+      result.maxBudget = parseFloat(underMatch[1]);
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -252,12 +297,19 @@ const locationAliases: Record<string, string[]> = {
   'eastgate bondi junction': ['bondi', 'bondi junction', 'eastgate'],
   'campbelltown mall': ['campbelltown', 'campbelltown mall'],
   'carnes hill marketplace': ['carnes hill', 'carnes'],
-  'highlands marketplace': ['highlands', 'highland'],
+  'highlands marketplace': ['highlands', 'highland', 'mittagong'],
   'waverley gardens': ['waverley', 'waverly'],
   'pacific square': ['pacific', 'maroubra'],
   'macarthur square': ['macarthur'],
   'westfield': ['westfield'],
   'stockland': ['stockland'],
+  'bass hill plaza': ['bass hill'],
+  'kallangur fair shopping centre': ['kallangur', 'kallangur fair'],
+  'chisholm village shopping centre': ['chisholm', 'chisholm village'],
+  'deagon marketplace': ['deagon'],
+  'kogarah town centre': ['kogarah'],
+  'rockdale plaza': ['rockdale'],
+  'wanneroo central': ['wanneroo'],
 };
 
 /**
@@ -322,7 +374,11 @@ function extractCentreName(query: string): string {
   let centreName = query;
   
   // Remove common filler words that don't help with location matching
-  centreName = centreName.replace(/\b(i\s+want\s+to|want\s+to|looking\s+for|need\s+to|would\s+like\s+to|can\s+i|where\s+can\s+i|sell|buy|rent|lease|find|get|have|put|place|set\s+up|open|start)\b/gi, '');
+  centreName = centreName.replace(/\b(i'm\s+looking\s+for|i\s+want\s+to|want\s+to|looking\s+for|need\s+to|would\s+like\s+to|can\s+i|where\s+can\s+i|i\s+need|where\s+is|show\s+me|any\s+available|do\s+you\s+have|is\s+there|are\s+there|sell|buy|rent|lease|leasing|find|get|have|put|place|set\s+up|open|start|promote|showcase|display|run|operate|host|launch|market|advertise|store|stall|shop|stand|booth|space|spot|area|site|centres?|shopping\s+centres?|malls?|plazas?|available|spots?|spaces?|options?|locations?)\b/gi, '');
+
+  // Remove budget/price patterns so they don't pollute the centre name
+  centreName = centreName.replace(/(?:under|less\s+than|max(?:imum)?|budget\s*(?:of|is|:)?)\s*\$\d+(?:\.\d+)?(?:\s*(?:per\s*)?(?:day|daily|week|weekly|month|monthly))?/gi, '');
+  centreName = centreName.replace(/\$\d+(?:\.\d+)?\s*(?:\/|per\s*|a\s+)(?:day|week|month)/gi, '');
   
   // Remove prepositions that don't help
   centreName = centreName.replace(/\b(in|at|near|around|close\s+to|next\s+to|by|from|for|the|a|an|my|some)\b/gi, '');
@@ -357,7 +413,7 @@ function extractCentreName(query: string): string {
     // Books & Stationery
     'books', 'book', 'stationery', 'calendars', 'calendar', 'news',
     // Art & Craft
-    'art', 'craft', 'handmade', 'hobbies', 'hobby', 'photography',
+    'art', 'craft', 'handmade', 'hobbies', 'hobby', 'photography', 'picture', 'pictures', 'display', 'displays', 'frame', 'frames', 'framing', 'canvas',
     // Beauty & Cosmetics
     'beauty', 'cosmetics', 'cosmetic', 'skincare', 'makeup', 'salon', 'barber',
     // Health & Wellness
@@ -674,6 +730,8 @@ export function parseSearchQuery(query: string): ParsedQuery {
   // Use matched centre name if available, otherwise use extracted location
   const centreName = locationResult.matchedCentre || locationResult.location;
   
+  const budget = extractBudget(cleanedQuery);
+
   return {
     centreName,
     minSizeM2: parseSizeRequirement(cleanedQuery),
@@ -687,6 +745,9 @@ export function parseSearchQuery(query: string): ParsedQuery {
     matchedLocation: locationResult.matchedAlias,
     matchedCentreName: locationResult.matchedCentre,
     stateFilter: extractStateFilter(cleanedQuery),
+    maxPricePerDay: budget.maxPricePerDay,
+    maxPricePerWeek: budget.maxPricePerWeek,
+    maxBudget: budget.maxBudget,
   };
 }
 

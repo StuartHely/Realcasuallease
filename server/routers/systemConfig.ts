@@ -220,6 +220,27 @@ export const systemConfigRouter = router({
     return owners;
   }),
 
+  // Auto-approval rules
+  getAutoApprovalRules: adminProcedure.query(async () => {
+    const { getAutoApprovalRules } = await import("../autoApprovalRules");
+    return await getAutoApprovalRules();
+  }),
+
+  updateAutoApprovalRules: adminProcedure
+    .input(z.object({
+      enabled: z.boolean(),
+      maxBookingValue: z.number().nullable(),
+      minPriorBookings: z.number().nullable(),
+      requireValidInsurance: z.boolean(),
+      allowedCategoryIds: z.array(z.number()).nullable(),
+      excludeCentreIds: z.array(z.number()).nullable(),
+    }))
+    .mutation(async ({ input }) => {
+      const { setAutoApprovalRules } = await import("../autoApprovalRules");
+      await setAutoApprovalRules(input);
+      return { success: true };
+    }),
+
   // Get rate validation alerts
   getRateValidationAlerts: publicProcedure.query(async () => {
     const { getRateValidationAlerts } = await import("../rateValidator");
@@ -238,4 +259,39 @@ export const systemConfigRouter = router({
     const alerts = await checkSiteRates();
     return { alertCount: alerts.length, alerts };
   }),
+
+  // Get SMTP configuration status (admin only)
+  getSmtpStatus: adminProcedure.query(async () => {
+    const { ENV } = await import("../_core/env");
+    return {
+      configured: !!(ENV.smtpHost && ENV.smtpUser && ENV.smtpPass && ENV.smtpFrom),
+      host: ENV.smtpHost || "(not set)",
+      port: ENV.smtpPort,
+      secure: ENV.smtpSecure,
+      from: ENV.smtpFrom || "(not set)",
+      appUrl: ENV.appUrl || "(not set)",
+    };
+  }),
+
+  // Send test email (admin only)
+  sendTestEmail: adminProcedure
+    .input(z.object({ to: z.string().email() }))
+    .mutation(async ({ input }) => {
+      const { sendEmail } = await import("../_core/email");
+      const success = await sendEmail({
+        to: input.to,
+        subject: "Real Casual Leasing — SMTP Test Email",
+        html: `
+          <h2>SMTP Configuration Test</h2>
+          <p>This is a test email from Real Casual Leasing.</p>
+          <p>If you're reading this, your SMTP configuration is working correctly.</p>
+          <p style="color: #666; font-size: 12px;">Sent at: ${new Date().toLocaleString("en-AU", { timeZone: "Australia/Sydney" })}</p>
+        `,
+        text: "SMTP Configuration Test\n\nThis is a test email from Real Casual Leasing.\nIf you're reading this, your SMTP configuration is working correctly.",
+      });
+      if (!success) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to send test email. Check SMTP configuration." });
+      }
+      return { success: true };
+    }),
 });

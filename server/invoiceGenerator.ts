@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { getBookingById, getSiteById, getShoppingCentreById, getUserById, getCustomerProfileByUserId } from './db';
+import { getBookingById, getSiteById, getShoppingCentreById, getUserById, getCustomerProfileByUserId, resolveRemittanceBankAccount } from './db';
 import { getLogoAsBase64, getOwnerIdFromContext } from './logoHelper';
 
 /**
@@ -184,7 +184,13 @@ export async function generateInvoicePDF(bookingId: number): Promise<string> {
   doc.text('Please include the invoice number in your payment reference.', 20, yPos);
   yPos += 15;
   
-  // Bank Details (placeholder - should be configurable)
+  // Bank Details — resolved from centre → portfolio → owner hierarchy
+  const bankAccount = await resolveRemittanceBankAccount(centre.id);
+  if (!bankAccount) {
+    console.error('[Invoice] No bank account configured for centre:', centre.id);
+    throw new Error('No bank account configured for this centre — cannot generate invoice');
+  }
+
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.text('Payment Details:', 20, yPos);
@@ -192,13 +198,11 @@ export async function generateInvoicePDF(bookingId: number): Promise<string> {
   
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text('Bank: [Bank Name]', 20, yPos);
+  doc.text(`BSB: ${bankAccount.bankBsb}`, 20, yPos);
   yPos += 7;
-  doc.text('BSB: [BSB Number]', 20, yPos);
+  doc.text(`Account Number: ${bankAccount.bankAccountNumber}`, 20, yPos);
   yPos += 7;
-  doc.text('Account Number: [Account Number]', 20, yPos);
-  yPos += 7;
-  doc.text('Account Name: Casual Lease Pty Ltd', 20, yPos);
+  doc.text(`Account Name: ${bankAccount.bankAccountName}`, 20, yPos);
   yPos += 15;
   
   // Footer

@@ -2,14 +2,23 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { sendBookingConfirmationEmail, sendBookingRejectionEmail, sendNewBookingNotificationToOwner, sendPaymentReceiptEmail } from "./_core/bookingNotifications";
 import * as notification from "./_core/notification";
 
-// Mock the notifyOwner function
+// Mock the notifyOwner function (still used by sendNewBookingNotificationToOwner)
 vi.mock("./_core/notification", () => ({
   notifyOwner: vi.fn().mockResolvedValue(true),
 }));
 
+// Mock sendEmail (now used by confirmation, rejection, receipt)
+vi.mock("./_core/email", () => ({
+  sendEmail: vi.fn().mockResolvedValue(true),
+}));
+
 describe("Booking Notification System", () => {
-  beforeEach(() => {
+  let mockSendEmail: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
+    const emailModule = await import("./_core/email");
+    mockSendEmail = vi.mocked(emailModule.sendEmail);
   });
 
   const mockBooking = {
@@ -27,35 +36,33 @@ describe("Booking Notification System", () => {
   };
 
   describe("sendBookingConfirmationEmail", () => {
-    it("should send confirmation email with correct booking details", async () => {
+    it("should send confirmation email to customer via SMTP", async () => {
       const result = await sendBookingConfirmationEmail(mockBooking);
 
       expect(result).toBe(true);
-      expect(notification.notifyOwner).toHaveBeenCalledTimes(1);
-      
-      const call = vi.mocked(notification.notifyOwner).mock.calls[0][0];
-      expect(call.title).toContain("Booking Confirmed");
-      expect(call.title).toContain(mockBooking.bookingNumber);
-      expect(call.content).toContain(mockBooking.customerName);
-      expect(call.content).toContain(mockBooking.customerEmail);
-      expect(call.content).toContain(mockBooking.centreName);
-      expect(call.content).toContain(mockBooking.siteNumber);
-      expect(call.content).toContain("$1500.00");
+      expect(mockSendEmail).toHaveBeenCalledTimes(1);
+
+      const call = mockSendEmail.mock.calls[0][0];
+      expect(call.to).toBe("john@example.com");
+      expect(call.subject).toContain("Booking Confirmed");
+      expect(call.html).toContain(mockBooking.customerName);
+      expect(call.html).toContain(mockBooking.centreName);
+      expect(call.html).toContain(mockBooking.siteNumber);
+      expect(call.html).toContain("$1500.00");
     });
 
     it("should format dates correctly in Australian format", async () => {
       await sendBookingConfirmationEmail(mockBooking);
 
-      const call = vi.mocked(notification.notifyOwner).mock.calls[0][0];
-      // Check for Australian date format (e.g., "Sunday, 1 June 2026")
-      expect(call.content).toMatch(/June.*2026/);
+      const call = mockSendEmail.mock.calls[0][0];
+      expect(call.html).toMatch(/June.*2026/);
     });
 
     it("should include category name when provided", async () => {
       await sendBookingConfirmationEmail(mockBooking);
 
-      const call = vi.mocked(notification.notifyOwner).mock.calls[0][0];
-      expect(call.content).toContain("Food and Beverage");
+      const call = mockSendEmail.mock.calls[0][0];
+      expect(call.html).toContain("Food and Beverage");
     });
 
     it("should handle missing category gracefully", async () => {
@@ -63,22 +70,22 @@ describe("Booking Notification System", () => {
       const result = await sendBookingConfirmationEmail(bookingWithoutCategory);
 
       expect(result).toBe(true);
-      expect(notification.notifyOwner).toHaveBeenCalledTimes(1);
+      expect(mockSendEmail).toHaveBeenCalledTimes(1);
     });
 
     it("should include trading name when provided", async () => {
       await sendBookingConfirmationEmail(mockBooking);
 
-      const call = vi.mocked(notification.notifyOwner).mock.calls[0][0];
-      expect(call.content).toContain("Doe's Delights");
+      const call = mockSendEmail.mock.calls[0][0];
+      expect(call.html).toContain("Doe's Delights");
     });
 
     it("should fall back to company name when trading name is not provided", async () => {
       const bookingWithoutTradingName = { ...mockBooking, tradingName: undefined };
       await sendBookingConfirmationEmail(bookingWithoutTradingName);
 
-      const call = vi.mocked(notification.notifyOwner).mock.calls[0][0];
-      expect(call.content).toContain("Doe Enterprises");
+      const call = mockSendEmail.mock.calls[0][0];
+      expect(call.html).toContain("Doe Enterprises");
     });
 
     it("should handle missing both company and trading name gracefully", async () => {
@@ -86,11 +93,11 @@ describe("Booking Notification System", () => {
       const result = await sendBookingConfirmationEmail(bookingWithoutBusiness);
 
       expect(result).toBe(true);
-      expect(notification.notifyOwner).toHaveBeenCalledTimes(1);
+      expect(mockSendEmail).toHaveBeenCalledTimes(1);
     });
 
-    it("should return false when notification fails", async () => {
-      vi.mocked(notification.notifyOwner).mockRejectedValueOnce(new Error("Network error"));
+    it("should return false when email fails", async () => {
+      mockSendEmail.mockResolvedValueOnce(false);
 
       const result = await sendBookingConfirmationEmail(mockBooking);
 
@@ -105,27 +112,27 @@ describe("Booking Notification System", () => {
       const result = await sendBookingRejectionEmail(mockBooking, rejectionReason);
 
       expect(result).toBe(true);
-      expect(notification.notifyOwner).toHaveBeenCalledTimes(1);
-      
-      const call = vi.mocked(notification.notifyOwner).mock.calls[0][0];
-      expect(call.title).toContain("Booking Rejected");
-      expect(call.title).toContain(mockBooking.bookingNumber);
-      expect(call.content).toContain(rejectionReason);
-      expect(call.content).toContain(mockBooking.customerName);
-      expect(call.content).toContain(mockBooking.centreName);
+      expect(mockSendEmail).toHaveBeenCalledTimes(1);
+
+      const call = mockSendEmail.mock.calls[0][0];
+      expect(call.to).toBe("john@example.com");
+      expect(call.subject).toContain("Booking Rejected");
+      expect(call.html).toContain(rejectionReason);
+      expect(call.html).toContain(mockBooking.customerName);
+      expect(call.html).toContain(mockBooking.centreName);
     });
 
     it("should include all booking details in rejection email", async () => {
       await sendBookingRejectionEmail(mockBooking, rejectionReason);
 
-      const call = vi.mocked(notification.notifyOwner).mock.calls[0][0];
-      expect(call.content).toContain(mockBooking.bookingNumber);
-      expect(call.content).toContain(mockBooking.siteNumber);
-      expect(call.content).toContain("Food and Beverage");
+      const call = mockSendEmail.mock.calls[0][0];
+      expect(call.html).toContain(mockBooking.bookingNumber);
+      expect(call.html).toContain(mockBooking.siteNumber);
+      expect(call.html).toContain("Food and Beverage");
     });
 
-    it("should return false when notification fails", async () => {
-      vi.mocked(notification.notifyOwner).mockRejectedValueOnce(new Error("Network error"));
+    it("should return false when email fails", async () => {
+      mockSendEmail.mockResolvedValueOnce(false);
 
       const result = await sendBookingRejectionEmail(mockBooking, rejectionReason);
 
@@ -139,7 +146,7 @@ describe("Booking Notification System", () => {
 
       expect(result).toBe(true);
       expect(notification.notifyOwner).toHaveBeenCalledTimes(1);
-      
+
       const call = vi.mocked(notification.notifyOwner).mock.calls[0][0];
       expect(call.title).toContain("New Booking Requires Approval");
       expect(call.title).toContain(mockBooking.bookingNumber);
@@ -152,7 +159,6 @@ describe("Booking Notification System", () => {
       await sendNewBookingNotificationToOwner(mockBooking);
 
       const call = vi.mocked(notification.notifyOwner).mock.calls[0][0];
-      // Check for shorter format (e.g., "1 Jun 2026")
       expect(call.content).toMatch(/Jun.*2026/);
     });
 
@@ -187,36 +193,35 @@ describe("Booking Notification System", () => {
       paidAt: new Date("2026-06-01"),
     };
 
-    it("should send payment receipt email with correct details", async () => {
+    it("should send payment receipt email via SMTP", async () => {
       const result = await sendPaymentReceiptEmail(mockReceiptBooking);
 
       expect(result).toBe(true);
-      expect(notification.notifyOwner).toHaveBeenCalledTimes(1);
-      
-      const call = vi.mocked(notification.notifyOwner).mock.calls[0][0];
-      expect(call.title).toContain("Payment Receipt");
-      expect(call.title).toContain(mockReceiptBooking.bookingNumber);
-      expect(call.content).toContain("$1500.00");
-      expect(call.content).toContain("Payment Receipt");
+      expect(mockSendEmail).toHaveBeenCalledTimes(1);
+
+      const call = mockSendEmail.mock.calls[0][0];
+      expect(call.to).toBe("john@example.com");
+      expect(call.subject).toContain("Payment Receipt");
+      expect(call.html).toContain("$1500.00");
     });
 
     it("should include trading name in receipt", async () => {
       await sendPaymentReceiptEmail(mockReceiptBooking);
 
-      const call = vi.mocked(notification.notifyOwner).mock.calls[0][0];
-      expect(call.content).toContain("Doe's Delights");
+      const call = mockSendEmail.mock.calls[0][0];
+      expect(call.html).toContain("Doe's Delights");
     });
 
     it("should fall back to company name when trading name is not provided", async () => {
       const bookingWithoutTradingName = { ...mockReceiptBooking, tradingName: undefined };
       await sendPaymentReceiptEmail(bookingWithoutTradingName);
 
-      const call = vi.mocked(notification.notifyOwner).mock.calls[0][0];
-      expect(call.content).toContain("Doe Enterprises");
+      const call = mockSendEmail.mock.calls[0][0];
+      expect(call.html).toContain("Doe Enterprises");
     });
 
-    it("should return false when notification fails", async () => {
-      vi.mocked(notification.notifyOwner).mockRejectedValueOnce(new Error("Network error"));
+    it("should return false when email fails", async () => {
+      mockSendEmail.mockResolvedValueOnce(false);
 
       const result = await sendPaymentReceiptEmail(mockReceiptBooking);
 

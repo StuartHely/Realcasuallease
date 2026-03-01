@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, MapPin, Calendar, ChevronLeft, ChevronRight, X, Store } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, ChevronLeft, ChevronRight, X, Store, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
@@ -74,13 +74,27 @@ export default function VacantShopDetail() {
     shop?.imageUrl2,
   ].filter(Boolean) as string[];
 
+  const vsCheckoutMutation = trpc.vacantShopBookings.createCheckoutSession.useMutation({
+    onSuccess: (data) => {
+      window.location.href = data.url;
+    },
+    onError: (error: any) => {
+      toast.error("Payment redirect failed: " + error.message);
+    },
+  });
+
   const createEnquiryMutation = trpc.vacantShopBookings.create.useMutation({
     onSuccess: (data: any) => {
-      toast.success(`Enquiry submitted! Booking number: ${data.bookingNumber}`);
-      setStartDate("");
-      setEndDate("");
-      setEnquiryMessage("");
-      setLocation("/my-bookings");
+      if (data.paymentMethod === "stripe") {
+        toast.info("Redirecting to payment...");
+        vsCheckoutMutation.mutate({ bookingId: data.id });
+      } else {
+        toast.success(`Enquiry submitted! Booking number: ${data.bookingNumber}`);
+        setStartDate("");
+        setEndDate("");
+        setEnquiryMessage("");
+        setLocation("/my-bookings");
+      }
     },
     onError: (error: any) => {
       toast.error("Enquiry failed: " + error.message);
@@ -106,20 +120,17 @@ export default function VacantShopDetail() {
     const end = new Date(endDate);
     const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     const weeklyRate = shop.pricePerWeek ? parseFloat(shop.pricePerWeek.toString()) : 0;
-    const totalAmount = (weeklyRate * days / 7).toFixed(2);
-    const gstAmount = (parseFloat(totalAmount) * 0.1).toFixed(2);
+    const rentAmount = weeklyRate * days / 7;
+    const outgoingsPerDay = parseFloat(shop.outgoingsPerDay?.toString() || "0");
+    const totalOutgoings = outgoingsPerDay > 0 ? outgoingsPerDay * days : 0;
+    const totalAmount = (rentAmount + totalOutgoings).toFixed(2);
     
     createEnquiryMutation.mutate({
       vacantShopId: shopId,
       startDate: start,
       endDate: end,
       totalAmount,
-      gstAmount,
-      gstPercentage: "10",
-      ownerAmount: totalAmount,
-      platformFee: "0",
       customerNotes: enquiryMessage || undefined,
-      paymentMethod: "invoice",
     });
   };
 
@@ -333,6 +344,12 @@ export default function VacantShopDetail() {
                         <p className="text-2xl font-bold text-green-600">${shop.pricePerMonth}/month</p>
                       </div>
                     )}
+                    {parseFloat(shop.outgoingsPerDay?.toString() || "0") > 0 && (
+                      <div>
+                        <p className="text-sm text-gray-600">Outgoings</p>
+                        <p className="text-2xl font-bold text-green-600">${shop.outgoingsPerDay}/day</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -415,6 +432,15 @@ export default function VacantShopDetail() {
                         rows={4}
                       />
                     </div>
+
+                    {centre?.paymentMode === "invoice_only" && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+                        <FileText className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-blue-800">
+                          This centre processes payments by invoice. You will receive an invoice once your booking is confirmed.
+                        </p>
+                      </div>
+                    )}
 
                     <Button
                       onClick={handleEnquiry}

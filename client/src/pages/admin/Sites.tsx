@@ -67,6 +67,13 @@ export default function AdminSites() {
     { centreId: selectedCentreId! },
     { enabled: !!selectedCentreId }
   );
+  const { data: sitesWithCategories } = trpc.usageCategories.getSitesWithCategories.useQuery(
+    { centreId: selectedCentreId! },
+    { enabled: !!selectedCentreId }
+  );
+  const siteCategoryMap = new Map(
+    (sitesWithCategories || []).map((s: any) => [s.id, s.approvedCategoryIds?.length || 0])
+  );
   
   const createMutation = trpc.admin.createSite.useMutation();
   const updateMutation = trpc.admin.updateSite.useMutation();
@@ -93,6 +100,7 @@ export default function AdminSites() {
     dailyRate: "",
     weeklyRate: "",
     weekendRate: "",
+    outgoingsPerDay: "",
     instantBooking: false,
   });
 
@@ -107,6 +115,7 @@ export default function AdminSites() {
       dailyRate: "",
       weeklyRate: "",
       weekendRate: "",
+      outgoingsPerDay: "",
       instantBooking: false,
     });
   };
@@ -145,6 +154,7 @@ export default function AdminSites() {
       dailyRate: site.pricePerDay || "",
       weeklyRate: site.pricePerWeek || "",
       weekendRate: site.weekendPricePerDay || "",
+      outgoingsPerDay: site.outgoingsPerDay || "",
       instantBooking: site.instantBooking || false,
     });
     setIsEditOpen(true);
@@ -467,6 +477,17 @@ export default function AdminSites() {
                       required
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="outgoingsPerDay">Outgoings/Day ($)</Label>
+                    <Input
+                      id="outgoingsPerDay"
+                      type="number"
+                      step="0.01"
+                      value={formData.outgoingsPerDay}
+                      onChange={(e) => setFormData({ ...formData, outgoingsPerDay: e.target.value })}
+                      placeholder="0.00"
+                    />
+                  </div>
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="instantBooking"
@@ -587,10 +608,21 @@ export default function AdminSites() {
                       <span className="text-muted-foreground">Weekly:</span>
                       <p className="font-medium">${site.pricePerWeek}</p>
                     </div>
+                    {parseFloat(site.outgoingsPerDay || "0") > 0 && (
+                      <div>
+                        <span className="text-muted-foreground">Outgoings/day:</span>
+                        <p className="font-medium">${site.outgoingsPerDay}</p>
+                      </div>
+                    )}
                   </div>
                   {site.instantBooking && (
                     <div className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded">
                       ✓ Instant Booking
+                    </div>
+                  )}
+                  {siteCategoryMap.has(site.id) && siteCategoryMap.get(site.id) === 0 && (
+                    <div className="text-xs bg-red-50 text-red-700 px-2 py-1 rounded border border-red-200 font-medium">
+                      ⚠ No categories set up
                     </div>
                   )}
                 </CardContent>
@@ -717,6 +749,17 @@ export default function AdminSites() {
                   id="edit-weeklyRate"
                   value={formData.weeklyRate}
                   onChange={(e) => setFormData({ ...formData, weeklyRate: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-outgoingsPerDay">Outgoings/Day ($)</Label>
+                <Input
+                  id="edit-outgoingsPerDay"
+                  type="number"
+                  step="0.01"
+                  value={formData.outgoingsPerDay}
+                  onChange={(e) => setFormData({ ...formData, outgoingsPerDay: e.target.value })}
+                  placeholder="0.00"
                 />
               </div>
               <div className="flex items-center space-x-2">

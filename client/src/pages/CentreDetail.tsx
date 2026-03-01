@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 // Select imports removed - using buttons instead
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, Building2, ArrowLeft, Calendar, DollarSign, Ruler, Zap, Store, Layers, ChevronLeft, ChevronRight, CheckCircle, XCircle, Info } from "lucide-react";
+import { MapPin, Building2, ArrowLeft, Calendar, DollarSign, Ruler, Zap, Store, Layers, ChevronLeft, ChevronRight, CheckCircle, XCircle, Info, FileText } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { format, addMonths, startOfWeek, addDays, isSameDay, getDaysInMonth, startOfMonth, getDay } from "date-fns";
 import InteractiveMap from "@/components/InteractiveMap";
@@ -21,8 +21,8 @@ type AssetType = "casual_leasing" | "vacant_shops" | "third_line" | "all";
 
 export default function CentreDetail() {
   const [, setLocation] = useLocation();
-  const [, params] = useRoute("/centre/:id");
-  const centreId = params?.id ? parseInt(params.id) : 0;
+  const [, params] = useRoute("/centre/:slug");
+  const slugOrId = params?.slug || "";
   const [assetType, setAssetType] = useState<AssetType>("casual_leasing");
   const [selectedVSId, setSelectedVSId] = useState<number | null>(null);
   const [selected3rdLId, setSelected3rdLId] = useState<number | null>(null);
@@ -38,10 +38,12 @@ export default function CentreDetail() {
   const calendarStartDate = useMemo(() => startOfWeek(new Date(), { weekStartsOn: 1 }), []);
   const calendarEndDate = useMemo(() => addMonths(new Date(), 3), []);
 
-  const { data: centre, isLoading: centreLoading } = trpc.centres.getById.useQuery(
-    { id: centreId },
-    { enabled: centreId > 0 }
+  const { data: centre, isLoading: centreLoading } = trpc.centres.getBySlugOrId.useQuery(
+    { idOrSlug: slugOrId },
+    { enabled: !!slugOrId }
   );
+
+  const centreId = centre?.id || 0;
 
   // Casual Leasing Sites
   const { data: sites = [], isLoading: sitesLoading } = trpc.centres.getSites.useQuery(
@@ -132,21 +134,12 @@ export default function CentreDetail() {
     const weeks = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)));
     const weeklyRate = selectedShop?.pricePerWeek ? Number(selectedShop.pricePerWeek) : 500;
     const totalAmount = weeklyRate * weeks;
-    const gstPercentage = 10;
-    const gstAmount = totalAmount * (gstPercentage / 100);
-    const platformFee = totalAmount * 0.05; // 5% platform fee
-    const ownerAmount = totalAmount - platformFee;
     
     createVSBooking.mutate({
       vacantShopId: selectedVSId,
       startDate,
       endDate,
       totalAmount: totalAmount.toFixed(2),
-      gstAmount: gstAmount.toFixed(2),
-      gstPercentage: gstPercentage.toFixed(2),
-      ownerAmount: ownerAmount.toFixed(2),
-      platformFee: platformFee.toFixed(2),
-      paymentMethod: "invoice",
     });
   };
 
@@ -163,21 +156,12 @@ export default function CentreDetail() {
     const weeks = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)));
     const weeklyRate = selectedAsset?.pricePerWeek ? Number(selectedAsset.pricePerWeek) : 200;
     const totalAmount = weeklyRate * weeks;
-    const gstPercentage = 10;
-    const gstAmount = totalAmount * (gstPercentage / 100);
-    const platformFee = totalAmount * 0.05;
-    const ownerAmount = totalAmount - platformFee;
     
     create3rdLBooking.mutate({
       thirdLineIncomeId: selected3rdLId,
       startDate,
       endDate,
       totalAmount: totalAmount.toFixed(2),
-      gstAmount: gstAmount.toFixed(2),
-      gstPercentage: gstPercentage.toFixed(2),
-      ownerAmount: ownerAmount.toFixed(2),
-      platformFee: platformFee.toFixed(2),
-      paymentMethod: "invoice",
     });
   };
 
@@ -354,6 +338,14 @@ export default function CentreDetail() {
             </div>
           </CardHeader>
           <CardContent>
+            {centre.paymentMode === "invoice_only" && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2 mb-6">
+                <FileText className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-blue-800">
+                  This centre processes payments by invoice. You will receive an invoice once your booking is confirmed.
+                </p>
+              </div>
+            )}
             {/* Asset Type Selector - Buttons */}
             <div className="mb-6">
               <div className="flex items-center gap-2 flex-wrap">
@@ -443,7 +435,7 @@ export default function CentreDetail() {
                 <p className="text-gray-600">
                   <span className="font-semibold text-gray-900">{mapAssets.length}</span>{" "}
                   {assetType === "all" ? "total assets" : getAssetTypeLabel(assetType).toLowerCase()}{" "}
-                  available
+                  locations available
                 </p>
               </div>
               {assetType === "casual_leasing" && (

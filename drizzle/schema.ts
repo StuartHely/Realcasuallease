@@ -1,4 +1,4 @@
-import { integer, pgEnum, pgTable, text, timestamp, varchar, decimal, boolean, bigint, index, serial } from "drizzle-orm/pg-core";
+import { integer, pgEnum, pgTable, text, timestamp, varchar, decimal, boolean, bigint, index, serial, jsonb } from "drizzle-orm/pg-core";
 
 // =============================================================================
 // PostgreSQL Enums (defined before tables that use them)
@@ -6,6 +6,7 @@ import { integer, pgEnum, pgTable, text, timestamp, varchar, decimal, boolean, b
 
 export const roleEnum = pgEnum("role", [
   "customer",
+  "owner_viewer",
   "owner_centre_manager",
   "owner_marketing_manager",
   "owner_regional_admin",
@@ -24,6 +25,8 @@ export const bookingStatusEnum = pgEnum("booking_status", ["pending", "confirmed
 export const paymentMethodEnum = pgEnum("payment_method", ["stripe", "invoice"]);
 
 export const transactionTypeEnum = pgEnum("transaction_type", ["booking", "cancellation", "monthly_fee"]);
+
+export const paymentModeEnum = pgEnum("payment_mode", ["stripe", "stripe_with_exceptions", "invoice_only"]);
 
 // =============================================================================
 // Tables
@@ -46,6 +49,7 @@ export const users = pgTable("users", {
   assignedState: varchar("assignedState", { length: 3 }), // For state_admin roles: NSW, VIC, QLD, etc.
   allocatedLogoId: varchar("allocated_logo_id", { length: 20 }), // For owners: which logo to use (logo_1, logo_2, etc.)
   canPayByInvoice: boolean("canPayByInvoice").default(false).notNull(),
+  assignedOwnerId: integer("assignedOwnerId").references(() => owners.id, { onDelete: "set null" }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -87,14 +91,28 @@ export const customerProfiles = pgTable("customer_profiles", {
 export const owners = pgTable("owners", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
+  isAgency: boolean("isAgency").default(false).notNull(),
+  parentAgencyId: integer("parentAgencyId").references((): any => owners.id, { onDelete: "set null" }),
+  companyAbn: varchar("companyAbn", { length: 20 }),
+  contactName: varchar("contactName", { length: 255 }),
+  contactTitle: varchar("contactTitle", { length: 100 }),
+  address: varchar("address", { length: 500 }),
   email: varchar("email", { length: 320 }),
   phone: varchar("phone", { length: 20 }),
+  secondaryContactName: varchar("secondaryContactName", { length: 255 }),
+  secondaryContactTitle: varchar("secondaryContactTitle", { length: 100 }),
+  secondaryAddress: varchar("secondaryAddress", { length: 500 }),
+  secondaryEmail: varchar("secondaryEmail", { length: 320 }),
+  secondaryPhone: varchar("secondaryPhone", { length: 20 }),
   bankName: varchar("bankName", { length: 255 }),
   bankAccountName: varchar("bankAccountName", { length: 255 }),
   bankBsb: varchar("bankBsb", { length: 10 }),
   bankAccountNumber: varchar("bankAccountNumber", { length: 20 }),
   monthlyFee: decimal("monthlyFee", { precision: 10, scale: 2 }).default("0.00").notNull(),
   commissionPercentage: decimal("commissionPercentage", { precision: 5, scale: 2 }).default("0.00").notNull(),
+  commissionCl: decimal("commissionCl", { precision: 5, scale: 2 }),
+  commissionVs: decimal("commissionVs", { precision: 5, scale: 2 }),
+  commissionTli: decimal("commissionTli", { precision: 5, scale: 2 }),
   remittanceType: remittanceTypeEnum("remittanceType").default("monthly").notNull(),
   invoiceEmail1: varchar("invoiceEmail1", { length: 320 }),
   invoiceEmail2: varchar("invoiceEmail2", { length: 320 }),
@@ -107,6 +125,22 @@ export const owners = pgTable("owners", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
+
+/**
+ * Portfolios - groups of centres under an owner
+ */
+export const portfolios = pgTable("portfolios", {
+  id: serial("id").primaryKey(),
+  ownerId: integer("ownerId").notNull().references(() => owners.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  bankBsb: varchar("bankBsb", { length: 10 }),
+  bankAccountNumber: varchar("bankAccountNumber", { length: 20 }),
+  bankAccountName: varchar("bankAccountName", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+}, (table) => ({
+  ownerIdIdx: index("portfolio_ownerId_idx").on(table.ownerId),
+}));
 
 /**
  * Floor levels for multi-level shopping centres
@@ -131,6 +165,8 @@ export const floorLevels = pgTable("floor_levels", {
 export const shoppingCentres = pgTable("shopping_centres", {
   id: serial("id").primaryKey(),
   ownerId: integer("ownerId").notNull().references(() => owners.id, { onDelete: "cascade" }),
+  portfolioId: integer("portfolioId").references(() => portfolios.id, { onDelete: "set null" }),
+  paymentMode: paymentModeEnum("paymentMode").default("stripe_with_exceptions").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   slug: varchar("slug", { length: 255 }).unique(),
   centreCode: varchar("centreCode", { length: 50 }),
@@ -171,10 +207,15 @@ export const shoppingCentres = pgTable("shopping_centres", {
   pdfName2: varchar("pdfName2", { length: 255 }),
   pdfUrl3: text("pdfUrl3"),
   pdfName3: varchar("pdfName3", { length: 255 }),
+  // Centre-level bank account override (most specific in resolution chain)
+  bankBsb: varchar("bankBsb", { length: 10 }),
+  bankAccountNumber: varchar("bankAccountNumber", { length: 20 }),
+  bankAccountName: varchar("bankAccountName", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
   ownerIdIdx: index("centre_ownerId_idx").on(table.ownerId),
+  portfolioIdIdx: index("centre_portfolioId_idx").on(table.portfolioId),
   nameIdx: index("centre_name_idx").on(table.name),
 }));
 
@@ -193,6 +234,7 @@ export const sites = pgTable("sites", {
   pricePerDay: decimal("pricePerDay", { precision: 10, scale: 2 }),
   pricePerWeek: decimal("pricePerWeek", { precision: 10, scale: 2 }),
   weekendPricePerDay: decimal("weekendPricePerDay", { precision: 10, scale: 2 }),
+  outgoingsPerDay: decimal("outgoingsPerDay", { precision: 10, scale: 2 }),
   instantBooking: boolean("instantBooking").default(true).notNull(),
   imageUrl1: text("imageUrl1"),
   imageUrl2: text("imageUrl2"),
@@ -278,6 +320,9 @@ export const bookings = pgTable("bookings", {
   stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
   paymentMethod: paymentMethodEnum("paymentMethod").default("stripe").notNull(),
   paidAt: timestamp("paidAt"),
+  cancelledAt: timestamp("cancelledAt"),
+  refundStatus: varchar("refundStatus", { length: 50 }),
+  refundPendingAt: timestamp("refundPendingAt"),
   paymentRecordedBy: integer("paymentRecordedBy").references(() => users.id),
   paymentDueDate: timestamp("paymentDueDate"), // For invoice bookings - when payment is due
   remindersSent: integer("remindersSent").default(0).notNull(), // Count of payment reminders sent
@@ -288,7 +333,8 @@ export const bookings = pgTable("bookings", {
   lastReminderSent: timestamp("lastReminderSent"),
   adminComments: text("adminComments"), // Internal admin notes, never shown on invoices/emails
   createdByAdmin: integer("createdByAdmin").references(() => users.id), // If booking was created by admin on behalf of user
-  invoiceOverride: boolean("invoiceOverride").default(false).notNull(), // Override Stripe user to pay by invoice for this booking
+  invoiceDispatchedAt: timestamp("invoiceDispatchedAt"), // Set when invoice PDF is generated and emailed
+  recurrenceGroupId: varchar("recurrenceGroupId", { length: 50 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
@@ -332,6 +378,7 @@ export const transactions = pgTable("transactions", {
   platformFee: decimal("platformFee", { precision: 12, scale: 2 }).notNull(),
   remitted: boolean("remitted").default(false).notNull(),
   remittedAt: timestamp("remittedAt"),
+  gstAdjustmentNoteNumber: varchar("gstAdjustmentNoteNumber", { length: 50 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
   bookingIdIdx: index("tx_bookingId_idx").on(table.bookingId),
@@ -472,6 +519,9 @@ export const searchAnalytics = pgTable("search_analytics", {
   clickedSuggestion: varchar("clickedSuggestion", { length: 255 }),
   searchDate: timestamp("searchDate").notNull(),
   ipAddress: varchar("ipAddress", { length: 45 }),
+  parsedIntent: jsonb("parsedIntent"),
+  parserUsed: varchar("parserUsed", { length: 20 }),
+  topResultScore: integer("topResultScore"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
   searchDateIdx: index("sa_searchDate_idx").on(table.searchDate),
@@ -481,6 +531,24 @@ export const searchAnalytics = pgTable("search_analytics", {
 
 export type SearchAnalytics = typeof searchAnalytics.$inferSelect;
 export type InsertSearchAnalytics = typeof searchAnalytics.$inferInsert;
+
+/**
+ * Cache for LLM-parsed search intents to avoid re-parsing identical queries
+ */
+export const searchIntentCache = pgTable("search_intent_cache", {
+  id: serial("id").primaryKey(),
+  queryHash: varchar("queryHash", { length: 64 }).notNull().unique(),
+  normalizedQuery: text("normalizedQuery").notNull(),
+  parsedIntent: jsonb("parsedIntent").notNull(),
+  hitCount: integer("hitCount").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastUsedAt: timestamp("lastUsedAt").defaultNow().notNull(),
+}, (table) => ({
+  queryHashIdx: index("sic_queryHash_idx").on(table.queryHash),
+}));
+
+export type SearchIntentCache = typeof searchIntentCache.$inferSelect;
+export type InsertSearchIntentCache = typeof searchIntentCache.$inferInsert;
 
 /**
  * Audit log for admin changes
@@ -526,6 +594,7 @@ export const vacantShops = pgTable("vacant_shops", {
   imageUrl2: text("imageUrl2"),
   pricePerWeek: decimal("pricePerWeek", { precision: 10, scale: 2 }),
   pricePerMonth: decimal("pricePerMonth", { precision: 10, scale: 2 }),
+  outgoingsPerDay: decimal("outgoingsPerDay", { precision: 10, scale: 2 }),
   floorLevelId: integer("floorLevelId").references(() => floorLevels.id, { onDelete: "set null" }),
   mapMarkerX: decimal("mapMarkerX", { precision: 5, scale: 2 }),
   mapMarkerY: decimal("mapMarkerY", { precision: 5, scale: 2 }),
@@ -553,6 +622,7 @@ export const thirdLineIncome = pgTable("third_line_income", {
   imageUrl2: text("imageUrl2"),
   pricePerWeek: decimal("pricePerWeek", { precision: 10, scale: 2 }),
   pricePerMonth: decimal("pricePerMonth", { precision: 10, scale: 2 }),
+  outgoingsPerDay: decimal("outgoingsPerDay", { precision: 10, scale: 2 }),
   floorLevelId: integer("floorLevelId").references(() => floorLevels.id, { onDelete: "set null" }),
   mapMarkerX: decimal("mapMarkerX", { precision: 5, scale: 2 }),
   mapMarkerY: decimal("mapMarkerY", { precision: 5, scale: 2 }),
@@ -641,9 +711,26 @@ export const thirdLineBookings = pgTable("third_line_bookings", {
 }));
 
 // =============================================================================
+// Password Reset Tokens
+// =============================================================================
+
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  usedAt: timestamp("usedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("prt_userId_idx").on(table.userId),
+}));
+
+// =============================================================================
 // Type Exports
 // =============================================================================
 
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type InsertPasswordResetToken = typeof passwordResetTokens.$inferInsert;
 export type ThirdLineCategory = typeof thirdLineCategories.$inferSelect;
 export type InsertThirdLineCategory = typeof thirdLineCategories.$inferInsert;
 export type VacantShop = typeof vacantShops.$inferSelect;
@@ -683,5 +770,7 @@ export type VacantShopBooking = typeof vacantShopBookings.$inferSelect;
 export type InsertVacantShopBooking = typeof vacantShopBookings.$inferInsert;
 export type ThirdLineBooking = typeof thirdLineBookings.$inferSelect;
 export type InsertThirdLineBooking = typeof thirdLineBookings.$inferInsert;
+export type Portfolio = typeof portfolios.$inferSelect;
+export type InsertPortfolio = typeof portfolios.$inferInsert;
 export type FAQ = typeof faqs.$inferSelect;
 export type InsertFAQ = typeof faqs.$inferInsert;

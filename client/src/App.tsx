@@ -6,6 +6,8 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import AuthGuard from "./components/AuthGuard";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Home from "./pages/Home";
 import Search from "./pages/Search";
 import Centres from "./pages/Centres";
@@ -51,19 +53,26 @@ import OwnerApprovals from "./pages/OwnerApprovals";
 import OwnerCentres from "./pages/OwnerCentres";
 import AdminEnquiries from "./pages/AdminEnquiries";
 import AdminBooking from "./pages/admin/AdminBooking";
+import Portfolios from "./pages/admin/Portfolios";
+import OwnerViewerDashboard from "./pages/admin/OwnerViewerDashboard";
+import RemittanceReport from "./pages/admin/RemittanceReport";
 import CustomerProfile from "./pages/admin/CustomerProfile";
+import PricingAnalytics from "./pages/admin/PricingAnalytics";
+import AIChatAssistant from "./pages/AIChatAssistant";
 
 function Router() {
   return (
     <Switch>
-      {/* Login page - accessible without authentication */}
+      {/* Auth pages - accessible without authentication */}
       <Route path="/login" component={Login} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       
       {/* All other routes require authentication */}
       <Route path="/" component={Home} />
       <Route path="/search" component={Search} />
       <Route path="/centres" component={Centres} />
-      <Route path="/centre/:id" component={CentreDetail} />
+      <Route path="/centre/:slug" component={CentreDetail} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/portfolio" component={PortfolioDashboard} />
       <Route path="/admin/fy-budgets" component={FYBudgetManagement} />
@@ -76,6 +85,7 @@ function Router() {
       <Route path="/admin/owner-logo-allocation" component={OwnerLogoAllocation} />
       <Route path="/admin/image-analytics" component={ImageAnalytics} />
       <Route path="/admin/search-analytics" component={SearchAnalytics} />
+      <Route path="/admin/pricing-analytics" component={PricingAnalytics} />
       <Route path="/admin/site-assignment" component={AdminSiteAssignment} />
       <Route path="/admin/equipment" component={Equipment} />
       <Route path="/admin/seasonal-rates" component={SeasonalRates} />
@@ -98,6 +108,9 @@ function Router() {
       <Route path="/admin/payments" component={Payments} />
       <Route path="/admin/invoice-dashboard" component={InvoiceDashboard} />
       <Route path="/admin/owners" component={AdminOwners} />
+      <Route path="/admin/portfolios" component={Portfolios} />
+      <Route path="/admin/owner-viewer" component={OwnerViewerDashboard} />
+      <Route path="/admin/remittance" component={RemittanceReport} />
       <Route path="/admin/financials" component={AdminFinancials} />
       <Route path="/admin/audit" component={AdminAudit} />
       <Route path="/admin/settings" component={AdminSettings} />
@@ -106,6 +119,7 @@ function Router() {
       <Route path="/third-line/:id" component={ThirdLineDetail} />
       <Route path="/my-bookings" component={MyBookings} />
       <Route path="/profile" component={Profile} />
+      <Route path="/ai-assistant" component={AIChatAssistant} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

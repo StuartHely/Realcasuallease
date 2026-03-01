@@ -60,12 +60,14 @@ export async function processSiteImage(
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(7);
   const fileName = `site-${siteId}-slot${slot}-${timestamp}-${random}.webp`;
-  const fs = await import('fs/promises');
-  const path = await import('path');
-  const imagesDir = path.join(process.cwd(), 'client', 'public', 'images', 'sites', siteId.toString());
-  await fs.mkdir(imagesDir, { recursive: true });
-  await fs.writeFile(path.join(imagesDir, fileName), processedImage);
-  const url = `/images/sites/${siteId}/${fileName}`;
+  const fileKey = `sites/${siteId}/${fileName}`;
+
+  const { url } = await storagePut(
+    fileKey,
+    processedImage,
+    'image/webp'
+  );
+
   return { url };
 }
 

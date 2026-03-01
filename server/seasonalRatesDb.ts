@@ -80,9 +80,9 @@ export async function createSeasonalRate(data: {
     name: data.name,
     startDate: data.startDate,
     endDate: data.endDate,
-    weekdayRate: data.weekdayRate ? data.weekdayRate.toString() : null,
-    weekendRate: data.weekendRate ? data.weekendRate.toString() : null,
-    weeklyRate: data.weeklyRate ? data.weeklyRate.toString() : null,
+    weekdayRate: data.weekdayRate != null ? data.weekdayRate.toString() : null,
+    weekendRate: data.weekendRate != null ? data.weekendRate.toString() : null,
+    weeklyRate: data.weeklyRate != null ? data.weeklyRate.toString() : null,
   }).returning({ id: seasonalRates.id });
   
   // Fetch the inserted record

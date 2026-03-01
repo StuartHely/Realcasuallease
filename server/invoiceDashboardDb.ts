@@ -25,18 +25,27 @@ export interface InvoiceListItem {
   dueDate: Date | null;
   daysUntilDue: number;
   status: 'outstanding' | 'overdue';
+  paymentMethod: string;
+}
+
+function buildPaymentMethodFilter(paymentMode?: 'all' | 'invoice' | 'stripe') {
+  if (paymentMode === 'stripe') return eq(bookings.paymentMethod, 'stripe');
+  if (paymentMode === 'invoice' || !paymentMode) return eq(bookings.paymentMethod, 'invoice');
+  return undefined; // 'all' — no payment method filter
 }
 
 /**
  * Get invoice dashboard statistics
  */
-export async function getInvoiceStats(): Promise<InvoiceStats> {
+export async function getInvoiceStats(paymentMode?: 'all' | 'invoice' | 'stripe'): Promise<InvoiceStats> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
   const now = new Date();
 
-  // Get all unpaid invoice bookings
+  const pmFilter = buildPaymentMethodFilter(paymentMode);
+
+  // Get all unpaid bookings
   const unpaidInvoices = await db
     .select({
       totalAmount: bookings.totalAmount,
@@ -46,9 +55,7 @@ export async function getInvoiceStats(): Promise<InvoiceStats> {
     .from(bookings)
     .where(
       and(
-        eq(bookings.paymentMethod, 'invoice'),
-        eq(bookings.status, 'confirmed'),
-        isNull(bookings.paidAt)
+        ...[pmFilter, eq(bookings.status, 'confirmed'), isNull(bookings.paidAt)].filter(Boolean)
       )
     );
 
@@ -88,24 +95,26 @@ export async function getInvoiceStats(): Promise<InvoiceStats> {
 /**
  * Get list of all unpaid invoices with details
  */
-export async function getInvoiceList(filter: 'all' | 'outstanding' | 'overdue' | 'paid'): Promise<InvoiceListItem[]> {
+export async function getInvoiceList(filter: 'all' | 'outstanding' | 'overdue' | 'paid', paymentMode?: 'all' | 'invoice' | 'stripe'): Promise<InvoiceListItem[]> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
   const now = new Date();
 
-  // Base query for invoice bookings
-  let whereClause = and(
-    eq(bookings.paymentMethod, 'invoice'),
-    eq(bookings.status, 'confirmed')
-  );
+  const pmFilter = buildPaymentMethodFilter(paymentMode);
+
+  // Base query
+  const conditions: any[] = [eq(bookings.status, 'confirmed')];
+  if (pmFilter) conditions.push(pmFilter);
 
   // Add filter for paid/unpaid
   if (filter === 'paid') {
-    whereClause = and(whereClause!, sql`${bookings.paidAt} IS NOT NULL`);
+    conditions.push(sql`${bookings.paidAt} IS NOT NULL`);
   } else {
-    whereClause = and(whereClause!, isNull(bookings.paidAt));
+    conditions.push(isNull(bookings.paidAt));
   }
+
+  const whereClause = and(...conditions);
 
   const invoices = await db
     .select({
@@ -121,6 +130,7 @@ export async function getInvoiceList(filter: 'all' | 'outstanding' | 'overdue' |
       totalAmount: bookings.totalAmount,
       gstAmount: bookings.gstAmount,
       approvedAt: bookings.approvedAt,
+      paymentMethod: bookings.paymentMethod,
     })
     .from(bookings)
     .innerJoin(users, eq(bookings.customerId, users.id))
@@ -162,6 +172,7 @@ export async function getInvoiceList(filter: 'all' | 'outstanding' | 'overdue' |
       dueDate,
       daysUntilDue,
       status,
+      paymentMethod: invoice.paymentMethod,
     });
   }
 
@@ -169,17 +180,17 @@ export async function getInvoiceList(filter: 'all' | 'outstanding' | 'overdue' |
 }
 
 /**
- * Get payment history (paid invoices)
+ * Get payment history (paid bookings)
  */
-export async function getPaymentHistory(searchTerm?: string): Promise<any[]> {
+export async function getPaymentHistory(searchTerm?: string, paymentMode?: 'all' | 'invoice' | 'stripe'): Promise<any[]> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  let whereClause = and(
-    eq(bookings.paymentMethod, 'invoice'),
-    eq(bookings.status, 'confirmed'),
-    sql`${bookings.paidAt} IS NOT NULL`
-  );
+  const pmFilter = buildPaymentMethodFilter(paymentMode);
+  const conditions: any[] = [eq(bookings.status, 'confirmed'), sql`${bookings.paidAt} IS NOT NULL`];
+  if (pmFilter) conditions.push(pmFilter);
+
+  let whereClause = and(...conditions);
 
   // Add search filter if provided
   if (searchTerm && searchTerm.trim().length > 0) {
@@ -205,6 +216,7 @@ export async function getPaymentHistory(searchTerm?: string): Promise<any[]> {
       gstAmount: bookings.gstAmount,
       approvedAt: bookings.approvedAt,
       paidAt: bookings.paidAt,
+      paymentMethod: bookings.paymentMethod,
     })
     .from(bookings)
     .innerJoin(users, eq(bookings.customerId, users.id))
