@@ -335,8 +335,7 @@ export async function getPendingApprovalsCount(siteIds: number[]): Promise<numbe
     .where(
       and(
         inArray(bookings.siteId, siteIds),
-        eq(bookings.status, 'pending'),
-        eq(bookings.requiresApproval, true)
+        eq(bookings.status, 'pending')
       )
     );
   

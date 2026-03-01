@@ -325,6 +325,37 @@ export const vacantShopBookingsRouter = router({
         reason: input.reason || "Cancelled by customer",
       });
 
+      // Create reversal transaction if a booking transaction exists
+      const { getDb } = await import("../db");
+      const { transactions, vacantShops, shoppingCentres } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      const dbInstance = await getDb();
+      if (dbInstance) {
+        const [originalTx] = await dbInstance.select().from(transactions)
+          .where(eq(transactions.bookingId, input.bookingId));
+        if (originalTx && originalTx.type === "booking") {
+          const [shop] = await dbInstance.select().from(vacantShops).where(eq(vacantShops.id, booking.vacantShopId));
+          const centreId = shop?.centreId;
+          const [centre] = centreId
+            ? await dbInstance.select().from(shoppingCentres).where(eq(shoppingCentres.id, centreId))
+            : [null];
+          if (centre) {
+            await dbInstance.insert(transactions).values({
+              bookingId: input.bookingId,
+              ownerId: centre.ownerId,
+              type: "cancellation",
+              amount: `-${originalTx.amount}` as any,
+              gstAmount: `-${originalTx.gstAmount}` as any,
+              gstPercentage: originalTx.gstPercentage,
+              ownerAmount: `-${originalTx.ownerAmount}` as any,
+              platformFee: `-${originalTx.platformFee}` as any,
+              remitted: false,
+              gstAdjustmentNoteNumber: `CN-${booking.bookingNumber}`,
+            });
+          }
+        }
+      }
+
       return { success: true, bookingNumber: booking.bookingNumber };
     }),
 
@@ -625,6 +656,37 @@ export const thirdLineBookingsRouter = router({
         changedBy: ctx.user.id,
         reason: input.reason || "Cancelled by customer",
       });
+
+      // Create reversal transaction if a booking transaction exists
+      const { getDb } = await import("../db");
+      const { transactions, thirdLineIncome, shoppingCentres } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      const dbInstance = await getDb();
+      if (dbInstance) {
+        const [originalTx] = await dbInstance.select().from(transactions)
+          .where(eq(transactions.bookingId, input.bookingId));
+        if (originalTx && originalTx.type === "booking") {
+          const [asset] = await dbInstance.select().from(thirdLineIncome).where(eq(thirdLineIncome.id, booking.thirdLineIncomeId));
+          const centreId = asset?.centreId;
+          const [centre] = centreId
+            ? await dbInstance.select().from(shoppingCentres).where(eq(shoppingCentres.id, centreId))
+            : [null];
+          if (centre) {
+            await dbInstance.insert(transactions).values({
+              bookingId: input.bookingId,
+              ownerId: centre.ownerId,
+              type: "cancellation",
+              amount: `-${originalTx.amount}` as any,
+              gstAmount: `-${originalTx.gstAmount}` as any,
+              gstPercentage: originalTx.gstPercentage,
+              ownerAmount: `-${originalTx.ownerAmount}` as any,
+              platformFee: `-${originalTx.platformFee}` as any,
+              remitted: false,
+              gstAdjustmentNoteNumber: `CN-${booking.bookingNumber}`,
+            });
+          }
+        }
+      }
 
       return { success: true, bookingNumber: booking.bookingNumber };
     }),

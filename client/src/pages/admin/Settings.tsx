@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings as SettingsIcon, DollarSign, Save, Mail, Globe } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Settings as SettingsIcon, DollarSign, Save, Mail, Globe, ShieldCheck } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -66,6 +67,57 @@ export default function AdminSettings() {
   };
 
   const isSuperAdmin = user?.role === "mega_admin" || user?.role === "owner_super_admin";
+
+  // Auto-approval rules
+  const autoApprovalQuery = trpc.systemConfig.getAutoApprovalRules.useQuery(undefined, {
+    enabled: isSuperAdmin,
+  });
+  const [autoApprovalEnabled, setAutoApprovalEnabled] = useState(false);
+  const [maxBookingValue, setMaxBookingValue] = useState("");
+  const [minPriorBookings, setMinPriorBookings] = useState("");
+  const [requireValidInsurance, setRequireValidInsurance] = useState(true);
+
+  useEffect(() => {
+    if (autoApprovalQuery.data) {
+      setAutoApprovalEnabled(autoApprovalQuery.data.enabled);
+      setMaxBookingValue(autoApprovalQuery.data.maxBookingValue?.toString() ?? "");
+      setMinPriorBookings(autoApprovalQuery.data.minPriorBookings?.toString() ?? "");
+      setRequireValidInsurance(autoApprovalQuery.data.requireValidInsurance);
+    }
+  }, [autoApprovalQuery.data]);
+
+  const updateAutoApprovalMutation = trpc.systemConfig.updateAutoApprovalRules.useMutation({
+    onSuccess: () => {
+      toast.success("Auto-approval rules updated");
+      autoApprovalQuery.refetch();
+    },
+    onError: (error) => {
+      toast.error(`Failed to update auto-approval rules: ${error.message}`);
+    },
+  });
+
+  const handleSaveAutoApproval = () => {
+    const maxVal = maxBookingValue.trim() ? parseFloat(maxBookingValue) : null;
+    const minBookings = minPriorBookings.trim() ? parseInt(minPriorBookings, 10) : null;
+
+    if (maxVal !== null && (isNaN(maxVal) || maxVal < 0)) {
+      toast.error("Please enter a valid max booking value");
+      return;
+    }
+    if (minBookings !== null && (isNaN(minBookings) || minBookings < 0)) {
+      toast.error("Please enter a valid minimum prior bookings count");
+      return;
+    }
+
+    updateAutoApprovalMutation.mutate({
+      enabled: autoApprovalEnabled,
+      maxBookingValue: maxVal,
+      minPriorBookings: minBookings,
+      requireValidInsurance,
+      allowedCategoryIds: autoApprovalQuery.data?.allowedCategoryIds ?? null,
+      excludeCentreIds: autoApprovalQuery.data?.excludeCentreIds ?? null,
+    });
+  };
 
   return (
     <AdminLayout>
@@ -279,6 +331,96 @@ export default function AdminSettings() {
                   <code className="text-xs bg-amber-100 px-1 py-0.5 rounded">SMTP_FROM</code>
                 </p>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Auto-Approval Rules Card */}
+        {isSuperAdmin && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-emerald-100 p-3">
+                  <ShieldCheck className="h-6 w-6 text-emerald-600" />
+                </div>
+                <div>
+                  <CardTitle>Auto-Approval Rules</CardTitle>
+                  <CardDescription>
+                    Configure rules to automatically approve bookings that would normally require manual review
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg border p-4 bg-muted/50">
+                <div>
+                  <p className="text-sm font-medium">Enable Auto-Approval</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    When enabled, bookings meeting all rule criteria will be automatically approved
+                  </p>
+                </div>
+                <Switch
+                  checked={autoApprovalEnabled}
+                  onCheckedChange={setAutoApprovalEnabled}
+                />
+              </div>
+
+              <div className="space-y-4 rounded-lg border p-4">
+                <div className="space-y-2">
+                  <Label htmlFor="maxBookingValue">Maximum Booking Value ($)</Label>
+                  <Input
+                    id="maxBookingValue"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="No limit"
+                    value={maxBookingValue}
+                    onChange={(e) => setMaxBookingValue(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Auto-approve bookings with a total value at or below this amount. Leave empty for no limit.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="minPriorBookings">Minimum Prior Confirmed Bookings</Label>
+                  <Input
+                    id="minPriorBookings"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="No requirement"
+                    value={minPriorBookings}
+                    onChange={(e) => setMinPriorBookings(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Only auto-approve if the customer has at least this many prior confirmed bookings. Leave empty to skip this check.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="requireInsurance">Require Valid Insurance</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Only auto-approve if insurance is valid through the booking end date
+                    </p>
+                  </div>
+                  <Switch
+                    id="requireInsurance"
+                    checked={requireValidInsurance}
+                    onCheckedChange={setRequireValidInsurance}
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={handleSaveAutoApproval}
+                disabled={updateAutoApprovalMutation.isPending}
+                className="gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {updateAutoApprovalMutation.isPending ? "Saving..." : "Save Auto-Approval Rules"}
+              </Button>
             </CardContent>
           </Card>
         )}

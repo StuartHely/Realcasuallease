@@ -220,6 +220,27 @@ export const systemConfigRouter = router({
     return owners;
   }),
 
+  // Auto-approval rules
+  getAutoApprovalRules: adminProcedure.query(async () => {
+    const { getAutoApprovalRules } = await import("../autoApprovalRules");
+    return await getAutoApprovalRules();
+  }),
+
+  updateAutoApprovalRules: adminProcedure
+    .input(z.object({
+      enabled: z.boolean(),
+      maxBookingValue: z.number().nullable(),
+      minPriorBookings: z.number().nullable(),
+      requireValidInsurance: z.boolean(),
+      allowedCategoryIds: z.array(z.number()).nullable(),
+      excludeCentreIds: z.array(z.number()).nullable(),
+    }))
+    .mutation(async ({ input }) => {
+      const { setAutoApprovalRules } = await import("../autoApprovalRules");
+      await setAutoApprovalRules(input);
+      return { success: true };
+    }),
+
   // Get rate validation alerts
   getRateValidationAlerts: publicProcedure.query(async () => {
     const { getRateValidationAlerts } = await import("../rateValidator");

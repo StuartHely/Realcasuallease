@@ -17,6 +17,10 @@ import { budgetsRouter } from "./routers/budgets";
 import { ownersRouter } from "./routers/owners";
 import { adminBookingRouter } from "./routers/adminBooking";
 import { portfoliosRouter } from "./routers/portfolios";
+import { financialsRouter } from "./routers/financials";
+import { pricingAnalyticsRouter } from "./routers/pricingAnalytics";
+import { aiRouter } from "./routers/ai";
+import { auditRouter } from "./routers/audit";
 import {
   thirdLineCategoriesRouter,
   vacantShopsRouter,
@@ -52,6 +56,10 @@ export const appRouter = router({
   adminBooking: adminBookingRouter,
   owners: ownersRouter,
   portfolios: portfoliosRouter,
+  audit: auditRouter,
+  ai: aiRouter,
+  financials: financialsRouter,
+  pricingAnalytics: pricingAnalyticsRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -465,7 +465,6 @@ export const adminRouter = router({
         
         const bookingsWithDetails = await Promise.all(
           pendingBookings
-            .filter(b => b.requiresApproval)
             .map(async (booking) => {
               const site = await db.getSiteById(booking.siteId);
               const centre = site ? await db.getShoppingCentreById(site.centreId) : null;

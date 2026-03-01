@@ -65,7 +65,8 @@ export async function createCheckoutSession(params: {
 
 /**
  * Handle Stripe webhook event for checkout.session.completed.
- * Marks the booking as paid and stores the payment intent ID.
+ * Marks the booking as paid, creates a transaction record for the payment split,
+ * updates booking status to "confirmed", and dispatches invoice.
  * Routes to the correct table based on bookingType metadata.
  */
 export async function handleCheckoutCompleted(session: {
@@ -84,7 +85,11 @@ export async function handleCheckoutCompleted(session: {
   const bookingType = (session.metadata?.bookingType || "site") as StripeBookingType;
 
   const { getDb } = await import("./db");
-  const { bookings, vacantShopBookings, thirdLineBookings } = await import("../drizzle/schema");
+  const {
+    bookings, vacantShopBookings, thirdLineBookings,
+    vacantShops, thirdLineIncome,
+    transactions, bookingStatusHistory, sites, shoppingCentres,
+  } = await import("../drizzle/schema");
   const { eq } = await import("drizzle-orm");
 
   const db = await getDb();
@@ -93,17 +98,108 @@ export async function handleCheckoutCompleted(session: {
     return;
   }
 
+  const now = new Date();
   const updateData = {
-    paidAt: new Date(),
+    paidAt: now,
     stripePaymentIntentId: session.payment_intent || null,
   };
 
   if (bookingType === "vacant_shop") {
-    await db.update(vacantShopBookings).set(updateData).where(eq(vacantShopBookings.id, bookingId));
+    const [booking] = await db.select().from(vacantShopBookings).where(eq(vacantShopBookings.id, bookingId));
+    if (!booking) return;
+
+    // Update payment fields + status
+    await db.update(vacantShopBookings)
+      .set({ ...updateData, status: booking.status === "pending" ? "confirmed" : booking.status })
+      .where(eq(vacantShopBookings.id, bookingId));
+
+    // Create transaction record
+    const [shop] = await db.select().from(vacantShops).where(eq(vacantShops.id, booking.vacantShopId));
+    if (shop) {
+      const [centre] = await db.select().from(shoppingCentres).where(eq(shoppingCentres.id, shop.centreId));
+      if (centre) {
+        await db.insert(transactions).values({
+          bookingId: bookingId,
+          ownerId: centre.ownerId,
+          type: "booking",
+          amount: booking.totalAmount,
+          gstAmount: booking.gstAmount,
+          gstPercentage: booking.gstPercentage,
+          ownerAmount: booking.ownerAmount,
+          platformFee: booking.platformFee,
+          remitted: false,
+        });
+      }
+    }
   } else if (bookingType === "third_line") {
-    await db.update(thirdLineBookings).set(updateData).where(eq(thirdLineBookings.id, bookingId));
+    const [booking] = await db.select().from(thirdLineBookings).where(eq(thirdLineBookings.id, bookingId));
+    if (!booking) return;
+
+    await db.update(thirdLineBookings)
+      .set({ ...updateData, status: booking.status === "pending" ? "confirmed" : booking.status })
+      .where(eq(thirdLineBookings.id, bookingId));
+
+    const [asset] = await db.select().from(thirdLineIncome).where(eq(thirdLineIncome.id, booking.thirdLineIncomeId));
+    if (asset) {
+      const [centre] = await db.select().from(shoppingCentres).where(eq(shoppingCentres.id, asset.centreId));
+      if (centre) {
+        await db.insert(transactions).values({
+          bookingId: bookingId,
+          ownerId: centre.ownerId,
+          type: "booking",
+          amount: booking.totalAmount,
+          gstAmount: booking.gstAmount,
+          gstPercentage: booking.gstPercentage,
+          ownerAmount: booking.ownerAmount,
+          platformFee: booking.platformFee,
+          remitted: false,
+        });
+      }
+    }
   } else {
-    await db.update(bookings).set(updateData).where(eq(bookings.id, bookingId));
+    // Standard CL booking
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId));
+    if (!booking) return;
+
+    const previousStatus = booking.status;
+    const newStatus = previousStatus === "pending" ? "confirmed" : previousStatus;
+
+    await db.update(bookings)
+      .set({ ...updateData, status: newStatus as any })
+      .where(eq(bookings.id, bookingId));
+
+    // Record status change in history if status changed
+    if (previousStatus !== newStatus) {
+      await db.insert(bookingStatusHistory).values({
+        bookingId,
+        previousStatus: previousStatus as any,
+        newStatus: newStatus as any,
+        changedByName: "Stripe Payment",
+        reason: "Payment confirmed via Stripe Checkout",
+      });
+    }
+
+    // Create transaction record for payment split
+    const [site] = await db.select().from(sites).where(eq(sites.id, booking.siteId));
+    if (site) {
+      const [centre] = await db.select().from(shoppingCentres).where(eq(shoppingCentres.id, site.centreId));
+      if (centre) {
+        await db.insert(transactions).values({
+          bookingId,
+          ownerId: centre.ownerId,
+          type: "booking",
+          amount: booking.totalAmount,
+          gstAmount: booking.gstAmount,
+          gstPercentage: booking.gstPercentage,
+          ownerAmount: booking.ownerAmount,
+          platformFee: booking.platformFee,
+          remitted: false,
+        });
+      }
+    }
+
+    // Fire-and-forget invoice dispatch
+    import("./invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(bookingId)).catch(() => {});
   }
 
   console.log(

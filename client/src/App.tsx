@@ -57,6 +57,8 @@ import Portfolios from "./pages/admin/Portfolios";
 import OwnerViewerDashboard from "./pages/admin/OwnerViewerDashboard";
 import RemittanceReport from "./pages/admin/RemittanceReport";
 import CustomerProfile from "./pages/admin/CustomerProfile";
+import PricingAnalytics from "./pages/admin/PricingAnalytics";
+import AIChatAssistant from "./pages/AIChatAssistant";
 
 function Router() {
   return (
@@ -83,6 +85,7 @@ function Router() {
       <Route path="/admin/owner-logo-allocation" component={OwnerLogoAllocation} />
       <Route path="/admin/image-analytics" component={ImageAnalytics} />
       <Route path="/admin/search-analytics" component={SearchAnalytics} />
+      <Route path="/admin/pricing-analytics" component={PricingAnalytics} />
       <Route path="/admin/site-assignment" component={AdminSiteAssignment} />
       <Route path="/admin/equipment" component={Equipment} />
       <Route path="/admin/seasonal-rates" component={SeasonalRates} />
@@ -116,6 +119,7 @@ function Router() {
       <Route path="/third-line/:id" component={ThirdLineDetail} />
       <Route path="/my-bookings" component={MyBookings} />
       <Route path="/profile" component={Profile} />
+      <Route path="/ai-assistant" component={AIChatAssistant} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

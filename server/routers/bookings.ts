@@ -182,6 +182,26 @@ export const bookingsRouter = router({
           }
         }
 
+        // Auto-approval rules: if booking requires approval, check if auto-approval rules can override
+        let autoApproved = false;
+        let autoApprovalReasons: string[] = [];
+        if (requiresApproval) {
+          const { evaluateAutoApproval } = await import("../autoApprovalRules");
+          const autoResult = await evaluateAutoApproval({
+            totalAmount,
+            customerId: ctx.user.id,
+            centreId: centre.id,
+            usageCategoryId: input.usageCategoryId || null,
+            insuranceExpiry: customerProfile?.insuranceExpiry ? new Date(customerProfile.insuranceExpiry) : null,
+            bookingEndDate: input.endDate,
+          });
+          if (autoResult.approved) {
+            requiresApproval = false;
+            autoApproved = true;
+            autoApprovalReasons = autoResult.reasons;
+          }
+        }
+
         // Calculate payment due date for invoice bookings (7 days from booking creation)
         const paymentDueDate = paymentMethod === "invoice" ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null;
 
@@ -215,6 +235,23 @@ export const bookingsRouter = router({
         const initialStatus = requiresApproval ? "pending" : (site.instantBooking ? "confirmed" : "pending");
         await db.recordBookingCreated(bookingId, initialStatus as "pending" | "confirmed", ctx.user.id, ctx.user.name || undefined);
 
+        // Log auto-approval to audit trail
+        if (autoApproved) {
+          const { createAuditLog } = await import("../db");
+          createAuditLog({
+            userId: ctx.user.id,
+            action: "booking_auto_approved",
+            entityType: "booking",
+            entityId: bookingId,
+            changes: JSON.stringify({
+              bookingNumber,
+              rules: autoApprovalReasons,
+              totalAmount,
+              centreId: centre.id,
+            }),
+          }).catch(() => {});
+        }
+
         // Fire-and-forget invoice dispatch for auto-confirmed bookings
         if (initialStatus === "confirmed") {
           import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(bookingId)).catch(() => {});
@@ -225,6 +262,7 @@ export const bookingsRouter = router({
           bookingNumber,
           totalAmount,
           requiresApproval,
+          autoApproved,
           insuranceExpired,
           canPayByInvoice,
           paymentMethod,
