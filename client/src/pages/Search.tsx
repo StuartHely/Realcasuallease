@@ -339,7 +339,7 @@ export default function Search() {
               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setLocation("/")}
             >
-              <img src="/logo.png" alt="Real Casual Leasing" className="h-12" />
+              <img src="/logo.png" alt="Real Casual Leasing" className="h-24" />
             </div>
           </div>
           <nav className="flex items-center gap-4">

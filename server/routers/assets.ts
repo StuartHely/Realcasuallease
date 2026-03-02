@@ -415,6 +415,10 @@ export const vacantShopBookingsRouter = router({
         }
       }
 
+      // Invalidate search cache
+      const { clearSearchCache } = await import("../searchCache");
+      clearSearchCache();
+
       return { success: true, bookingNumber: booking.bookingNumber, refundStatus };
     }),
 
@@ -482,6 +486,12 @@ export const vacantShopBookingsRouter = router({
       customerNotes: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      const { checkRateLimit } = await import("../_core/rateLimit");
+      const { allowed } = checkRateLimit(`booking:${ctx.user.id}`, 10, 60 * 60 * 1000);
+      if (!allowed) {
+        throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many booking requests. Please try again later." });
+      }
+
       // Check availability first
       const isAvailable = await assetDb.checkVacantShopAvailability(
         input.vacantShopId,
@@ -556,6 +566,10 @@ export const vacantShopBookingsRouter = router({
           input.customerNotes || ""
         );
       }
+
+      // Invalidate search cache
+      const { clearSearchCache } = await import("../searchCache");
+      clearSearchCache();
 
       return { id, bookingNumber, paymentMethod };
     }),
@@ -806,6 +820,10 @@ export const thirdLineBookingsRouter = router({
         }
       }
 
+      // Invalidate search cache
+      const { clearSearchCache } = await import("../searchCache");
+      clearSearchCache();
+
       return { success: true, bookingNumber: booking.bookingNumber, refundStatus };
     }),
 
@@ -873,6 +891,12 @@ export const thirdLineBookingsRouter = router({
       customerNotes: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      const { checkRateLimit } = await import("../_core/rateLimit");
+      const { allowed } = checkRateLimit(`booking:${ctx.user.id}`, 10, 60 * 60 * 1000);
+      if (!allowed) {
+        throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many booking requests. Please try again later." });
+      }
+
       // Check availability first
       const isAvailable = await assetDb.checkThirdLineAvailability(
         input.thirdLineIncomeId,
@@ -949,6 +973,10 @@ export const thirdLineBookingsRouter = router({
           input.customerNotes || ""
         );
       }
+
+      // Invalidate search cache
+      const { clearSearchCache } = await import("../searchCache");
+      clearSearchCache();
 
       return { id, bookingNumber, paymentMethod };
     }),

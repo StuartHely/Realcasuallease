@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Building2, ArrowRight, Search, ExternalLink } from "lucide-react";
@@ -8,17 +8,18 @@ import { trpc } from "@/lib/trpc";
 
 export default function Centres() {
   const [, setLocation] = useLocation();
+  const search = useSearch();
   const [selectedState, setSelectedState] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  // Get state from URL query parameter
+  // Get state from URL query parameter (reactive to URL changes, including back navigation)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(search);
     const stateParam = params.get("state");
     if (stateParam) {
       setSelectedState(stateParam);
     }
-  }, []);
+  }, [search]);
 
   // Fetch all centres for count badges
   const { data: allCentres = [] } = trpc.centres.list.useQuery();

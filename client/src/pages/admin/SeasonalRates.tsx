@@ -87,6 +87,15 @@ export default function SeasonalRates() {
       weeklyRate: formData.get("weeklyRate") ? parseFloat(formData.get("weeklyRate") as string) : undefined,
     };
 
+    const hasAnyPositiveRate = (data.weekdayRate && data.weekdayRate > 0) ||
+      (data.weekendRate && data.weekendRate > 0) ||
+      (data.weeklyRate && data.weeklyRate > 0);
+
+    if (!hasAnyPositiveRate) {
+      alert("At least one rate must be provided and greater than $0.");
+      return;
+    }
+
     if (editingRate) {
       updateMutation.mutate({ id: editingRate.id, ...data });
     } else {
@@ -332,6 +341,7 @@ export default function SeasonalRates() {
                     name="weekdayRate"
                     type="number"
                     step="0.01"
+                    min="0.01"
                     placeholder="Leave empty to use default"
                     defaultValue={editingRate?.weekdayRate}
                   />
@@ -343,6 +353,7 @@ export default function SeasonalRates() {
                     name="weekendRate"
                     type="number"
                     step="0.01"
+                    min="0.01"
                     placeholder="Leave empty to use default"
                     defaultValue={editingRate?.weekendRate}
                   />
@@ -354,6 +365,7 @@ export default function SeasonalRates() {
                     name="weeklyRate"
                     type="number"
                     step="0.01"
+                    min="0.01"
                     placeholder="Leave empty to use default"
                     defaultValue={editingRate?.weeklyRate}
                   />

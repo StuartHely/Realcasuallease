@@ -28,6 +28,8 @@ export const transactionTypeEnum = pgEnum("transaction_type", ["booking", "cance
 
 export const paymentModeEnum = pgEnum("payment_mode", ["stripe", "stripe_with_exceptions", "invoice_only"]);
 
+export const refundStatusEnum = pgEnum("refund_status", ["not_required", "pending", "processed", "manual"]);
+
 // =============================================================================
 // Tables
 // =============================================================================
@@ -321,7 +323,7 @@ export const bookings = pgTable("bookings", {
   paymentMethod: paymentMethodEnum("paymentMethod").default("stripe").notNull(),
   paidAt: timestamp("paidAt"),
   cancelledAt: timestamp("cancelledAt"),
-  refundStatus: varchar("refundStatus", { length: 50 }),
+  refundStatus: refundStatusEnum("refundStatus"),
   refundPendingAt: timestamp("refundPendingAt"),
   paymentRecordedBy: integer("paymentRecordedBy").references(() => users.id),
   paymentDueDate: timestamp("paymentDueDate"), // For invoice bookings - when payment is due
@@ -660,7 +662,7 @@ export const vacantShopBookings = pgTable("vacant_shop_bookings", {
   paymentMethod: paymentMethodEnum("paymentMethod").default("stripe").notNull(),
   paidAt: timestamp("paidAt"),
   cancelledAt: timestamp("cancelledAt"),
-  refundStatus: varchar("refundStatus", { length: 50 }),
+  refundStatus: refundStatusEnum("refundStatus"),
   refundPendingAt: timestamp("refundPendingAt"),
   paymentRecordedBy: integer("paymentRecordedBy").references(() => users.id),
   paymentDueDate: timestamp("paymentDueDate"),
@@ -700,7 +702,7 @@ export const thirdLineBookings = pgTable("third_line_bookings", {
   paymentMethod: paymentMethodEnum("paymentMethod").default("stripe").notNull(),
   paidAt: timestamp("paidAt"),
   cancelledAt: timestamp("cancelledAt"),
-  refundStatus: varchar("refundStatus", { length: 50 }),
+  refundStatus: refundStatusEnum("refundStatus"),
   refundPendingAt: timestamp("refundPendingAt"),
   paymentRecordedBy: integer("paymentRecordedBy").references(() => users.id),
   paymentDueDate: timestamp("paymentDueDate"),

@@ -404,9 +404,9 @@ export const adminRouter = router({
         name: z.string(),
         startDate: z.string(),
         endDate: z.string(),
-        weekdayRate: z.number().optional(),
-        weekendRate: z.number().optional(),
-        weeklyRate: z.number().optional(),
+        weekdayRate: z.number().positive().optional(),
+        weekendRate: z.number().positive().optional(),
+        weeklyRate: z.number().positive().optional(),
       }))
       .mutation(async ({ input }) => {
         return await createSeasonalRate(input);
@@ -418,9 +418,9 @@ export const adminRouter = router({
         name: z.string().optional(),
         startDate: z.string().optional(),
         endDate: z.string().optional(),
-        weekdayRate: z.number().optional(),
-        weekendRate: z.number().optional(),
-        weeklyRate: z.number().optional(),
+        weekdayRate: z.number().positive().optional(),
+        weekendRate: z.number().positive().optional(),
+        weeklyRate: z.number().positive().optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
@@ -766,7 +766,7 @@ export const adminRouter = router({
       }),
 
     // User Registration
-    registerUser: adminProcedure
+    registerUser: ownerProcedure
       .input(z.object({
         email: z.string().email(),
         name: z.string(),
@@ -798,7 +798,27 @@ export const adminRouter = router({
         insuranceAmount: z.string().optional(),
         insuranceExpiryDate: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const isMegaAdmin = ['mega_admin', 'mega_state_admin'].includes(ctx.user.role);
+        const isOwnerSuperAdmin = ctx.user.role === 'owner_super_admin';
+
+        // owner_super_admin can only create owner_viewer scoped to their own agency
+        if (!isMegaAdmin) {
+          if (!isOwnerSuperAdmin) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Only admins or owner super admins can register users' });
+          }
+          const ownerRoles = ['owner_viewer', 'owner_centre_manager', 'owner_marketing_manager'];
+          if (!ownerRoles.includes(input.role)) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Owner super admins can only create viewer and manager roles' });
+          }
+          if (!ctx.user.assignedOwnerId) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Your account is not assigned to an owner agency' });
+          }
+          if (input.assignedOwnerId !== ctx.user.assignedOwnerId) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'You can only create users for your own agency' });
+          }
+        }
+
         const existingUser = await db.getUserByEmail(input.email);
         if (existingUser) {
           throw new TRPCError({ code: 'CONFLICT', message: 'User with this email already exists' });

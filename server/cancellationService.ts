@@ -71,7 +71,7 @@ export async function cancelBooking(params: {
   const now = new Date();
 
   // --- Part B: Determine refund status ---
-  let refundStatus: string | null = null;
+  let refundStatus: "not_required" | "pending" | "processed" | "manual" | null = null;
   let refundPendingAt: Date | null = null;
 
   if (!booking.paidAt) {

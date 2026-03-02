@@ -1,5 +1,10 @@
 import { protectedProcedure, router } from "../_core/trpc";
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import { checkRateLimit } from "../_core/rateLimit";
+
+const AI_DAILY_LIMIT = 20;
+const AI_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export const aiRouter = router({
   chat: protectedProcedure
@@ -10,6 +15,15 @@ export const aiRouter = router({
       })),
     }))
     .mutation(async ({ input, ctx }) => {
+      const { allowed, retryAfterMs } = checkRateLimit(`ai:${ctx.user.id}`, AI_DAILY_LIMIT, AI_WINDOW_MS);
+      if (!allowed) {
+        const hoursLeft = Math.ceil(retryAfterMs / (60 * 60 * 1000));
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: `You've reached the daily AI chat limit (${AI_DAILY_LIMIT} messages). Try again in ~${hoursLeft} hour${hoursLeft === 1 ? "" : "s"}.`,
+        });
+      }
+
       const { invokeLLM } = await import("../_core/llm");
 
       const systemMessage = {

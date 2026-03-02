@@ -5,6 +5,7 @@ import { TRPCError } from "@trpc/server";
 import { sendBookingConfirmationEmail, sendBookingRejectionEmail } from "../_core/bookingNotifications";
 import { getConfigValue } from "../systemConfigDb";
 import { clearSearchCache } from "../searchCache";
+import { checkRateLimit } from "../_core/rateLimit";
 
 export const bookingsRouter = router({
     create: protectedProcedure
@@ -21,6 +22,11 @@ export const bookingsRouter = router({
         bringingOwnTables: z.boolean().optional().default(false),
       }))
       .mutation(async ({ input, ctx }) => {
+        const { allowed, retryAfterMs } = checkRateLimit(`booking:${ctx.user.id}`, 10, 60 * 60 * 1000);
+        if (!allowed) {
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many booking requests. Please try again later." });
+        }
+
         // Check availability
         const existingBookings = await db.getBookingsBySiteId(input.siteId, input.startDate, input.endDate);
         if (existingBookings.length > 0) {
@@ -748,6 +754,11 @@ export const bookingsRouter = router({
         bringingOwnTables: z.boolean().optional().default(false),
       }))
       .mutation(async ({ input, ctx }) => {
+        const { allowed, retryAfterMs } = checkRateLimit(`booking:${ctx.user.id}`, 10, 60 * 60 * 1000);
+        if (!allowed) {
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many booking requests. Please try again later." });
+        }
+
         const site = await db.getSiteById(input.siteId);
         if (!site) throw new TRPCError({ code: "NOT_FOUND", message: "Site not found" });
 
@@ -864,6 +875,9 @@ export const bookingsRouter = router({
 
           created.push({ bookingId, bookingNumber, totalAmount });
         }
+
+        // Invalidate search cache so availability reflects new bookings
+        clearSearchCache();
 
         // Fire-and-forget: notify owner about the recurring series
         const { sendNewBookingNotificationToOwner } = await import("../_core/bookingNotifications");

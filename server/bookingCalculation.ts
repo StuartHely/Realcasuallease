@@ -38,10 +38,6 @@ export async function calculateBookingCost(
   const pricePerWeek = Number(site.pricePerWeek ?? 0);
   const baseWeekendPricePerDay = site.weekendPricePerDay ? Number(site.weekendPricePerDay) : basePricePerDay;
 
-  const fs = await import('fs');
-  const debugLog = (msg: string) => fs.appendFileSync('booking-calc-debug.log', msg + '\n');
-  debugLog(`[BookingCalc] ${new Date().toISOString()} Site ${site.id}: pricePerDay=${site.pricePerDay}, pricePerWeek=${site.pricePerWeek} (parsed=${pricePerWeek}), weekendRate=${site.weekendPricePerDay}`);
-
   // Normalize dates to UTC
   const startNorm = new Date(startDate);
   startNorm.setUTCHours(0, 0, 0, 0);
@@ -140,8 +136,6 @@ export async function calculateBookingCost(
     const segDays = seg.days;
     let consumed = 0;
 
-    debugLog(`[BookingCalc] Segment "${seg.key}": ${segDays.length} days, segWeeklyRate=${segWeeklyRate}, seasonal=${!!seg.seasonalRate}`);
-
     // Consume complete 7-day weeks if weekly rate available
     if (segWeeklyRate !== null && segDays.length >= 7) {
       const fullWeeks = Math.floor(segDays.length / 7);
@@ -200,8 +194,6 @@ export async function calculateBookingCost(
       totalAmount += dayRate;
     }
   }
-
-  console.log(`[BookingCalc] Result: totalAmount=${totalAmount}, weeklyRateApplied=${weeklyRateApplied}, weeksCharged=${weeksCharged}, segments=${segments.length}, totalDays=${weekdayCount + weekendCount}`);
 
   return { totalAmount, weekdayCount, weekendCount, weeklyRateApplied, weeksCharged, weeklyRateValue, seasonalDays: allDaysInfo };
 }

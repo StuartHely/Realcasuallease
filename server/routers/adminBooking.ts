@@ -171,6 +171,10 @@ export const adminBookingRouter = router({
         bookingNumber,
       });
 
+      // Invalidate search cache so availability reflects new booking
+      const { clearSearchCache } = await import("../searchCache");
+      clearSearchCache();
+
       // Send confirmation email
       try {
         if (customer.email) {

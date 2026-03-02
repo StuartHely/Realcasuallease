@@ -15,112 +15,127 @@ export const financialsRouter = router({
     )
     .query(async ({ input }) => {
       const { getDb } = await import("../db");
-      const { bookings, shoppingCentres, sites } = await import(
-        "../../drizzle/schema"
-      );
-      const { sql, eq, and, gte, lte, desc } = await import("drizzle-orm");
+      const { sql } = await import("drizzle-orm");
 
       const db = await getDb();
       if (!db) return null;
 
-      const conditions: ReturnType<typeof eq>[] = [
-        eq(bookings.status, "confirmed"),
-      ];
-      if (input?.startDate)
-        conditions.push(gte(bookings.createdAt, new Date(input.startDate)));
-      if (input?.endDate)
-        conditions.push(
-          lte(bookings.createdAt, new Date(input.endDate + "T23:59:59")),
-        );
-      if (input?.centreId)
-        conditions.push(eq(sites.centreId, input.centreId));
-      if (input?.ownerId)
-        conditions.push(eq(shoppingCentres.ownerId, input.ownerId));
+      // Build WHERE fragments for each booking table
+      const clConditions: string[] = [`b.status = 'confirmed'`];
+      const vsConditions: string[] = [`b.status = 'confirmed'`];
+      const tlConditions: string[] = [`b.status = 'confirmed'`];
 
-      const needsJoin = !!(input?.centreId || input?.ownerId);
+      if (input?.startDate) {
+        const d = input.startDate;
+        clConditions.push(`b."createdAt" >= '${d}'`);
+        vsConditions.push(`b."createdAt" >= '${d}'`);
+        tlConditions.push(`b."createdAt" >= '${d}'`);
+      }
+      if (input?.endDate) {
+        const d = input.endDate + "T23:59:59";
+        clConditions.push(`b."createdAt" <= '${d}'`);
+        vsConditions.push(`b."createdAt" <= '${d}'`);
+        tlConditions.push(`b."createdAt" <= '${d}'`);
+      }
+      if (input?.centreId) {
+        clConditions.push(`s."centreId" = ${input.centreId}`);
+        vsConditions.push(`a."centreId" = ${input.centreId}`);
+        tlConditions.push(`a."centreId" = ${input.centreId}`);
+      }
+      if (input?.ownerId) {
+        clConditions.push(`c."ownerId" = ${input.ownerId}`);
+        vsConditions.push(`c."ownerId" = ${input.ownerId}`);
+        tlConditions.push(`c."ownerId" = ${input.ownerId}`);
+      }
 
-      const whereClause = and(...conditions);
+      const clWhere = clConditions.join(" AND ");
+      const vsWhere = vsConditions.join(" AND ");
+      const tlWhere = tlConditions.join(" AND ");
+
+      // Unified booking view across all 3 booking tables
+      const unionQuery = `
+        SELECT b."totalAmount", b."gstAmount", b."ownerAmount", b."platformFee",
+               b."paidAt", b."paymentMethod", b."createdAt",
+               s."centreId" AS "centreId", c.name AS "centreName", c.state AS state
+        FROM bookings b
+        LEFT JOIN sites s ON b."siteId" = s.id
+        LEFT JOIN shopping_centres c ON s."centreId" = c.id
+        WHERE ${clWhere}
+
+        UNION ALL
+
+        SELECT b."totalAmount", b."gstAmount", b."ownerAmount", b."platformFee",
+               b."paidAt", b."paymentMethod", b."createdAt",
+               a."centreId" AS "centreId", c.name AS "centreName", c.state AS state
+        FROM vacant_shop_bookings b
+        LEFT JOIN vacant_shops a ON b."vacantShopId" = a.id
+        LEFT JOIN shopping_centres c ON a."centreId" = c.id
+        WHERE ${vsWhere}
+
+        UNION ALL
+
+        SELECT b."totalAmount", b."gstAmount", b."ownerAmount", b."platformFee",
+               b."paidAt", b."paymentMethod", b."createdAt",
+               a."centreId" AS "centreId", c.name AS "centreName", c.state AS state
+        FROM third_line_bookings b
+        LEFT JOIN third_line_income a ON b."thirdLineIncomeId" = a.id
+        LEFT JOIN shopping_centres c ON a."centreId" = c.id
+        WHERE ${tlWhere}
+      `;
 
       // Summary totals
-      const totalsQuery = db
-        .select({
-          totalRevenue: sql<string>`COALESCE(SUM(CAST(${bookings.totalAmount} AS DECIMAL)), 0)`,
-          totalGst: sql<string>`COALESCE(SUM(CAST(${bookings.gstAmount} AS DECIMAL)), 0)`,
-          totalOwnerAmount: sql<string>`COALESCE(SUM(CAST(${bookings.ownerAmount} AS DECIMAL)), 0)`,
-          totalPlatformFee: sql<string>`COALESCE(SUM(CAST(${bookings.platformFee} AS DECIMAL)), 0)`,
-          bookingCount: sql<number>`COUNT(*)`,
-          paidCount: sql<number>`SUM(CASE WHEN ${bookings.paidAt} IS NOT NULL THEN 1 ELSE 0 END)`,
-        })
-        .from(bookings);
+      const totalsResult = await db.execute(sql.raw(`
+        SELECT
+          COALESCE(SUM(CAST(u."totalAmount" AS DECIMAL)), 0) AS "totalRevenue",
+          COALESCE(SUM(CAST(u."gstAmount" AS DECIMAL)), 0) AS "totalGst",
+          COALESCE(SUM(CAST(u."ownerAmount" AS DECIMAL)), 0) AS "totalOwnerAmount",
+          COALESCE(SUM(CAST(u."platformFee" AS DECIMAL)), 0) AS "totalPlatformFee",
+          COUNT(*) AS "bookingCount",
+          SUM(CASE WHEN u."paidAt" IS NOT NULL THEN 1 ELSE 0 END) AS "paidCount"
+        FROM (${unionQuery}) u
+      `));
+      const totals = totalsResult.rows[0] as any;
 
-      if (needsJoin) {
-        totalsQuery
-          .leftJoin(sites, eq(bookings.siteId, sites.id))
-          .leftJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id));
-      }
-
-      const [totals] = await totalsQuery.where(whereClause);
-
-      // Revenue by centre (always needs joins)
-      const revenueByCentre = await db
-        .select({
-          centreId: sites.centreId,
-          centreName: shoppingCentres.name,
-          state: shoppingCentres.state,
-          totalRevenue: sql<string>`COALESCE(SUM(CAST(${bookings.totalAmount} AS DECIMAL)), 0)`,
-          totalGst: sql<string>`COALESCE(SUM(CAST(${bookings.gstAmount} AS DECIMAL)), 0)`,
-          platformFee: sql<string>`COALESCE(SUM(CAST(${bookings.platformFee} AS DECIMAL)), 0)`,
-          ownerAmount: sql<string>`COALESCE(SUM(CAST(${bookings.ownerAmount} AS DECIMAL)), 0)`,
-          bookingCount: sql<number>`COUNT(*)`,
-        })
-        .from(bookings)
-        .leftJoin(sites, eq(bookings.siteId, sites.id))
-        .leftJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
-        .where(whereClause)
-        .groupBy(sites.centreId, shoppingCentres.name, shoppingCentres.state)
-        .orderBy(
-          desc(sql`SUM(CAST(${bookings.totalAmount} AS DECIMAL))`),
-        );
+      // Revenue by centre
+      const revenueByCentreResult = await db.execute(sql.raw(`
+        SELECT
+          u."centreId",
+          u."centreName",
+          u.state,
+          COALESCE(SUM(CAST(u."totalAmount" AS DECIMAL)), 0) AS "totalRevenue",
+          COALESCE(SUM(CAST(u."gstAmount" AS DECIMAL)), 0) AS "totalGst",
+          COALESCE(SUM(CAST(u."platformFee" AS DECIMAL)), 0) AS "platformFee",
+          COALESCE(SUM(CAST(u."ownerAmount" AS DECIMAL)), 0) AS "ownerAmount",
+          COUNT(*) AS "bookingCount"
+        FROM (${unionQuery}) u
+        GROUP BY u."centreId", u."centreName", u.state
+        ORDER BY SUM(CAST(u."totalAmount" AS DECIMAL)) DESC
+      `));
+      const revenueByCentre = revenueByCentreResult.rows as any[];
 
       // Revenue by month
-      const revenueByMonthQuery = db
-        .select({
-          month: sql<string>`TO_CHAR(${bookings.createdAt}, 'YYYY-MM')`,
-          totalRevenue: sql<string>`COALESCE(SUM(CAST(${bookings.totalAmount} AS DECIMAL)), 0)`,
-          platformFee: sql<string>`COALESCE(SUM(CAST(${bookings.platformFee} AS DECIMAL)), 0)`,
-          bookingCount: sql<number>`COUNT(*)`,
-        })
-        .from(bookings);
-
-      if (needsJoin) {
-        revenueByMonthQuery
-          .leftJoin(sites, eq(bookings.siteId, sites.id))
-          .leftJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id));
-      }
-
-      const revenueByMonth = await revenueByMonthQuery
-        .where(whereClause)
-        .groupBy(sql`TO_CHAR(${bookings.createdAt}, 'YYYY-MM')`)
-        .orderBy(sql`TO_CHAR(${bookings.createdAt}, 'YYYY-MM')`);
+      const revenueByMonthResult = await db.execute(sql.raw(`
+        SELECT
+          TO_CHAR(u."createdAt", 'YYYY-MM') AS month,
+          COALESCE(SUM(CAST(u."totalAmount" AS DECIMAL)), 0) AS "totalRevenue",
+          COALESCE(SUM(CAST(u."platformFee" AS DECIMAL)), 0) AS "platformFee",
+          COUNT(*) AS "bookingCount"
+        FROM (${unionQuery}) u
+        GROUP BY TO_CHAR(u."createdAt", 'YYYY-MM')
+        ORDER BY TO_CHAR(u."createdAt", 'YYYY-MM')
+      `));
+      const revenueByMonth = revenueByMonthResult.rows as any[];
 
       // Payment method breakdown
-      const paymentBreakdownQuery = db
-        .select({
-          paymentMethod: bookings.paymentMethod,
-          count: sql<number>`COUNT(*)`,
-          total: sql<string>`COALESCE(SUM(CAST(${bookings.totalAmount} AS DECIMAL)), 0)`,
-        })
-        .from(bookings);
-
-      if (needsJoin) {
-        paymentBreakdownQuery
-          .leftJoin(sites, eq(bookings.siteId, sites.id))
-          .leftJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id));
-      }
-
-      const paymentBreakdown = await paymentBreakdownQuery
-        .where(whereClause)
-        .groupBy(bookings.paymentMethod);
+      const paymentBreakdownResult = await db.execute(sql.raw(`
+        SELECT
+          u."paymentMethod",
+          COUNT(*) AS count,
+          COALESCE(SUM(CAST(u."totalAmount" AS DECIMAL)), 0) AS total
+        FROM (${unionQuery}) u
+        GROUP BY u."paymentMethod"
+      `));
+      const paymentBreakdown = paymentBreakdownResult.rows as any[];
 
       return {
         totals,

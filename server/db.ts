@@ -1,4 +1,4 @@
-import { eq, desc, and, or, isNull, lte, gte } from "drizzle-orm";
+import { eq, desc, and, or, isNull, lte, gte, inArray } from "drizzle-orm";
 import { expandCategoryKeyword } from "../shared/categorySynonyms.js";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { 
@@ -423,14 +423,39 @@ export async function searchShoppingCentres(query: string, stateFilter?: string)
     allCentres = await db.select().from(shoppingCentres);
   }
   
-  if (!centreQuery.trim() && stateFilter) { return allCentres.filter(centre => centre.includeInMainSite); }
+  if (!centreQuery.trim() && stateFilter) {
+    const filtered = allCentres.filter(centre => centre.includeInMainSite);
+    return await enrichCentresWithFloorLevelMaps(db, filtered);
+  }
   const { fuzzySearchCentres } = await import('./fuzzySearch');
   const searchableCentres = allCentres.filter(c => c.includeInMainSite).map(c => ({ id: c.id, name: c.name, suburb: c.suburb?.trim() ?? null, state: c.state }));
   const fuzzyResults = await fuzzySearchCentres(centreQuery, searchableCentres);
   const centreMap = new Map(allCentres.map(c => [c.id, c]));
   const scoredCentres = fuzzyResults.map(r => ({ centre: centreMap.get(r.id)!, score: r.score })).filter(i => i.centre);
-  if (scoredCentres.length > 0 && scoredCentres[0].score >= 0.8) return [scoredCentres[0].centre];
-  return scoredCentres.map(i => i.centre);
+  const results = scoredCentres.length > 0 && scoredCentres[0].score >= 0.8
+    ? [scoredCentres[0].centre]
+    : scoredCentres.map(i => i.centre);
+  return await enrichCentresWithFloorLevelMaps(db, results);
+}
+
+async function enrichCentresWithFloorLevelMaps(db: any, centres: any[]) {
+  if (centres.length === 0) return centres;
+  const centreIds = centres.map(c => c.id);
+  const floors = await db
+    .select({ centreId: floorLevels.centreId, mapImageUrl: floorLevels.mapImageUrl })
+    .from(floorLevels)
+    .where(and(inArray(floorLevels.centreId, centreIds), eq(floorLevels.isHidden, false)))
+    .orderBy(floorLevels.displayOrder);
+  const floorMap = new Map<number, string>();
+  for (const f of floors) {
+    if (f.mapImageUrl && !floorMap.has(f.centreId)) {
+      floorMap.set(f.centreId, f.mapImageUrl);
+    }
+  }
+  return centres.map(c => ({
+    ...c,
+    mapImageUrl: floorMap.get(c.id) || c.mapImageUrl,
+  }));
 }
 
 export async function uploadCentreMap(centreId: number, imageData: string, fileName: string) {
