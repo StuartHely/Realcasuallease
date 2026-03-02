@@ -634,6 +634,111 @@ The Casual Lease Team
 }
 
 /**
+ * Send payment confirmation email to the property owner when invoice payment is recorded
+ */
+export async function sendOwnerPaymentNotificationEmail(details: {
+  ownerEmail: string;
+  ownerName: string;
+  bookingNumber: string;
+  customerName: string;
+  centreName: string;
+  siteNumber: string;
+  startDate: Date;
+  endDate: Date;
+  totalAmount: string | number;
+  ownerAmount: string | number;
+  platformFee: string | number;
+  paidAt: Date;
+}): Promise<boolean> {
+  try {
+    const { sendEmail } = await import('./email');
+
+    const startDateStr = new Date(details.startDate).toLocaleDateString("en-AU", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    const endDateStr = new Date(details.endDate).toLocaleDateString("en-AU", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    const paidAtStr = new Date(details.paidAt).toLocaleDateString("en-AU", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    const subject = `Payment Received: ${details.bookingNumber} — ${details.centreName}`;
+
+    const htmlBody = `
+      <h2>Payment Received</h2>
+      <p>Dear ${details.ownerName},</p>
+      <p>A payment has been received for a booking at your centre.</p>
+      <h3>Payment Details</h3>
+      <ul>
+        <li><strong>Booking Number:</strong> ${details.bookingNumber}</li>
+        <li><strong>Payment Date:</strong> ${paidAtStr}</li>
+        <li><strong>Total Amount:</strong> $${Number(details.totalAmount).toFixed(2)}</li>
+        <li><strong>Your Share:</strong> $${Number(details.ownerAmount).toFixed(2)}</li>
+        <li><strong>Platform Fee:</strong> $${Number(details.platformFee).toFixed(2)}</li>
+      </ul>
+      <h3>Booking Details</h3>
+      <ul>
+        <li><strong>Customer:</strong> ${details.customerName}</li>
+        <li><strong>Location:</strong> ${details.centreName} — Site ${details.siteNumber}</li>
+        <li><strong>Dates:</strong> ${startDateStr} to ${endDateStr}</li>
+      </ul>
+      <p>This amount will be included in your next remittance.</p>
+      <p>Best regards,<br>The Casual Lease Team</p>
+    `;
+
+    const textBody = `
+Payment Received
+
+Dear ${details.ownerName},
+
+A payment has been received for a booking at your centre.
+
+Payment Details:
+- Booking Number: ${details.bookingNumber}
+- Payment Date: ${paidAtStr}
+- Total Amount: $${Number(details.totalAmount).toFixed(2)}
+- Your Share: $${Number(details.ownerAmount).toFixed(2)}
+- Platform Fee: $${Number(details.platformFee).toFixed(2)}
+
+Booking Details:
+- Customer: ${details.customerName}
+- Location: ${details.centreName} — Site ${details.siteNumber}
+- Dates: ${startDateStr} to ${endDateStr}
+
+This amount will be included in your next remittance.
+
+Best regards,
+The Casual Lease Team
+    `.trim();
+
+    const result = await sendEmail({
+      to: details.ownerEmail,
+      subject,
+      html: htmlBody,
+      text: textBody,
+    });
+
+    console.log(`[Email] Sent owner payment notification to ${details.ownerEmail}`);
+    return result;
+  } catch (error) {
+    console.error("[BookingNotifications] Failed to send owner payment notification:", error);
+    return false;
+  }
+}
+
+/**
  * Send VS/3rdL booking rejection email
  */
 export async function sendVSThirdLineRejectionEmail(

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays, Store, Zap, Layers, FileText, Search as SearchIcon, Star, HelpCircle, DollarSign, ChevronDown } from "lucide-react";
+import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays, Store, Zap, Layers, FileText, Search as SearchIcon, Star, HelpCircle, DollarSign, ChevronDown, Loader2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, parse, addDays, isSameDay, subDays, isBefore, startOfDay } from "date-fns";
@@ -38,6 +38,11 @@ export default function Search() {
   const expandedSiteRef = useRef<HTMLDivElement>(null);
   const expandedVSRef = useRef<HTMLDivElement>(null);
   const expandedTLIRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Pagination: show initial 30 CL sites, expand on demand
+  const INITIAL_SITES_LIMIT = 30;
+  const [visibleSitesLimit, setVisibleSitesLimit] = useState(INITIAL_SITES_LIMIT);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -174,7 +179,27 @@ export default function Search() {
         setSelectedAssetType('third_line');
       }
     }
-  }, [data?.assetType]);
+    // Reset pagination when new search results arrive
+    setVisibleSitesLimit(INITIAL_SITES_LIMIT);
+  }, [data]);
+
+  // IntersectionObserver for infinite scroll of sites
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleSitesLimit(prev => prev + 30);
+        }
+      },
+      { rootMargin: '200px' }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  });
 
   // Auto-scroll to matched site when data loads
   useEffect(() => {
@@ -280,7 +305,7 @@ export default function Search() {
   // Check if a site is booked on a specific date
   const isBookedOnDate = (siteId: number, date: Date) => {
     if (!data?.availability) return false;
-    const siteAvailability = data.availability.find(a => a.siteId === siteId);
+    const siteAvailability = data.availability.find((a: any) => a.siteId === siteId);
     if (!siteAvailability) return false;
 
     // Combine both week's bookings
@@ -1340,14 +1365,14 @@ export default function Search() {
             )}
 
             {/* Calendar Heatmap - Casual Leasing Sites */}
-            {(selectedAssetType === "casual_leasing" || selectedAssetType === "all") && data.centres.map((centre) => {
+            {(selectedAssetType === "casual_leasing" || selectedAssetType === "all") && data.centres.map((centre: any) => {
               // Use casualLeasingSites if fetched (when search was for VS/3rdL), otherwise filter from data.sites
               const sitesSource = casualLeasingSites || data.sites;
               let centreSites = sitesSource.filter((s: any) => s.centreId === centre.id && (!s.assetType || s.assetType === 'casual_leasing'));
               
               // Filter by selected category if one is chosen
               if (selectedCategoryId && data.siteCategories) {
-                centreSites = centreSites.filter((site) => {
+                centreSites = centreSites.filter((site: any) => {
                   const siteCategories = data.siteCategories[site.id];
                   // If no categories configured (empty array), site accepts all categories
                   if (!siteCategories || siteCategories.length === 0) return true;
@@ -1358,7 +1383,7 @@ export default function Search() {
 
               // Further filter by auto-approved if checkbox is checked
               if (showOnlyAutoApproved && selectedCategoryId && data.siteCategories) {
-                centreSites = centreSites.filter((site) => {
+                centreSites = centreSites.filter((site: any) => {
                   const siteCategories = data.siteCategories[site.id];
                   // Empty array means all categories approved (auto-approve all)
                   if (!siteCategories || siteCategories.length === 0) return true;
@@ -1373,7 +1398,12 @@ export default function Search() {
               return (
                 <Card key={`centre-casual-${centre.id}`}>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-2xl mb-1">{centre.name}</CardTitle>
+                    <CardTitle className="text-2xl mb-1 flex items-center gap-3">
+                      {centre.name}
+                      <Badge variant="secondary" className="text-sm font-normal">
+                        {Math.min(visibleSitesLimit, centreSites.length)} of {centreSites.length} sites
+                      </Badge>
+                    </CardTitle>
                     <CardDescription>
                       {centre.majors && <span key={`${centre.id}-majors`} className="block font-bold">Major Stores: {centre.majors}</span>}
                       {centre.numberOfSpecialties && (
@@ -1422,9 +1452,8 @@ export default function Search() {
                         const params = new URLSearchParams();
                         params.set('query', centreName);
                         params.set('date', format(searchParams.date, 'yyyy-MM-dd'));
-                        const newUrl = `/search?${params.toString()}`;
-                        // Don't preserve category or auto-approved filters - show ALL sites
-                        setLocation(newUrl);
+                        // Force full page reload so useEffect re-reads URL params
+                        window.location.href = `/search?${params.toString()}`;
                       };
                       
                       return (
@@ -1624,7 +1653,7 @@ export default function Search() {
                             </tr>
                           </thead>
                           <tbody>
-                            {centreSites.map((site, siteIdx) => {
+                            {centreSites.slice(0, visibleSitesLimit).map((site: any, siteIdx: number) => {
                               const isMatched = isMatchedSite(site.id);
                               return (
                               <tr 
@@ -1775,6 +1804,14 @@ export default function Search() {
                         </table>
                       </div>
                     </div>
+
+                    {/* Infinite scroll sentinel */}
+                    {centreSites.length > visibleSitesLimit && (
+                      <div ref={loadMoreRef} className="mt-4 flex items-center justify-center py-4">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mr-2" />
+                        <span className="text-sm text-muted-foreground">Loading more sites...</span>
+                      </div>
+                    )}
 
                     {/* Scroll Down Instruction */}
                     <div className="mt-8 mb-6 text-center">
@@ -1999,7 +2036,22 @@ export default function Search() {
                                             const totalDays = weekdays + weekends;
                                             const weekdayRate = Number(site.pricePerDay) || 0;
                                             const weekendRate = Number(site.weekendPricePerDay) || weekdayRate;
-                                            const subtotal = (weekdays * weekdayRate) + (weekends * weekendRate);
+                                            const weeklyRate = Number(site.pricePerWeek) || 0;
+                                            
+                                            let subtotal: number;
+                                            let weeksApplied = 0;
+                                            let weeklyRateApplied = false;
+                                            
+                                            if (weeklyRate > 0 && totalDays >= 7) {
+                                              weeksApplied = Math.floor(totalDays / 7);
+                                              const remainderDays = totalDays - weeksApplied * 7;
+                                              const avgDailyRate = totalDays > 0 ? ((weekdays * weekdayRate) + (weekends * weekendRate)) / totalDays : weekdayRate;
+                                              subtotal = (weeksApplied * weeklyRate) + (remainderDays * avgDailyRate);
+                                              weeklyRateApplied = true;
+                                            } else {
+                                              subtotal = (weekdays * weekdayRate) + (weekends * weekendRate);
+                                            }
+                                            
                                             const outgoingsRate = parseFloat(site.outgoingsPerDay || "0");
                                             const totalOutgoings = outgoingsRate * totalDays;
                                             const gst = (subtotal + totalOutgoings) * 0.1;
@@ -2007,8 +2059,19 @@ export default function Search() {
                                             return (
                                               <>
                                                 <p><span className="text-gray-600">Duration:</span> {totalDays} day{totalDays > 1 ? 's' : ''}</p>
-                                                {weekdays > 0 && <p><span className="text-gray-600">Weekdays:</span> {weekdays} × ${weekdayRate.toFixed(2)} = ${(weekdays * weekdayRate).toFixed(2)}</p>}
-                                                {weekends > 0 && <p><span className="text-gray-600">Weekends:</span> {weekends} × ${weekendRate.toFixed(2)} = ${(weekends * weekendRate).toFixed(2)}</p>}
+                                                {weeklyRateApplied ? (
+                                                  <>
+                                                    <p><span className="text-gray-600">Weekly Rate:</span> {weeksApplied} week{weeksApplied > 1 ? 's' : ''} × ${weeklyRate.toFixed(2)} = ${(weeksApplied * weeklyRate).toFixed(2)}</p>
+                                                    {totalDays - weeksApplied * 7 > 0 && (
+                                                      <p><span className="text-gray-600">Remaining:</span> {totalDays - weeksApplied * 7} day{totalDays - weeksApplied * 7 > 1 ? 's' : ''} at daily rate</p>
+                                                    )}
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    {weekdays > 0 && <p><span className="text-gray-600">Weekdays:</span> {weekdays} × ${weekdayRate.toFixed(2)} = ${(weekdays * weekdayRate).toFixed(2)}</p>}
+                                                    {weekends > 0 && <p><span className="text-gray-600">Weekends:</span> {weekends} × ${weekendRate.toFixed(2)} = ${(weekends * weekendRate).toFixed(2)}</p>}
+                                                  </>
+                                                )}
                                                 <div className="border-t border-gray-200 mt-2 pt-2">
                                                   <p><span className="text-gray-600">Subtotal:</span> ${subtotal.toFixed(2)}</p>
                                                   {totalOutgoings > 0 && <p><span className="text-gray-600">Outgoings:</span> {totalDays} × ${outgoingsRate.toFixed(2)} = ${totalOutgoings.toFixed(2)}</p>}
@@ -2156,7 +2219,7 @@ export default function Search() {
             })}
             
             {/* Centre Floor Plan Map - Show below sites listing */}
-            {((data.floorLevels && data.floorLevels.length > 0 && data.floorLevels.some((fl: any) => fl.mapImageUrl)) || data.centres[0]?.mapImageUrl) && (
+            {((data.floorLevels && data.floorLevels.length > 0 && data.floorLevels.some((fl: any) => fl.mapImageUrl)) || data.centres[0]?.mapImageUrl || combinedSites.some((s: any) => s.mapMarkerX != null && s.mapMarkerY != null)) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Centre Floor Plan</CardTitle>

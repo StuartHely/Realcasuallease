@@ -1,9 +1,16 @@
 // Preconfigured storage helpers
 // Uses the storage proxy (Authorization: Bearer <token>)
+// Falls back to local filesystem storage when proxy credentials are not set (dev mode)
 
 import { ENV } from './_core/env';
+import path from 'path';
+import fs from 'fs/promises';
 
 type StorageConfig = { baseUrl: string; apiKey: string };
+
+function isLocalMode(): boolean {
+  return !ENV.forgeApiUrl || !ENV.forgeApiKey;
+}
 
 function getStorageConfig(): StorageConfig {
   const baseUrl = ENV.forgeApiUrl;
@@ -16,6 +23,20 @@ function getStorageConfig(): StorageConfig {
   }
 
   return { baseUrl: baseUrl.replace(/\/+$/, ""), apiKey };
+}
+
+async function localStoragePut(
+  relKey: string,
+  data: Buffer | Uint8Array | string,
+): Promise<{ key: string; url: string }> {
+  const key = normalizeKey(relKey);
+  const uploadsDir = path.resolve(process.cwd(), 'client', 'public', 'uploads');
+  const filePath = path.join(uploadsDir, ...key.split('/'));
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  const buffer = typeof data === 'string' ? Buffer.from(data) : Buffer.from(data);
+  await fs.writeFile(filePath, buffer);
+  const url = `/uploads/${key}`;
+  return { key, url };
 }
 
 function buildUploadUrl(baseUrl: string, relKey: string): URL {
@@ -72,6 +93,9 @@ export async function storagePut(
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream"
 ): Promise<{ key: string; url: string }> {
+  if (isLocalMode()) {
+    return localStoragePut(relKey, data);
+  }
   const { baseUrl, apiKey } = getStorageConfig();
   const key = normalizeKey(relKey);
   const uploadUrl = buildUploadUrl(baseUrl, key);
@@ -93,8 +117,11 @@ export async function storagePut(
 }
 
 export async function storageGet(relKey: string): Promise<{ key: string; url: string; }> {
-  const { baseUrl, apiKey } = getStorageConfig();
   const key = normalizeKey(relKey);
+  if (isLocalMode()) {
+    return { key, url: `/uploads/${key}` };
+  }
+  const { baseUrl, apiKey } = getStorageConfig();
   return {
     key,
     url: await buildDownloadUrl(baseUrl, key, apiKey),

@@ -30,10 +30,8 @@ export function PriceCalculator({ siteId, startDate, endDate }: PriceCalculatorP
 
   if (!preview) return null;
 
-  const hasSeasonalRates = preview.seasonalDays && preview.seasonalDays.length > 0;
+  const hasSeasonalRates = preview.seasonalDays?.some((d: any) => d.isSeasonalRate) || false;
   const totalDays = preview.weekdayCount + preview.weekendCount;
-  const seasonalDaysCount = preview.seasonalDays?.length || 0;
-  const baseDaysCount = totalDays - seasonalDaysCount;
 
   return (
     <Card className="bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
@@ -46,6 +44,11 @@ export function PriceCalculator({ siteId, startDate, endDate }: PriceCalculatorP
               Seasonal Pricing
             </Badge>
           )}
+          {preview.weeklyRateApplied && !hasSeasonalRates && (
+            <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-300">
+              Weekly Rate Applied
+            </Badge>
+          )}
         </div>
         
         {/* Summary */}
@@ -56,13 +59,44 @@ export function PriceCalculator({ siteId, startDate, endDate }: PriceCalculatorP
           </div>
           {hasSeasonalRates && (
             <div className="text-xs text-blue-600 ml-6">
-              {seasonalDaysCount} day{seasonalDaysCount > 1 ? 's' : ''} with seasonal pricing, {baseDaysCount} day{baseDaysCount > 1 ? 's' : ''} at base rate
+              Includes seasonal pricing adjustments
             </div>
           )}
         </div>
 
-        {/* Base Rate Days */}
-        {!hasSeasonalRates && (
+        {/* Weekly Rate Breakdown (non-seasonal) */}
+        {preview.weeklyRateApplied && !hasSeasonalRates && (
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-600">
+                {preview.weeksApplied} week{preview.weeksApplied > 1 ? 's' : ''} @ ${preview.weeklyRate?.toFixed(2)}/week
+              </span>
+              <span className="font-medium text-green-700">
+                ${(preview.weeksApplied * (preview.weeklyRate || 0)).toFixed(2)}
+              </span>
+            </div>
+            {preview.remainderDays > 0 && (
+              <>
+                {/* Show remainder days at daily rates */}
+                {preview.seasonalDays?.slice(preview.weeksApplied * 7).map((day: any, idx: number) => {
+                  const date = new Date(day.date);
+                  return (
+                    <div key={idx} className="flex justify-between text-xs ml-2">
+                      <span className="text-gray-500">
+                        {date.toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' })}
+                        {' '}— {day.name}
+                      </span>
+                      <span className="font-medium">${day.rate.toFixed(2)}</span>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Base Rate Days (no weekly rate, no seasonal) */}
+        {!preview.weeklyRateApplied && !hasSeasonalRates && (
           <div className="space-y-2 text-sm">
             {preview.weekdayCount > 0 && (
               <div className="flex justify-between">
@@ -112,7 +146,7 @@ export function PriceCalculator({ siteId, startDate, endDate }: PriceCalculatorP
                         </Badge>
                       ) : (
                         <span className="text-xs text-gray-400">
-                          {isWeekend ? 'Weekend' : 'Weekday'}
+                          {day.name.includes('Weekly') ? day.name : (isWeekend ? 'Weekend' : 'Weekday')}
                         </span>
                       )}
                     </div>
@@ -165,7 +199,7 @@ export function PriceCalculator({ siteId, startDate, endDate }: PriceCalculatorP
             </div>
           )}
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">GST (10%)</span>
+            <span className="text-gray-600">GST ({preview.gstPercentage}%)</span>
             <span className="font-medium">${preview.gstAmount.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-lg font-bold pt-2 border-t border-blue-300">

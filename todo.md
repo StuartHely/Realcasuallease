@@ -74,9 +74,9 @@ Done: Pricing analytics dashboard with AI-powered recommendations (suggestions o
 ## 🟡 Medium Priority — Features
 
 ### Search & Performance
-- [ ] Implement search result caching with 5-min TTL
-- [ ] Add pagination to search results (initial load: 30 sites)
-- [ ] Add lazy loading for remaining sites on scroll
+- [x] Implement search result caching with 5-min TTL (server/searchCache.ts — in-memory, auto-evict, invalidated on booking create/cancel)
+- [x] Add pagination to search results (initial load: 30 sites, "Show More" button loads 30 more)
+- [x] Add lazy loading for remaining sites on scroll (IntersectionObserver-based infinite scroll, replaces "Show More" button)
 
 ### Auto-Approval Rules Expansion
 - [ ] Add allowedCategoryIds filter to auto-approval rules
@@ -84,15 +84,16 @@ Done: Pricing analytics dashboard with AI-powered recommendations (suggestions o
 - [ ] Build admin UI for configuring expanded auto-approval rules
 
 ### Enhanced Registration Form
-- [ ] Add password and confirm password fields to registration
-- [ ] Add company details section (name, website, ABN, address, city, state, postcode)
-- [ ] Complete product/service dropdown with custom text field
+- [x] Add password and confirm password fields to registration
+- [x] Add company details section (name, website, ABN, address, city, state, postcode)
+- [x] Complete product/service dropdown with custom text field
+- [x] Public self-registration page at /register with 3-step form (Account → Company → Product/Service)
 
 ### Payment & Financial
 - [ ] Monthly maintenance fee tracking for owners
 - [ ] Remittance options implementation (per booking / month end automated)
-- [ ] Payment confirmation emails to all parties on invoice payment recording
-- [ ] Export functionality for financial analytics reports
+- [x] Payment confirmation emails to all parties on invoice payment recording (customer receipt + owner payment notification with revenue split)
+- [x] Export functionality for financial analytics reports (CSV + multi-sheet Excel with Summary, Revenue by Centre, Revenue by Month, Payment Breakdown)
 
 ### Pricing Features
 - [ ] Add real-time price preview calculator on site detail pages (component exists, needs integration)
@@ -110,14 +111,13 @@ Done: Pricing analytics dashboard with AI-powered recommendations (suggestions o
 ## 🟡 Medium Priority — Bug Fixes
 
 ### Seasonal Pricing $0 on Calendar
-- [ ] Fix bulk seasonal rate increase showing $0 on calendar
-- [ ] Issue: Applied 30% increase shows $0; investigate seasonal pricing calculation logic
-- [ ] Verify seasonal_pricing table data integrity after bulk create
+- [x] Fix bulk seasonal rate increase showing $0 on calendar — skip sites with no base pricing (all rates zero); added skipped count to response
+- [x] Verify seasonal_pricing table data integrity — added `cleanupZeroSeasonalRates` admin endpoint + UI button, added validation to prevent $0 rate creation
 
 ### Search Results & Map Issues
-- [ ] Fix "Show All Sized Sites" button navigation to properly remove category filters
-- [ ] Fix centre map not showing on search results page (some centres)
-- [ ] Add VS and 3rdL availability to search results calendar heatmap
+- [x] Fix "Show All Sized Sites" button navigation — changed from setLocation() to window.location.href for full page reload
+- [x] Fix centre map not showing on search results page — added public `centres.getFloorLevels` endpoint, switched InteractiveMap from admin to public query, show map when sites have markers
+- [x] VS and 3rdL availability on search results calendar heatmap — already implemented via separate tab sections with dedicated availability queries
 
 ### Floor Plan & Map Issues
 - [ ] Fix missing floor plan map for some centres (Highlands, Chullora — need map images uploaded)
@@ -125,9 +125,9 @@ Done: Pricing analytics dashboard with AI-powered recommendations (suggestions o
 - [ ] Add asset type markers to floor plan map editor
 
 ### Admin Page Fixes
-- [ ] Fix "Failed to update a site, Failed query" error in Admin Sites page
-- [ ] Fix CentreDetail tabs when accessing via state browse (investigate if still occurring)
-- [ ] Add Search Analytics link to admin dashboard navigation
+- [x] Fix "Failed to update a site" error — added field sanitization (empty strings → null for decimal/text columns, .trim() for rate fields)
+- [x] Fix CentreDetail tabs when accessing via state browse — parse `?tab=` URL param, guard auto-selection with ref to only run once
+- [x] Add Search Analytics link to admin dashboard navigation (already in AdminLayout.tsx + App.tsx route)
 - [ ] Update Admin Bookings default tab tests
 
 ### S3 Image 403s

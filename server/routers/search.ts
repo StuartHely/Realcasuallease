@@ -2,12 +2,19 @@ import { publicProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 import * as db from "../db";
 import * as assetDb from "../assetDb";
+import { buildCacheKey, getCached, setCache } from "../searchCache";
 
 export const searchRouter = router({
     // Smart search with site-level support
     smart: publicProcedure
       .input(z.object({ query: z.string(), date: z.date() }))
       .query(async ({ input, ctx }) => {
+        // Check cache first (5-min TTL)
+        const cacheKey = buildCacheKey(input.query, input.date);
+        const cached = getCached(cacheKey);
+        if (cached) {
+          return cached;
+        }
         // Parse query to extract requirements
         const { parseSearchQuery, siteMatchesRequirements } = await import("../../shared/queryParser");
         const parsedQuery = parseSearchQuery(input.query);
@@ -422,11 +429,12 @@ export const searchRouter = router({
           floorLevels = await db.getFloorLevelsByCentre(centres[0].id);
         }
         
-        return {
+        const result = {
           centres,
           sites: allSites,
           availability,
           matchedSiteIds,
+          totalSites: allSites.length,
           sizeNotAvailable,
           categoryNotAvailable,
           closestMatch,
@@ -450,6 +458,11 @@ export const searchRouter = router({
             parserUsed,
           },
         };
+
+        // Cache the result (5-min TTL)
+        setCache(cacheKey, result);
+
+        return result;
       }),
     byNameAndDate: publicProcedure
       .input(z.object({

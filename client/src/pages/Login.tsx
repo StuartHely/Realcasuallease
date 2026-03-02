@@ -121,6 +121,15 @@ export default function Login() {
             </Link>
           </div>
 
+          <div className="text-center">
+            <span className="text-sm text-muted-foreground">Don't have an account? </span>
+            <Link href="/register">
+              <span className="text-sm text-blue-600 hover:underline cursor-pointer">
+                Create one
+              </span>
+            </Link>
+          </div>
+
           <p className="text-xs text-center text-muted-foreground">
             By signing in, you agree to our Terms of Service and Privacy Policy.
           </p>

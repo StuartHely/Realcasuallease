@@ -4,6 +4,7 @@ import * as db from "../db";
 import { TRPCError } from "@trpc/server";
 import { sendBookingConfirmationEmail, sendBookingRejectionEmail } from "../_core/bookingNotifications";
 import { getConfigValue } from "../systemConfigDb";
+import { clearSearchCache } from "../searchCache";
 
 export const bookingsRouter = router({
     create: protectedProcedure
@@ -257,6 +258,9 @@ export const bookingsRouter = router({
           import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(bookingId)).catch(() => {});
         }
 
+        // Invalidate search cache so availability reflects new booking
+        clearSearchCache();
+
         return {
           bookingId,
           bookingNumber,
@@ -293,28 +297,34 @@ export const bookingsRouter = router({
         if (!site) throw new TRPCError({ code: "NOT_FOUND", message: "Site not found" });
 
         // Calculate booking cost with seasonal rates
-        const { totalAmount, weekdayCount, weekendCount, seasonalDays } = await import("../bookingCalculation").then(m => 
+        const calcResult = await import("../bookingCalculation").then(m => 
           m.calculateBookingCost(site, input.startDate, input.endDate)
         );
+        const { totalAmount, weekdayCount, weekendCount, weeklyRateApplied, weeksCharged, weeklyRateValue, seasonalDays } = calcResult;
 
         // Get GST rate
         const gstValue = await getConfigValue("gst_percentage");
         const gstRate = gstValue ? Number(gstValue) / 100 : 0.1;
         const gstAmount = totalAmount * gstRate;
 
+        const totalDays = weekdayCount + weekendCount;
         const outgoingsPerDay = site.outgoingsPerDay ? Number(site.outgoingsPerDay) : 0;
-        const totalOutgoings = outgoingsPerDay * (weekdayCount + weekendCount);
+        const totalOutgoings = outgoingsPerDay * totalDays;
 
         return {
           weekdayCount,
           weekendCount,
           weekdayRate: Number(site.pricePerDay),
           weekendRate: site.weekendPricePerDay ? Number(site.weekendPricePerDay) : Number(site.pricePerDay),
+          weeklyRate: weeklyRateValue,
+          weeklyRateApplied,
+          weeksApplied: weeksCharged,
+          remainderDays: weeklyRateApplied ? totalDays - (weeksCharged * 7) : 0,
           outgoingsPerDay,
           totalOutgoings,
           subtotal: totalAmount,
           gstAmount,
-          gstPercentage: gstRate * 100, // Return current GST percentage
+          gstPercentage: gstRate * 100,
           total: totalAmount + gstAmount,
           seasonalDays: seasonalDays || [],
         };

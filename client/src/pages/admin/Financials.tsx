@@ -32,7 +32,11 @@ import {
   Building2,
   Calendar,
   Loader2,
+  Download,
+  FileSpreadsheet,
 } from "lucide-react";
+import { format } from "date-fns";
+import * as XLSX from "xlsx";
 
 function formatAUD(value: string | number | null | undefined): string {
   const num = parseFloat(String(value ?? "0"));
@@ -61,6 +65,86 @@ export default function AdminFinancials() {
   const revenueByCentre = data?.revenueByCentre ?? [];
   const revenueByMonth = data?.revenueByMonth ?? [];
   const paymentBreakdown = data?.paymentBreakdown ?? [];
+
+  const exportCSV = () => {
+    const headers = ["Centre Name", "State", "Bookings", "Revenue", "GST", "Platform Fee", "Owner Amount"];
+    const rows = revenueByCentre.map(row => [
+      row.centreName ?? "Unknown",
+      row.state ?? "",
+      row.bookingCount,
+      row.totalRevenue,
+      row.totalGst,
+      row.platformFee,
+      row.ownerAmount,
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `financial-report-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    // Summary sheet
+    const summaryData = [
+      ["Financial Report Summary"],
+      [`Generated: ${format(new Date(), "PPP")}`],
+      [],
+      ["Metric", "Value"],
+      ["Total Revenue", totals?.totalRevenue],
+      ["Total GST", totals?.totalGst],
+      ["Platform Commission", totals?.totalPlatformFee],
+      ["Owner Payments", totals?.totalOwnerAmount],
+      ["Total Bookings", totals?.bookingCount],
+      ["Paid Bookings", totals?.paidCount ?? 0],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), "Summary");
+
+    // Revenue by Centre sheet
+    const centreData = [
+      ["Centre Name", "State", "Bookings", "Revenue", "GST", "Platform Fee", "Owner Amount"],
+      ...revenueByCentre.map(row => [
+        row.centreName ?? "Unknown",
+        row.state ?? "",
+        row.bookingCount,
+        row.totalRevenue,
+        row.totalGst,
+        row.platformFee,
+        row.ownerAmount,
+      ]),
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(centreData), "Revenue by Centre");
+
+    // Revenue by Month sheet
+    const monthData = [
+      ["Month", "Bookings", "Revenue", "Platform Fee"],
+      ...revenueByMonth.map(row => [
+        row.month,
+        row.bookingCount,
+        row.totalRevenue,
+        row.platformFee,
+      ]),
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(monthData), "Revenue by Month");
+
+    // Payment Breakdown sheet
+    const paymentData = [
+      ["Payment Method", "Booking Count", "Total"],
+      ...paymentBreakdown.map(pm => [
+        pm.paymentMethod === "stripe" ? "Stripe" : "Invoice",
+        pm.count,
+        pm.total,
+      ]),
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(paymentData), "Payment Breakdown");
+
+    XLSX.writeFile(wb, `financial-report-${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+  };
 
   return (
     <AdminLayout>
@@ -127,6 +211,22 @@ export default function AdminFinancials() {
                 }}
               >
                 Clear Filters
+              </Button>
+              <Button
+                variant="outline"
+                onClick={exportCSV}
+                disabled={!totals}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </Button>
+              <Button
+                variant="outline"
+                onClick={exportExcel}
+                disabled={!totals}
+              >
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Export Excel
               </Button>
             </div>
           </CardContent>

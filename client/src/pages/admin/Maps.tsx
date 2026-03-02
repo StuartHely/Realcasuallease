@@ -93,7 +93,8 @@ export default function AdminMaps() {
   const uploadMapMutation = trpc.admin.uploadCentreMap.useMutation({
     onSuccess: (data: any) => {
       toast.success("Map uploaded successfully");
-      setMapPreviewUrl(data.mapUrl);
+      setMapPreviewUrl(data.url);
+      setMapImage(null);
     },
     onError: (error: any) => {
       toast.error(`Failed to upload map: ${error.message}`);
@@ -103,7 +104,8 @@ export default function AdminMaps() {
   const uploadFloorLevelMapMutation = trpc.admin.uploadFloorLevelMap.useMutation({
     onSuccess: (data: any) => {
       toast.success("Floor plan uploaded successfully");
-      setMapPreviewUrl(data.mapUrl);
+      setMapPreviewUrl(data.url);
+      setMapImage(null);
       refetchFloorLevels();
     },
     onError: (error: any) => {
@@ -173,7 +175,7 @@ export default function AdminMaps() {
     } else {
       setMarkers((prevMarkers) => prevMarkers.length > 0 ? [] : prevMarkers);
     }
-  }, [centre?.mapImageUrl, centre?.id, sites.length, selectedCentreId, selectedFloorLevelId, floorLevels.length]);
+  }, [centre?.mapImageUrl, centre?.id, sites, selectedCentreId, selectedFloorLevelId, floorLevels]);
 
   // Auto-select first floor level when floor levels are loaded
   useEffect(() => {
@@ -568,66 +570,108 @@ export default function AdminMaps() {
                 <CardHeader>
                   <CardTitle>Position Site Markers</CardTitle>
                   <CardDescription>
-                    Click on the map to add markers for each site. Drag markers to reposition them.
+                    {sites.length > 0
+                      ? "Click on the map to place the next unplaced site. Drag markers to reposition them."
+                      : "No sites have been created yet. Create sites first, then return here to place them on the map."}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-4">
-                      <div
-                        ref={canvasRef}
-                        className="relative inline-block cursor-crosshair"
-                        onClick={handleCanvasClick}
-                        onMouseMove={handleMarkerDrag}
-                        onMouseUp={handleMarkerDragEnd}
-                        onMouseLeave={handleMarkerDragEnd}
-                      >
-                        <img
-                          ref={imageRef}
-                          src={mapPreviewUrl}
-                          alt="Floor plan"
-                          className="max-w-full h-auto"
-                          draggable={false}
-                        />
-                        {markers.map((marker) => (
+                    {sites.length === 0 ? (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
+                        <MapPin className="h-10 w-10 text-amber-400 mx-auto mb-3" />
+                        <p className="text-amber-800 font-medium mb-2">No sites to place on this map</p>
+                        <p className="text-sm text-amber-700 mb-4">
+                          Sites need to be created before they can be positioned on the floor plan.
+                        </p>
+                        <Button
+                          onClick={() => setLocation(`/admin/sites?centreId=${selectedCentreId}`)}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Go to Site Management
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-4">
                           <div
-                            key={marker.siteId}
-                            className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-move group"
-                            style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
-                            onMouseDown={() => handleMarkerDragStart(marker.siteId)}
+                            ref={canvasRef}
+                            className="relative inline-block cursor-crosshair"
+                            onClick={handleCanvasClick}
+                            onMouseMove={handleMarkerDrag}
+                            onMouseUp={handleMarkerDragEnd}
+                            onMouseLeave={handleMarkerDragEnd}
                           >
-                            <div className="relative">
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: '#123047', color: '#F5F7FA' }}>
-                                {marker.siteNumber}
-                              </div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRemoveMarker(marker.siteId);
-                                }}
-                                className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            <img
+                              ref={imageRef}
+                              src={mapPreviewUrl}
+                              alt="Floor plan"
+                              className="max-w-full h-auto"
+                              draggable={false}
+                            />
+                            {markers.map((marker) => (
+                              <div
+                                key={marker.siteId}
+                                className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-move group"
+                                style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
+                                onMouseDown={() => handleMarkerDragStart(marker.siteId)}
                               >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
+                                <div className="relative">
+                                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: '#123047', color: '#F5F7FA' }}>
+                                    {marker.siteNumber}
+                                  </div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemoveMarker(marker.siteId);
+                                    }}
+                                    className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                        </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-600">
-                        {markers.length} of {sites.length} sites marked
-                      </div>
-                      <Button
-                        onClick={handleSaveMarkers}
-                        disabled={markers.length === 0 || saveMarkersMutation.isPending}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        <Save className="mr-2 h-4 w-4" />
-                        {saveMarkersMutation.isPending ? "Saving..." : "Save Markers"}
-                      </Button>
-                    </div>
+                        {/* Unmapped sites list */}
+                        {(() => {
+                          const unmappedSites = sites.filter(
+                            (site: any) => !markers.some((m) => m.siteId === site.id)
+                          );
+                          if (unmappedSites.length === 0) return null;
+                          return (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                              <p className="text-sm font-medium text-blue-800 mb-1">
+                                Unplaced sites ({unmappedSites.length}):
+                              </p>
+                              <p className="text-sm text-blue-700">
+                                {unmappedSites.map((s: any) => s.siteNumber).join(", ")}
+                              </p>
+                              <p className="text-xs text-blue-600 mt-1">
+                                Click on the map to place the next site: <strong>{unmappedSites[0]?.siteNumber}</strong>
+                              </p>
+                            </div>
+                          );
+                        })()}
+
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-gray-600">
+                            {markers.length} of {sites.length} sites marked
+                          </div>
+                          <Button
+                            onClick={handleSaveMarkers}
+                            disabled={markers.length === 0 || saveMarkersMutation.isPending}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <Save className="mr-2 h-4 w-4" />
+                            {saveMarkersMutation.isPending ? "Saving..." : "Save Markers"}
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>

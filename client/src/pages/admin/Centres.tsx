@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { Building2, Edit, Eye, EyeOff, MapPin, Plus, Trash2, Upload, FileText, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -265,11 +264,10 @@ export default function AdminCentres() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
+                    <RichTextEditor
                       value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      rows={3}
+                      onChange={(val) => setFormData({ ...formData, description: val })}
+                      placeholder="Centre description (supports bold, italic, lists...)"
                     />
                   </div>
 

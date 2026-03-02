@@ -35,11 +35,14 @@ export function ManageSiteCategoriesDialog({
     { enabled: open }
   );
 
+  const utils = trpc.useUtils();
+
   // Save categories mutation
   const saveCategoriesMutation = trpc.sites.setApprovedCategories.useMutation({
     onSuccess: () => {
       toast.success("Categories updated successfully");
       refetchApproved();
+      utils.usageCategories.getSitesWithCategories.invalidate();
       onOpenChange(false);
     },
     onError: (error: any) => {

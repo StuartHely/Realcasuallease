@@ -132,10 +132,10 @@ export const adminRouter = router({
         const { dailyRate, weeklyRate, weekendRate, outgoingsPerDay, ...rest } = input;
         return await db.createSite({
           ...rest,
-          pricePerDay: dailyRate,
-          pricePerWeek: weeklyRate,
-          weekendPricePerDay: weekendRate || null,
-          outgoingsPerDay: outgoingsPerDay || null,
+          pricePerDay: dailyRate && dailyRate.trim() ? dailyRate : null,
+          pricePerWeek: weeklyRate && weeklyRate.trim() ? weeklyRate : null,
+          weekendPricePerDay: weekendRate && weekendRate.trim() ? weekendRate : null,
+          outgoingsPerDay: outgoingsPerDay && outgoingsPerDay.trim() ? outgoingsPerDay : null,
         });
       }),
 
@@ -162,11 +162,17 @@ export const adminRouter = router({
         const { id, dailyRate, weeklyRate, weekendRate, outgoingsPerDay, maxTables, ...rest } = input;
         const data: any = { ...rest };
         
-        if (dailyRate !== undefined) data.pricePerDay = dailyRate || null;
-        if (weeklyRate !== undefined) data.pricePerWeek = weeklyRate || null;
-        if (weekendRate !== undefined) data.weekendPricePerDay = weekendRate || null;
-        if (outgoingsPerDay !== undefined) data.outgoingsPerDay = outgoingsPerDay || null;
+        // Map rate field names and sanitize: empty strings → null for decimal columns
+        if (dailyRate !== undefined) data.pricePerDay = dailyRate && dailyRate.trim() ? dailyRate : null;
+        if (weeklyRate !== undefined) data.pricePerWeek = weeklyRate && weeklyRate.trim() ? weeklyRate : null;
+        if (weekendRate !== undefined) data.weekendPricePerDay = weekendRate && weekendRate.trim() ? weekendRate : null;
+        if (outgoingsPerDay !== undefined) data.outgoingsPerDay = outgoingsPerDay && outgoingsPerDay.trim() ? outgoingsPerDay : null;
         if (maxTables !== undefined) data.maxTables = (maxTables != null && !isNaN(maxTables)) ? maxTables : null;
+        
+        // Sanitize optional text fields: empty strings → null for cleaner DB
+        if (data.description === '') data.description = null;
+        if (data.size === '') data.size = null;
+        if (data.restrictions === '') data.restrictions = null;
         
         try {
           const result = await db.updateSite(id, data);
@@ -648,16 +654,24 @@ export const adminRouter = router({
         }
 
         let created = 0;
+        let skipped = 0;
         for (const site of allSites) {
           const multiplier = 1 + (percentageIncrease / 100);
           const baseWeekdayRate = site.pricePerDay ? parseFloat(site.pricePerDay) : 0;
           const baseWeekendRate = site.weekendPricePerDay ? parseFloat(site.weekendPricePerDay) : 0;
+          const baseWeeklyRate = site.pricePerWeek ? parseFloat(site.pricePerWeek) : 0;
           
+          // Skip sites with no base pricing — creating seasonal rates with $0 is meaningless
+          if (baseWeekdayRate === 0 && baseWeekendRate === 0 && baseWeeklyRate === 0) {
+            skipped++;
+            continue;
+          }
+
           const weekdayRate = baseWeekdayRate > 0 ? Math.round(baseWeekdayRate * multiplier * 100) / 100 : undefined;
           const weekendRate = baseWeekendRate > 0 
             ? Math.round(baseWeekendRate * multiplier * 100) / 100 
             : (baseWeekdayRate > 0 ? Math.round(baseWeekdayRate * multiplier * 100) / 100 : undefined);
-          const weeklyRate = site.pricePerWeek ? Math.round(parseFloat(site.pricePerWeek) * multiplier * 100) / 100 : undefined;
+          const weeklyRate = baseWeeklyRate > 0 ? Math.round(baseWeeklyRate * multiplier * 100) / 100 : undefined;
 
           await createSeasonalRate({
             siteId: site.id,
@@ -671,7 +685,35 @@ export const adminRouter = router({
           created++;
         }
 
-        return { created, totalSites: allSites.length };
+        return { created, skipped, totalSites: allSites.length };
+      }),
+
+    cleanupZeroSeasonalRates: adminProcedure
+      .mutation(async () => {
+        const { getDb } = await import('../db');
+        const { seasonalRates } = await import('../../drizzle/schema');
+        const { inArray } = await import('drizzle-orm');
+        const dbInstance = await getDb();
+        if (!dbInstance) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        const allRates = await dbInstance.select().from(seasonalRates);
+        const idsToDelete: number[] = [];
+
+        for (const rate of allRates) {
+          const weekday = rate.weekdayRate ? parseFloat(rate.weekdayRate) : 0;
+          const weekend = rate.weekendRate ? parseFloat(rate.weekendRate) : 0;
+          const weekly = rate.weeklyRate ? parseFloat(rate.weeklyRate) : 0;
+
+          if (weekday === 0 && weekend === 0 && weekly === 0) {
+            idsToDelete.push(rate.id);
+          }
+        }
+
+        if (idsToDelete.length > 0) {
+          await dbInstance.delete(seasonalRates).where(inArray(seasonalRates.id, idsToDelete));
+        }
+
+        return { deleted: idsToDelete.length, total: allRates.length };
       }),
 
     // Invoice Payment Management

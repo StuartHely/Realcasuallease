@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Calendar, CalendarDays } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, CalendarDays, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { BulkIncreaseForm } from "@/components/BulkIncreaseForm";
 import { SeasonalRateCalendar } from "@/components/SeasonalRateCalendar";
@@ -63,6 +63,16 @@ export default function SeasonalRates() {
     },
   });
 
+  const cleanupMutation = trpc.admin.cleanupZeroSeasonalRates.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Cleaned up ${data.deleted} seasonal rates with $0 pricing`);
+      refetch();
+    },
+    onError: (error) => {
+      toast.error("Failed to clean up $0 rates: " + error.message);
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -89,10 +99,25 @@ export default function SeasonalRates() {
       <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-6 w-6" />
-            Seasonal Pricing Management
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-6 w-6" />
+              Seasonal Pricing Management
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (confirm("This will delete all seasonal rates where every rate is $0. Continue?")) {
+                  cleanupMutation.mutate();
+                }
+              }}
+              disabled={cleanupMutation.isPending}
+            >
+              <Trash className="h-4 w-4 mr-2" />
+              {cleanupMutation.isPending ? "Cleaning..." : "Clean Up $0 Rates"}
+            </Button>
+          </div>
           <CardDescription>
             Set special rates for holidays, events, and peak seasons
           </CardDescription>

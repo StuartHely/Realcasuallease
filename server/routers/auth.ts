@@ -111,6 +111,87 @@ export const authRouter = router({
       return { success: true };
     }),
 
+  register: publicProcedure
+    .input(z.object({
+      email: z.string().email(),
+      name: z.string().min(1),
+      password: z.string().min(8, "Password must be at least 8 characters"),
+      confirmPassword: z.string(),
+      companyName: z.string().optional(),
+      tradingName: z.string().optional(),
+      companyWebsite: z.string().optional(),
+      abn: z.string().optional().refine(
+        (val) => !val || /^\d{11}$/.test(val),
+        { message: "ABN must be exactly 11 digits" }
+      ),
+      address: z.string().optional(),
+      city: z.string().optional(),
+      state: z.string().optional(),
+      postcode: z.string().optional(),
+      productService: z.string().optional(),
+      productDetails: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const clientIp = ctx.req.ip || ctx.req.socket.remoteAddress || "unknown";
+      const { allowed, retryAfterMs } = checkRateLimit(`register:${clientIp}`);
+      if (!allowed) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: `Too many registration attempts. Try again in ${Math.ceil(retryAfterMs / 60000)} minutes.`,
+        });
+      }
+
+      if (input.password !== input.confirmPassword) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Passwords do not match" });
+      }
+
+      const { getUserByEmail, getDb } = await import('../db');
+      const existingUser = await getUserByEmail(input.email);
+      if (existingUser) {
+        throw new TRPCError({ code: "CONFLICT", message: "User with this email already exists" });
+      }
+
+      const bcrypt = await import('bcryptjs');
+      const hashedPassword = await bcrypt.hash(input.password, 10);
+
+      const { users, customerProfiles } = await import('../../drizzle/schema');
+      const dbInstance = await getDb();
+
+      if (!dbInstance) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+      }
+
+      const openId = `manual_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+      const [newUser] = await dbInstance.insert(users).values({
+        openId,
+        username: input.email,
+        passwordHash: hashedPassword,
+        email: input.email,
+        name: input.name,
+        role: 'customer',
+        loginMethod: 'password',
+      }).returning({ id: users.id });
+
+      if (input.companyName || input.productService) {
+        await dbInstance.insert(customerProfiles).values({
+          userId: newUser.id,
+          companyName: input.companyName || null,
+          tradingName: input.tradingName || null,
+          website: input.companyWebsite || null,
+          abn: input.abn || null,
+          streetAddress: input.address || null,
+          city: input.city || null,
+          state: input.state || null,
+          postcode: input.postcode || null,
+          productCategory: input.productService || null,
+          productDetails: input.productDetails || null,
+        });
+      }
+
+      return { success: true };
+    }),
+
   resetPassword: publicProcedure
     .input(z.object({
       token: z.string().min(1),

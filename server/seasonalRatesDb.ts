@@ -72,6 +72,13 @@ export async function createSeasonalRate(data: {
   weekendRate?: number;
   weeklyRate?: number;
 }): Promise<SeasonalRate> {
+  const hasNonZeroRate = (data.weekdayRate && data.weekdayRate > 0) || 
+                       (data.weekendRate && data.weekendRate > 0) || 
+                       (data.weeklyRate && data.weeklyRate > 0);
+  if (!hasNonZeroRate) {
+    throw new Error("Cannot create seasonal rate with all $0 rates");
+  }
+
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   

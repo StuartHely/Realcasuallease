@@ -218,6 +218,10 @@ export async function cancelBooking(params: {
     );
   }
 
+  // Invalidate search cache so availability reflects cancellation
+  const { clearSearchCache } = await import("./searchCache");
+  clearSearchCache();
+
   return {
     success: true,
     bookingNumber: booking.bookingNumber,

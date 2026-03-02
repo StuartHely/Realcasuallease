@@ -313,7 +313,24 @@ export const vacantShopBookingsRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Completed bookings cannot be cancelled" });
       }
 
-      await assetDb.updateVacantShopBooking(input.bookingId, { status: "cancelled" });
+      const now = new Date();
+
+      // Determine refund status (matching CL cancellationService pattern)
+      let refundStatus: string | null = null;
+      if (!booking.paidAt) {
+        refundStatus = "not_required";
+      } else if (booking.paymentMethod === "invoice") {
+        refundStatus = "manual";
+      } else if (booking.paymentMethod === "stripe") {
+        refundStatus = "pending";
+      }
+
+      await assetDb.updateVacantShopBooking(input.bookingId, {
+        status: "cancelled",
+        cancelledAt: now,
+        refundStatus,
+        refundPendingAt: refundStatus === "pending" ? now : undefined,
+      } as any);
 
       const { logAssetBookingStatusChange } = await import("../bookingStatusHelper");
       await logAssetBookingStatusChange({
@@ -327,19 +344,23 @@ export const vacantShopBookingsRouter = router({
 
       // Create reversal transaction if a booking transaction exists
       const { getDb } = await import("../db");
-      const { transactions, vacantShops, shoppingCentres } = await import("../../drizzle/schema");
+      const { transactions, vacantShops, shoppingCentres, users } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
       const dbInstance = await getDb();
+      let centreName = "";
+      let shopNumber = "";
       if (dbInstance) {
         const [originalTx] = await dbInstance.select().from(transactions)
           .where(eq(transactions.bookingId, input.bookingId));
         if (originalTx && originalTx.type === "booking") {
           const [shop] = await dbInstance.select().from(vacantShops).where(eq(vacantShops.id, booking.vacantShopId));
+          shopNumber = shop?.shopNumber || "";
           const centreId = shop?.centreId;
           const [centre] = centreId
             ? await dbInstance.select().from(shoppingCentres).where(eq(shoppingCentres.id, centreId))
             : [null];
           if (centre) {
+            centreName = centre.name;
             await dbInstance.insert(transactions).values({
               bookingId: input.bookingId,
               ownerId: centre.ownerId,
@@ -354,9 +375,47 @@ export const vacantShopBookingsRouter = router({
             });
           }
         }
+
+        // Process Stripe refund if applicable
+        if (
+          booking.paymentMethod === "stripe" &&
+          booking.paidAt &&
+          booking.stripePaymentIntentId
+        ) {
+          try {
+            const { ENV } = await import("../_core/env");
+            const Stripe = (await import("stripe")).default;
+            const stripe = new Stripe(ENV.stripeSecretKey);
+            await stripe.refunds.create({ payment_intent: booking.stripePaymentIntentId });
+            refundStatus = "processed";
+            await assetDb.updateVacantShopBooking(input.bookingId, { refundStatus: "processed" } as any);
+          } catch (stripeError) {
+            console.error(`[VS Cancellation] Stripe refund failed for ${booking.bookingNumber}:`, stripeError);
+            await assetDb.updateVacantShopBooking(input.bookingId, { refundStatus: "pending", refundPendingAt: now } as any);
+          }
+        }
+
+        // Send cancellation email (fire-and-forget)
+        if (booking.customerEmail || ctx.user.email) {
+          const [customer] = await dbInstance.select().from(users).where(eq(users.id, booking.customerId));
+          import("../_core/bookingNotifications").then(({ sendBookingCancellationEmail }) =>
+            sendBookingCancellationEmail({
+              bookingNumber: booking.bookingNumber,
+              customerName: customer?.name || "Customer",
+              customerEmail: booking.customerEmail || customer?.email || "",
+              centreName,
+              siteNumber: `Shop ${shopNumber}`,
+              startDate: booking.startDate,
+              endDate: booking.endDate,
+              totalAmount: booking.totalAmount,
+              cancellationReason: input.reason,
+              refundStatus: refundStatus || "not_required",
+            })
+          ).catch(e => console.error("[VS Cancellation] Email failed:", e));
+        }
       }
 
-      return { success: true, bookingNumber: booking.bookingNumber };
+      return { success: true, bookingNumber: booking.bookingNumber, refundStatus };
     }),
 
   list: ownerProcedure
@@ -645,7 +704,24 @@ export const thirdLineBookingsRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Completed bookings cannot be cancelled" });
       }
 
-      await assetDb.updateThirdLineBooking(input.bookingId, { status: "cancelled" });
+      const now = new Date();
+
+      // Determine refund status (matching CL cancellationService pattern)
+      let refundStatus: string | null = null;
+      if (!booking.paidAt) {
+        refundStatus = "not_required";
+      } else if (booking.paymentMethod === "invoice") {
+        refundStatus = "manual";
+      } else if (booking.paymentMethod === "stripe") {
+        refundStatus = "pending";
+      }
+
+      await assetDb.updateThirdLineBooking(input.bookingId, {
+        status: "cancelled",
+        cancelledAt: now,
+        refundStatus,
+        refundPendingAt: refundStatus === "pending" ? now : undefined,
+      } as any);
 
       const { logAssetBookingStatusChange } = await import("../bookingStatusHelper");
       await logAssetBookingStatusChange({
@@ -659,19 +735,23 @@ export const thirdLineBookingsRouter = router({
 
       // Create reversal transaction if a booking transaction exists
       const { getDb } = await import("../db");
-      const { transactions, thirdLineIncome, shoppingCentres } = await import("../../drizzle/schema");
+      const { transactions, thirdLineIncome, shoppingCentres, users } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
       const dbInstance = await getDb();
+      let centreName = "";
+      let assetNumber = "";
       if (dbInstance) {
         const [originalTx] = await dbInstance.select().from(transactions)
           .where(eq(transactions.bookingId, input.bookingId));
         if (originalTx && originalTx.type === "booking") {
           const [asset] = await dbInstance.select().from(thirdLineIncome).where(eq(thirdLineIncome.id, booking.thirdLineIncomeId));
+          assetNumber = asset?.assetNumber || "";
           const centreId = asset?.centreId;
           const [centre] = centreId
             ? await dbInstance.select().from(shoppingCentres).where(eq(shoppingCentres.id, centreId))
             : [null];
           if (centre) {
+            centreName = centre.name;
             await dbInstance.insert(transactions).values({
               bookingId: input.bookingId,
               ownerId: centre.ownerId,
@@ -686,9 +766,47 @@ export const thirdLineBookingsRouter = router({
             });
           }
         }
+
+        // Process Stripe refund if applicable
+        if (
+          booking.paymentMethod === "stripe" &&
+          booking.paidAt &&
+          booking.stripePaymentIntentId
+        ) {
+          try {
+            const { ENV } = await import("../_core/env");
+            const Stripe = (await import("stripe")).default;
+            const stripe = new Stripe(ENV.stripeSecretKey);
+            await stripe.refunds.create({ payment_intent: booking.stripePaymentIntentId });
+            refundStatus = "processed";
+            await assetDb.updateThirdLineBooking(input.bookingId, { refundStatus: "processed" } as any);
+          } catch (stripeError) {
+            console.error(`[TLI Cancellation] Stripe refund failed for ${booking.bookingNumber}:`, stripeError);
+            await assetDb.updateThirdLineBooking(input.bookingId, { refundStatus: "pending", refundPendingAt: now } as any);
+          }
+        }
+
+        // Send cancellation email (fire-and-forget)
+        if (booking.customerEmail || ctx.user.email) {
+          const [customer] = await dbInstance.select().from(users).where(eq(users.id, booking.customerId));
+          import("../_core/bookingNotifications").then(({ sendBookingCancellationEmail }) =>
+            sendBookingCancellationEmail({
+              bookingNumber: booking.bookingNumber,
+              customerName: customer?.name || "Customer",
+              customerEmail: booking.customerEmail || customer?.email || "",
+              centreName,
+              siteNumber: assetNumber,
+              startDate: booking.startDate,
+              endDate: booking.endDate,
+              totalAmount: booking.totalAmount,
+              cancellationReason: input.reason,
+              refundStatus: refundStatus || "not_required",
+            })
+          ).catch(e => console.error("[TLI Cancellation] Email failed:", e));
+        }
       }
 
-      return { success: true, bookingNumber: booking.bookingNumber };
+      return { success: true, bookingNumber: booking.bookingNumber, refundStatus };
     }),
 
   list: ownerProcedure

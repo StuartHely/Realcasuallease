@@ -1259,7 +1259,8 @@ export async function recordPayment(bookingId: number, recordedBy: string) {
     createdAt: new Date(),
   });
   
-  // Send payment receipt email
+  // Send payment receipt email to customer (fire-and-forget)
+  const paidAt = new Date();
   try {
     const customer = await getUserById(booking.customerId);
     const customerProfile = customer ? await getCustomerProfileByUserId(customer.id) : null;
@@ -1277,8 +1278,30 @@ export async function recordPayment(bookingId: number, recordedBy: string) {
         totalAmount: booking.totalAmount,
         companyName: customerProfile?.companyName || undefined,
         tradingName: customerProfile?.tradingName || undefined,
-        paidAt: new Date(),
+        paidAt,
       });
+    }
+
+    // Send payment notification to owner (fire-and-forget)
+    if (centre.ownerId) {
+      const owner = await getOwnerById(centre.ownerId);
+      if (owner && owner.email) {
+        const { sendOwnerPaymentNotificationEmail } = await import('./_core/bookingNotifications');
+        sendOwnerPaymentNotificationEmail({
+          ownerEmail: owner.email,
+          ownerName: owner.name || 'Owner',
+          bookingNumber: booking.bookingNumber,
+          customerName: customer?.name || 'Customer',
+          centreName: centre.name,
+          siteNumber: site.siteNumber,
+          startDate: booking.startDate,
+          endDate: booking.endDate,
+          totalAmount: booking.totalAmount,
+          ownerAmount: booking.ownerAmount,
+          platformFee: booking.platformFee,
+          paidAt,
+        }).catch((err: any) => console.error('[recordPayment] Owner notification failed:', err));
+      }
     }
   } catch (emailError) {
     console.error('[recordPayment] Failed to send receipt email:', emailError);

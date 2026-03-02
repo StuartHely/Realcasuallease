@@ -55,6 +55,12 @@ export const centresRouter = router({
     .query(async ({ input }) => {
       return await db.getNearbyCentres(input.centreId, input.radiusKm);
     }),
+
+  getFloorLevels: publicProcedure
+    .input(z.object({ centreId: z.number() }))
+    .query(async ({ input }) => {
+      return await db.getFloorLevelsByCentre(input.centreId);
+    }),
   
   listWithCodes: ownerProcedure.query(async () => {
     const { generateAbbreviatedCentreCode } = await import('../centreCodeHelper');
