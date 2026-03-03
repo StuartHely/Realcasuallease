@@ -147,39 +147,126 @@ describe("RBAC Role Hierarchy", () => {
     });
   });
 
-  describe("registerUser RBAC (owner_super_admin restrictions)", () => {
-    const ownerRolesAllowedBySuper = [
+  describe("registerUser RBAC", () => {
+    /**
+     * Mirrors the registerUser mutation logic from server/routers/admin.ts.
+     * The endpoint sits behind ownerProcedure, so only non-customer/non-viewer
+     * roles can call it at all.  Inside the mutation:
+     *   - mega_admin / mega_state_admin can create ANY role
+     *   - owner_super_admin can only create owner_viewer, owner_centre_manager,
+     *     or owner_marketing_manager AND only for their own agency
+     *   - all other callers are rejected
+     */
+    type CallerCtx = { role: Role; assignedOwnerId: number | null };
+
+    const SUPER_ADMIN_ALLOWED_ROLES = [
       "owner_viewer",
       "owner_centre_manager",
       "owner_marketing_manager",
-    ];
+    ] as const;
 
-    function canSuperAdminCreateRole(targetRole: string): boolean {
-      return ownerRolesAllowedBySuper.includes(targetRole);
+    function registerUserCheck(
+      caller: CallerCtx,
+      targetRole: Role,
+      targetOwnerId: number | null
+    ): { allowed: boolean; reason?: string } {
+      const isMegaAdmin = ["mega_admin", "mega_state_admin"].includes(caller.role);
+
+      if (isMegaAdmin) return { allowed: true };
+
+      if (caller.role !== "owner_super_admin") {
+        return { allowed: false, reason: "Only admins or owner super admins can register users" };
+      }
+
+      if (!(SUPER_ADMIN_ALLOWED_ROLES as readonly string[]).includes(targetRole)) {
+        return { allowed: false, reason: "Owner super admins can only create viewer and manager roles" };
+      }
+
+      if (!caller.assignedOwnerId) {
+        return { allowed: false, reason: "Your account is not assigned to an owner agency" };
+      }
+
+      if (targetOwnerId !== caller.assignedOwnerId) {
+        return { allowed: false, reason: "You can only create users for your own agency" };
+      }
+
+      return { allowed: true };
     }
 
-    it("owner_super_admin can create owner_viewer", () => {
-      expect(canSuperAdminCreateRole("owner_viewer")).toBe(true);
+    // --- mega_admin bypasses all restrictions ---
+
+    it("mega_admin can create any role", () => {
+      const caller: CallerCtx = { role: "mega_admin", assignedOwnerId: null };
+      for (const role of ALL_ROLES) {
+        expect(registerUserCheck(caller, role, 99).allowed).toBe(true);
+      }
     });
 
-    it("owner_super_admin can create owner_centre_manager", () => {
-      expect(canSuperAdminCreateRole("owner_centre_manager")).toBe(true);
+    it("mega_state_admin can create any role", () => {
+      const caller: CallerCtx = { role: "mega_state_admin", assignedOwnerId: null };
+      for (const role of ALL_ROLES) {
+        expect(registerUserCheck(caller, role, 99).allowed).toBe(true);
+      }
     });
 
-    it("owner_super_admin can create owner_marketing_manager", () => {
-      expect(canSuperAdminCreateRole("owner_marketing_manager")).toBe(true);
+    // --- owner_super_admin: allowed target roles ---
+
+    it.each(["owner_viewer", "owner_centre_manager", "owner_marketing_manager"] as Role[])(
+      "owner_super_admin can create %s for their own agency",
+      (targetRole) => {
+        const caller: CallerCtx = { role: "owner_super_admin", assignedOwnerId: 5 };
+        expect(registerUserCheck(caller, targetRole, 5).allowed).toBe(true);
+      }
+    );
+
+    // --- owner_super_admin: forbidden target roles ---
+
+    it.each([
+      "customer",
+      "owner_regional_admin",
+      "owner_state_admin",
+      "owner_super_admin",
+      "mega_state_admin",
+      "mega_admin",
+    ] as Role[])(
+      "owner_super_admin cannot create %s",
+      (targetRole) => {
+        const caller: CallerCtx = { role: "owner_super_admin", assignedOwnerId: 5 };
+        const result = registerUserCheck(caller, targetRole, 5);
+        expect(result.allowed).toBe(false);
+      }
+    );
+
+    // --- owner_super_admin: agency scoping ---
+
+    it("owner_super_admin cannot create users for a different agency", () => {
+      const caller: CallerCtx = { role: "owner_super_admin", assignedOwnerId: 5 };
+      const result = registerUserCheck(caller, "owner_viewer", 99);
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toMatch(/your own agency/i);
     });
 
-    it("owner_super_admin cannot create mega_admin", () => {
-      expect(canSuperAdminCreateRole("mega_admin")).toBe(false);
+    it("owner_super_admin without assignedOwnerId is rejected", () => {
+      const caller: CallerCtx = { role: "owner_super_admin", assignedOwnerId: null };
+      const result = registerUserCheck(caller, "owner_viewer", 5);
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toMatch(/not assigned to an owner agency/i);
     });
 
-    it("owner_super_admin cannot create mega_state_admin", () => {
-      expect(canSuperAdminCreateRole("mega_state_admin")).toBe(false);
-    });
+    // --- other owner roles cannot register users ---
 
-    it("owner_super_admin cannot create customer", () => {
-      expect(canSuperAdminCreateRole("customer")).toBe(false);
-    });
+    it.each([
+      "owner_centre_manager",
+      "owner_marketing_manager",
+      "owner_regional_admin",
+      "owner_state_admin",
+    ] as Role[])(
+      "%s cannot register users",
+      (callerRole) => {
+        const caller: CallerCtx = { role: callerRole, assignedOwnerId: 5 };
+        const result = registerUserCheck(caller, "owner_viewer", 5);
+        expect(result.allowed).toBe(false);
+      }
+    );
   });
 });

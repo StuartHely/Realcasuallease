@@ -142,11 +142,14 @@ export default function AdminMaps() {
       const currentFloor = floorLevels.find((fl: any) => fl.id === selectedFloorLevelId);
       if (currentFloor?.mapImageUrl) {
         setMapPreviewUrl(currentFloor.mapImageUrl);
+      } else if (centre?.mapImageUrl) {
+        // Floor level has no dedicated map — fall back to the centre-level map
+        setMapPreviewUrl(centre.mapImageUrl);
       } else {
         setMapPreviewUrl("");
       }
-    } else if (floorLevels.length === 0 && centre?.mapImageUrl) {
-      // Single-level centre
+    } else if (centre?.mapImageUrl) {
+      // Single-level centre or no floor level selected yet
       setMapPreviewUrl(centre.mapImageUrl);
     } else {
       setMapPreviewUrl("");
@@ -288,6 +291,19 @@ export default function AdminMaps() {
     });
   };
 
+  /** Persist markers to DB without blocking the UI. */
+  const autoSaveMarkers = (currentMarkers: typeof markers) => {
+    if (selectedCentreId === 0 || currentMarkers.length === 0) return;
+    saveMarkersMutation.mutate({
+      centreId: selectedCentreId,
+      markers: currentMarkers.map((m) => ({
+        siteId: m.siteId,
+        x: m.x,
+        y: m.y,
+      })),
+    });
+  };
+
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Don't process clicks if a drag just occurred
     if (dragOccurred) {
@@ -310,16 +326,17 @@ export default function AdminMaps() {
     );
 
     if (unmappedSite) {
-      setMarkers([
-        ...markers,
-        {
-          siteId: unmappedSite.id,
-          x: Math.round(xPercent * 10) / 10, // Round to 1 decimal
-          y: Math.round(yPercent * 10) / 10,
-          siteNumber: unmappedSite.siteNumber,
-        },
-      ]);
-      toast.success(`Marker added for ${unmappedSite.siteNumber}`);
+      const newMarker = {
+        siteId: unmappedSite.id,
+        x: Math.round(xPercent * 10) / 10, // Round to 1 decimal
+        y: Math.round(yPercent * 10) / 10,
+        siteNumber: unmappedSite.siteNumber,
+      };
+      const updatedMarkers = [...markers, newMarker];
+      setMarkers(updatedMarkers);
+      // Auto-save immediately so the marker survives navigation
+      autoSaveMarkers(updatedMarkers);
+      toast.success(`Marker placed for ${unmappedSite.siteNumber}`);
     } else {
       toast.info("All sites already have markers. Remove a marker to add a new one.");
     }
@@ -356,6 +373,10 @@ export default function AdminMaps() {
   };
 
   const handleMarkerDragEnd = () => {
+    if (isDragging !== null && dragOccurred) {
+      // Auto-save after repositioning so the change survives navigation
+      autoSaveMarkers(markers);
+    }
     setIsDragging(null);
   };
 

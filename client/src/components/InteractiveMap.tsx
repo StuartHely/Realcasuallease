@@ -193,9 +193,10 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
       </div>
       <div 
         ref={mapContainerRef} 
-        className="relative inline-block overflow-auto max-h-[600px]"
+        className="overflow-auto max-h-[600px]"
         onMouseLeave={handleMarkerLeave}
       >
+        <div className="relative inline-block">
         {mapLoading ? (
           <div className="w-full h-64 flex items-center justify-center bg-gray-100">
             <p className="text-gray-500">Loading map...</p>
@@ -240,6 +241,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
             </div>
           );
         })}
+        </div>
 
         {/* Hover Tooltip - Fixed positioning to work across re-renders */}
         {hoveredSite && (
@@ -409,7 +411,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
 
   // Multi-level centre with side-by-side layout (2 per row)
   if (isMultiLevel && floorLevels.length > 0) {
-    // Get floors with their maps and sites
+    // Get floors with their maps and sites, falling back to centre-level map if needed
     const floorsWithMaps = floorLevels.map((floor: any) => {
       const floorSites = sites.filter((site: Site) => {
         const hasMarkers = site.mapMarkerX !== null && site.mapMarkerY !== null;
@@ -417,7 +419,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
         if (assetTypeFilter !== "all" && siteAssetType !== assetTypeFilter) return false;
         return hasMarkers && site.floorLevelId === floor.id;
       });
-      return { ...floor, sites: floorSites };
+      return { ...floor, effectiveMapUrl: floor.mapImageUrl || mapUrl || "", sites: floorSites };
     });
 
     return (
@@ -431,6 +433,12 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
                 <h4 className="font-semibold text-gray-800">{floor.levelName}</h4>
                 <span className="text-xs text-gray-500">{floor.sites.length} markers</span>
               </div>
+              {!floor.effectiveMapUrl ? (
+                <div className="p-8 text-center">
+                  <p className="text-gray-500 text-sm">Map coming shortly for {floor.levelName}</p>
+                </div>
+              ) : (
+              <>
               {/* Zoom Controls */}
               <div className="absolute top-14 right-2 z-20 flex flex-col gap-1">
                 <Button
@@ -461,13 +469,15 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
                   <RotateCcw className="h-3 w-3" />
                 </Button>
               </div>
-              {/* Map container */}
+              {/* Map container — scroll wrapper is separate from the
+                   positioning context so % markers align to the full image */}
               <div 
-                className="relative inline-block overflow-auto max-h-[400px]"
+                className="overflow-auto max-h-[400px]"
                 onMouseLeave={handleMarkerLeave}
               >
+                <div className="relative inline-block">
                 <img
-                  src={floor.mapImageUrl || ""}
+                  src={floor.effectiveMapUrl}
                   alt={`${centreName} - ${floor.levelName}`}
                   className="max-w-full h-auto"
                   style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}
@@ -502,7 +512,10 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
                     </div>
                   );
                 })}
+                </div>
               </div>
+              </>
+              )}
             </div>
           ))}
         </div>

@@ -116,9 +116,12 @@ function extractProductCategory(query: string): string | undefined {
   // Common product category keywords (will be matched against database categories)
   const categoryKeywords = [
     // Footwear
-    'shoes', 'shoe', 'footwear', 'boots', 'boot', 'ugg', 'sneakers', 'sneaker', 'sandals', 'sandal', 'heels', 'heel',
+    'shoes', 'shoe', 'footwear', 'boots', 'boot', 'ugg', 'sneakers', 'sneaker', 'sandals', 'sandal', 'heels', 'heel', 'socks', 'sock', 'thongs',
     // Clothing & Fashion
     'clothing', 'apparel', 'fashion', 'accessories', 'accessory',
+    'beanies', 'beanie', 'scarves', 'scarf', 'gloves', 'belts', 'belt', 'hats', 'hat', 'caps', 'cap',
+    'sunglasses', 'sunnies', 'wallets', 'wallet', 'handbags', 'handbag', 'bags', 'luggage',
+    'swimwear', 'activewear', 'sportswear', 'uniforms', 'workwear',
     // Jewellery
     'jewelry', 'jewellery', 'watches', 'watch', 'rings', 'ring', 'necklaces', 'necklace',
     // Food & Beverage
@@ -152,7 +155,8 @@ function extractProductCategory(query: string): string | undefined {
   ];
   
   for (const keyword of categoryKeywords) {
-    if (lowerQuery.includes(keyword)) {
+    const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+    if (regex.test(lowerQuery)) {
       return keyword;
     }
   }
@@ -401,9 +405,12 @@ function extractCentreName(query: string): string {
   // Remove product category keywords
   const categoryKeywords = [
     // Footwear
-    'shoes', 'shoe', 'footwear', 'boots', 'boot', 'ugg', 'sneakers', 'sneaker', 'sandals', 'sandal', 'heels', 'heel',
+    'shoes', 'shoe', 'footwear', 'boots', 'boot', 'ugg', 'sneakers', 'sneaker', 'sandals', 'sandal', 'heels', 'heel', 'socks', 'sock', 'thongs',
     // Clothing & Fashion
     'clothing', 'apparel', 'fashion', 'accessories', 'accessory',
+    'beanies', 'beanie', 'scarves', 'scarf', 'gloves', 'belts', 'belt', 'hats', 'hat', 'caps', 'cap',
+    'sunglasses', 'sunnies', 'wallets', 'wallet', 'handbags', 'handbag', 'bags', 'luggage',
+    'swimwear', 'activewear', 'sportswear', 'uniforms', 'workwear',
     // Jewellery
     'jewelry', 'jewellery', 'watches', 'watch', 'rings', 'ring', 'necklaces', 'necklace',
     // Food & Beverage

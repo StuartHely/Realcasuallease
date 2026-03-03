@@ -235,7 +235,7 @@ export default function Search() {
   const casualLeasingCount = useMemo(() => {
     const clSites = data?.sites?.filter((s: any) => s.assetType === 'casual_leasing' || !s.assetType) || [];
     const fetchedCLSites = casualLeasingSites || [];
-    return clSites.length + fetchedCLSites.length;
+    return fetchedCLSites.length > 0 ? fetchedCLSites.length : clSites.length;
   }, [data?.sites, casualLeasingSites]);
 
   const vacantShopsCount = vacantShops?.length || 0;
@@ -518,6 +518,13 @@ export default function Search() {
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-800 font-medium text-lg">
                 This product category is not permitted at this centre. Please try a different centre or search without the category filter.
+              </p>
+            </div>
+          )}
+          {data?.categoryUnrecognised && data?.searchInterpretation?.productCategory && (
+            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-amber-800 font-medium text-base">
+                We couldn't match a specific category for '{data.searchInterpretation.productCategory}' — showing all available sites. You may want to check with the centre directly about permitted product categories.
               </p>
             </div>
           )}
