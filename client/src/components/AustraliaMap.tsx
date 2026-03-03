@@ -6,6 +6,7 @@ import { MarkerClusterer } from "@googlemaps/markerclusterer";
 interface Centre {
   id: number;
   name: string;
+  slug: string | null;
   latitude: string | null;
   longitude: string | null;
   suburb: string | null;
@@ -120,7 +121,7 @@ export default function AustraliaMap({ centres }: AustraliaMapProps) {
               />
             ` : ""}
             <button 
-              onclick="window.location.href='/centre/${centre.id}'"
+              onclick="window.location.href='/centre/${centre.slug || centre.id}'"
               style="
                 background-color: #2563eb;
                 color: white;
@@ -143,7 +144,7 @@ export default function AustraliaMap({ centres }: AustraliaMapProps) {
 
       // Navigate to centre on click
       markerDiv.addEventListener("click", () => {
-        setLocation(`/centre/${centre.id}`);
+        setLocation(`/centre/${centre.slug || centre.id}`);
       });
 
       return marker;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Building2, ArrowRight, Search, ExternalLink } from "lucide-react";
@@ -8,17 +8,18 @@ import { trpc } from "@/lib/trpc";
 
 export default function Centres() {
   const [, setLocation] = useLocation();
+  const search = useSearch();
   const [selectedState, setSelectedState] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  // Get state from URL query parameter
+  // Get state from URL query parameter (reactive to URL changes, including back navigation)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(search);
     const stateParam = params.get("state");
     if (stateParam) {
       setSelectedState(stateParam);
     }
-  }, []);
+  }, [search]);
 
   // Fetch all centres for count badges
   const { data: allCentres = [] } = trpc.centres.list.useQuery();
@@ -175,7 +176,7 @@ export default function Centres() {
                   <Card
                     key={centre.id}
                     className="shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
-                    onClick={() => setLocation(`/centre/${centre.id}`)}
+                    onClick={() => setLocation(`/centre/${centre.slug || centre.id}`)}
                   >
                     <CardHeader>
                       <CardTitle className="text-xl text-blue-900">{centre.name}</CardTitle>
@@ -197,7 +198,7 @@ export default function Centres() {
                         className="w-full bg-blue-600 hover:bg-blue-700"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setLocation(`/centre/${centre.id}`);
+                          setLocation(`/centre/${centre.slug || centre.id}`);
                         }}
                       >
                         View Details

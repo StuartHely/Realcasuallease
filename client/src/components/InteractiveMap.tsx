@@ -57,7 +57,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   // Fetch floor levels for this centre
-  const { data: floorLevels = [] } = trpc.admin.getFloorLevels.useQuery({ centreId });
+  const { data: floorLevels = [] } = trpc.centres.getFloorLevels.useQuery({ centreId });
 
   // Auto-select first floor level
   useEffect(() => {

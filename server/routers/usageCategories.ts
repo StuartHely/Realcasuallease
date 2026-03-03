@@ -1,10 +1,15 @@
-import { publicProcedure, ownerProcedure, router } from "../_core/trpc";
+import { publicProcedure, ownerProcedure, adminProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 import { getAllUsageCategories, getApprovedCategoriesForSite, setApprovedCategoriesForSite, getSitesWithCategoriesForCentre } from "../usageCategoriesDb";
 
 export const usageCategoriesRouter = router({
   list: publicProcedure.query(async () => {
     return await getAllUsageCategories();
+  }),
+  
+  listAll: adminProcedure.query(async () => {
+    const { getAllUsageCategoriesIncludingInactive } = await import("../usageCategoriesDb");
+    return await getAllUsageCategoriesIncludingInactive();
   }),
   
   getApprovedForSite: publicProcedure
@@ -39,6 +44,29 @@ export const usageCategoriesRouter = router({
       const { createUsageCategory } = await import("../usageCategoriesDb");
       const categoryId = await createUsageCategory(input.name, input.isFree, input.displayOrder);
       return { success: true, categoryId };
+    }),
+  
+  updateCategory: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      name: z.string().min(1).optional(),
+      isFree: z.boolean().optional(),
+      displayOrder: z.number().int().optional(),
+      isActive: z.boolean().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      const { updateUsageCategory } = await import("../usageCategoriesDb");
+      await updateUsageCategory(id, data);
+      return { success: true };
+    }),
+  
+  deleteCategory: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const { deleteUsageCategory } = await import("../usageCategoriesDb");
+      await deleteUsageCategory(input.id);
+      return { success: true };
     }),
   
   applyToAllSites: ownerProcedure

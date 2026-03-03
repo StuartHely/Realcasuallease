@@ -7,19 +7,21 @@ interface AuthGuardProps {
   children: React.ReactNode;
 }
 
+const PUBLIC_PATHS = ["/login", "/forgot-password", "/reset-password"];
+
 export default function AuthGuard({ children }: AuthGuardProps) {
   const [location, setLocation] = useLocation();
   const { isAuthenticated, loading } = useAuth();
 
+  const isPublicPath = PUBLIC_PATHS.some(p => location === p || location.startsWith(p + "?"));
+
   useEffect(() => {
-    if (!loading && !isAuthenticated && location !== "/login") {
-      // Store the current URL for redirect after login
+    if (!loading && !isAuthenticated && !isPublicPath) {
       sessionStorage.setItem("returnUrl", location);
       setLocation("/login");
     }
-  }, [isAuthenticated, loading, location, setLocation]);
+  }, [isAuthenticated, loading, location, isPublicPath, setLocation]);
 
-  // Show loading spinner while checking auth
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -28,8 +30,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  // If not authenticated and not on login page, don't render children
-  if (!isAuthenticated && location !== "/login") {
+  if (!isAuthenticated && !isPublicPath) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />

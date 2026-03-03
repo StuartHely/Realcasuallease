@@ -122,7 +122,7 @@ export function NearbyCentresMap({
                 Get Directions →
               </a>
               <a 
-                href="/centre/${centre.id}" 
+                href="/centre/${centre.slug || centre.id}" 
                 style="display: inline-block; margin-top: 4px; margin-left: 8px; padding: 6px 12px; background: #10b981; color: white; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500;"
               >
                 View Centre

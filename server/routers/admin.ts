@@ -58,33 +58,52 @@ export const adminRouter = router({
     // Shopping Centre Management
     createCentre: adminProcedure
       .input(z.object({
-        name: z.string(),
-        address: z.string().optional(),
-        suburb: z.string().optional(),
-        state: z.string().optional(),
-        postcode: z.string().optional(),
+        ownerId: z.number(),
+        name: z.string().trim(),
+        address: z.string().trim().optional(),
+        suburb: z.string().trim().optional(),
+        state: z.string().trim().toUpperCase().optional(),
+        postcode: z.string().trim().optional(),
         description: z.string().optional(),
+        paymentMode: z.enum(["stripe", "stripe_with_exceptions", "invoice_only"]).default("stripe_with_exceptions"),
+        portfolioId: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
+        // Force invoice_only if the owner is an agency
+        const owner = await db.getOwnerById(input.ownerId);
+        const paymentMode = owner?.isAgency ? "invoice_only" : input.paymentMode;
+
         return await db.createShoppingCentre({
           ...input,
-          ownerId: 1,
+          paymentMode,
         });
       }),
 
     updateCentre: ownerProcedure
       .input(z.object({
         id: z.number(),
-        name: z.string(),
-        address: z.string().optional(),
-        suburb: z.string().optional(),
-        state: z.string().optional(),
-        postcode: z.string().optional(),
+        name: z.string().trim(),
+        address: z.string().trim().optional(),
+        suburb: z.string().trim().optional(),
+        state: z.string().trim().toUpperCase().optional(),
+        postcode: z.string().trim().optional(),
         description: z.string().optional(),
         includeInMainSite: z.boolean().optional(),
+        paymentMode: z.enum(["stripe", "stripe_with_exceptions", "invoice_only"]).optional(),
+        portfolioId: z.number().nullable().optional(),
+        bankBsb: z.string().nullable().optional(),
+        bankAccountNumber: z.string().nullable().optional(),
+        bankAccountName: z.string().nullable().optional(),
+        pdfUrl1: z.string().optional(),
+        pdfName1: z.string().optional(),
+        pdfUrl2: z.string().optional(),
+        pdfName2: z.string().optional(),
+        pdfUrl3: z.string().optional(),
+        pdfName3: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        return await db.updateShoppingCentre(input.id, input);
+        const { id, ...updates } = input;
+        return await db.updateShoppingCentre(id, updates);
       }),
 
     deleteCentre: adminProcedure
@@ -106,15 +125,17 @@ export const adminRouter = router({
         dailyRate: z.string(),
         weeklyRate: z.string(),
         weekendRate: z.string().optional(),
+        outgoingsPerDay: z.string().optional(),
         instantBooking: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { dailyRate, weeklyRate, weekendRate, ...rest } = input;
+        const { dailyRate, weeklyRate, weekendRate, outgoingsPerDay, ...rest } = input;
         return await db.createSite({
           ...rest,
-          pricePerDay: dailyRate,
-          pricePerWeek: weeklyRate,
-          weekendPricePerDay: weekendRate || null,
+          pricePerDay: dailyRate && dailyRate.trim() ? dailyRate : null,
+          pricePerWeek: weeklyRate && weeklyRate.trim() ? weeklyRate : null,
+          weekendPricePerDay: weekendRate && weekendRate.trim() ? weekendRate : null,
+          outgoingsPerDay: outgoingsPerDay && outgoingsPerDay.trim() ? outgoingsPerDay : null,
         });
       }),
 
@@ -130,6 +151,7 @@ export const adminRouter = router({
         dailyRate: z.string().optional(),
         weeklyRate: z.string().optional(),
         weekendRate: z.string().nullish(),
+        outgoingsPerDay: z.string().nullish(),
         instantBooking: z.boolean().optional(),
         imageUrl1: z.string().nullish(),
         imageUrl2: z.string().nullish(),
@@ -137,20 +159,26 @@ export const adminRouter = router({
         imageUrl4: z.string().nullish(),
       }))
       .mutation(async ({ input }) => {
-        const { id, dailyRate, weeklyRate, weekendRate, ...rest } = input;
+        const { id, dailyRate, weeklyRate, weekendRate, outgoingsPerDay, maxTables, ...rest } = input;
         const data: any = { ...rest };
         
-        if (dailyRate !== undefined) data.pricePerDay = dailyRate || null;
-        if (weeklyRate !== undefined) data.pricePerWeek = weeklyRate || null;
-        if (weekendRate !== undefined) data.weekendPricePerDay = weekendRate || null;
+        // Map rate field names and sanitize: empty strings → null for decimal columns
+        if (dailyRate !== undefined) data.pricePerDay = dailyRate && dailyRate.trim() ? dailyRate : null;
+        if (weeklyRate !== undefined) data.pricePerWeek = weeklyRate && weeklyRate.trim() ? weeklyRate : null;
+        if (weekendRate !== undefined) data.weekendPricePerDay = weekendRate && weekendRate.trim() ? weekendRate : null;
+        if (outgoingsPerDay !== undefined) data.outgoingsPerDay = outgoingsPerDay && outgoingsPerDay.trim() ? outgoingsPerDay : null;
+        if (maxTables !== undefined) data.maxTables = (maxTables != null && !isNaN(maxTables)) ? maxTables : null;
         
-        console.log('[updateSite] Updating site:', { id, data });
+        // Sanitize optional text fields: empty strings → null for cleaner DB
+        if (data.description === '') data.description = null;
+        if (data.size === '') data.size = null;
+        if (data.restrictions === '') data.restrictions = null;
+        
         try {
           const result = await db.updateSite(id, data);
-          console.log('[updateSite] Success:', result);
           return result;
         } catch (error: any) {
-          console.error('[updateSite] Error:', error.message, error.stack);
+          console.error('[updateSite] Error:', error.message, { id, data });
           throw error;
         }
       }),
@@ -376,9 +404,9 @@ export const adminRouter = router({
         name: z.string(),
         startDate: z.string(),
         endDate: z.string(),
-        weekdayRate: z.number().optional(),
-        weekendRate: z.number().optional(),
-        weeklyRate: z.number().optional(),
+        weekdayRate: z.number().positive().optional(),
+        weekendRate: z.number().positive().optional(),
+        weeklyRate: z.number().positive().optional(),
       }))
       .mutation(async ({ input }) => {
         return await createSeasonalRate(input);
@@ -390,9 +418,9 @@ export const adminRouter = router({
         name: z.string().optional(),
         startDate: z.string().optional(),
         endDate: z.string().optional(),
-        weekdayRate: z.number().optional(),
-        weekendRate: z.number().optional(),
-        weeklyRate: z.number().optional(),
+        weekdayRate: z.number().positive().optional(),
+        weekendRate: z.number().positive().optional(),
+        weeklyRate: z.number().positive().optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
@@ -443,7 +471,6 @@ export const adminRouter = router({
         
         const bookingsWithDetails = await Promise.all(
           pendingBookings
-            .filter(b => b.requiresApproval)
             .map(async (booking) => {
               const site = await db.getSiteById(booking.siteId);
               const centre = site ? await db.getShoppingCentreById(site.centreId) : null;
@@ -627,16 +654,24 @@ export const adminRouter = router({
         }
 
         let created = 0;
+        let skipped = 0;
         for (const site of allSites) {
           const multiplier = 1 + (percentageIncrease / 100);
           const baseWeekdayRate = site.pricePerDay ? parseFloat(site.pricePerDay) : 0;
           const baseWeekendRate = site.weekendPricePerDay ? parseFloat(site.weekendPricePerDay) : 0;
+          const baseWeeklyRate = site.pricePerWeek ? parseFloat(site.pricePerWeek) : 0;
           
+          // Skip sites with no base pricing — creating seasonal rates with $0 is meaningless
+          if (baseWeekdayRate === 0 && baseWeekendRate === 0 && baseWeeklyRate === 0) {
+            skipped++;
+            continue;
+          }
+
           const weekdayRate = baseWeekdayRate > 0 ? Math.round(baseWeekdayRate * multiplier * 100) / 100 : undefined;
           const weekendRate = baseWeekendRate > 0 
             ? Math.round(baseWeekendRate * multiplier * 100) / 100 
             : (baseWeekdayRate > 0 ? Math.round(baseWeekdayRate * multiplier * 100) / 100 : undefined);
-          const weeklyRate = site.pricePerWeek ? Math.round(parseFloat(site.pricePerWeek) * multiplier * 100) / 100 : undefined;
+          const weeklyRate = baseWeeklyRate > 0 ? Math.round(baseWeeklyRate * multiplier * 100) / 100 : undefined;
 
           await createSeasonalRate({
             siteId: site.id,
@@ -650,7 +685,35 @@ export const adminRouter = router({
           created++;
         }
 
-        return { created, totalSites: allSites.length };
+        return { created, skipped, totalSites: allSites.length };
+      }),
+
+    cleanupZeroSeasonalRates: adminProcedure
+      .mutation(async () => {
+        const { getDb } = await import('../db');
+        const { seasonalRates } = await import('../../drizzle/schema');
+        const { inArray } = await import('drizzle-orm');
+        const dbInstance = await getDb();
+        if (!dbInstance) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        const allRates = await dbInstance.select().from(seasonalRates);
+        const idsToDelete: number[] = [];
+
+        for (const rate of allRates) {
+          const weekday = rate.weekdayRate ? parseFloat(rate.weekdayRate) : 0;
+          const weekend = rate.weekendRate ? parseFloat(rate.weekendRate) : 0;
+          const weekly = rate.weeklyRate ? parseFloat(rate.weeklyRate) : 0;
+
+          if (weekday === 0 && weekend === 0 && weekly === 0) {
+            idsToDelete.push(rate.id);
+          }
+        }
+
+        if (idsToDelete.length > 0) {
+          await dbInstance.delete(seasonalRates).where(inArray(seasonalRates.id, idsToDelete));
+        }
+
+        return { deleted: idsToDelete.length, total: allRates.length };
       }),
 
     // Invoice Payment Management
@@ -674,37 +737,43 @@ export const adminRouter = router({
 
     // Invoice Dashboard
     getInvoiceStats: ownerProcedure
-      .query(async () => {
+      .input(z.object({
+        paymentMode: z.enum(['all', 'invoice', 'stripe']).optional(),
+      }))
+      .query(async ({ input }) => {
         const { getInvoiceStats } = await import('../invoiceDashboardDb');
-        return await getInvoiceStats();
+        return await getInvoiceStats(input.paymentMode);
       }),
 
     getInvoiceList: ownerProcedure
       .input(z.object({
         filter: z.enum(['all', 'outstanding', 'overdue', 'paid']).default('all'),
+        paymentMode: z.enum(['all', 'invoice', 'stripe']).optional(),
       }))
       .query(async ({ input }) => {
         const { getInvoiceList } = await import('../invoiceDashboardDb');
-        return await getInvoiceList(input.filter);
+        return await getInvoiceList(input.filter, input.paymentMode);
       }),
 
     getPaymentHistory: ownerProcedure
       .input(z.object({
         searchTerm: z.string().optional(),
+        paymentMode: z.enum(['all', 'invoice', 'stripe']).optional(),
       }))
       .query(async ({ input }) => {
         const { getPaymentHistory } = await import('../invoiceDashboardDb');
-        return await getPaymentHistory(input.searchTerm);
+        return await getPaymentHistory(input.searchTerm, input.paymentMode);
       }),
 
     // User Registration
-    registerUser: adminProcedure
+    registerUser: ownerProcedure
       .input(z.object({
         email: z.string().email(),
         name: z.string(),
         password: z.string().min(8),
         role: z.enum([
           'customer',
+          'owner_viewer',
           'owner_centre_manager',
           'owner_marketing_manager',
           'owner_regional_admin',
@@ -713,6 +782,7 @@ export const adminRouter = router({
           'mega_state_admin',
           'mega_admin'
         ]).default('customer'),
+        assignedOwnerId: z.number().nullable().optional(),
         canPayByInvoice: z.boolean().default(false),
         companyName: z.string().optional(),
         tradingName: z.string().optional(),
@@ -728,7 +798,27 @@ export const adminRouter = router({
         insuranceAmount: z.string().optional(),
         insuranceExpiryDate: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const isMegaAdmin = ['mega_admin', 'mega_state_admin'].includes(ctx.user.role);
+        const isOwnerSuperAdmin = ctx.user.role === 'owner_super_admin';
+
+        // owner_super_admin can only create owner_viewer scoped to their own agency
+        if (!isMegaAdmin) {
+          if (!isOwnerSuperAdmin) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Only admins or owner super admins can register users' });
+          }
+          const ownerRoles = ['owner_viewer', 'owner_centre_manager', 'owner_marketing_manager'];
+          if (!ownerRoles.includes(input.role)) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Owner super admins can only create viewer and manager roles' });
+          }
+          if (!ctx.user.assignedOwnerId) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Your account is not assigned to an owner agency' });
+          }
+          if (input.assignedOwnerId !== ctx.user.assignedOwnerId) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'You can only create users for your own agency' });
+          }
+        }
+
         const existingUser = await db.getUserByEmail(input.email);
         if (existingUser) {
           throw new TRPCError({ code: 'CONFLICT', message: 'User with this email already exists' });
@@ -749,10 +839,14 @@ export const adminRouter = router({
 
         const [newUser] = await dbInstance.insert(users).values({
           openId,
+          username: input.email,
+          passwordHash: hashedPassword,
           email: input.email,
           name: input.name,
           role: input.role,
+          assignedOwnerId: input.assignedOwnerId ?? null,
           canPayByInvoice: input.canPayByInvoice,
+          loginMethod: 'password',
         }).returning({ id: users.id });
 
         if (input.companyName || input.insuranceCompany) {
@@ -786,6 +880,7 @@ export const adminRouter = router({
         name: z.string().optional(),
         role: z.enum([
           'customer',
+          'owner_viewer',
           'owner_centre_manager',
           'owner_marketing_manager',
           'owner_regional_admin',
@@ -794,6 +889,7 @@ export const adminRouter = router({
           'mega_state_admin',
           'mega_admin'
         ]).optional(),
+        assignedOwnerId: z.number().nullable().optional(),
         assignedState: z.string().nullable().optional(),
         canPayByInvoice: z.boolean().optional(),
         companyName: z.string().optional(),
@@ -826,6 +922,7 @@ export const adminRouter = router({
         if (input.email) userUpdates.email = input.email;
         if (input.name) userUpdates.name = input.name;
         if (input.role) userUpdates.role = input.role;
+        if (input.assignedOwnerId !== undefined) userUpdates.assignedOwnerId = input.assignedOwnerId;
         if (input.assignedState !== undefined) userUpdates.assignedState = input.assignedState || null;
         if (input.canPayByInvoice !== undefined) userUpdates.canPayByInvoice = input.canPayByInvoice;
 
@@ -865,4 +962,35 @@ export const adminRouter = router({
 
         return { success: true, message: 'User updated successfully' };
       }),
+
+    /**
+     * Audit query: find users who only have OAuth/SDK auth (openId set, no passwordHash).
+     * If count is zero, the SDK auth fallback in context.ts can be safely removed.
+     */
+    getOauthOnlyUsers: adminProcedure.query(async () => {
+      const { getDb } = await import("../db");
+      const { users } = await import("../../drizzle/schema");
+      const { isNull, and, ne } = await import("drizzle-orm");
+
+      const dbInstance = await getDb();
+      if (!dbInstance) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const oauthOnlyUsers = await dbInstance
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          openId: users.openId,
+          role: users.role,
+          lastSignedIn: users.lastSignedIn,
+        })
+        .from(users)
+        .where(and(isNull(users.passwordHash), ne(users.openId, "")));
+
+      return {
+        count: oauthOnlyUsers.length,
+        users: oauthOnlyUsers,
+        canRemoveSdkFallback: oauthOnlyUsers.length === 0,
+      };
+    }),
 });

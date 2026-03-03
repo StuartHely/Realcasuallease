@@ -27,12 +27,12 @@ const requireUser = t.middleware(async opts => {
 
 export const protectedProcedure = t.procedure.use(requireUser);
 
-/** Allows any non-customer role (all owner_* roles + mega_state_admin + mega_admin) */
+/** Allows any non-customer role except owner_viewer (all owner_* roles + mega_state_admin + mega_admin) */
 export const ownerProcedure = t.procedure.use(
   t.middleware(async opts => {
     const { ctx, next } = opts;
 
-    if (!ctx.user || ctx.user.role === 'customer') {
+    if (!ctx.user || ctx.user.role === 'customer' || ctx.user.role === 'owner_viewer') {
       throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
     }
 

@@ -72,6 +72,13 @@ export async function createSeasonalRate(data: {
   weekendRate?: number;
   weeklyRate?: number;
 }): Promise<SeasonalRate> {
+  const hasNonZeroRate = (data.weekdayRate && data.weekdayRate > 0) || 
+                       (data.weekendRate && data.weekendRate > 0) || 
+                       (data.weeklyRate && data.weeklyRate > 0);
+  if (!hasNonZeroRate) {
+    throw new Error("Cannot create seasonal rate with all $0 rates");
+  }
+
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
@@ -80,9 +87,9 @@ export async function createSeasonalRate(data: {
     name: data.name,
     startDate: data.startDate,
     endDate: data.endDate,
-    weekdayRate: data.weekdayRate ? data.weekdayRate.toString() : null,
-    weekendRate: data.weekendRate ? data.weekendRate.toString() : null,
-    weeklyRate: data.weeklyRate ? data.weeklyRate.toString() : null,
+    weekdayRate: data.weekdayRate != null ? data.weekdayRate.toString() : null,
+    weekendRate: data.weekendRate != null ? data.weekendRate.toString() : null,
+    weeklyRate: data.weeklyRate != null ? data.weeklyRate.toString() : null,
   }).returning({ id: seasonalRates.id });
   
   // Fetch the inserted record

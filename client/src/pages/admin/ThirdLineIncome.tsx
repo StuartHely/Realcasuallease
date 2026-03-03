@@ -374,6 +374,9 @@ export default function ThirdLineIncome() {
                         <TableCell className="font-medium">{asset.assetNumber}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{asset.categoryName || getCategoryName(asset.categoryId)}</Badge>
+                          {!asset.categoryName && getCategoryName(asset.categoryId) === "Unknown" && (
+                            <div className="text-xs text-red-600 font-medium mt-1">⚠ No categories set up</div>
+                          )}
                         </TableCell>
                         <TableCell>{asset.dimensions || "-"}</TableCell>
                         <TableCell>{asset.floorLevelName || "-"}</TableCell>

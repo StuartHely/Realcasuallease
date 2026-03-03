@@ -20,7 +20,13 @@ export async function getBookingsForMultipleSites(
   if (!db) throw new Error("Database not available");
 
   const results = await db
-    .select()
+    .select({
+      id: bookings.id,
+      siteId: bookings.siteId,
+      startDate: bookings.startDate,
+      endDate: bookings.endDate,
+      status: bookings.status,
+    })
     .from(bookings)
     .where(
       and(

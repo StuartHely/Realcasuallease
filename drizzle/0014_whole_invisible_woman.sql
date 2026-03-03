@@ -1,0 +1,4 @@
+CREATE TYPE "public"."refund_status" AS ENUM('not_required', 'pending', 'processed', 'manual');--> statement-breakpoint
+ALTER TABLE "bookings" ALTER COLUMN "refundStatus" SET DATA TYPE "public"."refund_status" USING "refundStatus"::"public"."refund_status";--> statement-breakpoint
+ALTER TABLE "third_line_bookings" ALTER COLUMN "refundStatus" SET DATA TYPE "public"."refund_status" USING "refundStatus"::"public"."refund_status";--> statement-breakpoint
+ALTER TABLE "vacant_shop_bookings" ALTER COLUMN "refundStatus" SET DATA TYPE "public"."refund_status" USING "refundStatus"::"public"."refund_status";

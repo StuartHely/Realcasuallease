@@ -20,6 +20,7 @@ interface Asset {
   shopNumber?: string;
   assetName?: string;
   pricePerDay?: number | string | null;
+  pricePerWeek?: number | string | null;
   weekendRate?: number | string | null;
   weekendPricePerDay?: number | string | null;
 }
@@ -245,16 +246,36 @@ export function AvailabilityCalendarSelectable({
     
     const weekdayRate = Number(asset.pricePerDay) || 0;
     const weekendRate = Number(asset.weekendRate || asset.weekendPricePerDay) || weekdayRate;
-    const subtotal = (weekdays * weekdayRate) + (weekends * weekendRate);
+    const weeklyRate = Number(asset.pricePerWeek) || 0;
+    const totalDays = weekdays + weekends;
+
+    let subtotal: number;
+    let weeksApplied = 0;
+    let weeklyRateApplied = false;
+
+    if (weeklyRate > 0 && totalDays >= 7) {
+      weeksApplied = Math.floor(totalDays / 7);
+      const remainderDays = totalDays - weeksApplied * 7;
+      // Remainder days priced at simple daily average (exact split requires server-side calc)
+      const avgDailyRate = totalDays > 0 ? ((weekdays * weekdayRate) + (weekends * weekendRate)) / totalDays : weekdayRate;
+      subtotal = (weeksApplied * weeklyRate) + (remainderDays * avgDailyRate);
+      weeklyRateApplied = true;
+    } else {
+      subtotal = (weekdays * weekdayRate) + (weekends * weekendRate);
+    }
+
     const gst = subtotal * 0.1;
     const total = subtotal + gst;
     
     return {
       weekdays,
       weekends,
-      totalDays: weekdays + weekends,
+      totalDays,
       weekdayRate,
       weekendRate,
+      weeklyRate,
+      weeksApplied,
+      weeklyRateApplied,
       subtotal,
       gst,
       total,
@@ -475,11 +496,22 @@ export function AvailabilityCalendarSelectable({
                 <p><span className="text-gray-600 font-medium">Duration:</span> {estimate.totalDays} day{estimate.totalDays > 1 ? 's' : ''}</p>
               </div>
               <div className="space-y-2 text-sm">
-                {estimate.weekdays > 0 && (
-                  <p><span className="text-gray-600">Weekdays:</span> {estimate.weekdays} × ${estimate.weekdayRate.toFixed(2)} = ${(estimate.weekdays * estimate.weekdayRate).toFixed(2)}</p>
-                )}
-                {estimate.weekends > 0 && (
-                  <p><span className="text-gray-600">Weekends:</span> {estimate.weekends} × ${estimate.weekendRate.toFixed(2)} = ${(estimate.weekends * estimate.weekendRate).toFixed(2)}</p>
+                {estimate.weeklyRateApplied ? (
+                  <>
+                    <p><span className="text-gray-600">Weekly Rate:</span> {estimate.weeksApplied} week{estimate.weeksApplied > 1 ? 's' : ''} × ${estimate.weeklyRate.toFixed(2)} = ${(estimate.weeksApplied * estimate.weeklyRate).toFixed(2)}</p>
+                    {estimate.totalDays - estimate.weeksApplied * 7 > 0 && (
+                      <p><span className="text-gray-600">Remaining Days:</span> {estimate.totalDays - estimate.weeksApplied * 7} day{estimate.totalDays - estimate.weeksApplied * 7 > 1 ? 's' : ''} at daily rate</p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {estimate.weekdays > 0 && (
+                      <p><span className="text-gray-600">Weekdays:</span> {estimate.weekdays} × ${estimate.weekdayRate.toFixed(2)} = ${(estimate.weekdays * estimate.weekdayRate).toFixed(2)}</p>
+                    )}
+                    {estimate.weekends > 0 && (
+                      <p><span className="text-gray-600">Weekends:</span> {estimate.weekends} × ${estimate.weekendRate.toFixed(2)} = ${(estimate.weekends * estimate.weekendRate).toFixed(2)}</p>
+                    )}
+                  </>
                 )}
                 <div className={`border-t pt-2 mt-2 ${colors.border}`}>
                   <p><span className="text-gray-600">Subtotal:</span> ${estimate.subtotal.toFixed(2)}</p>

@@ -148,7 +148,7 @@ function OwnerCentresContent() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setLocation(`/centre/${centre.id}`)}
+                      onClick={() => setLocation(`/centre/${centre.slug || centre.id}`)}
                       className="flex-1"
                     >
                       View Details

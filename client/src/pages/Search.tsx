@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays, Store, Zap, Layers, FileText } from "lucide-react";
+import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays, Store, Zap, Layers, FileText, Search as SearchIcon, Star, HelpCircle, DollarSign, ChevronDown, Loader2, Building2, LayoutGrid } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, parse, addDays, isSameDay, subDays, isBefore, startOfDay } from "date-fns";
@@ -38,6 +38,11 @@ export default function Search() {
   const expandedSiteRef = useRef<HTMLDivElement>(null);
   const expandedVSRef = useRef<HTMLDivElement>(null);
   const expandedTLIRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Pagination: show initial 30 CL sites, expand on demand
+  const INITIAL_SITES_LIMIT = 30;
+  const [visibleSitesLimit, setVisibleSitesLimit] = useState(INITIAL_SITES_LIMIT);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -174,7 +179,27 @@ export default function Search() {
         setSelectedAssetType('third_line');
       }
     }
-  }, [data?.assetType]);
+    // Reset pagination when new search results arrive
+    setVisibleSitesLimit(INITIAL_SITES_LIMIT);
+  }, [data]);
+
+  // IntersectionObserver for infinite scroll of sites
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleSitesLimit(prev => prev + 30);
+        }
+      },
+      { rootMargin: '200px' }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  });
 
   // Auto-scroll to matched site when data loads
   useEffect(() => {
@@ -280,7 +305,7 @@ export default function Search() {
   // Check if a site is booked on a specific date
   const isBookedOnDate = (siteId: number, date: Date) => {
     if (!data?.availability) return false;
-    const siteAvailability = data.availability.find(a => a.siteId === siteId);
+    const siteAvailability = data.availability.find((a: any) => a.siteId === siteId);
     if (!siteAvailability) return false;
 
     // Combine both week's bookings
@@ -314,7 +339,7 @@ export default function Search() {
               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setLocation("/")}
             >
-              <img src="/logo.png" alt="Real Casual Leasing" className="h-12" />
+              <img src="/logo.png" alt="Real Casual Leasing" className="h-24" />
             </div>
           </div>
           <nav className="flex items-center gap-4">
@@ -325,13 +350,128 @@ export default function Search() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Search Summary */}
+        {/* Search Summary Band */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-blue-900 mb-2">Search Results</h2>
-          <p className="text-gray-600">
-            Searching for: <span className="font-semibold">{searchParams.query}</span> on{" "}
-            <span className="font-semibold">{format(searchParams.date, "dd/MM/yyyy")}</span>
-          </p>
+          {/* Gradient header band */}
+          <div className="rounded-t-lg px-6 py-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%)' }}>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-white/50 mb-1.5">Search Results</p>
+              <div className="flex flex-wrap items-center gap-2">
+                {data?.centres?.[0] ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                    <MapPin className="h-3.5 w-3.5" />
+                    {data.centres[0].name}{data.centres[0].suburb ? `, ${data.centres[0].suburb}` : ''}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                    <MapPin className="h-3.5 w-3.5" />
+                    {searchParams.query}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                  <Calendar className="h-3.5 w-3.5" />
+                  {format(searchParams.date, "dd/MM/yyyy")}
+                </span>
+                {data?.searchInterpretation?.productCategory && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                    {data.searchInterpretation.productCategory.charAt(0).toUpperCase() + data.searchInterpretation.productCategory.slice(1)}
+                  </span>
+                )}
+                {data?.searchInterpretation?.budget && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                    <DollarSign className="h-3.5 w-3.5" />
+                    {data.searchInterpretation.budget.maxPerDay
+                      ? `Under $${data.searchInterpretation.budget.maxPerDay}/day`
+                      : data.searchInterpretation.budget.maxPerWeek
+                      ? `Under $${data.searchInterpretation.budget.maxPerWeek}/week`
+                      : `Budget $${data.searchInterpretation.budget.maxTotal}`}
+                  </span>
+                )}
+              </div>
+            </div>
+            <Button
+              size="sm"
+              className="bg-white text-[#0369a1] hover:bg-gray-100 font-semibold shadow-md"
+              onClick={() => setLocation("/")}
+            >
+              <SearchIcon className="h-4 w-4 mr-1.5" />
+              Edit Search
+            </Button>
+          </div>
+
+          {/* Asset type tab bar */}
+          {(casualLeasingCount > 0 || vacantShopsCount > 0 || thirdLineCount > 0) && (
+          <div className="bg-white border-b border-x rounded-b-lg">
+            <div className="flex">
+              {casualLeasingCount > 0 && (
+              <button
+                onClick={() => setSelectedAssetType("casual_leasing")}
+                className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  selectedAssetType === "casual_leasing"
+                    ? "border-[#0369a1] text-[#0369a1] font-bold"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <MapPin className="h-4 w-4" />
+                Casual Leasing
+                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                  selectedAssetType === "casual_leasing" ? "bg-[#0369a1]/10 text-[#0369a1]" : "bg-gray-100 text-gray-500"
+                }`}>{casualLeasingCount}</span>
+              </button>
+              )}
+              {vacantShopsCount > 0 && (
+              <button
+                onClick={() => setSelectedAssetType("vacant_shops")}
+                className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  selectedAssetType === "vacant_shops"
+                    ? "border-[#0369a1] text-[#0369a1] font-bold"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <Store className="h-4 w-4" />
+                Vacant Shops
+                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                  selectedAssetType === "vacant_shops" ? "bg-[#0369a1]/10 text-[#0369a1]" : "bg-gray-100 text-gray-500"
+                }`}>{vacantShopsCount}</span>
+              </button>
+              )}
+              {thirdLineCount > 0 && (
+              <button
+                onClick={() => setSelectedAssetType("third_line")}
+                className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  selectedAssetType === "third_line"
+                    ? "border-[#0369a1] text-[#0369a1] font-bold"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <Zap className="h-4 w-4" />
+                Third Line Income
+                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                  selectedAssetType === "third_line" ? "bg-[#0369a1]/10 text-[#0369a1]" : "bg-gray-100 text-gray-500"
+                }`}>{thirdLineCount}</span>
+              </button>
+              )}
+              {((casualLeasingCount > 0 && vacantShopsCount > 0) || (casualLeasingCount > 0 && thirdLineCount > 0) || (vacantShopsCount > 0 && thirdLineCount > 0)) && (
+              <button
+                onClick={() => setSelectedAssetType("all")}
+                className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  selectedAssetType === "all"
+                    ? "border-[#0369a1] text-[#0369a1] font-bold"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <Layers className="h-4 w-4" />
+                All Assets
+                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                  selectedAssetType === "all" ? "bg-[#0369a1]/10 text-[#0369a1]" : "bg-gray-100 text-gray-500"
+                }`}>{casualLeasingCount + vacantShopsCount + thirdLineCount}</span>
+              </button>
+              )}
+            </div>
+          </div>
+          )}
+
+          {/* Filtering badges (size/table requirements) */}
           {(() => {
             const parsed = parseSearchQuery(searchParams.query);
             const hasRequirements = parsed.minSizeM2 !== undefined || parsed.minTables !== undefined;
@@ -354,59 +494,6 @@ export default function Search() {
             }
             return null;
           })()}
-          
-          {/* Asset Type Filter - only show if there are sites available */}
-          {(casualLeasingCount > 0 || vacantShopsCount > 0 || thirdLineCount > 0) && (
-          <div className="mt-6 flex flex-wrap items-center gap-4">
-            <span className="text-sm font-medium text-gray-700">Asset Type:</span>
-            <div className="flex flex-wrap gap-2">
-              {casualLeasingCount > 0 && (
-              <Button
-                variant={selectedAssetType === "casual_leasing" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedAssetType("casual_leasing")}
-                className="flex items-center gap-1.5"
-              >
-                <MapPin className="h-4 w-4" />
-                Casual Leasing
-              </Button>
-              )}
-              {vacantShopsCount > 0 && (
-              <Button
-                variant={selectedAssetType === "vacant_shops" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedAssetType("vacant_shops")}
-                className="flex items-center gap-1.5"
-              >
-                <Store className="h-4 w-4" />
-                Vacant Shops
-              </Button>
-              )}
-              {thirdLineCount > 0 && (
-              <Button
-                variant={selectedAssetType === "third_line" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedAssetType("third_line")}
-                className="flex items-center gap-1.5"
-              >
-                <Zap className="h-4 w-4" />
-                Third Line Income
-              </Button>
-              )}
-              {(casualLeasingCount > 0 && vacantShopsCount > 0) || (casualLeasingCount > 0 && thirdLineCount > 0) || (vacantShopsCount > 0 && thirdLineCount > 0) ? (
-              <Button
-                variant={selectedAssetType === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedAssetType("all")}
-                className="flex items-center gap-1.5"
-              >
-                <Layers className="h-4 w-4" />
-                All Assets
-              </Button>
-              ) : null}
-            </div>
-          </div>
-          )}
           
           {/* Show smart size suggestion if exact match not available */}
           {data?.sizeNotAvailable && data?.closestMatch && (
@@ -761,6 +848,11 @@ export default function Search() {
                                 <p className="text-sm">
                                   <span className="font-semibold">Price:</span> ${shop.pricePerWeek}/week or ${shop.pricePerMonth}/month
                                 </p>
+                                {parseFloat(shop.outgoingsPerDay || "0") > 0 && (
+                                  <p className="text-sm">
+                                    <span className="font-semibold">Outgoings:</span> ${shop.outgoingsPerDay}/day
+                                  </p>
+                                )}
                               </div>
                             </div>
                             
@@ -804,14 +896,22 @@ export default function Search() {
                                       const days = Math.ceil((dateSelection.endDate.getTime() - dateSelection.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
                                       const weeks = Math.ceil(days / 7);
                                       const subtotal = weeks * (shop.pricePerWeek || 0);
-                                      const gst = subtotal * 0.1;
-                                      const total = subtotal + gst;
+                                      const outgoingsRate = parseFloat(shop.outgoingsPerDay || "0");
+                                      const totalOutgoings = outgoingsRate * days;
+                                      const gst = (subtotal + totalOutgoings) * 0.1;
+                                      const total = subtotal + totalOutgoings + gst;
                                       return (
                                         <>
                                           <div className="flex items-center gap-3">
                                             <span className="text-sm font-medium text-gray-700 w-24">Subtotal:</span>
                                             <span className="text-sm">${subtotal.toFixed(2)} ({weeks} week{weeks > 1 ? 's' : ''})</span>
                                           </div>
+                                          {totalOutgoings > 0 && (
+                                            <div className="flex items-center gap-3">
+                                              <span className="text-sm font-medium text-gray-700 w-24">Outgoings:</span>
+                                              <span className="text-sm">{days} × ${outgoingsRate.toFixed(2)} = ${totalOutgoings.toFixed(2)}</span>
+                                            </div>
+                                          )}
                                           <div className="flex items-center gap-3">
                                             <span className="text-sm font-medium text-gray-700 w-24">GST (10%):</span>
                                             <span className="text-sm">${gst.toFixed(2)}</span>
@@ -1138,6 +1238,11 @@ export default function Search() {
                                 <p className="text-sm">
                                   <span className="font-semibold">Price:</span> ${asset.pricePerWeek}/week or ${asset.pricePerMonth}/month
                                 </p>
+                                {parseFloat(asset.outgoingsPerDay || "0") > 0 && (
+                                  <p className="text-sm">
+                                    <span className="font-semibold">Outgoings:</span> ${asset.outgoingsPerDay}/day
+                                  </p>
+                                )}
                               </div>
                             </div>
                             
@@ -1181,14 +1286,22 @@ export default function Search() {
                                       const days = Math.ceil((dateSelection.endDate.getTime() - dateSelection.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
                                       const weeks = Math.ceil(days / 7);
                                       const subtotal = weeks * (asset.pricePerWeek || 0);
-                                      const gst = subtotal * 0.1;
-                                      const total = subtotal + gst;
+                                      const outgoingsRate = parseFloat(asset.outgoingsPerDay || "0");
+                                      const totalOutgoings = outgoingsRate * days;
+                                      const gst = (subtotal + totalOutgoings) * 0.1;
+                                      const total = subtotal + totalOutgoings + gst;
                                       return (
                                         <>
                                           <div className="flex items-center gap-3">
                                             <span className="text-sm font-medium text-gray-700 w-24">Subtotal:</span>
                                             <span className="text-sm">${subtotal.toFixed(2)} ({weeks} week{weeks > 1 ? 's' : ''})</span>
                                           </div>
+                                          {totalOutgoings > 0 && (
+                                            <div className="flex items-center gap-3">
+                                              <span className="text-sm font-medium text-gray-700 w-24">Outgoings:</span>
+                                              <span className="text-sm">{days} × ${outgoingsRate.toFixed(2)} = ${totalOutgoings.toFixed(2)}</span>
+                                            </div>
+                                          )}
                                           <div className="flex items-center gap-3">
                                             <span className="text-sm font-medium text-gray-700 w-24">GST (10%):</span>
                                             <span className="text-sm">${gst.toFixed(2)}</span>
@@ -1236,14 +1349,14 @@ export default function Search() {
             )}
 
             {/* Calendar Heatmap - Casual Leasing Sites */}
-            {(selectedAssetType === "casual_leasing" || selectedAssetType === "all") && data.centres.map((centre) => {
+            {(selectedAssetType === "casual_leasing" || selectedAssetType === "all") && data.centres.map((centre: any) => {
               // Use casualLeasingSites if fetched (when search was for VS/3rdL), otherwise filter from data.sites
               const sitesSource = casualLeasingSites || data.sites;
               let centreSites = sitesSource.filter((s: any) => s.centreId === centre.id && (!s.assetType || s.assetType === 'casual_leasing'));
               
               // Filter by selected category if one is chosen
               if (selectedCategoryId && data.siteCategories) {
-                centreSites = centreSites.filter((site) => {
+                centreSites = centreSites.filter((site: any) => {
                   const siteCategories = data.siteCategories[site.id];
                   // If no categories configured (empty array), site accepts all categories
                   if (!siteCategories || siteCategories.length === 0) return true;
@@ -1254,7 +1367,7 @@ export default function Search() {
 
               // Further filter by auto-approved if checkbox is checked
               if (showOnlyAutoApproved && selectedCategoryId && data.siteCategories) {
-                centreSites = centreSites.filter((site) => {
+                centreSites = centreSites.filter((site: any) => {
                   const siteCategories = data.siteCategories[site.id];
                   // Empty array means all categories approved (auto-approve all)
                   if (!siteCategories || siteCategories.length === 0) return true;
@@ -1269,8 +1382,29 @@ export default function Search() {
               return (
                 <Card key={`centre-casual-${centre.id}`}>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-2xl mb-1">{centre.name}</CardTitle>
-                    <CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50">
+                          <Building2 className="h-5 w-5 text-[#0369a1]" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg" style={{ fontSize: '18px', fontWeight: 700 }}>
+                            {centre.name}
+                          </CardTitle>
+                          {(centre.suburb || centre.state) && (
+                            <p className="flex items-center gap-1 text-sm text-gray-500 mt-0.5">
+                              <MapPin className="h-3 w-3" />
+                              {[centre.suburb, centre.state].filter(Boolean).join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-gray-900">{centreSites.length}</p>
+                        <p className="text-xs text-gray-500">sites available</p>
+                      </div>
+                    </div>
+                    <CardDescription className="mt-2">
                       {centre.majors && <span key={`${centre.id}-majors`} className="block font-bold">Major Stores: {centre.majors}</span>}
                       {centre.numberOfSpecialties && (
                         <span key={`${centre.id}-specialties`} className="block">Specialty Stores: {centre.numberOfSpecialties}</span>
@@ -1318,9 +1452,8 @@ export default function Search() {
                         const params = new URLSearchParams();
                         params.set('query', centreName);
                         params.set('date', format(searchParams.date, 'yyyy-MM-dd'));
-                        const newUrl = `/search?${params.toString()}`;
-                        // Don't preserve category or auto-approved filters - show ALL sites
-                        setLocation(newUrl);
+                        // Force full page reload so useEffect re-reads URL params
+                        window.location.href = `/search?${params.toString()}`;
                       };
                       
                       return (
@@ -1520,7 +1653,7 @@ export default function Search() {
                             </tr>
                           </thead>
                           <tbody>
-                            {centreSites.map((site, siteIdx) => {
+                            {centreSites.slice(0, visibleSitesLimit).map((site: any, siteIdx: number) => {
                               const isMatched = isMatchedSite(site.id);
                               return (
                               <tr 
@@ -1672,6 +1805,14 @@ export default function Search() {
                       </div>
                     </div>
 
+                    {/* Infinite scroll sentinel */}
+                    {centreSites.length > visibleSitesLimit && (
+                      <div ref={loadMoreRef} className="mt-4 flex items-center justify-center py-4">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mr-2" />
+                        <span className="text-sm text-muted-foreground">Loading more sites...</span>
+                      </div>
+                    )}
+
                     {/* Scroll Down Instruction */}
                     <div className="mt-8 mb-6 text-center">
                       <p className="text-lg font-semibold text-blue-900">
@@ -1679,24 +1820,37 @@ export default function Search() {
                       </p>
                     </div>
 
-                    {/* Site Details Below Heatmap */}
+                    {/* Site Details Below Heatmap — grouped by relevance */}
                     <div className="mt-8">
-                      <h3 className="text-lg font-semibold mb-4">Site Details</h3>
-                      <div className="grid md:grid-cols-2 gap-4">
                       {/* Date selection instruction */}
                       {dateSelection?.isSelecting && (
-                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="p-4 mb-4 bg-blue-50 border border-blue-200 rounded-lg">
                           <p className="text-blue-800 font-medium flex items-center gap-2">
                             <Calendar className="h-5 w-5" />
                             Click on another date in the calendar above to set your end date
                           </p>
                         </div>
                       )}
-                      {centreSites.map((site) => {
-                        const availability = data.availability.find((a) => a.siteId === site.id);
-                        const isExpanded = expandedSiteId === site.id;
-                        const hasSelectedDates = dateSelection?.siteId === site.id && dateSelection?.startDate && dateSelection?.endDate;
+                      {(() => {
+                        const scores = data.siteScores || {};
+                        const hasScores = Object.keys(scores).length > 0;
                         
+                        const bestMatches = hasScores
+                          ? centreSites.filter((s: any) => (scores[s.id]?.total ?? 0) >= 70)
+                          : centreSites;
+                        const goodMatches = hasScores
+                          ? centreSites.filter((s: any) => { const t = scores[s.id]?.total ?? 0; return t >= 40 && t < 70; })
+                          : [];
+                        const otherOptions = hasScores
+                          ? centreSites.filter((s: any) => (scores[s.id]?.total ?? 0) < 40)
+                          : [];
+                        
+                        const renderSiteCard = (site: any) => {
+                          const siteAvailability = data.availability.find((a: any) => a.siteId === site.id);
+                          const isExpanded = expandedSiteId === site.id;
+                          const hasSelectedDates = dateSelection?.siteId === site.id && dateSelection?.startDate && dateSelection?.endDate;
+                          const score = scores[site.id];
+
                         return (
                           <Card 
                             key={`site-detail-casual-${centre.id}-${site.id}`} 
@@ -1724,6 +1878,39 @@ export default function Search() {
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <CardTitle className="text-lg">Site {site.siteNumber}</CardTitle>
+                                    {/* Score badge */}
+                                    {score && hasScores && (
+                                      <Badge className={`${
+                                        score.total >= 70 ? 'bg-green-600 hover:bg-green-700' :
+                                        score.total >= 40 ? 'bg-amber-500 hover:bg-amber-600' :
+                                        'bg-gray-500 hover:bg-gray-600'
+                                      } text-white`}>
+                                        {score.total >= 70 ? '⭐ ' : ''}{score.total}/100
+                                      </Badge>
+                                    )}
+                                    {/* "Why this result?" tooltip */}
+                                    {score && score.reasons.length > 0 && (
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <button className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800">
+                                              <HelpCircle className="h-3.5 w-3.5" />
+                                              Why this result?
+                                            </button>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="bottom" className="max-w-xs">
+                                            <div className="space-y-1 text-xs">
+                                              {score.reasons.map((reason: string, i: number) => (
+                                                <p key={i}>{reason}</p>
+                                              ))}
+                                              <div className="border-t border-gray-200 pt-1 mt-1 text-[10px] text-gray-400">
+                                                Category {score.categoryMatch}/30 · Location {score.locationMatch}/25 · Availability {score.availability}/20 · Price {score.priceMatch}/15 · Size {score.sizeMatch}/10
+                                              </div>
+                                            </div>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    )}
                                     {/* Show selected dates badge */}
                                     {hasSelectedDates && (
                                       <Badge className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1">
@@ -1790,6 +1977,11 @@ export default function Search() {
                                     {site.weekendPricePerDay && ` (Mon-Fri), $${site.weekendPricePerDay}/day (Sat-Sun)`}
                                     {' '}or ${site.pricePerWeek}/week
                                   </p>
+                                  {parseFloat(site.outgoingsPerDay || "0") > 0 && (
+                                    <p className="text-sm">
+                                      <span className="font-semibold">Outgoings:</span> ${site.outgoingsPerDay}/day
+                                    </p>
+                                  )}
                                   {site.restrictions && (
                                     <p className="text-sm">
                                       <span className="font-semibold">Restrictions:</span> {site.restrictions}
@@ -1843,17 +2035,46 @@ export default function Search() {
                                             }
                                             const totalDays = weekdays + weekends;
                                             const weekdayRate = Number(site.pricePerDay) || 0;
-                                            const weekendRate = Number(site.weekendRate) || weekdayRate;
-                                            const subtotal = (weekdays * weekdayRate) + (weekends * weekendRate);
-                                            const gst = subtotal * 0.1;
-                                            const total = subtotal + gst;
+                                            const weekendRate = Number(site.weekendPricePerDay) || weekdayRate;
+                                            const weeklyRate = Number(site.pricePerWeek) || 0;
+                                            
+                                            let subtotal: number;
+                                            let weeksApplied = 0;
+                                            let weeklyRateApplied = false;
+                                            
+                                            if (weeklyRate > 0 && totalDays >= 7) {
+                                              weeksApplied = Math.floor(totalDays / 7);
+                                              const remainderDays = totalDays - weeksApplied * 7;
+                                              const avgDailyRate = totalDays > 0 ? ((weekdays * weekdayRate) + (weekends * weekendRate)) / totalDays : weekdayRate;
+                                              subtotal = (weeksApplied * weeklyRate) + (remainderDays * avgDailyRate);
+                                              weeklyRateApplied = true;
+                                            } else {
+                                              subtotal = (weekdays * weekdayRate) + (weekends * weekendRate);
+                                            }
+                                            
+                                            const outgoingsRate = parseFloat(site.outgoingsPerDay || "0");
+                                            const totalOutgoings = outgoingsRate * totalDays;
+                                            const gst = (subtotal + totalOutgoings) * 0.1;
+                                            const total = subtotal + totalOutgoings + gst;
                                             return (
                                               <>
                                                 <p><span className="text-gray-600">Duration:</span> {totalDays} day{totalDays > 1 ? 's' : ''}</p>
-                                                {weekdays > 0 && <p><span className="text-gray-600">Weekdays:</span> {weekdays} × ${weekdayRate.toFixed(2)} = ${(weekdays * weekdayRate).toFixed(2)}</p>}
-                                                {weekends > 0 && <p><span className="text-gray-600">Weekends:</span> {weekends} × ${weekendRate.toFixed(2)} = ${(weekends * weekendRate).toFixed(2)}</p>}
+                                                {weeklyRateApplied ? (
+                                                  <>
+                                                    <p><span className="text-gray-600">Weekly Rate:</span> {weeksApplied} week{weeksApplied > 1 ? 's' : ''} × ${weeklyRate.toFixed(2)} = ${(weeksApplied * weeklyRate).toFixed(2)}</p>
+                                                    {totalDays - weeksApplied * 7 > 0 && (
+                                                      <p><span className="text-gray-600">Remaining:</span> {totalDays - weeksApplied * 7} day{totalDays - weeksApplied * 7 > 1 ? 's' : ''} at daily rate</p>
+                                                    )}
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    {weekdays > 0 && <p><span className="text-gray-600">Weekdays:</span> {weekdays} × ${weekdayRate.toFixed(2)} = ${(weekdays * weekdayRate).toFixed(2)}</p>}
+                                                    {weekends > 0 && <p><span className="text-gray-600">Weekends:</span> {weekends} × ${weekendRate.toFixed(2)} = ${(weekends * weekendRate).toFixed(2)}</p>}
+                                                  </>
+                                                )}
                                                 <div className="border-t border-gray-200 mt-2 pt-2">
                                                   <p><span className="text-gray-600">Subtotal:</span> ${subtotal.toFixed(2)}</p>
+                                                  {totalOutgoings > 0 && <p><span className="text-gray-600">Outgoings:</span> {totalDays} × ${outgoingsRate.toFixed(2)} = ${totalOutgoings.toFixed(2)}</p>}
                                                   <p><span className="text-gray-600">GST (10%):</span> ${gst.toFixed(2)}</p>
                                                   <p className="font-semibold text-blue-700"><span className="text-gray-700">Total:</span> ${total.toFixed(2)}</p>
                                                 </div>
@@ -1892,8 +2113,71 @@ export default function Search() {
                             </CardContent>
                           </Card>
                         );
-                      })}
-                      </div>
+                        };
+
+                        return (
+                          <>
+                            {/* Best Matches */}
+                            {bestMatches.length > 0 && (
+                              <div className="mb-6">
+                                {hasScores && (goodMatches.length > 0 || otherOptions.length > 0) && (
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <Star className="h-5 w-5 text-green-600" />
+                                    <h3 className="text-lg font-semibold text-green-800">Best Matches</h3>
+                                    <Badge className="bg-green-100 text-green-700">{bestMatches.length}</Badge>
+                                  </div>
+                                )}
+                                {!hasScores && (
+                                  <h3 className="text-lg font-semibold mb-4">Site Details</h3>
+                                )}
+                                <div className="grid md:grid-cols-2 gap-4">
+                                  {bestMatches.map(renderSiteCard)}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Good Matches */}
+                            {goodMatches.length > 0 && (
+                              <div className="mb-6">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <CheckCircle className="h-5 w-5 text-amber-500" />
+                                  <h3 className="text-lg font-semibold text-amber-700">Good Matches</h3>
+                                  <Badge className="bg-amber-100 text-amber-700">{goodMatches.length}</Badge>
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                  {goodMatches.map(renderSiteCard)}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Other Options — collapsed by default */}
+                            {otherOptions.length > 0 && (
+                              <div className="mb-6">
+                                <button
+                                  className="flex items-center gap-2 mb-3 group cursor-pointer"
+                                  onClick={(e) => {
+                                    const target = e.currentTarget.nextElementSibling;
+                                    if (target) {
+                                      target.classList.toggle('hidden');
+                                      e.currentTarget.querySelector('.chevron-icon')?.classList.toggle('rotate-180');
+                                    }
+                                  }}
+                                >
+                                  <Info className="h-5 w-5 text-gray-400" />
+                                  <h3 className="text-lg font-semibold text-gray-500">Other Options</h3>
+                                  <Badge className="bg-gray-100 text-gray-500">{otherOptions.length}</Badge>
+                                  <ChevronDown className="h-4 w-4 text-gray-400 transition-transform chevron-icon" />
+                                </button>
+                                <div className="hidden">
+                                  <div className="grid md:grid-cols-2 gap-4">
+                                    {otherOptions.map(renderSiteCard)}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                       
                       {/* Show "Show me all sized sites" link if size filter is active and results are filtered */}
                       {(() => {
@@ -1935,7 +2219,7 @@ export default function Search() {
             })}
             
             {/* Centre Floor Plan Map - Show below sites listing */}
-            {((data.floorLevels && data.floorLevels.length > 0 && data.floorLevels.some((fl: any) => fl.mapImageUrl)) || data.centres[0]?.mapImageUrl) && (
+            {((data.floorLevels && data.floorLevels.length > 0 && data.floorLevels.some((fl: any) => fl.mapImageUrl)) || data.centres[0]?.mapImageUrl || combinedSites.some((s: any) => s.mapMarkerX != null && s.mapMarkerY != null)) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Centre Floor Plan</CardTitle>

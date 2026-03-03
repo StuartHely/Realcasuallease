@@ -12,6 +12,7 @@ interface RateAlert {
   centreName: string;
   siteName: string;
   siteNumber: string;
+  invalidFields?: string[];
 }
 
 /**
@@ -23,6 +24,15 @@ function isValidRate(rate: string | null | undefined): boolean {
   const numRate = parseFloat(rate);
   if (isNaN(numRate)) return false;
   return numRate > 0 && numRate <= 10000;
+}
+
+/**
+ * Validate an optional rate — null/undefined is acceptable (fallback applies),
+ * but if a value is present it must be valid.
+ */
+function isValidOptionalRate(rate: string | null | undefined): boolean {
+  if (rate === null || rate === undefined) return true;
+  return isValidRate(rate);
 }
 
 /**
@@ -53,16 +63,17 @@ export async function checkSiteRates(): Promise<RateAlert[]> {
   for (const { site, centre } of allSites) {
     if (!centre) continue; // Skip sites without a centre
 
-    const hasInvalidRate =
-      !isValidRate(site.pricePerDay) ||
-      !isValidRate(site.pricePerWeek) ||
-      !isValidRate(site.weekendPricePerDay);
+    const invalidFields: string[] = [];
+    if (!isValidRate(site.pricePerDay)) invalidFields.push("pricePerDay");
+    if (!isValidRate(site.pricePerWeek)) invalidFields.push("pricePerWeek");
+    if (!isValidOptionalRate(site.weekendPricePerDay)) invalidFields.push("weekendPricePerDay");
 
-    if (hasInvalidRate) {
+    if (invalidFields.length > 0) {
       alerts.push({
         centreName: centre.name || "Unknown Centre",
         siteName: site.description || `Site ${site.siteNumber}`,
         siteNumber: site.siteNumber || "",
+        invalidFields,
       });
     }
   }

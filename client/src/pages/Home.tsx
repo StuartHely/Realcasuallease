@@ -1,18 +1,21 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Calendar, CheckCircle, MapPin, Info } from "lucide-react";
+import { Search, Calendar, CheckCircle, MapPin, LogIn, LogOut, User } from "lucide-react";
 import AustraliaMap from "@/components/AustraliaMap";
 import FAQ from "@/components/FAQ";
 import Logo from "@/components/Logo";
 import { format } from "date-fns";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 import { parseSearchQuery } from "@shared/queryParser";
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const { isAuthenticated, user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -189,10 +192,37 @@ export default function Home() {
           >
             <Logo height={48} className="h-12" />
           </div>
-          <nav className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => setLocation("/")}>Home</Button>
-            <Button variant="ghost" onClick={() => setLocation("/my-bookings")}>My Bookings</Button>
-            <Button variant="ghost" onClick={() => setLocation("/profile")}>Profile</Button>
+          <nav className="flex items-center gap-2">
+            {isAuthenticated ? (
+              <>
+                <Button variant="ghost" onClick={() => setLocation("/my-bookings")}>My Bookings</Button>
+                <Button variant="ghost" onClick={() => setLocation("/profile")}>
+                  <User className="h-4 w-4 mr-1" />
+                  {user?.name || "Profile"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    await logout();
+                    toast.success("Logged out");
+                    setLocation("/login");
+                  }}
+                >
+                  <LogOut className="h-4 w-4 mr-1" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="default" size="sm">
+                    <LogIn className="h-4 w-4 mr-1" />
+                    Sign In
+                  </Button>
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </header>
@@ -204,7 +234,7 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-blue-900 mb-4 md:mb-6 leading-tight">
               The Easiest Way to Book Casual Leasing in Shopping Centres
             </h2>
-            <p className="text-xl md:text-2xl text-blue-900 font-semibold mb-8 md:mb-12 max-w-3xl mx-auto animate-fade-in">
+            <p className="text-xl md:text-2xl text-blue-900 font-semibold mb-8 md:mb-12 max-w-3xl mx-auto animate-fade-in" style={{ fontSize: '120%' }}>
               Describe the space you need in any order. We'll handle the rest.
             </p>
 

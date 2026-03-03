@@ -18,3 +18,9 @@ postgresql://username:password@host:port/database
 # Notes
 
 Make sure to set up environment variables for sensitive data instead of hardcoding them in the application.
+
+## Stripe
+
+| Variable | Description |
+|----------|-------------|
+| `STRIPE_SECRET_KEY` | Stripe API secret key (use `sk_test_` prefix in development) |
