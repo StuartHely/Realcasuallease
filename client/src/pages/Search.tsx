@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays, Store, Zap, Layers, FileText, Search as SearchIcon, Star, HelpCircle, DollarSign, ChevronDown, Loader2 } from "lucide-react";
+import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays, Store, Zap, Layers, FileText, Search as SearchIcon, Star, HelpCircle, DollarSign, ChevronDown, Loader2, Building2, LayoutGrid } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, parse, addDays, isSameDay, subDays, isBefore, startOfDay } from "date-fns";
@@ -350,91 +350,128 @@ export default function Search() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Search Summary */}
+        {/* Search Summary Band */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-blue-900 mb-2">Search Results</h2>
-          
-          {/* Search Interpretation Banner */}
-          {data?.searchInterpretation && (
-            (() => {
-              const interp = data.searchInterpretation;
-              const hasMeaningfulInterpretation = interp.productCategory || interp.location || interp.state || interp.budget || interp.dateRange;
-              if (!hasMeaningfulInterpretation) return null;
-              
-              const parts: string[] = [];
-              if (interp.productCategory) {
-                parts.push(interp.productCategory.charAt(0).toUpperCase() + interp.productCategory.slice(1));
-              }
-              if (interp.location) {
-                const loc = interp.location + (interp.state ? `, ${interp.state}` : '');
-                parts.push(`in ${loc}`);
-              } else if (interp.state) {
-                parts.push(`in ${interp.state}`);
-              }
-              
-              return (
-                <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <SearchIcon className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="font-semibold text-blue-900">
-                        Showing: {parts.join(' ') || searchParams.query}
-                      </p>
-                      <div className="mt-1 flex flex-wrap gap-2">
-                        {interp.productCategory && (
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                            Category: {interp.productCategory}
-                          </Badge>
-                        )}
-                        {(interp.location || interp.state) && (
-                          <Badge variant="secondary" className="bg-green-100 text-green-700">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            {interp.location || interp.state}
-                          </Badge>
-                        )}
-                        {interp.dateRange ? (
-                          <Badge variant="secondary" className="bg-purple-100 text-purple-700">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            {interp.dateRange.end
-                              ? `${interp.dateRange.start} to ${interp.dateRange.end}`
-                              : interp.dateRange.start}
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="bg-gray-100 text-gray-600">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            This week
-                          </Badge>
-                        )}
-                        {interp.budget && (
-                          <Badge variant="secondary" className="bg-amber-100 text-amber-700">
-                            <DollarSign className="h-3 w-3 mr-1" />
-                            {interp.budget.maxPerDay
-                              ? `Under $${interp.budget.maxPerDay}/day`
-                              : interp.budget.maxPerWeek
-                              ? `Under $${interp.budget.maxPerWeek}/week`
-                              : `Budget $${interp.budget.maxTotal}`}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-blue-600 hover:text-blue-800"
-                      onClick={() => setLocation("/")}
-                    >
-                      Edit Search
-                    </Button>
-                  </div>
-                </div>
-              );
-            })()
+          {/* Gradient header band */}
+          <div className="rounded-t-lg px-6 py-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%)' }}>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-white/50 mb-1.5">Search Results</p>
+              <div className="flex flex-wrap items-center gap-2">
+                {data?.centres?.[0] ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                    <MapPin className="h-3.5 w-3.5" />
+                    {data.centres[0].name}{data.centres[0].suburb ? `, ${data.centres[0].suburb}` : ''}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                    <MapPin className="h-3.5 w-3.5" />
+                    {searchParams.query}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                  <Calendar className="h-3.5 w-3.5" />
+                  {format(searchParams.date, "dd/MM/yyyy")}
+                </span>
+                {data?.searchInterpretation?.productCategory && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                    {data.searchInterpretation.productCategory.charAt(0).toUpperCase() + data.searchInterpretation.productCategory.slice(1)}
+                  </span>
+                )}
+                {data?.searchInterpretation?.budget && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                    <DollarSign className="h-3.5 w-3.5" />
+                    {data.searchInterpretation.budget.maxPerDay
+                      ? `Under $${data.searchInterpretation.budget.maxPerDay}/day`
+                      : data.searchInterpretation.budget.maxPerWeek
+                      ? `Under $${data.searchInterpretation.budget.maxPerWeek}/week`
+                      : `Budget $${data.searchInterpretation.budget.maxTotal}`}
+                  </span>
+                )}
+              </div>
+            </div>
+            <Button
+              size="sm"
+              className="bg-white text-[#0369a1] hover:bg-gray-100 font-semibold shadow-md"
+              onClick={() => setLocation("/")}
+            >
+              <SearchIcon className="h-4 w-4 mr-1.5" />
+              Edit Search
+            </Button>
+          </div>
+
+          {/* Asset type tab bar */}
+          {(casualLeasingCount > 0 || vacantShopsCount > 0 || thirdLineCount > 0) && (
+          <div className="bg-white border-b border-x rounded-b-lg">
+            <div className="flex">
+              {casualLeasingCount > 0 && (
+              <button
+                onClick={() => setSelectedAssetType("casual_leasing")}
+                className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  selectedAssetType === "casual_leasing"
+                    ? "border-[#0369a1] text-[#0369a1] font-bold"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <MapPin className="h-4 w-4" />
+                Casual Leasing
+                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                  selectedAssetType === "casual_leasing" ? "bg-[#0369a1]/10 text-[#0369a1]" : "bg-gray-100 text-gray-500"
+                }`}>{casualLeasingCount}</span>
+              </button>
+              )}
+              {vacantShopsCount > 0 && (
+              <button
+                onClick={() => setSelectedAssetType("vacant_shops")}
+                className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  selectedAssetType === "vacant_shops"
+                    ? "border-[#0369a1] text-[#0369a1] font-bold"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <Store className="h-4 w-4" />
+                Vacant Shops
+                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                  selectedAssetType === "vacant_shops" ? "bg-[#0369a1]/10 text-[#0369a1]" : "bg-gray-100 text-gray-500"
+                }`}>{vacantShopsCount}</span>
+              </button>
+              )}
+              {thirdLineCount > 0 && (
+              <button
+                onClick={() => setSelectedAssetType("third_line")}
+                className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  selectedAssetType === "third_line"
+                    ? "border-[#0369a1] text-[#0369a1] font-bold"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <Zap className="h-4 w-4" />
+                Third Line Income
+                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                  selectedAssetType === "third_line" ? "bg-[#0369a1]/10 text-[#0369a1]" : "bg-gray-100 text-gray-500"
+                }`}>{thirdLineCount}</span>
+              </button>
+              )}
+              {((casualLeasingCount > 0 && vacantShopsCount > 0) || (casualLeasingCount > 0 && thirdLineCount > 0) || (vacantShopsCount > 0 && thirdLineCount > 0)) && (
+              <button
+                onClick={() => setSelectedAssetType("all")}
+                className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  selectedAssetType === "all"
+                    ? "border-[#0369a1] text-[#0369a1] font-bold"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <Layers className="h-4 w-4" />
+                All Assets
+                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                  selectedAssetType === "all" ? "bg-[#0369a1]/10 text-[#0369a1]" : "bg-gray-100 text-gray-500"
+                }`}>{casualLeasingCount + vacantShopsCount + thirdLineCount}</span>
+              </button>
+              )}
+            </div>
+          </div>
           )}
 
-          <p className="text-gray-600">
-            Searching for: <span className="font-semibold">{searchParams.query}</span> on{" "}
-            <span className="font-semibold">{format(searchParams.date, "dd/MM/yyyy")}</span>
-          </p>
+          {/* Filtering badges (size/table requirements) */}
           {(() => {
             const parsed = parseSearchQuery(searchParams.query);
             const hasRequirements = parsed.minSizeM2 !== undefined || parsed.minTables !== undefined;
@@ -457,59 +494,6 @@ export default function Search() {
             }
             return null;
           })()}
-          
-          {/* Asset Type Filter - only show if there are sites available */}
-          {(casualLeasingCount > 0 || vacantShopsCount > 0 || thirdLineCount > 0) && (
-          <div className="mt-6 flex flex-wrap items-center gap-4">
-            <span className="text-sm font-medium text-gray-700">Asset Type:</span>
-            <div className="flex flex-wrap gap-2">
-              {casualLeasingCount > 0 && (
-              <Button
-                variant={selectedAssetType === "casual_leasing" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedAssetType("casual_leasing")}
-                className="flex items-center gap-1.5"
-              >
-                <MapPin className="h-4 w-4" />
-                Casual Leasing
-              </Button>
-              )}
-              {vacantShopsCount > 0 && (
-              <Button
-                variant={selectedAssetType === "vacant_shops" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedAssetType("vacant_shops")}
-                className="flex items-center gap-1.5"
-              >
-                <Store className="h-4 w-4" />
-                Vacant Shops
-              </Button>
-              )}
-              {thirdLineCount > 0 && (
-              <Button
-                variant={selectedAssetType === "third_line" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedAssetType("third_line")}
-                className="flex items-center gap-1.5"
-              >
-                <Zap className="h-4 w-4" />
-                Third Line Income
-              </Button>
-              )}
-              {(casualLeasingCount > 0 && vacantShopsCount > 0) || (casualLeasingCount > 0 && thirdLineCount > 0) || (vacantShopsCount > 0 && thirdLineCount > 0) ? (
-              <Button
-                variant={selectedAssetType === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedAssetType("all")}
-                className="flex items-center gap-1.5"
-              >
-                <Layers className="h-4 w-4" />
-                All Assets
-              </Button>
-              ) : null}
-            </div>
-          </div>
-          )}
           
           {/* Show smart size suggestion if exact match not available */}
           {data?.sizeNotAvailable && data?.closestMatch && (
@@ -1398,13 +1382,29 @@ export default function Search() {
               return (
                 <Card key={`centre-casual-${centre.id}`}>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-2xl mb-1 flex items-center gap-3">
-                      {centre.name}
-                      <Badge variant="secondary" className="text-sm font-normal">
-                        {Math.min(visibleSitesLimit, centreSites.length)} of {centreSites.length} sites
-                      </Badge>
-                    </CardTitle>
-                    <CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50">
+                          <Building2 className="h-5 w-5 text-[#0369a1]" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg" style={{ fontSize: '18px', fontWeight: 700 }}>
+                            {centre.name}
+                          </CardTitle>
+                          {(centre.suburb || centre.state) && (
+                            <p className="flex items-center gap-1 text-sm text-gray-500 mt-0.5">
+                              <MapPin className="h-3 w-3" />
+                              {[centre.suburb, centre.state].filter(Boolean).join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-gray-900">{centreSites.length}</p>
+                        <p className="text-xs text-gray-500">sites available</p>
+                      </div>
+                    </div>
+                    <CardDescription className="mt-2">
                       {centre.majors && <span key={`${centre.id}-majors`} className="block font-bold">Major Stores: {centre.majors}</span>}
                       {centre.numberOfSpecialties && (
                         <span key={`${centre.id}-specialties`} className="block">Specialty Stores: {centre.numberOfSpecialties}</span>

@@ -962,4 +962,35 @@ export const adminRouter = router({
 
         return { success: true, message: 'User updated successfully' };
       }),
+
+    /**
+     * Audit query: find users who only have OAuth/SDK auth (openId set, no passwordHash).
+     * If count is zero, the SDK auth fallback in context.ts can be safely removed.
+     */
+    getOauthOnlyUsers: adminProcedure.query(async () => {
+      const { getDb } = await import("../db");
+      const { users } = await import("../../drizzle/schema");
+      const { isNull, and, ne } = await import("drizzle-orm");
+
+      const dbInstance = await getDb();
+      if (!dbInstance) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const oauthOnlyUsers = await dbInstance
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          openId: users.openId,
+          role: users.role,
+          lastSignedIn: users.lastSignedIn,
+        })
+        .from(users)
+        .where(and(isNull(users.passwordHash), ne(users.openId, "")));
+
+      return {
+        count: oauthOnlyUsers.length,
+        users: oauthOnlyUsers,
+        canRemoveSdkFallback: oauthOnlyUsers.length === 0,
+      };
+    }),
 });
