@@ -598,11 +598,22 @@ export async function searchSitesWithCategory(query: string, categoryKeyword?: s
       if (!categoryMatch) return false;
       // Category matched - now check if the centre name matches the remaining query
       // Extract non-category words from query, also removing common prepositions
-      const prepositions = ['at', 'in', 'on', 'for', 'near', 'by', 'from', 'to', 'the', 'a', 'an'];
+      const stopWords = [
+        // prepositions & articles
+        'at', 'in', 'on', 'for', 'near', 'by', 'from', 'to', 'the', 'a', 'an', 'of', 'with',
+        // conversational filler
+        'where', 'can', 'i', 'me', 'my', 'we', 'find', 'sell', 'buy', 'get', 'want',
+        'place', 'spot', 'space', 'looking', 'need', 'please', 'show', 'is', 'are',
+        'there', 'any', 'some', 'do', 'does', 'have', 'has', 'would', 'like', 'that',
+        // Australian state codes & names (state filtering handled separately)
+        'nsw', 'vic', 'qld', 'sa', 'wa', 'tas', 'nt', 'act',
+        'new', 'south', 'wales', 'victoria', 'queensland', 'western', 'australia',
+        'tasmania', 'northern', 'territory', 'australian', 'capital', 'canberra',
+      ];
       const queryWordsWithoutCategory = lowerQuery.split(/\s+/).filter(word => 
         word !== categoryKeyword.toLowerCase() && 
         !expandCategoryKeyword(categoryKeyword).includes(word) &&
-        !prepositions.includes(word)
+        !stopWords.includes(word)
       );
       
       // If no other query words, return true (just a category search)

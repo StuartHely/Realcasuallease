@@ -1,6 +1,13 @@
 /**
  * Category synonym mapping for handling common product category variations
  * Maps user search terms to standard category names
+ *
+ * Run periodically to find unrecognised category terms from real searches:
+ *   SELECT query, parsedIntent->>'productCategory' AS category, COUNT(*)
+ *   FROM search_analytics
+ *   WHERE (parsedIntent->>'categoryUnrecognised')::boolean = true
+ *   GROUP BY query, category
+ *   ORDER BY count DESC;
  */
 
 export const CATEGORY_SYNONYMS: Record<string, string[]> = {
@@ -10,11 +17,49 @@ export const CATEGORY_SYNONYMS: Record<string, string[]> = {
   "uggs": ["ugg", "ugg boots", "sheepskin boots", "shoes", "footwear"],
   "boots": ["boot", "footwear", "shoes"],
   "sneakers": ["sneaker", "shoes", "footwear", "trainers"],
+  "socks": ["sock", "footwear", "clothing", "apparel", "fashion"],
+  "sock": ["socks", "footwear", "clothing", "apparel", "fashion"],
+  "thongs": ["thong", "footwear", "sandals", "shoes"],
   
-  // Clothing variations
+  // Clothing & Apparel variations
   "clothes": ["clothing", "apparel", "fashion", "wear"],
   "clothing": ["clothes", "apparel", "fashion", "wear"],
   "fashion": ["clothes", "clothing", "apparel"],
+  "beanies": ["beanie", "clothing", "apparel", "fashion", "accessories"],
+  "beanie": ["beanies", "clothing", "apparel", "fashion", "accessories"],
+  "scarves": ["scarf", "clothing", "apparel", "fashion", "accessories"],
+  "scarf": ["scarves", "clothing", "apparel", "fashion", "accessories"],
+  "gloves": ["glove", "clothing", "apparel", "fashion", "accessories"],
+  "belts": ["belt", "clothing", "apparel", "fashion", "accessories"],
+  "belt": ["belts", "clothing", "apparel", "fashion", "accessories"],
+  "hats": ["hat", "clothing", "apparel", "fashion", "accessories"],
+  "hat": ["hats", "clothing", "apparel", "fashion", "accessories"],
+  "caps": ["cap", "clothing", "apparel", "fashion", "accessories", "hats"],
+  "cap": ["caps", "clothing", "apparel", "fashion", "accessories", "hats"],
+  "swimwear": ["swimming", "clothing", "apparel", "fashion"],
+  "activewear": ["sportswear", "clothing", "apparel", "fashion", "fitness"],
+  "sportswear": ["activewear", "clothing", "apparel", "fashion", "fitness"],
+  "uniforms": ["uniform", "clothing", "apparel", "workwear"],
+  "workwear": ["uniform", "uniforms", "clothing", "apparel"],
+  
+  // Bags & Luggage variations
+  "handbags": ["handbag", "bags", "fashion", "accessories"],
+  "handbag": ["handbags", "bags", "fashion", "accessories"],
+  "bags": ["bag", "handbags", "luggage", "fashion", "accessories"],
+  "bag": ["bags", "handbags", "luggage", "fashion", "accessories"],
+  "luggage": ["bags", "suitcase", "travel"],
+  "wallets": ["wallet", "fashion", "accessories", "leather goods"],
+  "wallet": ["wallets", "fashion", "accessories", "leather goods"],
+  
+  // Eyewear variations
+  "sunglasses": ["sunnies", "eyewear", "fashion", "accessories"],
+  "sunnies": ["sunglasses", "eyewear", "fashion", "accessories"],
+  
+  // Watches (extend existing jewellery group)
+  "watches": ["watch", "jewellery", "jewelry", "accessories"],
+  "watch": ["watches", "jewellery", "jewelry", "accessories"],
+  "accessories": ["accessory", "fashion", "jewellery", "jewelry"],
+  "accessory": ["accessories", "fashion", "jewellery", "jewelry"],
   
   // Food & Beverage variations
   "food": ["foods", "dining", "restaurant", "cafe", "eatery"],

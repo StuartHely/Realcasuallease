@@ -23,14 +23,12 @@ export const searchRouter = router({
         // If the rule-based parser couldn't find a location, try the location index
         let enhancedQuery = parsedQuery;
 
-        if (!parsedQuery.centreName && !parsedQuery.matchedLocation) {
-          // Try LLM intent parsing for complex natural language
-          const { shouldUseLLM, parseIntentWithLLM, mergeLLMIntent } = await import("../intentParser");
-          if (shouldUseLLM(parsedQuery)) {
-            const llmIntent = await parseIntentWithLLM(input.query);
-            if (llmIntent) {
-              enhancedQuery = mergeLLMIntent(parsedQuery, llmIntent);
-            }
+        // Try LLM intent parsing for complex natural language
+        const { shouldUseLLM, parseIntentWithLLM, mergeLLMIntent } = await import("../intentParser");
+        if (shouldUseLLM(parsedQuery)) {
+          const llmIntent = await parseIntentWithLLM(input.query);
+          if (llmIntent) {
+            enhancedQuery = mergeLLMIntent(parsedQuery, llmIntent);
           }
         }
 
@@ -145,6 +143,13 @@ export const searchRouter = router({
         // This handles cases like "Fashion in VIC" where VIC centres may not have fashion-approved sites
         if (centres.length === 0) {
           centres = await db.searchShoppingCentres(searchQuery, enhancedQuery.stateFilter);
+        }
+
+        // If centre name search returned nothing (likely because the "centre name" is
+        // just leftover natural-language noise) but we have a state filter, show all
+        // centres in that state so the user still gets results.
+        if (centres.length === 0 && enhancedQuery.stateFilter && searchQuery) {
+          centres = await db.searchShoppingCentres('', enhancedQuery.stateFilter);
         }
 
         // If still no results and we have area matches, use those
@@ -359,6 +364,10 @@ export const searchRouter = router({
         // (when sites exist but don't match the category, scoring handles it via lower ranks)
         const categoryNotAvailable = !!enhancedQuery.productCategory && siteResults.length === 0 && allSites.length === 0;
 
+        // Flag when category keyword was provided but no sites matched it via
+        // fuzzyMatchCategory — the user sees unfiltered results with a notice.
+        const categoryUnrecognised = !!enhancedQuery.productCategory && siteResults.length === 0 && allSites.length > 0;
+
         // --- Score and rank sites ---
         const { scoreAndRankSites } = await import("../siteScoring");
         const availabilityMap = new Map<number, { week1Available: boolean; week2Available: boolean }>();
@@ -411,6 +420,7 @@ export const searchRouter = router({
             searchDate: input.date,
             parsedIntent: {
               productCategory: enhancedQuery.productCategory || null,
+              categoryUnrecognised,
               location: enhancedQuery.centreName || enhancedQuery.matchedLocation || null,
               state: enhancedQuery.stateFilter || null,
               assetType: enhancedQuery.assetType || null,
@@ -437,6 +447,7 @@ export const searchRouter = router({
           totalSites: allSites.length,
           sizeNotAvailable,
           categoryNotAvailable,
+          categoryUnrecognised,
           closestMatch,
           siteCategories,
           siteScores: scored.scores,
