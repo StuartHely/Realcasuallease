@@ -627,9 +627,9 @@ export const vacantShopBookingsRouter = router({
         );
       }
 
-      // Fire-and-forget invoice dispatch when confirmed
+      // Fire-and-forget document dispatch (licence agreement)
       if (input.status === "confirmed") {
-        import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(input.id)).catch(() => {});
+        import("../documentDispatch").then(m => m.dispatchBookingDocuments(input.id, "vs")).catch(() => {});
       }
 
       // Send rejection email
@@ -1035,9 +1035,9 @@ export const thirdLineBookingsRouter = router({
         );
       }
 
-      // Fire-and-forget invoice dispatch when confirmed
+      // Fire-and-forget document dispatch (licence agreement)
       if (input.status === "confirmed") {
-        import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(input.id)).catch(() => {});
+        import("../documentDispatch").then(m => m.dispatchBookingDocuments(input.id, "tli")).catch(() => {});
       }
 
       // Send rejection email

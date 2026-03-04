@@ -337,6 +337,10 @@ export const bookings = pgTable("bookings", {
   createdByAdmin: integer("createdByAdmin").references(() => users.id), // If booking was created by admin on behalf of user
   invoiceDispatchedAt: timestamp("invoiceDispatchedAt"), // Set when invoice PDF is generated and emailed
   recurrenceGroupId: varchar("recurrenceGroupId", { length: 50 }),
+  licenceSignatureToken: varchar("licenceSignatureToken", { length: 64 }).unique(),
+  licenceSignedAt: timestamp("licenceSignedAt"),
+  licenceSignedByName: varchar("licenceSignedByName", { length: 255 }),
+  licenceSignedByIp: varchar("licenceSignedByIp", { length: 45 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
@@ -668,6 +672,10 @@ export const vacantShopBookings = pgTable("vacant_shop_bookings", {
   paymentDueDate: timestamp("paymentDueDate"),
   customerEmail: varchar("customerEmail", { length: 320 }),
   customerNotes: text("customerNotes"),
+  licenceSignatureToken: varchar("licenceSignatureToken", { length: 64 }).unique(),
+  licenceSignedAt: timestamp("licenceSignedAt"),
+  licenceSignedByName: varchar("licenceSignedByName", { length: 255 }),
+  licenceSignedByIp: varchar("licenceSignedByIp", { length: 45 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
@@ -708,6 +716,10 @@ export const thirdLineBookings = pgTable("third_line_bookings", {
   paymentDueDate: timestamp("paymentDueDate"),
   customerEmail: varchar("customerEmail", { length: 320 }),
   customerNotes: text("customerNotes"),
+  licenceSignatureToken: varchar("licenceSignatureToken", { length: 64 }).unique(),
+  licenceSignedAt: timestamp("licenceSignedAt"),
+  licenceSignedByName: varchar("licenceSignedByName", { length: 255 }),
+  licenceSignedByIp: varchar("licenceSignedByIp", { length: 45 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({

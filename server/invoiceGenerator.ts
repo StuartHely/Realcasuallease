@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { getBookingById, getSiteById, getShoppingCentreById, getUserById, getCustomerProfileByUserId, resolveRemittanceBankAccount } from './db';
 import { getLogoAsBase64, getOwnerIdFromContext } from './logoHelper';
+import * as assetDb from './assetDb';
 
 /**
  * Generate invoice PDF for a booking
@@ -244,4 +245,406 @@ function getDueDate(): string {
   const dueDate = new Date();
   dueDate.setDate(dueDate.getDate() + 14);
   return formatDate(dueDate);
+}
+
+/**
+ * Generate invoice PDF for a Vacant Shop booking
+ * Returns base64 encoded PDF string
+ */
+export async function generateVSInvoicePDF(bookingId: number): Promise<string> {
+  const booking = await assetDb.getVacantShopBookingById(bookingId);
+  if (!booking) {
+    throw new Error('VS Booking not found');
+  }
+
+  const shop = await assetDb.getVacantShopById(booking.vacantShopId);
+  if (!shop) {
+    throw new Error('Vacant shop not found');
+  }
+
+  const centre = await getShoppingCentreById(shop.centreId);
+  if (!centre) {
+    throw new Error('Centre not found');
+  }
+
+  const customer = await getUserById(booking.customerId);
+  if (!customer) {
+    throw new Error('Customer not found');
+  }
+
+  const profile = await getCustomerProfileByUserId(customer.id);
+
+  const ownerId = await getOwnerIdFromContext({ centreId: centre.id });
+
+  const doc = new jsPDF();
+  doc.setFont('helvetica');
+
+  // Add Logo
+  try {
+    const logoBase64 = await getLogoAsBase64(ownerId);
+    if (logoBase64) {
+      doc.addImage(logoBase64, 'PNG', 20, 10, 60, 20);
+    } else {
+      doc.setFontSize(24);
+      doc.setTextColor(18, 48, 71);
+      doc.text('Casual Lease', 20, 25);
+    }
+  } catch (error) {
+    console.error('[Invoice-VS] Error adding logo:', error);
+    doc.setFontSize(24);
+    doc.setTextColor(18, 48, 71);
+    doc.text('Casual Lease', 20, 25);
+  }
+
+  // Invoice Title
+  doc.setFontSize(20);
+  doc.setTextColor(0, 0, 0);
+  doc.text('INVOICE', 150, 25);
+
+  // Invoice Details
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Invoice Number: ${booking.bookingNumber}`, 150, 35);
+  doc.text(`Date: ${new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })}`, 150, 42);
+  doc.text(`Due Date: ${getDueDate()}`, 150, 49);
+
+  // Customer Details
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Bill To:', 20, 50);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+
+  let yPos = 58;
+  const businessName = profile?.tradingName || profile?.companyName;
+  if (businessName) {
+    doc.text(businessName, 20, yPos);
+    yPos += 7;
+    if (profile?.tradingName && profile?.companyName && profile.tradingName !== profile.companyName) {
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`(${profile.companyName})`, 20, yPos);
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      yPos += 7;
+    }
+  }
+  if (customer.name) {
+    doc.text(customer.name, 20, yPos);
+    yPos += 7;
+  }
+  if (customer.email) {
+    doc.text(customer.email, 20, yPos);
+    yPos += 7;
+  }
+  if (profile?.phone) {
+    doc.text(profile.phone, 20, yPos);
+    yPos += 7;
+  }
+
+  // Booking Details
+  yPos += 10;
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Booking Details:', 20, yPos);
+  yPos += 8;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(`Location: ${centre.name}`, 20, yPos);
+  yPos += 7;
+  doc.text(`Vacant Shop: ${shop.shopNumber}`, 20, yPos);
+  yPos += 7;
+  if (shop.totalSizeM2) {
+    doc.text(`Size: ${shop.totalSizeM2} m²`, 20, yPos);
+    yPos += 7;
+  }
+  doc.text(`Start Date: ${formatDate(booking.startDate)}`, 20, yPos);
+  yPos += 7;
+  doc.text(`End Date: ${formatDate(booking.endDate)}`, 20, yPos);
+  yPos += 7;
+
+  const days = Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const weeks = Math.round(days / 7);
+  const durationText = weeks >= 4 ? `${Math.round(weeks / 4.33)} month${Math.round(weeks / 4.33) > 1 ? 's' : ''}` : `${weeks} week${weeks > 1 ? 's' : ''}`;
+  doc.text(`Duration: ${durationText} (${days} days)`, 20, yPos);
+  yPos += 15;
+
+  // Line items table
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('Description', 20, yPos);
+  doc.text('Amount', 160, yPos, { align: 'right' });
+  yPos += 3;
+
+  doc.setLineWidth(0.5);
+  doc.line(20, yPos, 190, yPos);
+  yPos += 8;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+
+  const subtotal = Number(booking.totalAmount) - Number(booking.gstAmount);
+  doc.text(`Vacant shop rental (${shop.shopNumber})`, 20, yPos);
+  doc.text(formatCurrency(subtotal), 160, yPos, { align: 'right' });
+  yPos += 7;
+
+  doc.text(`GST (${booking.gstPercentage}%)`, 20, yPos);
+  doc.text(formatCurrency(Number(booking.gstAmount)), 160, yPos, { align: 'right' });
+  yPos += 10;
+
+  // Total line
+  doc.setLineWidth(0.5);
+  doc.line(20, yPos, 190, yPos);
+  yPos += 8;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('TOTAL DUE', 20, yPos);
+  doc.text(formatCurrency(Number(booking.totalAmount)), 160, yPos, { align: 'right' });
+  yPos += 15;
+
+  // Payment Terms
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('Payment Terms:', 20, yPos);
+  yPos += 7;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text('Payment is due within 14 days of invoice date (NET-14).', 20, yPos);
+  yPos += 7;
+  doc.text('Please include the invoice number in your payment reference.', 20, yPos);
+  yPos += 15;
+
+  // Bank Details
+  const bankAccount = await resolveRemittanceBankAccount(centre.id);
+  if (!bankAccount) {
+    console.error('[Invoice-VS] No bank account configured for centre:', centre.id);
+    throw new Error('No bank account configured for this centre — cannot generate invoice');
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('Payment Details:', 20, yPos);
+  yPos += 7;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(`BSB: ${bankAccount.bankBsb}`, 20, yPos);
+  yPos += 7;
+  doc.text(`Account Number: ${bankAccount.bankAccountNumber}`, 20, yPos);
+  yPos += 7;
+  doc.text(`Account Name: ${bankAccount.bankAccountName}`, 20, yPos);
+  yPos += 15;
+
+  // Footer
+  doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Thank you for your business!', 105, 280, { align: 'center' });
+  doc.text('For inquiries, please contact us at info@casuallease.com', 105, 286, { align: 'center' });
+
+  const pdfBase64 = doc.output('datauristring').split(',')[1];
+  return pdfBase64;
+}
+
+/**
+ * Generate invoice PDF for a Third Line Income booking
+ * Returns base64 encoded PDF string
+ */
+export async function generateTLIInvoicePDF(bookingId: number): Promise<string> {
+  const booking = await assetDb.getThirdLineBookingById(bookingId);
+  if (!booking) {
+    throw new Error('TLI Booking not found');
+  }
+
+  const asset = await assetDb.getThirdLineIncomeById(booking.thirdLineIncomeId);
+  if (!asset) {
+    throw new Error('Third line income asset not found');
+  }
+
+  const centre = await getShoppingCentreById(asset.centreId);
+  if (!centre) {
+    throw new Error('Centre not found');
+  }
+
+  const customer = await getUserById(booking.customerId);
+  if (!customer) {
+    throw new Error('Customer not found');
+  }
+
+  const profile = await getCustomerProfileByUserId(customer.id);
+
+  const ownerId = await getOwnerIdFromContext({ centreId: centre.id });
+
+  const doc = new jsPDF();
+  doc.setFont('helvetica');
+
+  // Add Logo
+  try {
+    const logoBase64 = await getLogoAsBase64(ownerId);
+    if (logoBase64) {
+      doc.addImage(logoBase64, 'PNG', 20, 10, 60, 20);
+    } else {
+      doc.setFontSize(24);
+      doc.setTextColor(18, 48, 71);
+      doc.text('Casual Lease', 20, 25);
+    }
+  } catch (error) {
+    console.error('[Invoice-TLI] Error adding logo:', error);
+    doc.setFontSize(24);
+    doc.setTextColor(18, 48, 71);
+    doc.text('Casual Lease', 20, 25);
+  }
+
+  // Invoice Title
+  doc.setFontSize(20);
+  doc.setTextColor(0, 0, 0);
+  doc.text('INVOICE', 150, 25);
+
+  // Invoice Details
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Invoice Number: ${booking.bookingNumber}`, 150, 35);
+  doc.text(`Date: ${new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })}`, 150, 42);
+  doc.text(`Due Date: ${getDueDate()}`, 150, 49);
+
+  // Customer Details
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Bill To:', 20, 50);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+
+  let yPos = 58;
+  const businessName = profile?.tradingName || profile?.companyName;
+  if (businessName) {
+    doc.text(businessName, 20, yPos);
+    yPos += 7;
+    if (profile?.tradingName && profile?.companyName && profile.tradingName !== profile.companyName) {
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`(${profile.companyName})`, 20, yPos);
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      yPos += 7;
+    }
+  }
+  if (customer.name) {
+    doc.text(customer.name, 20, yPos);
+    yPos += 7;
+  }
+  if (customer.email) {
+    doc.text(customer.email, 20, yPos);
+    yPos += 7;
+  }
+  if (profile?.phone) {
+    doc.text(profile.phone, 20, yPos);
+    yPos += 7;
+  }
+
+  // Booking Details
+  yPos += 10;
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Booking Details:', 20, yPos);
+  yPos += 8;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(`Location: ${centre.name}`, 20, yPos);
+  yPos += 7;
+  doc.text(`Third Line Asset: ${asset.assetNumber}`, 20, yPos);
+  yPos += 7;
+  if (asset.description) {
+    doc.text(`Description: ${asset.description}`, 20, yPos);
+    yPos += 7;
+  }
+  doc.text(`Start Date: ${formatDate(booking.startDate)}`, 20, yPos);
+  yPos += 7;
+  doc.text(`End Date: ${formatDate(booking.endDate)}`, 20, yPos);
+  yPos += 7;
+
+  const days = Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const weeks = Math.round(days / 7);
+  const durationText = weeks >= 4 ? `${Math.round(weeks / 4.33)} month${Math.round(weeks / 4.33) > 1 ? 's' : ''}` : `${weeks} week${weeks > 1 ? 's' : ''}`;
+  doc.text(`Duration: ${durationText} (${days} days)`, 20, yPos);
+  yPos += 15;
+
+  // Line items table
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('Description', 20, yPos);
+  doc.text('Amount', 160, yPos, { align: 'right' });
+  yPos += 3;
+
+  doc.setLineWidth(0.5);
+  doc.line(20, yPos, 190, yPos);
+  yPos += 8;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+
+  const subtotal = Number(booking.totalAmount) - Number(booking.gstAmount);
+  doc.text(`Third line income asset rental (${asset.assetNumber})`, 20, yPos);
+  doc.text(formatCurrency(subtotal), 160, yPos, { align: 'right' });
+  yPos += 7;
+
+  doc.text(`GST (${booking.gstPercentage}%)`, 20, yPos);
+  doc.text(formatCurrency(Number(booking.gstAmount)), 160, yPos, { align: 'right' });
+  yPos += 10;
+
+  // Total line
+  doc.setLineWidth(0.5);
+  doc.line(20, yPos, 190, yPos);
+  yPos += 8;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('TOTAL DUE', 20, yPos);
+  doc.text(formatCurrency(Number(booking.totalAmount)), 160, yPos, { align: 'right' });
+  yPos += 15;
+
+  // Payment Terms
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('Payment Terms:', 20, yPos);
+  yPos += 7;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text('Payment is due within 14 days of invoice date (NET-14).', 20, yPos);
+  yPos += 7;
+  doc.text('Please include the invoice number in your payment reference.', 20, yPos);
+  yPos += 15;
+
+  // Bank Details
+  const bankAccount = await resolveRemittanceBankAccount(centre.id);
+  if (!bankAccount) {
+    console.error('[Invoice-TLI] No bank account configured for centre:', centre.id);
+    throw new Error('No bank account configured for this centre — cannot generate invoice');
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('Payment Details:', 20, yPos);
+  yPos += 7;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(`BSB: ${bankAccount.bankBsb}`, 20, yPos);
+  yPos += 7;
+  doc.text(`Account Number: ${bankAccount.bankAccountNumber}`, 20, yPos);
+  yPos += 7;
+  doc.text(`Account Name: ${bankAccount.bankAccountName}`, 20, yPos);
+  yPos += 15;
+
+  // Footer
+  doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Thank you for your business!', 105, 280, { align: 'center' });
+  doc.text('For inquiries, please contact us at info@casuallease.com', 105, 286, { align: 'center' });
+
+  const pdfBase64 = doc.output('datauristring').split(',')[1];
+  return pdfBase64;
 }

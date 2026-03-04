@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Clock, Calendar, DollarSign, User, MapPin, Search, X, Zap } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Calendar, DollarSign, User, MapPin, Search, X, Zap, FileSignature, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -36,6 +36,8 @@ export default function ThirdLineBookings() {
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [licenceDialogOpen, setLicenceDialogOpen] = useState(false);
+  const [licenceBookingId, setLicenceBookingId] = useState<number | null>(null);
 
   const { data: bookings, isLoading, refetch } = trpc.thirdLineBookings.list.useQuery({
     status: selectedStatus === "all" ? undefined : selectedStatus,
@@ -101,6 +103,21 @@ export default function ThirdLineBookings() {
     },
     onError: (error) => {
       toast.error(`Failed to reject booking: ${error.message}`);
+    },
+  });
+
+  const licenceStatus = trpc.licence.getStatus.useQuery(
+    { bookingId: licenceBookingId!, assetType: "tli" },
+    { enabled: licenceDialogOpen && licenceBookingId !== null }
+  );
+
+  const resendMutation = trpc.licence.resendSigningLink.useMutation({
+    onSuccess: () => {
+      toast.success("Signing link resent successfully");
+      licenceStatus.refetch();
+    },
+    onError: (error) => {
+      toast.error(`Failed to resend: ${error.message}`);
     },
   });
 
@@ -249,6 +266,7 @@ export default function ThirdLineBookings() {
                           <TableHead>Dates</TableHead>
                           <TableHead>Amount</TableHead>
                           <TableHead>Status</TableHead>
+                          <TableHead>Licence</TableHead>
                           <TableHead>Created</TableHead>
                           {selectedStatus === "pending" && <TableHead>Actions</TableHead>}
                         </TableRow>
@@ -298,6 +316,32 @@ export default function ThirdLineBookings() {
                               </div>
                             </TableCell>
                             <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                            <TableCell>
+                              <button
+                                onClick={() => {
+                                  setLicenceBookingId(booking.id);
+                                  setLicenceDialogOpen(true);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                {booking.licenceSignedAt ? (
+                                  <Badge variant="default" className="bg-green-600 gap-1">
+                                    <FileSignature className="h-3 w-3" />
+                                    Signed
+                                  </Badge>
+                                ) : booking.licenceSignatureToken ? (
+                                  <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-300 gap-1">
+                                    <FileSignature className="h-3 w-3" />
+                                    Sent
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-muted-foreground gap-1">
+                                    <FileSignature className="h-3 w-3" />
+                                    N/A
+                                  </Badge>
+                                )}
+                              </button>
+                            </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
                               {format(new Date(booking.createdAt), "MMM d, yyyy")}
                             </TableCell>
@@ -385,6 +429,74 @@ export default function ThirdLineBookings() {
                 disabled={rejectMutation.isPending || !rejectionReason.trim()}
               >
                 {rejectMutation.isPending ? "Rejecting..." : "Reject Booking"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Licence Detail Dialog */}
+        <Dialog open={licenceDialogOpen} onOpenChange={setLicenceDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Licence Agreement Status</DialogTitle>
+              <DialogDescription>
+                Signing details for this booking's licence agreement
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {licenceStatus.isLoading ? (
+                <div className="text-center py-4 text-muted-foreground">Loading...</div>
+              ) : licenceStatus.data?.signedAt ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-green-600 font-medium">
+                    <CheckCircle className="h-5 w-5" />
+                    Licence Signed
+                  </div>
+                  <div className="rounded-lg border p-4 bg-muted/50 space-y-2">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="text-muted-foreground">Signed By</div>
+                      <div className="font-medium">{licenceStatus.data.signedByName}</div>
+                      <div className="text-muted-foreground">Signed At</div>
+                      <div className="font-medium">{new Date(licenceStatus.data.signedAt).toLocaleString('en-AU')}</div>
+                      <div className="text-muted-foreground">IP Address</div>
+                      <div className="font-mono text-xs">{licenceStatus.data.signedByIp}</div>
+                    </div>
+                  </div>
+                </div>
+              ) : licenceStatus.data?.token ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-orange-600 font-medium">
+                    <Clock className="h-5 w-5" />
+                    Awaiting Signature
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    The licence agreement has been sent but has not been signed yet.
+                  </p>
+                  <Button
+                    onClick={() => resendMutation.mutate({ bookingId: licenceBookingId!, assetType: "tli" })}
+                    disabled={resendMutation.isPending}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Mail className="h-4 w-4" />
+                    {resendMutation.isPending ? "Resending..." : "Resend Signing Link"}
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium">
+                    <FileSignature className="h-5 w-5" />
+                    Not Yet Sent
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    The licence agreement has not been dispatched for this booking.
+                  </p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setLicenceDialogOpen(false)}>
+                Close
               </Button>
             </DialogFooter>
           </DialogContent>

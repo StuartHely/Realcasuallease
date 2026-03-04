@@ -731,6 +731,8 @@ export async function listVacantShopBookings(status?: "pending" | "confirmed" | 
       status: vacantShopBookings.status,
       paymentMethod: vacantShopBookings.paymentMethod,
       createdAt: vacantShopBookings.createdAt,
+      licenceSignedAt: vacantShopBookings.licenceSignedAt,
+      licenceSignatureToken: vacantShopBookings.licenceSignatureToken,
     })
     .from(vacantShopBookings)
     .innerJoin(vacantShops, eq(vacantShopBookings.vacantShopId, vacantShops.id))
@@ -769,6 +771,8 @@ export async function listThirdLineBookings(status?: "pending" | "confirmed" | "
       status: thirdLineBookings.status,
       paymentMethod: thirdLineBookings.paymentMethod,
       createdAt: thirdLineBookings.createdAt,
+      licenceSignedAt: thirdLineBookings.licenceSignedAt,
+      licenceSignatureToken: thirdLineBookings.licenceSignatureToken,
     })
     .from(thirdLineBookings)
     .innerJoin(thirdLineIncome, eq(thirdLineBookings.thirdLineIncomeId, thirdLineIncome.id))
