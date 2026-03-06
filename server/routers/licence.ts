@@ -5,6 +5,7 @@ import * as db from "../db";
 import { getDb } from "../db";
 import { eq } from "drizzle-orm";
 import {
+  bookings as bookingsTable,
   vacantShopBookings,
   vacantShops,
   thirdLineBookings,
@@ -186,7 +187,55 @@ export const licenceRouter = router({
     }))
     .mutation(async ({ input }) => {
       const token = await assignLicenceToken(input.bookingId, input.assetType);
-      const signingUrl = `/licence/sign/${token}`;
+
+      const { ENV } = await import("../_core/env");
+      const signingUrl = `${ENV.appUrl}/sign/${token}`;
+
+      // Resolve customer email from the booking
+      const table =
+        input.assetType === "cl"
+          ? bookingsTable
+          : input.assetType === "vs"
+            ? vacantShopBookings
+            : thirdLineBookings;
+
+      const dbInstance = await getDb();
+      if (!dbInstance) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+      const [booking] = await dbInstance
+        .select({ customerId: table.customerId, bookingNumber: table.bookingNumber })
+        .from(table)
+        .where(eq(table.id, input.bookingId));
+
+      if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
+
+      const customer = await db.getUserById(booking.customerId);
+      if (!customer?.email) throw new TRPCError({ code: "BAD_REQUEST", message: "Customer has no email" });
+
+      const { sendEmail } = await import("../_core/email");
+      await sendEmail({
+        to: customer.email,
+        subject: `Licence Agreement Reminder: ${booking.bookingNumber}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #123047;">Licence Agreement Reminder</h2>
+            <p>Dear ${customer.name || "Valued Customer"},</p>
+            <p>This is a reminder to review and sign your Licence Agreement for booking <strong>${booking.bookingNumber}</strong>.</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${signingUrl}"
+                 style="display: inline-block; padding: 14px 28px; background-color: #123047; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
+                Sign Your Licence Agreement
+              </a>
+            </div>
+            <p style="font-size: 13px; color: #555;">
+              If the button above doesn't work, copy and paste this link into your browser:<br>
+              <a href="${signingUrl}" style="color: #123047;">${signingUrl}</a>
+            </p>
+            <p style="margin-top: 30px;">Best regards,<br><strong>Casual Lease Team</strong></p>
+          </div>
+        `,
+      });
+
       return { token, signingUrl };
     }),
 });

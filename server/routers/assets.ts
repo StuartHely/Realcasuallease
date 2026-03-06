@@ -85,7 +85,13 @@ export const vacantShopsRouter = router({
       isActive: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
-      const id = await assetDb.createVacantShop(input);
+      const { pricePerWeek, pricePerMonth, outgoingsPerDay, ...rest } = input;
+      const id = await assetDb.createVacantShop({
+        ...rest,
+        pricePerWeek: pricePerWeek?.trim() || null,
+        pricePerMonth: pricePerMonth?.trim() || null,
+        outgoingsPerDay: outgoingsPerDay?.trim() || null,
+      });
       return { id };
     }),
 
@@ -108,7 +114,11 @@ export const vacantShopsRouter = router({
       isActive: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
-      const { id, ...data } = input;
+      const { id, pricePerWeek, pricePerMonth, outgoingsPerDay, ...rest } = input;
+      const data: Record<string, any> = { ...rest };
+      if (pricePerWeek !== undefined) data.pricePerWeek = pricePerWeek?.trim() || null;
+      if (pricePerMonth !== undefined) data.pricePerMonth = pricePerMonth?.trim() || null;
+      if (outgoingsPerDay !== undefined) data.outgoingsPerDay = outgoingsPerDay?.trim() || null;
       await assetDb.updateVacantShop(id, data);
       return { success: true };
     }),
@@ -181,7 +191,13 @@ export const thirdLineIncomeRouter = router({
       isActive: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
-      const id = await assetDb.createThirdLineIncome(input);
+      const { pricePerWeek, pricePerMonth, outgoingsPerDay, ...rest } = input;
+      const id = await assetDb.createThirdLineIncome({
+        ...rest,
+        pricePerWeek: pricePerWeek?.trim() || null,
+        pricePerMonth: pricePerMonth?.trim() || null,
+        outgoingsPerDay: outgoingsPerDay?.trim() || null,
+      });
       return { id };
     }),
 
@@ -204,7 +220,11 @@ export const thirdLineIncomeRouter = router({
       isActive: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
-      const { id, ...data } = input;
+      const { id, pricePerWeek, pricePerMonth, outgoingsPerDay, ...rest } = input;
+      const data: Record<string, any> = { ...rest };
+      if (pricePerWeek !== undefined) data.pricePerWeek = pricePerWeek?.trim() || null;
+      if (pricePerMonth !== undefined) data.pricePerMonth = pricePerMonth?.trim() || null;
+      if (outgoingsPerDay !== undefined) data.outgoingsPerDay = outgoingsPerDay?.trim() || null;
       await assetDb.updateThirdLineIncome(id, data);
       return { success: true };
     }),
@@ -610,24 +630,7 @@ export const vacantShopBookingsRouter = router({
         reason: input.rejectionReason,
       });
 
-      // Send confirmation email
-      if (input.status === "confirmed" && booking.customerEmail) {
-        const shop = await assetDb.getVacantShopById(booking.vacantShopId);
-        const centre = await db.getShoppingCentreById(shop?.centreId || 0);
-        const { sendVSThirdLineConfirmationEmail } = await import("../_core/bookingNotifications");
-        await sendVSThirdLineConfirmationEmail(
-          "vacant_shop",
-          shop?.shopNumber || "Vacant Shop",
-          booking.customerEmail,
-          booking.customerEmail,
-          centre?.name || "Shopping Centre",
-          booking.startDate,
-          booking.endDate,
-          booking.totalAmount
-        );
-      }
-
-      // Fire-and-forget document dispatch (licence agreement)
+      // Fire-and-forget document dispatch (licence agreement + invoice + Stripe payment link)
       if (input.status === "confirmed") {
         import("../documentDispatch").then(m => m.dispatchBookingDocuments(input.id, "vs")).catch(() => {});
       }
@@ -1017,25 +1020,7 @@ export const thirdLineBookingsRouter = router({
         reason: input.rejectionReason,
       });
 
-      // Send confirmation email
-      if (input.status === "confirmed" && booking.customerEmail) {
-        const asset = await assetDb.getThirdLineIncomeById(booking.thirdLineIncomeId);
-        const centre = await db.getShoppingCentreById(asset?.centreId || 0);
-        const { sendVSThirdLineConfirmationEmail } = await import("../_core/bookingNotifications");
-        await sendVSThirdLineConfirmationEmail(
-          "third_line",
-          asset?.assetNumber || "Third Line Asset",
-          booking.customerEmail,
-          booking.customerEmail,
-          centre?.name || "Shopping Centre",
-          booking.startDate,
-          booking.endDate,
-          booking.totalAmount,
-          asset?.categoryName || undefined
-        );
-      }
-
-      // Fire-and-forget document dispatch (licence agreement)
+      // Fire-and-forget document dispatch (licence agreement + invoice + Stripe payment link)
       if (input.status === "confirmed") {
         import("../documentDispatch").then(m => m.dispatchBookingDocuments(input.id, "tli")).catch(() => {});
       }

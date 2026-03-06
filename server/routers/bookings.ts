@@ -259,9 +259,9 @@ export const bookingsRouter = router({
           }).catch(() => {});
         }
 
-        // Fire-and-forget invoice dispatch for auto-confirmed bookings
+        // Fire-and-forget document dispatch (licence agreement + invoice + Stripe payment link)
         if (initialStatus === "confirmed") {
-          import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(bookingId)).catch(() => {});
+          import("../documentDispatch").then(m => m.dispatchBookingDocuments(bookingId, "cl")).catch(() => {});
         }
 
         // Invalidate search cache so availability reflects new booking
@@ -449,80 +449,7 @@ export const bookingsRouter = router({
 
         await db.approveBooking(input.bookingId, ctx.user.id, ctx.user.name || undefined);
         
-        // Send appropriate email based on payment method
-        const site = await db.getSiteById(booking.siteId);
-        const centre = site ? await db.getShoppingCentreById(site.centreId) : null;
-        const customer = await db.getUserById(booking.customerId);
-        const customerProfile = customer ? await db.getCustomerProfileByUserId(customer.id) : null;
-        
-        if (customer && site && centre) {
-          if (booking.paymentMethod === "stripe") {
-            // Stripe booking: send approval email with payment link
-            try {
-              const { createCheckoutSession } = await import("../stripeService");
-              const totalWithGst = Math.round(
-                (Number(booking.totalAmount) + Number(booking.gstAmount)) * 100
-              );
-              const session = await createCheckoutSession({
-                bookingId: booking.id,
-                bookingNumber: booking.bookingNumber,
-                bookingType: "site",
-                customerEmail: customer.email || "",
-                centreName: centre.name,
-                assetLabel: `Site ${site.siteNumber}`,
-                totalAmountCents: totalWithGst,
-                startDate: booking.startDate,
-                endDate: booking.endDate,
-              });
-              const { sendStripeApprovalEmail } = await import("../_core/bookingNotifications");
-              await sendStripeApprovalEmail({
-                bookingNumber: booking.bookingNumber,
-                customerName: customer.name || "Customer",
-                customerEmail: customer.email || "",
-                centreName: centre.name,
-                siteNumber: site.siteNumber,
-                startDate: booking.startDate,
-                endDate: booking.endDate,
-                totalAmount: booking.totalAmount,
-                gstAmount: booking.gstAmount,
-                paymentUrl: session.url,
-                companyName: customerProfile?.companyName || undefined,
-                tradingName: customerProfile?.tradingName || undefined,
-              });
-            } catch (emailError) {
-              console.error("[Approve] Failed to send Stripe approval email:", emailError);
-              // Still send generic confirmation as fallback
-              await sendBookingConfirmationEmail({
-                bookingNumber: booking.bookingNumber,
-                customerName: customer.name || "Customer",
-                customerEmail: customer.email || "",
-                centreName: centre.name,
-                siteNumber: site.siteNumber,
-                startDate: booking.startDate,
-                endDate: booking.endDate,
-                totalAmount: booking.totalAmount,
-                companyName: customerProfile?.companyName || undefined,
-                tradingName: customerProfile?.tradingName || undefined,
-              });
-            }
-          } else {
-            // Invoice booking: send generic confirmation
-            await sendBookingConfirmationEmail({
-              bookingNumber: booking.bookingNumber,
-              customerName: customer.name || "Customer",
-              customerEmail: customer.email || "",
-              centreName: centre.name,
-              siteNumber: site.siteNumber,
-              startDate: booking.startDate,
-              endDate: booking.endDate,
-              totalAmount: booking.totalAmount,
-              companyName: customerProfile?.companyName || undefined,
-              tradingName: customerProfile?.tradingName || undefined,
-            });
-          }
-        }
-
-        // Fire-and-forget document dispatch (licence agreement + invoice)
+        // Fire-and-forget document dispatch (licence agreement + invoice + Stripe payment link)
         import("../documentDispatch").then(m => m.dispatchBookingDocuments(input.bookingId, "cl")).catch(() => {});
         
         return { success: true };
@@ -870,7 +797,7 @@ export const bookingsRouter = router({
           await db.recordBookingCreated(bookingId, initialStatus as "pending" | "confirmed", ctx.user.id, ctx.user.name || undefined);
 
           if (initialStatus === "confirmed") {
-            import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(bookingId)).catch(() => {});
+            import("../documentDispatch").then(m => m.dispatchBookingDocuments(bookingId, "cl")).catch(() => {});
           }
 
           created.push({ bookingId, bookingNumber, totalAmount });
