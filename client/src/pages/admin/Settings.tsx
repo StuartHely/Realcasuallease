@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Settings as SettingsIcon, DollarSign, Save, Mail, Globe, ShieldCheck } from "lucide-react";
+import { Settings as SettingsIcon, DollarSign, Save, Mail, Globe, ShieldCheck, FileSignature } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 export default function AdminSettings() {
   const { user } = useAuth();
@@ -117,6 +118,40 @@ export default function AdminSettings() {
       allowedCategoryIds: autoApprovalQuery.data?.allowedCategoryIds ?? null,
       excludeCentreIds: autoApprovalQuery.data?.excludeCentreIds ?? null,
     });
+  };
+
+  // Licence Terms & Conditions
+  const [licenceTerms, setLicenceTerms] = useState("");
+  const [termsChanged, setTermsChanged] = useState(false);
+
+  const termsQuery = trpc.licence.getTermsAdmin.useQuery(undefined, {
+    enabled: isSuperAdmin,
+  });
+
+  useEffect(() => {
+    if (termsQuery.data?.terms) {
+      setLicenceTerms(termsQuery.data.terms);
+    }
+  }, [termsQuery.data]);
+
+  const updateTermsMutation = trpc.licence.updateTerms.useMutation({
+    onSuccess: () => {
+      toast.success("Licence terms updated successfully");
+      setTermsChanged(false);
+      termsQuery.refetch();
+    },
+    onError: (error) => {
+      toast.error(`Failed to update terms: ${error.message}`);
+    },
+  });
+
+  const handleTermsChange = (value: string) => {
+    setLicenceTerms(value);
+    setTermsChanged(true);
+  };
+
+  const handleSaveTerms = () => {
+    updateTermsMutation.mutate({ terms: licenceTerms });
   };
 
   return (
@@ -420,6 +455,36 @@ export default function AdminSettings() {
               >
                 <Save className="h-4 w-4" />
                 {updateAutoApprovalMutation.isPending ? "Saving..." : "Save Auto-Approval Rules"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Licence Terms & Conditions Card */}
+        {isSuperAdmin && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-orange-100 p-3">
+                  <FileSignature className="h-6 w-6 text-orange-600" />
+                </div>
+                <div>
+                  <CardTitle>Licence Terms & Conditions</CardTitle>
+                  <CardDescription>
+                    Edit the terms and conditions included in licence agreements sent to tenants
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <RichTextEditor value={licenceTerms} onChange={handleTermsChange} />
+              <Button
+                onClick={handleSaveTerms}
+                disabled={!termsChanged || updateTermsMutation.isPending}
+                className="gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {updateTermsMutation.isPending ? "Saving..." : "Save Terms"}
               </Button>
             </CardContent>
           </Card>

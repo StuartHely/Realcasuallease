@@ -7,6 +7,7 @@ export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
   res: CreateExpressContextOptions["res"];
   user: User | null;
+  tenantOwnerId: number | null;
 };
 
 export async function createContext(
@@ -30,9 +31,13 @@ export async function createContext(
     }
   }
 
+  // Extract tenant owner ID set by tenantMiddleware
+  const tenantOwnerId: number | null = (opts.req as any).tenantOwnerId ?? null;
+
   return {
     req: opts.req,
     res: opts.res,
     user,
+    tenantOwnerId,
   };
 }

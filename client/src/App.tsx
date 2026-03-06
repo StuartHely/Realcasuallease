@@ -60,6 +60,7 @@ import RemittanceReport from "./pages/admin/RemittanceReport";
 import CustomerProfile from "./pages/admin/CustomerProfile";
 import PricingAnalytics from "./pages/admin/PricingAnalytics";
 import AIChatAssistant from "./pages/AIChatAssistant";
+import SignLicence from "./pages/SignLicence";
 
 function Router() {
   return (
@@ -69,6 +70,7 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/sign/:token" component={SignLicence} />
       
       {/* All other routes require authentication */}
       <Route path="/" component={Home} />

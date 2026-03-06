@@ -196,8 +196,8 @@ export const adminBookingRouter = router({
         console.error('Failed to send confirmation email:', emailError);
       }
 
-      // Fire-and-forget invoice dispatch — admin bookings are always confirmed
-      import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(bookingId)).catch(() => {});
+      // Fire-and-forget document dispatch — admin bookings are always confirmed
+      import("../documentDispatch").then(m => m.dispatchBookingDocuments(bookingId, "cl")).catch(() => {});
 
       return { bookingId, bookingNumber };
     }),

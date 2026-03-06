@@ -522,8 +522,8 @@ export const bookingsRouter = router({
           }
         }
 
-        // Fire-and-forget invoice dispatch after approval (only fires for invoice bookings)
-        import("../invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(input.bookingId)).catch(() => {});
+        // Fire-and-forget document dispatch (licence agreement + invoice)
+        import("../documentDispatch").then(m => m.dispatchBookingDocuments(input.bookingId, "cl")).catch(() => {});
         
         return { success: true };
       }),

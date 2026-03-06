@@ -903,6 +903,8 @@ export async function getBookingsByStatus(status?: "pending" | "confirmed" | "ca
       createdAt: bookings.createdAt,
       updatedAt: bookings.updatedAt,
       centreId: shoppingCentres.id,
+      licenceSignedAt: bookings.licenceSignedAt,
+      licenceSignatureToken: bookings.licenceSignatureToken,
     })
     .from(bookings)
     .innerJoin(users, eq(bookings.customerId, users.id))
@@ -959,6 +961,8 @@ export async function getUnpaidInvoiceBookings() {
       createdAt: bookings.createdAt,
       updatedAt: bookings.updatedAt,
       centreId: shoppingCentres.id,
+      licenceSignedAt: bookings.licenceSignedAt,
+      licenceSignatureToken: bookings.licenceSignatureToken,
     })
     .from(bookings)
     .innerJoin(users, eq(bookings.customerId, users.id))
