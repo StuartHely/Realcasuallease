@@ -1,0 +1,25 @@
+-- Multi-Tenancy: tenant_domains table + owner branding columns
+-- Maps hostnames to owners (tenants). An owner can have multiple domains.
+
+CREATE TABLE IF NOT EXISTS tenant_domains (
+  id SERIAL PRIMARY KEY,
+  "ownerId" INTEGER NOT NULL REFERENCES owners(id) ON DELETE CASCADE,
+  hostname VARCHAR(255) NOT NULL UNIQUE,
+  "isPrimary" BOOLEAN NOT NULL DEFAULT false,
+  "isActive" BOOLEAN NOT NULL DEFAULT true,
+  "sslProvisioned" BOOLEAN NOT NULL DEFAULT false,
+  "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL,
+  "updatedAt" TIMESTAMP DEFAULT NOW() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS "td_ownerId_idx" ON tenant_domains ("ownerId");
+
+-- Branding columns on owners
+ALTER TABLE owners ADD COLUMN IF NOT EXISTS "brandName" VARCHAR(255);
+ALTER TABLE owners ADD COLUMN IF NOT EXISTS "brandLogoUrl" TEXT;
+ALTER TABLE owners ADD COLUMN IF NOT EXISTS "brandPrimaryColor" VARCHAR(7);
+ALTER TABLE owners ADD COLUMN IF NOT EXISTS "brandAccentColor" VARCHAR(7);
+ALTER TABLE owners ADD COLUMN IF NOT EXISTS "brandFaviconUrl" TEXT;
+ALTER TABLE owners ADD COLUMN IF NOT EXISTS "brandFooterText" TEXT;
+ALTER TABLE owners ADD COLUMN IF NOT EXISTS "supportEmail" VARCHAR(320);
+ALTER TABLE owners ADD COLUMN IF NOT EXISTS "supportPhone" VARCHAR(20);

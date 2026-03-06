@@ -124,9 +124,35 @@ export const owners = pgTable("owners", {
   remittanceEmail3: varchar("remittanceEmail3", { length: 320 }),
   remittanceEmail4: varchar("remittanceEmail4", { length: 320 }),
   remittanceEmail5: varchar("remittanceEmail5", { length: 320 }),
+  // Branding columns for multi-tenancy
+  brandName: varchar("brandName", { length: 255 }),
+  brandLogoUrl: text("brandLogoUrl"),
+  brandPrimaryColor: varchar("brandPrimaryColor", { length: 7 }),
+  brandAccentColor: varchar("brandAccentColor", { length: 7 }),
+  brandFaviconUrl: text("brandFaviconUrl"),
+  brandFooterText: text("brandFooterText"),
+  supportEmail: varchar("supportEmail", { length: 320 }),
+  supportPhone: varchar("supportPhone", { length: 20 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
+
+/**
+ * Tenant domains — maps hostnames to owners for multi-tenancy.
+ * An owner can have multiple domains (e.g. custom domain + subdomain).
+ */
+export const tenantDomains = pgTable("tenant_domains", {
+  id: serial("id").primaryKey(),
+  ownerId: integer("ownerId").notNull().references(() => owners.id, { onDelete: "cascade" }),
+  hostname: varchar("hostname", { length: 255 }).notNull().unique(),
+  isPrimary: boolean("isPrimary").default(false).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  sslProvisioned: boolean("sslProvisioned").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+}, (table) => ({
+  ownerIdIdx: index("td_ownerId_idx").on(table.ownerId),
+}));
 
 /**
  * Portfolios - groups of centres under an owner
@@ -794,3 +820,5 @@ export type Portfolio = typeof portfolios.$inferSelect;
 export type InsertPortfolio = typeof portfolios.$inferInsert;
 export type FAQ = typeof faqs.$inferSelect;
 export type InsertFAQ = typeof faqs.$inferInsert;
+export type TenantDomain = typeof tenantDomains.$inferSelect;
+export type InsertTenantDomain = typeof tenantDomains.$inferInsert;
