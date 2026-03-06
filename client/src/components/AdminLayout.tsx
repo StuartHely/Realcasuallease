@@ -42,7 +42,8 @@ import {
   Store,
   Layers,
   CalendarPlus,
-  BarChart3
+  BarChart3,
+  Globe
 } from "lucide-react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -108,6 +109,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
         items: [
           { icon: Users, label: "Users", path: "/admin/users" },
           { icon: Users, label: "Owners & Managers", path: "/admin/owners" },
+          { icon: Globe, label: "Operators", path: "/admin/operators" },
           { icon: Building2, label: "Portfolios", path: "/admin/portfolios" },
           { icon: FileText, label: "Manage FAQs", path: "/admin/manage-faq" },
           { icon: Image, label: "Logo Management", path: "/admin/logo-management" },

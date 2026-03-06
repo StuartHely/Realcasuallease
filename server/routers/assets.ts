@@ -451,6 +451,7 @@ export const vacantShopBookingsRouter = router({
       const dbInstance = await getDb();
       let centreName = "";
       let shopNumber = "";
+      let centreOwnerId: number | null = null;
       if (dbInstance) {
         const [originalTx] = await dbInstance.select().from(transactions)
           .where(eq(transactions.bookingId, input.bookingId));
@@ -463,6 +464,7 @@ export const vacantShopBookingsRouter = router({
             : [null];
           if (centre) {
             centreName = centre.name;
+            centreOwnerId = centre.ownerId;
             await dbInstance.insert(transactions).values({
               bookingId: input.bookingId,
               ownerId: centre.ownerId,
@@ -512,6 +514,7 @@ export const vacantShopBookingsRouter = router({
               totalAmount: booking.totalAmount,
               cancellationReason: input.reason,
               refundStatus: refundStatus || "not_required",
+              ownerId: centreOwnerId,
             })
           ).catch(e => console.error("[VS Cancellation] Email failed:", e));
         }
@@ -754,7 +757,9 @@ export const vacantShopBookingsRouter = router({
           centre?.name || "Shopping Centre",
           booking.startDate,
           booking.endDate,
-          input.rejectionReason
+          input.rejectionReason,
+          undefined,
+          centre?.ownerId ?? null,
         );
       }
 
@@ -863,6 +868,7 @@ export const thirdLineBookingsRouter = router({
       const dbInstance = await getDb();
       let centreName = "";
       let assetNumber = "";
+      let centreOwnerId: number | null = null;
       if (dbInstance) {
         const [originalTx] = await dbInstance.select().from(transactions)
           .where(eq(transactions.bookingId, input.bookingId));
@@ -875,6 +881,7 @@ export const thirdLineBookingsRouter = router({
             : [null];
           if (centre) {
             centreName = centre.name;
+            centreOwnerId = centre.ownerId;
             await dbInstance.insert(transactions).values({
               bookingId: input.bookingId,
               ownerId: centre.ownerId,
@@ -924,6 +931,7 @@ export const thirdLineBookingsRouter = router({
               totalAmount: booking.totalAmount,
               cancellationReason: input.reason,
               refundStatus: refundStatus || "not_required",
+              ownerId: centreOwnerId,
             })
           ).catch(e => console.error("[TLI Cancellation] Email failed:", e));
         }
@@ -1169,7 +1177,8 @@ export const thirdLineBookingsRouter = router({
           booking.startDate,
           booking.endDate,
           input.rejectionReason,
-          asset?.categoryName || undefined
+          asset?.categoryName || undefined,
+          centre?.ownerId ?? null,
         );
       }
 

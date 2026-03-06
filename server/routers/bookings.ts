@@ -533,6 +533,7 @@ export const bookingsRouter = router({
               startDate: booking.startDate,
               endDate: booking.endDate,
               totalAmount: booking.totalAmount,
+              ownerId: centre.ownerId,
             },
             input.reason || "No reason provided"
           );

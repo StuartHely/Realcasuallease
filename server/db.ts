@@ -1333,6 +1333,7 @@ export async function recordPayment(bookingId: number, recordedBy: string) {
         companyName: customerProfile?.companyName || undefined,
         tradingName: customerProfile?.tradingName || undefined,
         paidAt,
+        ownerId: centre.ownerId,
       });
     }
 
@@ -1353,6 +1354,7 @@ export async function recordPayment(bookingId: number, recordedBy: string) {
           totalAmount: booking.totalAmount,
           ownerAmount: booking.ownerAmount,
           platformFee: booking.platformFee,
+          ownerId: centre.ownerId,
           paidAt,
         }).catch((err: any) => console.error('[recordPayment] Owner notification failed:', err));
       }

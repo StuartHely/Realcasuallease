@@ -35,6 +35,33 @@ export async function dispatchBookingDocuments(
       return;
     }
 
+    // --- Resolve owner for branding -------------------------------------------
+    let emailOwnerId: number | null = null;
+    try {
+      const { getShoppingCentreById, getSiteById } = await import("./db");
+      if (assetType === "cl") {
+        const site = await getSiteById((booking as any).siteId);
+        if (site) {
+          const centre = await getShoppingCentreById(site.centreId);
+          emailOwnerId = centre?.ownerId ?? null;
+        }
+      } else if (assetType === "vs") {
+        const { getVacantShopById } = await import("./assetDb");
+        const shop = await getVacantShopById((booking as any).vacantShopId);
+        if (shop) {
+          const centre = await getShoppingCentreById(shop.centreId);
+          emailOwnerId = centre?.ownerId ?? null;
+        }
+      } else {
+        const { getThirdLineIncomeById } = await import("./assetDb");
+        const asset = await getThirdLineIncomeById((booking as any).thirdLineIncomeId);
+        if (asset) {
+          const centre = await getShoppingCentreById(asset.centreId);
+          emailOwnerId = centre?.ownerId ?? null;
+        }
+      }
+    } catch {}
+
     // --- Idempotency: skip if already dispatched -----------------------------
     if (assetType === "cl" && (booking as any).invoiceDispatchedAt !== null) {
       console.log("[DocumentDispatch] Already dispatched, skipping:", bookingId);
@@ -141,7 +168,13 @@ export async function dispatchBookingDocuments(
     // --- Assign signing token -----------------------------------------------
     const { assignLicenceToken } = await import("./licenceService");
     const token = await assignLicenceToken(bookingId, assetType);
-    const signingUrl = `${ENV.appUrl}/sign/${token}`;
+    const { getOperatorAppUrl } = await import("./tenantScope");
+    const appUrl = emailOwnerId ? await getOperatorAppUrl(emailOwnerId) : ENV.appUrl;
+    const signingUrl = `${appUrl}/sign/${token}`;
+
+    // --- Resolve branding ---------------------------------------------------
+    const { getOperatorBranding } = await import("./_core/emailTemplate");
+    const branding = await getOperatorBranding(emailOwnerId);
 
     // --- Build email --------------------------------------------------------
     const bookingNumber = booking.bookingNumber;
@@ -217,7 +250,7 @@ export async function dispatchBookingDocuments(
 
         <p style="margin-top: 30px;">
           Best regards,<br>
-          <strong>Casual Lease Team</strong>
+          <strong>${branding.teamName}</strong>
         </p>
 
         <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">

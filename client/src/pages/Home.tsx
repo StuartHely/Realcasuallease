@@ -12,10 +12,12 @@ import { format } from "date-fns";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { parseSearchQuery } from "@shared/queryParser";
+import { useTenant } from "@/contexts/TenantContext";
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
+  const tenant = useTenant();
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -426,7 +428,10 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-blue-900 text-white py-8">
         <div className="container mx-auto px-4 text-center">
-          <p>&copy; {new Date().getFullYear()} Real Casual Leasing. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {tenant.brandName}. All rights reserved.</p>
+          {tenant.brandFooterText && (
+            <p className="mt-2 text-sm opacity-75">{tenant.brandFooterText}</p>
+          )}
         </div>
       </footer>
     </div>

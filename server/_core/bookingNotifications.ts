@@ -17,6 +17,7 @@ interface BookingDetails {
   categoryName?: string;
   companyName?: string;
   tradingName?: string;
+  ownerId?: number | null;
 }
 
 /**
@@ -25,6 +26,8 @@ interface BookingDetails {
 export async function sendBookingConfirmationEmail(booking: BookingDetails): Promise<boolean> {
   try {
     const { sendEmail } = await import('./email');
+    const { getOperatorBranding } = await import('./emailTemplate');
+    const branding = await getOperatorBranding(booking.ownerId);
 
     const startDateStr = new Date(booking.startDate).toLocaleDateString("en-AU", {
       weekday: "long",
@@ -59,7 +62,7 @@ export async function sendBookingConfirmationEmail(booking: BookingDetails): Pro
       </ul>
       <p>Your booking is now confirmed. Please arrive at the site on the start date and check in with the shopping centre management.</p>
       <p>If you have any questions, please contact us.</p>
-      <p>Best regards,<br>The Casual Lease Team</p>
+      <p>Best regards,<br>${branding.teamName}</p>
     `;
 
     const textBody = `
@@ -82,7 +85,7 @@ Your booking is now confirmed. Please arrive at the site on the start date and c
 If you have any questions, please contact us.
 
 Best regards,
-The Casual Lease Team
+${branding.teamName}
     `.trim();
 
     const result = await sendEmail({
@@ -109,6 +112,8 @@ export async function sendBookingRejectionEmail(
 ): Promise<boolean> {
   try {
     const { sendEmail } = await import('./email');
+    const { getOperatorBranding } = await import('./emailTemplate');
+    const branding = await getOperatorBranding(booking.ownerId);
 
     const startDateStr = new Date(booking.startDate).toLocaleDateString("en-AU", {
       weekday: "long",
@@ -143,7 +148,7 @@ export async function sendBookingRejectionEmail(
       <h3>Reason for Rejection</h3>
       <p>${rejectionReason}</p>
       <p>We apologize for any inconvenience. Please feel free to search for alternative spaces or contact us if you have any questions.</p>
-      <p>Best regards,<br>The Casual Lease Team</p>
+      <p>Best regards,<br>${branding.teamName}</p>
     `;
 
     const textBody = `
@@ -166,7 +171,7 @@ ${rejectionReason}
 We apologize for any inconvenience. Please feel free to search for alternative spaces or contact us if you have any questions.
 
 Best regards,
-The Casual Lease Team
+${branding.teamName}
     `.trim();
 
     const result = await sendEmail({
@@ -541,9 +546,12 @@ export async function sendPaymentReceiptEmail(booking: {
   companyName?: string;
   tradingName?: string;
   paidAt: Date;
+  ownerId?: number | null;
 }): Promise<boolean> {
   try {
     const { sendEmail } = await import('./email');
+    const { getOperatorBranding } = await import('./emailTemplate');
+    const branding = await getOperatorBranding(booking.ownerId);
 
     const startDateStr = new Date(booking.startDate).toLocaleDateString("en-AU", {
       weekday: "long",
@@ -589,7 +597,7 @@ export async function sendPaymentReceiptEmail(booking: {
       </ul>
       <p>Your payment has been successfully processed. Please keep this receipt for your records.</p>
       <p>If you have any questions, please contact us.</p>
-      <p>Best regards,<br>The Casual Lease Team</p>
+      <p>Best regards,<br>${branding.teamName}</p>
     `;
 
     const textBody = `
@@ -615,7 +623,7 @@ Your payment has been successfully processed. Please keep this receipt for your 
 If you have any questions, please contact us.
 
 Best regards,
-The Casual Lease Team
+${branding.teamName}
     `.trim();
 
     const result = await sendEmail({
@@ -648,10 +656,13 @@ export async function sendOwnerPaymentNotificationEmail(details: {
   totalAmount: string | number;
   ownerAmount: string | number;
   platformFee: string | number;
+  ownerId?: number | null;
   paidAt: Date;
 }): Promise<boolean> {
   try {
     const { sendEmail } = await import('./email');
+    const { getOperatorBranding } = await import('./emailTemplate');
+    const branding = await getOperatorBranding(details.ownerId);
 
     const startDateStr = new Date(details.startDate).toLocaleDateString("en-AU", {
       weekday: "long",
@@ -659,7 +670,7 @@ export async function sendOwnerPaymentNotificationEmail(details: {
       month: "long",
       day: "numeric",
     });
-
+    
     const endDateStr = new Date(details.endDate).toLocaleDateString("en-AU", {
       weekday: "long",
       year: "numeric",
@@ -695,7 +706,7 @@ export async function sendOwnerPaymentNotificationEmail(details: {
         <li><strong>Dates:</strong> ${startDateStr} to ${endDateStr}</li>
       </ul>
       <p>This amount will be included in your next remittance.</p>
-      <p>Best regards,<br>The Casual Lease Team</p>
+      <p>Best regards,<br>${branding.teamName}</p>
     `;
 
     const textBody = `
@@ -720,7 +731,7 @@ Booking Details:
 This amount will be included in your next remittance.
 
 Best regards,
-The Casual Lease Team
+${branding.teamName}
     `.trim();
 
     const result = await sendEmail({
@@ -750,10 +761,13 @@ export async function sendVSThirdLineRejectionEmail(
   startDate: Date,
   endDate: Date,
   rejectionReason: string,
-  category?: string
+  category?: string,
+  ownerId?: number | null,
 ): Promise<boolean> {
   try {
     const { sendEmail } = await import('./email');
+    const { getOperatorBranding } = await import('./emailTemplate');
+    const branding = await getOperatorBranding(ownerId);
 
     const startDateStr = new Date(startDate).toLocaleDateString("en-AU", {
       weekday: "long",
@@ -787,7 +801,7 @@ export async function sendVSThirdLineRejectionEmail(
       <h3>Reason for Rejection</h3>
       <p>${rejectionReason}</p>
       <p>We apologize for any inconvenience. Please feel free to search for alternative spaces or contact us if you have any questions.</p>
-      <p>Best regards,<br>The Real Casual Leasing Team</p>
+      <p>Best regards,<br>${branding.teamName}</p>
     `;
 
     const textBody = `
@@ -809,7 +823,7 @@ ${rejectionReason}
 We apologize for any inconvenience. Please feel free to search for alternative spaces or contact us if you have any questions.
 
 Best regards,
-The Real Casual Leasing Team
+${branding.teamName}
     `.trim();
 
     const result = await sendEmail({
@@ -839,10 +853,13 @@ export async function sendInsuranceRejectionEmail(
     siteNumber: string;
     startDate: Date;
     endDate: Date;
+    ownerId?: number | null;
   },
   insuranceIssues: string[]
 ): Promise<void> {
   const { sendEmail } = await import('./email');
+  const { getOperatorBranding } = await import('./emailTemplate');
+  const branding = await getOperatorBranding(booking.ownerId);
   
   const issuesList = insuranceIssues.map(issue => `• ${issue}`).join('\n');
   
@@ -890,7 +907,7 @@ export async function sendInsuranceRejectionEmail(
     <p>If you have any questions, please contact us.</p>
     
     <p>Best regards,<br>
-    The Casual Lease Team</p>
+    ${branding.teamName}</p>
   `;
   
   const textBody = `
@@ -924,7 +941,7 @@ Booking Details:
 - Dates: ${booking.startDate.toLocaleDateString()} - ${booking.endDate.toLocaleDateString()}
 
 Best regards,
-The Casual Lease Team
+${branding.teamName}
   `;
 
   await sendEmail({
@@ -945,9 +962,12 @@ export async function sendInsuranceUnreadableEmail(
     name: string;
     email: string;
   },
-  bookingNumber: string
+  bookingNumber: string,
+  ownerId?: number | null,
 ): Promise<void> {
   const { sendEmail } = await import('./email');
+  const { getOperatorBranding } = await import('./emailTemplate');
+  const branding = await getOperatorBranding(ownerId);
   
   const subject = `Please Re-upload Insurance - Booking ${bookingNumber}`;
   
@@ -986,7 +1006,7 @@ export async function sendInsuranceUnreadableEmail(
     <p>Log in to your account and go to "My Bookings" to update your insurance document.</p>
     
     <p>Best regards,<br>
-    The Casual Lease Team</p>
+    ${branding.teamName}</p>
   `;
   
   const textBody = `
@@ -1017,7 +1037,7 @@ Tips for a good upload:
 Log in to your account and go to "My Bookings" to update your insurance document.
 
 Best regards,
-The Casual Lease Team
+${branding.teamName}
   `;
 
   await sendEmail({
@@ -1046,8 +1066,11 @@ export async function sendBookingCancellationEmail(params: {
   tradingName?: string;
   cancellationReason?: string;
   refundStatus: string;
+  ownerId?: number | null;
 }): Promise<void> {
   const { sendEmail } = await import('./email');
+  const { getOperatorBranding } = await import('./emailTemplate');
+  const branding = await getOperatorBranding(params.ownerId);
 
   const startDateStr = new Date(params.startDate).toLocaleDateString("en-AU", {
     weekday: "long",
@@ -1113,7 +1136,7 @@ export async function sendBookingCancellationEmail(params: {
     <p>If you have any questions, please contact us.</p>
     
     <p>Best regards,<br>
-    The Casual Lease Team</p>
+    ${branding.teamName}</p>
   `;
 
   const textBody = `
@@ -1137,7 +1160,7 @@ ${refundStatementText}
 If you have any questions, please contact us.
 
 Best regards,
-The Casual Lease Team
+${branding.teamName}
   `.trim();
 
   await sendEmail({
@@ -1166,8 +1189,11 @@ export async function sendStripeApprovalEmail(params: {
   paymentUrl: string;
   companyName?: string;
   tradingName?: string;
+  ownerId?: number | null;
 }): Promise<void> {
   const { sendEmail } = await import('./email');
+  const { getOperatorBranding } = await import('./emailTemplate');
+  const branding = await getOperatorBranding(params.ownerId);
 
   const startDateStr = new Date(params.startDate).toLocaleDateString("en-AU", {
     weekday: "long",
@@ -1212,7 +1238,7 @@ export async function sendStripeApprovalEmail(params: {
     <p style="font-size: 14px; color: #555;">If you would prefer to pay by bank transfer, please contact us and we can arrange an alternative payment method for you.</p>
     
     <p>Best regards,<br>
-    The Casual Lease Team</p>
+    ${branding.teamName}</p>
   `;
 
   const textBody = `
@@ -1234,7 +1260,7 @@ Pay now: ${params.paymentUrl}
 If you would prefer to pay by bank transfer, please contact us and we can arrange an alternative payment method for you.
 
 Best regards,
-The Casual Lease Team
+${branding.teamName}
   `.trim();
 
   await sendEmail({

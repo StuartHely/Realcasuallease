@@ -77,6 +77,10 @@ export async function sendInvoiceEmail(bookingId: number): Promise<boolean> {
       year: 'numeric',
     });
 
+    // Resolve branding
+    const { getOperatorBranding } = await import('./_core/emailTemplate');
+    const branding = await getOperatorBranding(centre.ownerId);
+
     // Email content
     const subject = `Invoice for Your Booking at ${centre.name}`;
     const html = `
@@ -114,7 +118,7 @@ export async function sendInvoiceEmail(bookingId: number): Promise<boolean> {
         
         <p style="margin-top: 30px;">
           Best regards,<br>
-          <strong>Casual Lease Team</strong>
+          <strong>${branding.teamName}</strong>
         </p>
         
         <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
