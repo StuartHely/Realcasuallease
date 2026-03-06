@@ -4,47 +4,62 @@ import * as db from "../db";
 import { TRPCError } from "@trpc/server";
 
 export const centresRouter = router({
-  list: publicProcedure.query(async () => {
-    return await db.getShoppingCentres();
+  list: publicProcedure.query(async ({ ctx }) => {
+    return await db.getShoppingCentres(ctx.tenantOwnerId ?? undefined);
   }),
   
   search: publicProcedure
     .input(z.object({ query: z.string() }))
-    .query(async ({ input }) => {
-      return await db.searchShoppingCentres(input.query);
+    .query(async ({ input, ctx }) => {
+      return await db.searchShoppingCentres(input.query, undefined, ctx.tenantOwnerId ?? undefined);
     }),
   
   getById: publicProcedure
     .input(z.object({ id: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const centre = await db.getShoppingCentreById(input.id);
       if (!centre) throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+      if (ctx.tenantOwnerId && centre.ownerId !== ctx.tenantOwnerId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+      }
       return centre;
     }),
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const centre = await db.getShoppingCentreBySlug(input.slug);
       if (!centre) throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+      if (ctx.tenantOwnerId && centre.ownerId !== ctx.tenantOwnerId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+      }
       return centre;
     }),
   getBySlugOrId: publicProcedure
     .input(z.object({ idOrSlug: z.string() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const centre = await db.getShoppingCentreByIdOrSlug(input.idOrSlug);
       if (!centre) throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+      if (ctx.tenantOwnerId && centre.ownerId !== ctx.tenantOwnerId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+      }
       return centre;
     }),
   getSites: publicProcedure
     .input(z.object({ centreId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      if (ctx.tenantOwnerId) {
+        const centre = await db.getShoppingCentreById(input.centreId);
+        if (!centre || centre.ownerId !== ctx.tenantOwnerId) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+        }
+      }
       return await db.getSitesByCentreId(input.centreId);
     }),
   
   getByState: publicProcedure
     .input(z.object({ state: z.string().trim().toUpperCase() }))
-    .query(async ({ input }) => {
-      return await db.getShoppingCentresByState(input.state);
+    .query(async ({ input, ctx }) => {
+      return await db.getShoppingCentresByState(input.state, ctx.tenantOwnerId ?? undefined);
     }),
   
   getNearby: publicProcedure
@@ -52,19 +67,27 @@ export const centresRouter = router({
       centreId: z.number(),
       radiusKm: z.number().optional().default(10),
     }))
-    .query(async ({ input }) => {
-      return await db.getNearbyCentres(input.centreId, input.radiusKm);
+    .query(async ({ input, ctx }) => {
+      return await db.getNearbyCentres(input.centreId, input.radiusKm, ctx.tenantOwnerId ?? undefined);
     }),
 
   getFloorLevels: publicProcedure
     .input(z.object({ centreId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      if (ctx.tenantOwnerId) {
+        const centre = await db.getShoppingCentreById(input.centreId);
+        if (!centre || centre.ownerId !== ctx.tenantOwnerId) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+        }
+      }
       return await db.getFloorLevelsByCentre(input.centreId);
     }),
   
-  listWithCodes: ownerProcedure.query(async () => {
+  listWithCodes: ownerProcedure.query(async ({ ctx }) => {
     const { generateAbbreviatedCentreCode } = await import('../centreCodeHelper');
-    const centres = await db.getShoppingCentres();
+    const { getScopedOwnerId } = await import('../tenantScope');
+    const scopedOwnerId = getScopedOwnerId(ctx.user);
+    const centres = await db.getShoppingCentres(scopedOwnerId ?? undefined);
     
     return centres.map(centre => ({
       id: centre.id,

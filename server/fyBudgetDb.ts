@@ -269,31 +269,42 @@ export async function getFYBudgetMetrics(
 }
 
 /**
- * Get permitted centre IDs based on user role and assigned state
+ * Get permitted centre IDs based on user role, assigned state, and optional owner
  */
 export async function getPermittedCentreIds(
   userRole: string,
-  assignedState: string | null
+  assignedState: string | null,
+  assignedOwnerId?: number | null
 ): Promise<number[]> {
   const db = await getDb();
   if (!db) return [];
 
-  // National admins see everything
-  if (userRole === 'mega_admin' || userRole === 'owner_super_admin') {
-    const allCentres = await db.select({ id: shoppingCentres.id }).from(shoppingCentres);
-    return allCentres.map((c: any) => c.id);
+  // Build centre conditions
+  const conditions = [];
+
+  // State filter for state admins
+  if ((userRole === 'mega_state_admin' || userRole === 'owner_state_admin') && assignedState) {
+    conditions.push(eq(shoppingCentres.state, assignedState));
+  } else if (userRole !== 'mega_admin' && userRole !== 'owner_super_admin') {
+    return [];
   }
 
-  // State admins see only their state
-  if ((userRole === 'mega_state_admin' || userRole === 'owner_state_admin') && assignedState) {
-    const stateCentres = await db
+  // Owner filter: owner_* roles always filter by owner; mega roles optionally
+  if (assignedOwnerId) {
+    conditions.push(eq(shoppingCentres.ownerId, assignedOwnerId));
+  }
+
+  if (conditions.length > 0) {
+    const centres = await db
       .select({ id: shoppingCentres.id })
       .from(shoppingCentres)
-      .where(eq(shoppingCentres.state, assignedState));
-    return stateCentres.map((c: any) => c.id);
+      .where(conditions.length === 1 ? conditions[0] : and(...conditions));
+    return centres.map((c: any) => c.id);
   }
 
-  return [];
+  // No filters — mega_admin sees everything
+  const allCentres = await db.select({ id: shoppingCentres.id }).from(shoppingCentres);
+  return allCentres.map((c: any) => c.id);
 }
 
 /**

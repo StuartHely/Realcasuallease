@@ -84,7 +84,15 @@ export const vacantShopsRouter = router({
       mapMarkerY: z.string().nullable().optional(),
       isActive: z.boolean().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      if (scopedOwnerId) {
+        const centre = await db.getShoppingCentreById(input.centreId);
+        if (!centre || centre.ownerId !== scopedOwnerId) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+        }
+      }
       const { pricePerWeek, pricePerMonth, outgoingsPerDay, ...rest } = input;
       const id = await assetDb.createVacantShop({
         ...rest,
@@ -113,7 +121,18 @@ export const vacantShopsRouter = router({
       mapMarkerY: z.string().nullable().optional(),
       isActive: z.boolean().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      if (scopedOwnerId) {
+        const shop = await assetDb.getVacantShopById(input.id);
+        if (shop) {
+          const centre = await db.getShoppingCentreById(shop.centreId);
+          if (!centre || centre.ownerId !== scopedOwnerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+          }
+        }
+      }
       const { id, pricePerWeek, pricePerMonth, outgoingsPerDay, ...rest } = input;
       const data: Record<string, any> = { ...rest };
       if (pricePerWeek !== undefined) data.pricePerWeek = pricePerWeek?.trim() || null;
@@ -125,7 +144,18 @@ export const vacantShopsRouter = router({
 
   delete: ownerProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      if (scopedOwnerId) {
+        const shop = await assetDb.getVacantShopById(input.id);
+        if (shop) {
+          const centre = await db.getShoppingCentreById(shop.centreId);
+          if (!centre || centre.ownerId !== scopedOwnerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+          }
+        }
+      }
       await assetDb.deleteVacantShop(input.id);
       return { success: true };
     }),
@@ -136,7 +166,18 @@ export const vacantShopsRouter = router({
       imageSlot: z.number().min(1).max(2),
       base64Image: z.string(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      if (scopedOwnerId) {
+        const shop = await assetDb.getVacantShopById(input.shopId);
+        if (shop) {
+          const centre = await db.getShoppingCentreById(shop.centreId);
+          if (!centre || centre.ownerId !== scopedOwnerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+          }
+        }
+      }
       const { processAssetImage } = await import('../imageProcessing');
       const { url } = await processAssetImage(
         input.base64Image,
@@ -190,7 +231,15 @@ export const thirdLineIncomeRouter = router({
       mapMarkerY: z.string().nullable().optional(),
       isActive: z.boolean().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      if (scopedOwnerId) {
+        const centre = await db.getShoppingCentreById(input.centreId);
+        if (!centre || centre.ownerId !== scopedOwnerId) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+        }
+      }
       const { pricePerWeek, pricePerMonth, outgoingsPerDay, ...rest } = input;
       const id = await assetDb.createThirdLineIncome({
         ...rest,
@@ -219,7 +268,18 @@ export const thirdLineIncomeRouter = router({
       mapMarkerY: z.string().nullable().optional(),
       isActive: z.boolean().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      if (scopedOwnerId) {
+        const asset = await assetDb.getThirdLineIncomeById(input.id);
+        if (asset) {
+          const centre = await db.getShoppingCentreById(asset.centreId);
+          if (!centre || centre.ownerId !== scopedOwnerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+          }
+        }
+      }
       const { id, pricePerWeek, pricePerMonth, outgoingsPerDay, ...rest } = input;
       const data: Record<string, any> = { ...rest };
       if (pricePerWeek !== undefined) data.pricePerWeek = pricePerWeek?.trim() || null;
@@ -231,7 +291,18 @@ export const thirdLineIncomeRouter = router({
 
   delete: ownerProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      if (scopedOwnerId) {
+        const asset = await assetDb.getThirdLineIncomeById(input.id);
+        if (asset) {
+          const centre = await db.getShoppingCentreById(asset.centreId);
+          if (!centre || centre.ownerId !== scopedOwnerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+          }
+        }
+      }
       await assetDb.deleteThirdLineIncome(input.id);
       return { success: true };
     }),
@@ -242,7 +313,18 @@ export const thirdLineIncomeRouter = router({
       imageSlot: z.number().min(1).max(2),
       base64Image: z.string(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      if (scopedOwnerId) {
+        const asset = await assetDb.getThirdLineIncomeById(input.assetId);
+        if (asset) {
+          const centre = await db.getShoppingCentreById(asset.centreId);
+          if (!centre || centre.ownerId !== scopedOwnerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+          }
+        }
+      }
       const { processAssetImage } = await import('../imageProcessing');
       const { url } = await processAssetImage(
         input.base64Image,
@@ -446,8 +528,20 @@ export const vacantShopBookingsRouter = router({
     .input(z.object({
       status: z.enum(["pending", "confirmed", "cancelled", "completed", "rejected"]).optional(),
     }))
-    .query(async ({ input }) => {
-      return await assetDb.listVacantShopBookings(input.status);
+    .query(async ({ input, ctx }) => {
+      const bookings = await assetDb.listVacantShopBookings(input.status);
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      if (!scopedOwnerId) return bookings;
+      const filtered = [];
+      for (const b of bookings) {
+        const shop = await assetDb.getVacantShopById(b.vacantShopId);
+        if (shop) {
+          const centre = await db.getShoppingCentreById(shop.centreId);
+          if (centre && centre.ownerId === scopedOwnerId) filtered.push(b);
+        }
+      }
+      return filtered;
     }),
 
   getByShop: publicProcedure
@@ -604,6 +698,18 @@ export const vacantShopBookingsRouter = router({
       const booking = await assetDb.getVacantShopBookingById(input.id);
       if (!booking) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
+      }
+
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      if (scopedOwnerId) {
+        const shop = await assetDb.getVacantShopById(booking.vacantShopId);
+        if (shop) {
+          const centre = await db.getShoppingCentreById(shop.centreId);
+          if (!centre || centre.ownerId !== scopedOwnerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+          }
+        }
       }
 
       const updateData: any = { status: input.status };
@@ -834,8 +940,20 @@ export const thirdLineBookingsRouter = router({
     .input(z.object({
       status: z.enum(["pending", "confirmed", "cancelled", "completed", "rejected"]).optional(),
     }))
-    .query(async ({ input }) => {
-      return await assetDb.listThirdLineBookings(input.status);
+    .query(async ({ input, ctx }) => {
+      const bookings = await assetDb.listThirdLineBookings(input.status);
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      if (!scopedOwnerId) return bookings;
+      const filtered = [];
+      for (const b of bookings) {
+        const asset = await assetDb.getThirdLineIncomeById(b.thirdLineIncomeId);
+        if (asset) {
+          const centre = await db.getShoppingCentreById(asset.centreId);
+          if (centre && centre.ownerId === scopedOwnerId) filtered.push(b);
+        }
+      }
+      return filtered;
     }),
 
   getByAsset: publicProcedure
@@ -994,6 +1112,18 @@ export const thirdLineBookingsRouter = router({
       const booking = await assetDb.getThirdLineBookingById(input.id);
       if (!booking) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
+      }
+
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      if (scopedOwnerId) {
+        const asset = await assetDb.getThirdLineIncomeById(booking.thirdLineIncomeId);
+        if (asset) {
+          const centre = await db.getShoppingCentreById(asset.centreId);
+          if (!centre || centre.ownerId !== scopedOwnerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+          }
+        }
       }
 
       const updateData: any = { status: input.status };

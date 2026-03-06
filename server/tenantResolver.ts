@@ -32,21 +32,6 @@ export async function resolveOwnerIdFromHostname(hostname: string): Promise<numb
 
   const ownerId = row?.ownerId ?? null;
 
-  // If direct lookup failed, try subdomain fallback (e.g. smith.realcasualleasing.com)
-  if (ownerId === null && normalised.endsWith(".realcasualleasing.com")) {
-    const subdomain = normalised.replace(".realcasualleasing.com", "");
-    if (subdomain && !subdomain.includes(".")) {
-      const [subRow] = await db
-        .select({ ownerId: tenantDomains.ownerId })
-        .from(tenantDomains)
-        .where(and(eq(tenantDomains.hostname, normalised), eq(tenantDomains.isActive, true)))
-        .limit(1);
-      const subOwnerId = subRow?.ownerId ?? null;
-      cache.set(normalised, { ownerId: subOwnerId, expiresAt: Date.now() + CACHE_TTL_MS });
-      return subOwnerId;
-    }
-  }
-
   cache.set(normalised, { ownerId, expiresAt: Date.now() + CACHE_TTL_MS });
   return ownerId;
 }

@@ -8,10 +8,16 @@ import { getSeasonalRatesBySiteId, createSeasonalRate, updateSeasonalRate, delet
 import { notifyOwner } from "../_core/notification";
 
 export const adminRouter = router({
-    getStats: ownerProcedure.query(async () => {
-      const centres = await db.getShoppingCentres();
-      const sites = await db.getAllSites();
-      const bookings = await db.getAllBookings();
+    getStats: ownerProcedure.query(async ({ ctx }) => {
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      const centres = await db.getShoppingCentres(scopedOwnerId ?? undefined);
+      const centreIds = new Set(centres.map(c => c.id));
+      const allSites = await db.getAllSites();
+      const sites = scopedOwnerId ? allSites.filter(s => centreIds.has(s.centreId)) : allSites;
+      const allBookings = await db.getAllBookings();
+      const siteIdSet = new Set(sites.map(s => s.id));
+      const bookings = scopedOwnerId ? allBookings.filter((b: any) => siteIdSet.has(b.siteId)) : allBookings;
       const users = await db.getAllUsers();
       
       const activeBookings = bookings.filter(
@@ -101,7 +107,14 @@ export const adminRouter = router({
         pdfUrl3: z.string().optional(),
         pdfName3: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const { getScopedOwnerId } = await import('../tenantScope');
+        const scopedOwnerId = getScopedOwnerId(ctx.user);
+        const centre = await db.getShoppingCentreById(input.id);
+        if (!centre) throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+        if (scopedOwnerId && centre.ownerId !== scopedOwnerId) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+        }
         const { id, ...updates } = input;
         return await db.updateShoppingCentre(id, updates);
       }),
@@ -128,7 +141,15 @@ export const adminRouter = router({
         outgoingsPerDay: z.string().optional(),
         instantBooking: z.boolean().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const { getScopedOwnerId } = await import('../tenantScope');
+        const scopedOwnerId = getScopedOwnerId(ctx.user);
+        if (scopedOwnerId) {
+          const centre = await db.getShoppingCentreById(input.centreId);
+          if (!centre || centre.ownerId !== scopedOwnerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+          }
+        }
         const { dailyRate, weeklyRate, weekendRate, outgoingsPerDay, ...rest } = input;
         return await db.createSite({
           ...rest,
@@ -158,7 +179,18 @@ export const adminRouter = router({
         imageUrl3: z.string().nullish(),
         imageUrl4: z.string().nullish(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const { getScopedOwnerId } = await import('../tenantScope');
+        const scopedOwnerId = getScopedOwnerId(ctx.user);
+        if (scopedOwnerId) {
+          const site = await db.getSiteById(input.id);
+          if (site) {
+            const centre = await db.getShoppingCentreById(site.centreId);
+            if (!centre || centre.ownerId !== scopedOwnerId) {
+              throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+            }
+          }
+        }
         const { id, dailyRate, weeklyRate, weekendRate, outgoingsPerDay, maxTables, ...rest } = input;
         const data: any = { ...rest };
         
@@ -242,7 +274,18 @@ export const adminRouter = router({
         imageSlot: z.number().min(1).max(4),
         base64Image: z.string(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const { getScopedOwnerId } = await import('../tenantScope');
+        const scopedOwnerId = getScopedOwnerId(ctx.user);
+        if (scopedOwnerId) {
+          const site = await db.getSiteById(input.siteId);
+          if (site) {
+            const centre = await db.getShoppingCentreById(site.centreId);
+            if (!centre || centre.ownerId !== scopedOwnerId) {
+              throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+            }
+          }
+        }
         const { processSiteImage } = await import('../imageProcessing');
         const { url } = await processSiteImage(
           input.base64Image,

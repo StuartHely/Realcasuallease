@@ -3,40 +3,53 @@ import { bookings, sites, shoppingCentres, budgets } from "../drizzle/schema";
 import { eq, and, gte, lte, sql, desc, inArray } from "drizzle-orm";
 
 /**
- * Get permitted site IDs based on user role and assigned state
- * - mega_admin / owner_super_admin: all sites
- * - mega_state_admin / owner_state_admin: sites in assigned state
- * - other admin roles: empty array (no dashboard access)
+ * Get permitted site IDs based on user role, assigned state, and optional owner
+ * - mega_admin: all sites (or filtered by owner if assignedOwnerId provided)
+ * - owner_super_admin: sites belonging to their owner
+ * - mega_state_admin / owner_state_admin: sites in assigned state (+ owner filter if provided)
+ * - other roles: empty array (no dashboard access)
  */
-export async function getPermittedSiteIds(userRole: string, assignedState: string | null): Promise<number[]> {
+export async function getPermittedSiteIds(userRole: string, assignedState: string | null, assignedOwnerId?: number | null): Promise<number[]> {
   const db = await getDb();
   if (!db) return [];
-  // National admins see everything
-  if (userRole === 'mega_admin' || userRole === 'owner_super_admin') {
+
+  // Build centre conditions
+  const conditions = [];
+
+  // State filter for state admins
+  if ((userRole === 'mega_state_admin' || userRole === 'owner_state_admin') && assignedState) {
+    conditions.push(eq(shoppingCentres.state, assignedState));
+  } else if (userRole !== 'mega_admin' && userRole !== 'owner_super_admin') {
+    // Other roles have no dashboard access
+    return [];
+  }
+
+  // Owner filter: owner_* roles always filter by owner; mega roles optionally
+  if (assignedOwnerId) {
+    conditions.push(eq(shoppingCentres.ownerId, assignedOwnerId));
+  }
+
+  let centreIds: number[];
+  if (conditions.length > 0) {
+    const centres = await db
+      .select({ id: shoppingCentres.id })
+      .from(shoppingCentres)
+      .where(conditions.length === 1 ? conditions[0] : and(...conditions));
+    centreIds = centres.map((c: any) => c.id);
+  } else {
+    // No filters — mega_admin sees everything
     const allSites = await db.select({ id: sites.id }).from(sites);
     return allSites.map((s: any) => s.id);
   }
-  
-  // State admins see only their state
-  if ((userRole === 'mega_state_admin' || userRole === 'owner_state_admin') && assignedState) {
-    const stateCentres = await db
-      .select({ id: shoppingCentres.id })
-      .from(shoppingCentres)
-      .where(eq(shoppingCentres.state, assignedState));
-    
-    const centreIds = stateCentres.map((c: any) => c.id);
-    if (centreIds.length === 0) return [];
-    
-    const stateSites = await db
-      .select({ id: sites.id })
-      .from(sites)
-      .where(inArray(sites.centreId, centreIds));
-    
-    return stateSites.map((s: any) => s.id);
-  }
-  
-  // Other roles have no dashboard access
-  return [];
+
+  if (centreIds.length === 0) return [];
+
+  const filteredSites = await db
+    .select({ id: sites.id })
+    .from(sites)
+    .where(inArray(sites.centreId, centreIds));
+
+  return filteredSites.map((s: any) => s.id);
 }
 
 /**

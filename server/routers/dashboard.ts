@@ -24,7 +24,7 @@ export const dashboardRouter = router({
       }
       
       // Get permitted site IDs based on role and state filter
-      const siteIds = await getPermittedSiteIds(ctx.user.role, filterState);
+      const siteIds = await getPermittedSiteIds(ctx.user.role, filterState, ctx.user.assignedOwnerId);
       
       if (siteIds.length === 0) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'No dashboard access for your role' });
@@ -83,7 +83,7 @@ export const dashboardRouter = router({
       }
       
       // Get permitted centre IDs
-      const centreIds = await getPermittedCentreIds(ctx.user.role, filterState);
+      const centreIds = await getPermittedCentreIds(ctx.user.role, filterState, ctx.user.assignedOwnerId);
       
       // Get FY budget metrics
       return await getFYBudgetMetrics(centreIds, input.financialYear);
