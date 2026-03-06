@@ -45,6 +45,7 @@ export async function sendPaymentReminders(): Promise<{
         siteNumber: sites.siteNumber,
         // Centre info
         centreName: shoppingCentres.name,
+        centreOwnerId: shoppingCentres.ownerId,
       })
       .from(bookings)
       .innerJoin(users, eq(bookings.customerId, users.id))
@@ -142,6 +143,9 @@ async function sendReminderEmail(
   daysOverdue: number,
   dueDate: Date
 ): Promise<boolean> {
+  const { getOperatorBranding } = await import('./_core/emailTemplate');
+  const branding = await getOperatorBranding(booking.centreOwnerId);
+
   const dueDateStr = dueDate.toLocaleDateString('en-AU', {
     day: '2-digit',
     month: 'short',
@@ -204,7 +208,7 @@ async function sendReminderEmail(
       
       <p style="margin-top: 30px;">
         Best regards,<br>
-        <strong>Casual Lease Team</strong>
+        <strong>${branding.teamName}</strong>
       </p>
       
       <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">

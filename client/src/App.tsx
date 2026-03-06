@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
@@ -5,6 +6,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AuthGuard from "./components/AuthGuard";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { TenantProvider, useTenant } from "./contexts/TenantContext";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -59,6 +61,7 @@ import OwnerViewerDashboard from "./pages/admin/OwnerViewerDashboard";
 import RemittanceReport from "./pages/admin/RemittanceReport";
 import CustomerProfile from "./pages/admin/CustomerProfile";
 import PricingAnalytics from "./pages/admin/PricingAnalytics";
+import OperatorManagement from "./pages/admin/OperatorManagement";
 import AIChatAssistant from "./pages/AIChatAssistant";
 import SignLicence from "./pages/SignLicence";
 
@@ -112,6 +115,7 @@ function Router() {
       <Route path="/admin/payments" component={Payments} />
       <Route path="/admin/invoice-dashboard" component={InvoiceDashboard} />
       <Route path="/admin/owners" component={AdminOwners} />
+      <Route path="/admin/operators" component={OperatorManagement} />
       <Route path="/admin/portfolios" component={Portfolios} />
       <Route path="/admin/owner-viewer" component={OwnerViewerDashboard} />
       <Route path="/admin/remittance" component={RemittanceReport} />
@@ -130,16 +134,29 @@ function Router() {
   );
 }
 
+function TenantTitle() {
+  const tenant = useTenant();
+  useEffect(() => {
+    document.title = tenant.isTenantSite
+      ? `${tenant.brandName} — Short-Term Retail Leasing`
+      : "Real Casual Leasing - AI-Driven Short-Term Retail Leasing Platform";
+  }, [tenant.brandName, tenant.isTenantSite]);
+  return null;
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
-        <TooltipProvider>
-          <Toaster />
-          <AuthGuard>
-            <Router />
-          </AuthGuard>
-        </TooltipProvider>
+        <TenantProvider>
+          <TenantTitle />
+          <TooltipProvider>
+            <Toaster />
+            <AuthGuard>
+              <Router />
+            </AuthGuard>
+          </TooltipProvider>
+        </TenantProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

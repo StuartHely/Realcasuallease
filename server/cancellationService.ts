@@ -209,6 +209,7 @@ export async function cancelBooking(params: {
         tradingName: profile?.tradingName || undefined,
         cancellationReason: params.reason,
         refundStatus: refundStatus || "not_required",
+        ownerId: centre.ownerId,
       });
     }
   } catch (emailError) {

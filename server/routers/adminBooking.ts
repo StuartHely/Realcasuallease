@@ -190,6 +190,7 @@ export const adminBookingRouter = router({
             totalAmount: input.totalAmount,
             companyName: customerProfile?.companyName || undefined,
             tradingName: customerProfile?.tradingName || undefined,
+            ownerId: centre.ownerId,
           });
         }
       } catch (emailError) {

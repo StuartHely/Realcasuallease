@@ -1,4 +1,5 @@
 import { useLogo } from "@/hooks/useLogo";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface LogoProps {
   className?: string;
@@ -15,6 +16,7 @@ interface LogoProps {
  * 
  * If ownerId is provided, displays that owner's allocated logo
  * Otherwise displays the default platform logo (or logged-in owner's logo)
+ * Tenant branded logo takes precedence on tenant sites.
  */
 export default function Logo({ 
   className = "", 
@@ -23,12 +25,16 @@ export default function Logo({
   alt = "Real Casual Leasing",
   ownerId
 }: LogoProps) {
+  const tenant = useTenant();
   const { currentLogoUrl } = useLogo(ownerId);
+
+  const logoUrl = tenant.isTenantSite && tenant.brandLogoUrl ? tenant.brandLogoUrl : currentLogoUrl;
+  const logoAlt = tenant.isTenantSite ? tenant.brandName : alt;
 
   return (
     <img
-      src={currentLogoUrl}
-      alt={alt}
+      src={logoUrl}
+      alt={logoAlt}
       width={width}
       height={height}
       className={className}

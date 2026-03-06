@@ -1,11 +1,48 @@
 import { getLogoUrlForEmail } from '../logoHelper';
 
 /**
+ * Get operator branding for emails. Falls back to platform defaults.
+ */
+export async function getOperatorBranding(ownerId?: number | null): Promise<{
+  brandName: string;
+  teamName: string;
+  copyrightName: string;
+}> {
+  if (!ownerId) {
+    return {
+      brandName: "Real Casual Leasing",
+      teamName: "Casual Lease Team",
+      copyrightName: "Real Casual Leasing",
+    };
+  }
+
+  try {
+    const { getOwnerById } = await import("../db");
+    const owner = await getOwnerById(ownerId);
+    if (owner) {
+      const name = owner.name || "Real Casual Leasing";
+      return {
+        brandName: name,
+        teamName: `The ${name} Team`,
+        copyrightName: name,
+      };
+    }
+  } catch {}
+
+  return {
+    brandName: "Real Casual Leasing",
+    teamName: "Casual Lease Team",
+    copyrightName: "Real Casual Leasing",
+  };
+}
+
+/**
  * Generate HTML email template with logo header
  * This creates a professional email layout with the selected logo
  */
-export async function generateEmailTemplate(content: string, title?: string): Promise<string> {
+export async function generateEmailTemplate(content: string, title?: string, ownerId?: number | null): Promise<string> {
   const logoUrl = await getLogoUrlForEmail();
+  const branding = await getOperatorBranding(ownerId);
   
   return `
 <!DOCTYPE html>
@@ -13,7 +50,7 @@ export async function generateEmailTemplate(content: string, title?: string): Pr
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title || 'Real Casual Leasing'}</title>
+  <title>${title || branding.brandName}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f5f5f5;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f5f5f5;">
@@ -24,7 +61,7 @@ export async function generateEmailTemplate(content: string, title?: string): Pr
           <!-- Logo Header -->
           <tr>
             <td align="center" style="padding: 30px 20px 20px 20px; border-bottom: 2px solid #f0f0f0;">
-              <img src="${logoUrl}" alt="Real Casual Leasing" style="max-width: 200px; height: auto;" />
+              <img src="${logoUrl}" alt="${branding.brandName}" style="max-width: 200px; height: auto;" />
             </td>
           </tr>
           
@@ -39,7 +76,7 @@ export async function generateEmailTemplate(content: string, title?: string): Pr
           <tr>
             <td style="padding: 20px 40px; background-color: #f9f9f9; border-top: 1px solid #e0e0e0; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">
               <p style="margin: 0; font-size: 12px; color: #666; text-align: center;">
-                © ${new Date().getFullYear()} Real Casual Leasing. All rights reserved.
+                © ${new Date().getFullYear()} ${branding.copyrightName}. All rights reserved.
               </p>
               <p style="margin: 5px 0 0 0; font-size: 11px; color: #999; text-align: center;">
                 This is an automated message. Please do not reply to this email.

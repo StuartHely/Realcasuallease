@@ -188,9 +188,6 @@ export const licenceRouter = router({
     .mutation(async ({ input }) => {
       const token = await assignLicenceToken(input.bookingId, input.assetType);
 
-      const { ENV } = await import("../_core/env");
-      const signingUrl = `${ENV.appUrl}/sign/${token}`;
-
       // Resolve customer email from the booking
       const table =
         input.assetType === "cl"
@@ -212,6 +209,59 @@ export const licenceRouter = router({
       const customer = await db.getUserById(booking.customerId);
       if (!customer?.email) throw new TRPCError({ code: "BAD_REQUEST", message: "Customer has no email" });
 
+      // Resolve owner for branding
+      let emailOwnerId: number | null = null;
+      try {
+        if (input.assetType === "cl") {
+          const fullBooking = await db.getBookingById(input.bookingId);
+          if (fullBooking) {
+            const site = await db.getSiteById(fullBooking.siteId);
+            if (site) {
+              const centre = await db.getShoppingCentreById(site.centreId);
+              emailOwnerId = centre?.ownerId ?? null;
+            }
+          }
+        } else if (input.assetType === "vs") {
+          const [vsBooking] = await dbInstance
+            .select({ vacantShopId: vacantShopBookings.vacantShopId })
+            .from(vacantShopBookings)
+            .where(eq(vacantShopBookings.id, input.bookingId));
+          if (vsBooking) {
+            const [shop] = await dbInstance
+              .select({ centreId: vacantShops.centreId })
+              .from(vacantShops)
+              .where(eq(vacantShops.id, vsBooking.vacantShopId));
+            if (shop) {
+              const centre = await db.getShoppingCentreById(shop.centreId);
+              emailOwnerId = centre?.ownerId ?? null;
+            }
+          }
+        } else {
+          const [tliBooking] = await dbInstance
+            .select({ thirdLineIncomeId: thirdLineBookings.thirdLineIncomeId })
+            .from(thirdLineBookings)
+            .where(eq(thirdLineBookings.id, input.bookingId));
+          if (tliBooking) {
+            const [asset] = await dbInstance
+              .select({ centreId: thirdLineIncome.centreId })
+              .from(thirdLineIncome)
+              .where(eq(thirdLineIncome.id, tliBooking.thirdLineIncomeId));
+            if (asset) {
+              const centre = await db.getShoppingCentreById(asset.centreId);
+              emailOwnerId = centre?.ownerId ?? null;
+            }
+          }
+        }
+      } catch {}
+
+      const { ENV } = await import("../_core/env");
+      const { getOperatorAppUrl } = await import("../tenantScope");
+      const appUrl = emailOwnerId ? await getOperatorAppUrl(emailOwnerId) : ENV.appUrl;
+      const signingUrl = `${appUrl}/sign/${token}`;
+
+      const { getOperatorBranding } = await import("../_core/emailTemplate");
+      const branding = await getOperatorBranding(emailOwnerId);
+
       const { sendEmail } = await import("../_core/email");
       await sendEmail({
         to: customer.email,
@@ -231,7 +281,7 @@ export const licenceRouter = router({
               If the button above doesn't work, copy and paste this link into your browser:<br>
               <a href="${signingUrl}" style="color: #123047;">${signingUrl}</a>
             </p>
-            <p style="margin-top: 30px;">Best regards,<br><strong>Casual Lease Team</strong></p>
+            <p style="margin-top: 30px;">Best regards,<br><strong>${branding.teamName}</strong></p>
           </div>
         `,
       });

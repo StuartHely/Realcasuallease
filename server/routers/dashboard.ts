@@ -515,6 +515,16 @@ export const dashboardRouter = router({
               return await getRemittanceReport(input.month, input.year);
             }),
 
+          getMetricsByOwner: adminProcedure
+            .input(z.object({
+              month: z.number().min(1).max(12),
+              year: z.number(),
+            }))
+            .query(async ({ input }) => {
+              const { getDashboardMetricsByOwner } = await import('../dashboardDb');
+              return await getDashboardMetricsByOwner(input.month, input.year);
+            }),
+
           exportRemittanceExcel: adminProcedure
             .input(z.object({
               month: z.number().min(1).max(12),

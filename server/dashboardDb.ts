@@ -1,5 +1,5 @@
 import { getDb } from "./db";
-import { bookings, sites, shoppingCentres, budgets } from "../drizzle/schema";
+import { bookings, sites, shoppingCentres, budgets, owners } from "../drizzle/schema";
 import { eq, and, gte, lte, sql, desc, inArray } from "drizzle-orm";
 
 /**
@@ -530,4 +530,110 @@ export async function getRecentCancellationsAffectingPeriod(
     totalAmount: Number(row?.totalAmount ?? 0),
     gstAmount: Number(row?.gstAmount ?? 0),
   };
+}
+
+/**
+ * Get dashboard metrics grouped by owner (for MegaAdmin cross-operator view).
+ * Returns revenue and booking counts per owner for a given month/year.
+ */
+export async function getDashboardMetricsByOwner(
+  month: number,
+  year: number,
+): Promise<Array<{
+  ownerId: number;
+  ownerName: string;
+  totalRevenue: number;
+  bookingCount: number;
+  confirmedCount: number;
+  pendingCount: number;
+}>> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const allOwners = await db.select({ id: owners.id, name: owners.name }).from(owners);
+
+  const monthStart = new Date(year, month - 1, 1);
+  const monthEnd = new Date(year, month, 0, 23, 59, 59);
+
+  const results: Array<{
+    ownerId: number;
+    ownerName: string;
+    totalRevenue: number;
+    bookingCount: number;
+    confirmedCount: number;
+    pendingCount: number;
+  }> = [];
+
+  for (const owner of allOwners) {
+    // Get centres for this owner
+    const ownerCentres = await db
+      .select({ id: shoppingCentres.id })
+      .from(shoppingCentres)
+      .where(eq(shoppingCentres.ownerId, owner.id));
+
+    const centreIds = ownerCentres.map(c => c.id);
+    if (centreIds.length === 0) {
+      results.push({
+        ownerId: owner.id,
+        ownerName: owner.name,
+        totalRevenue: 0,
+        bookingCount: 0,
+        confirmedCount: 0,
+        pendingCount: 0,
+      });
+      continue;
+    }
+
+    // Get sites for these centres
+    const ownerSites = await db
+      .select({ id: sites.id })
+      .from(sites)
+      .where(inArray(sites.centreId, centreIds));
+
+    const siteIds = ownerSites.map(s => s.id);
+    if (siteIds.length === 0) {
+      results.push({
+        ownerId: owner.id,
+        ownerName: owner.name,
+        totalRevenue: 0,
+        bookingCount: 0,
+        confirmedCount: 0,
+        pendingCount: 0,
+      });
+      continue;
+    }
+
+    // Get bookings for these sites in the month
+    const monthBookings = await db
+      .select({
+        status: bookings.status,
+        totalAmount: bookings.totalAmount,
+      })
+      .from(bookings)
+      .where(
+        and(
+          inArray(bookings.siteId, siteIds),
+          gte(bookings.startDate, monthStart),
+          lte(bookings.startDate, monthEnd),
+        )
+      );
+
+    const totalRevenue = monthBookings
+      .filter(b => b.status === 'confirmed' || b.status === 'completed')
+      .reduce((sum, b) => sum + parseFloat(b.totalAmount), 0);
+
+    results.push({
+      ownerId: owner.id,
+      ownerName: owner.name,
+      totalRevenue,
+      bookingCount: monthBookings.length,
+      confirmedCount: monthBookings.filter(b => b.status === 'confirmed' || b.status === 'completed').length,
+      pendingCount: monthBookings.filter(b => b.status === 'pending').length,
+    });
+  }
+
+  // Sort by revenue descending
+  results.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+  return results;
 }
