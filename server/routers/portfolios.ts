@@ -3,14 +3,17 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
 export const portfoliosRouter = router({
-  list: ownerProcedure.query(async () => {
+  list: ownerProcedure.query(async ({ ctx }) => {
     const { getDb } = await import("../db");
     const { portfolios, shoppingCentres } = await import("../../drizzle/schema");
     const { eq, sql } = await import("drizzle-orm");
+    const { getScopedOwnerId } = await import("../tenantScope");
     const db = await getDb();
     if (!db) return [];
 
-    const rows = await db
+    const scopedOwnerId = getScopedOwnerId(ctx.user);
+
+    let query = db
       .select({
         id: portfolios.id,
         ownerId: portfolios.ownerId,
@@ -26,7 +29,11 @@ export const portfoliosRouter = router({
       .groupBy(portfolios.id)
       .orderBy(portfolios.name);
 
-    return rows;
+    if (scopedOwnerId) {
+      query = query.where(eq(portfolios.ownerId, scopedOwnerId)) as typeof query;
+    }
+
+    return await query;
   }),
 
   listByOwner: ownerProcedure

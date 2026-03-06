@@ -130,12 +130,15 @@ export const dashboardRouter = router({
         filterState = ctx.user.assignedState || undefined;
       }
       
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
       return await getCentreBreakdown(
         ctx.user.role,
         ctx.user.assignedState || null,
         input.financialYear,
         input.breakdownType,
-        filterState
+        filterState,
+        scopedOwnerId
       );
     }),
 
@@ -156,12 +159,15 @@ export const dashboardRouter = router({
       }
       
       // Get data for report
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
       const centreBreakdown = await getCentreBreakdown(
         ctx.user.role,
         ctx.user.assignedState || null,
         input.financialYear,
         'annual',
-        filterState
+        filterState,
+        scopedOwnerId
       );
       
       const percentages = await getFyPercentages(input.financialYear);
