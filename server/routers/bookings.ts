@@ -429,12 +429,35 @@ export const bookingsRouter = router({
       .input(z.object({
         status: z.enum(["pending", "confirmed", "cancelled", "completed", "unpaid", "rejected"]).optional(),
       }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        const { getScopedOwnerId } = await import('../tenantScope');
+        const scopedOwnerId = getScopedOwnerId(ctx.user);
+
         // Handle "unpaid" status specially - it's not a database status
         if (input.status === "unpaid") {
-          return await db.getUnpaidInvoiceBookings();
+          const bookings = await db.getUnpaidInvoiceBookings();
+          if (!scopedOwnerId) return bookings;
+          const filtered = [];
+          for (const b of bookings) {
+            const site = await db.getSiteById(b.siteId);
+            if (site) {
+              const centre = await db.getShoppingCentreById(site.centreId);
+              if (centre && centre.ownerId === scopedOwnerId) filtered.push(b);
+            }
+          }
+          return filtered;
         }
-        return await db.getBookingsByStatus(input.status);
+        const bookings = await db.getBookingsByStatus(input.status);
+        if (!scopedOwnerId) return bookings;
+        const filtered = [];
+        for (const b of bookings) {
+          const site = await db.getSiteById(b.siteId);
+          if (site) {
+            const centre = await db.getShoppingCentreById(site.centreId);
+            if (centre && centre.ownerId === scopedOwnerId) filtered.push(b);
+          }
+        }
+        return filtered;
       }),
 
     approve: ownerProcedure
@@ -445,6 +468,18 @@ export const bookingsRouter = router({
         
         if (booking.status !== "pending") {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending bookings can be approved" });
+        }
+
+        const { getScopedOwnerId } = await import('../tenantScope');
+        const scopedOwnerId = getScopedOwnerId(ctx.user);
+        if (scopedOwnerId) {
+          const site = await db.getSiteById(booking.siteId);
+          if (site) {
+            const centre = await db.getShoppingCentreById(site.centreId);
+            if (!centre || centre.ownerId !== scopedOwnerId) {
+              throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+            }
+          }
         }
 
         await db.approveBooking(input.bookingId, ctx.user.id, ctx.user.name || undefined);
@@ -466,6 +501,18 @@ export const bookingsRouter = router({
         
         if (booking.status !== "pending") {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending bookings can be rejected" });
+        }
+
+        const { getScopedOwnerId } = await import('../tenantScope');
+        const scopedOwnerId = getScopedOwnerId(ctx.user);
+        if (scopedOwnerId) {
+          const site = await db.getSiteById(booking.siteId);
+          if (site) {
+            const centre = await db.getShoppingCentreById(site.centreId);
+            if (!centre || centre.ownerId !== scopedOwnerId) {
+              throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+            }
+          }
         }
 
         await db.rejectBooking(input.bookingId, input.reason, ctx.user.id, ctx.user.name || undefined);
@@ -498,7 +545,7 @@ export const bookingsRouter = router({
       .input(z.object({
         status: z.enum(["pending", "confirmed", "rejected", "all"]).default("pending"),
       }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         const { getDb } = await import("../db");
         const { bookings, sites, shoppingCentres, users, usageCategories, customerProfiles } = await import("../../drizzle/schema");
         const { eq, and, inArray } = await import("drizzle-orm");
@@ -507,10 +554,18 @@ export const bookingsRouter = router({
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
 
+        // Owner-scope filtering
+        const { getScopedOwnerId } = await import('../tenantScope');
+        const scopedOwnerId = getScopedOwnerId(ctx.user);
+
         // Build where clause based on status filter
-        const whereClause = input.status === "all" 
+        const statusFilter = input.status === "all" 
           ? undefined 
           : eq(bookings.status, input.status);
+        const ownerFilter = scopedOwnerId ? eq(shoppingCentres.ownerId, scopedOwnerId) : undefined;
+        const whereClause = statusFilter && ownerFilter
+          ? and(statusFilter, ownerFilter)
+          : statusFilter || ownerFilter;
 
         // Fetch bookings with joined data INCLUDING customer profile
         const bookingsList = await db

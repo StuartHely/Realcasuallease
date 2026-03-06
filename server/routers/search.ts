@@ -54,8 +54,12 @@ export const searchRouter = router({
 
         // If asset type is specified (VS or 3rdL), search only that type
         if (enhancedQuery.assetType === 'vacant_shop') {
-          const searchQuery = enhancedQuery.centreName || input.query;
-          const centres = await db.searchShoppingCentres(searchQuery, enhancedQuery.stateFilter);
+          const searchQuery = enhancedQuery.centreName;
+          let centres = await db.searchShoppingCentres(searchQuery, enhancedQuery.stateFilter, ctx.tenantOwnerId ?? undefined);
+          // Fallback: if centre name search failed but we have a state filter, show all centres in that state
+          if (centres.length === 0 && enhancedQuery.stateFilter && searchQuery) {
+            centres = await db.searchShoppingCentres('', enhancedQuery.stateFilter, ctx.tenantOwnerId ?? undefined);
+          }
           if (centres.length === 0) {
             return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'vacant_shop', floorLevels: [] };
           }
@@ -70,8 +74,12 @@ export const searchRouter = router({
         }
         
         if (enhancedQuery.assetType === 'third_line') {
-          const searchQuery = enhancedQuery.centreName || input.query;
-          const centres = await db.searchShoppingCentres(searchQuery, enhancedQuery.stateFilter);
+          const searchQuery = enhancedQuery.centreName;
+          let centres = await db.searchShoppingCentres(searchQuery, enhancedQuery.stateFilter, ctx.tenantOwnerId ?? undefined);
+          // Fallback: if centre name search failed but we have a state filter, show all centres in that state
+          if (centres.length === 0 && enhancedQuery.stateFilter && searchQuery) {
+            centres = await db.searchShoppingCentres('', enhancedQuery.stateFilter, ctx.tenantOwnerId ?? undefined);
+          }
           if (centres.length === 0) {
             return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'third_line', floorLevels: [] };
           }
@@ -142,14 +150,14 @@ export const searchRouter = router({
         // If no centres found from category search, fall back to centre-only search
         // This handles cases like "Fashion in VIC" where VIC centres may not have fashion-approved sites
         if (centres.length === 0) {
-          centres = await db.searchShoppingCentres(searchQuery, enhancedQuery.stateFilter);
+          centres = await db.searchShoppingCentres(searchQuery, enhancedQuery.stateFilter, ctx.tenantOwnerId ?? undefined);
         }
 
         // If centre name search returned nothing (likely because the "centre name" is
         // just leftover natural-language noise) but we have a state filter, show all
         // centres in that state so the user still gets results.
         if (centres.length === 0 && enhancedQuery.stateFilter && searchQuery) {
-          centres = await db.searchShoppingCentres('', enhancedQuery.stateFilter);
+          centres = await db.searchShoppingCentres('', enhancedQuery.stateFilter, ctx.tenantOwnerId ?? undefined);
         }
 
         // If still no results and we have area matches, use those
@@ -169,7 +177,7 @@ export const searchRouter = router({
           };
           const inferredState = AREA_STATE_MAP[areaQuery.toLowerCase()];
           if (inferredState) {
-            centres = await db.searchShoppingCentres('', inferredState);
+            centres = await db.searchShoppingCentres('', inferredState, ctx.tenantOwnerId ?? undefined);
           }
         }
         
@@ -480,9 +488,9 @@ export const searchRouter = router({
         centreName: z.string(),
         date: z.date(),
       }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         // Search for centres matching the name
-        const centres = await db.searchShoppingCentres(input.centreName);
+        const centres = await db.searchShoppingCentres(input.centreName, undefined, ctx.tenantOwnerId ?? undefined);
         
         if (centres.length === 0) {
           return { centres: [], sites: [], availability: [] };

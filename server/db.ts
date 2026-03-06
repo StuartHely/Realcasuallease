@@ -301,11 +301,15 @@ export async function deleteOwner(id: number) {
   return await db.delete(owners).where(eq(owners.id, id));
 }
 
-export async function getShoppingCentres() {
+export async function getShoppingCentres(ownerId?: number) {
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(shoppingCentres).orderBy(shoppingCentres.name);
+  const query = db.select().from(shoppingCentres);
+  if (ownerId != null) {
+    return await query.where(eq(shoppingCentres.ownerId, ownerId)).orderBy(shoppingCentres.name);
+  }
+  return await query.orderBy(shoppingCentres.name);
 }
 
 export async function getShoppingCentreById(id: number) {
@@ -331,13 +335,16 @@ export async function getShoppingCentreById(id: number) {
 }
 
 
-export async function getShoppingCentresByState(state: string) {
+export async function getShoppingCentresByState(state: string, ownerId?: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return await db.select().from(shoppingCentres).where(eq(shoppingCentres.state, state));
+  const condition = ownerId != null
+    ? and(eq(shoppingCentres.state, state), eq(shoppingCentres.ownerId, ownerId))
+    : eq(shoppingCentres.state, state);
+  return await db.select().from(shoppingCentres).where(condition);
 }
 
-export async function getNearbyCentres(centreId: number, radiusKm: number = 10) {
+export async function getNearbyCentres(centreId: number, radiusKm: number = 10, ownerId?: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
@@ -345,7 +352,7 @@ export async function getNearbyCentres(centreId: number, radiusKm: number = 10) 
   const { findNearbyCentres } = await import("./geoUtils");
   
   // Get all centres with coordinates
-  const allCentres = await db.select({
+  const query = db.select({
     id: shoppingCentres.id,
     name: shoppingCentres.name,
     slug: shoppingCentres.slug,
@@ -354,6 +361,9 @@ export async function getNearbyCentres(centreId: number, radiusKm: number = 10) 
     address: shoppingCentres.address,
     state: shoppingCentres.state,
   }).from(shoppingCentres);
+  const allCentres = ownerId != null
+    ? await query.where(eq(shoppingCentres.ownerId, ownerId))
+    : await query;
   
   // Find nearby centres
   const nearby = findNearbyCentres(allCentres, centreId, radiusKm);
@@ -404,7 +414,7 @@ export async function getShoppingCentreByIdOrSlug(idOrSlug: string | number) {
 
 }
 
-export async function searchShoppingCentres(query: string, stateFilter?: string) {
+export async function searchShoppingCentres(query: string, stateFilter?: string, ownerId?: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
@@ -415,10 +425,14 @@ export async function searchShoppingCentres(query: string, stateFilter?: string)
   // Remove site number from query for centre matching
   const centreQuery = siteMatch ? query.replace(sitePattern, "").trim() : query;
   
-  // Get all centres, optionally filtered by state
+  // Get all centres, optionally filtered by state and/or owner
   let allCentres;
-  if (stateFilter) {
+  if (stateFilter && ownerId != null) {
+    allCentres = await db.select().from(shoppingCentres).where(and(eq(shoppingCentres.state, stateFilter), eq(shoppingCentres.ownerId, ownerId)));
+  } else if (stateFilter) {
     allCentres = await db.select().from(shoppingCentres).where(eq(shoppingCentres.state, stateFilter));
+  } else if (ownerId != null) {
+    allCentres = await db.select().from(shoppingCentres).where(eq(shoppingCentres.ownerId, ownerId));
   } else {
     allCentres = await db.select().from(shoppingCentres);
   }
