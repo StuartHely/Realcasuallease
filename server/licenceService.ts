@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { eq } from "drizzle-orm";
 import { getDb } from "./db";
-import { bookings, vacantShopBookings, thirdLineBookings } from "../drizzle/schema";
+import { bookings, vacantShopBookings, thirdLineBookings, auditLog } from "../drizzle/schema";
 
 export type AssetType = "cl" | "vs" | "tli";
 
@@ -16,6 +16,7 @@ export interface BookingForSigning {
   id: number;
   bookingNumber: string;
   assetType: AssetType;
+  customerId: number;
   startDate: Date;
   endDate: Date;
   totalAmount: string;
@@ -78,6 +79,7 @@ export async function findBookingByToken(
     .select({
       id: bookings.id,
       bookingNumber: bookings.bookingNumber,
+      customerId: bookings.customerId,
       startDate: bookings.startDate,
       endDate: bookings.endDate,
       totalAmount: bookings.totalAmount,
@@ -96,6 +98,7 @@ export async function findBookingByToken(
     .select({
       id: vacantShopBookings.id,
       bookingNumber: vacantShopBookings.bookingNumber,
+      customerId: vacantShopBookings.customerId,
       startDate: vacantShopBookings.startDate,
       endDate: vacantShopBookings.endDate,
       totalAmount: vacantShopBookings.totalAmount,
@@ -114,6 +117,7 @@ export async function findBookingByToken(
     .select({
       id: thirdLineBookings.id,
       bookingNumber: thirdLineBookings.bookingNumber,
+      customerId: thirdLineBookings.customerId,
       startDate: thirdLineBookings.startDate,
       endDate: thirdLineBookings.endDate,
       totalAmount: thirdLineBookings.totalAmount,
@@ -152,14 +156,27 @@ export async function recordSignature(
         ? vacantShopBookings
         : thirdLineBookings;
 
+  const now = new Date();
+
   await db
     .update(table)
     .set({
-      licenceSignedAt: new Date(),
+      licenceSignedAt: now,
       licenceSignedByName: signedByName,
       licenceSignedByIp: signedByIp,
     })
     .where(eq(table.id, booking.id));
+
+  // Write audit log
+  await db.insert(auditLog).values({
+    userId: booking.customerId,
+    action: "licence_signed",
+    entityType: `${booking.assetType}_booking`,
+    entityId: booking.id,
+    changes: JSON.stringify({ signedByName, signedByIp, bookingNumber: booking.bookingNumber }),
+    ipAddress: signedByIp,
+    createdAt: now,
+  });
 
   console.log(
     `[LicenceService] Signature recorded for ${booking.assetType} booking ${booking.bookingNumber} by ${signedByName}`,

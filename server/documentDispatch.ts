@@ -35,9 +35,13 @@ export async function dispatchBookingDocuments(
       return;
     }
 
-    // --- Idempotency (CL only) ---------------------------------------------
+    // --- Idempotency: skip if already dispatched -----------------------------
     if (assetType === "cl" && (booking as any).invoiceDispatchedAt !== null) {
       console.log("[DocumentDispatch] Already dispatched, skipping:", bookingId);
+      return;
+    }
+    if ((assetType === "vs" || assetType === "tli") && (booking as any).licenceSignatureToken) {
+      console.log("[DocumentDispatch] Already dispatched (token exists), skipping:", bookingId);
       return;
     }
 
@@ -65,9 +69,9 @@ export async function dispatchBookingDocuments(
       licencePdfBase64 = await generateLicencePDFForTLIBooking(bookingId);
     }
 
-    // --- Generate Invoice PDF (invoice payment method only) ------------------
+    // --- Generate Invoice PDF (all bookings get invoice for records) ---------
     let invoicePdfBase64: string | null = null;
-    if ((booking as any).paymentMethod === "invoice") {
+    try {
       const invoiceGen = await import("./invoiceGenerator");
       if (assetType === "cl") {
         invoicePdfBase64 = await invoiceGen.generateInvoicePDF(bookingId);
@@ -75,6 +79,62 @@ export async function dispatchBookingDocuments(
         invoicePdfBase64 = await invoiceGen.generateVSInvoicePDF(bookingId);
       } else {
         invoicePdfBase64 = await invoiceGen.generateTLIInvoicePDF(bookingId);
+      }
+    } catch (invoiceError) {
+      console.error("[DocumentDispatch] Invoice generation failed, continuing without:", invoiceError);
+    }
+
+    // --- Create Stripe Checkout Session (stripe payment method only) ---------
+    let paymentUrl: string | null = null;
+    if ((booking as any).paymentMethod === "stripe") {
+      try {
+        const { createCheckoutSession } = await import("./stripeService");
+        const { getShoppingCentreById, getSiteById } = await import("./db");
+
+        let centreName = "Shopping Centre";
+        let assetLabel = `Booking ${booking.bookingNumber}`;
+        let bookingType: "site" | "vacant_shop" | "third_line" = "site";
+
+        if (assetType === "cl") {
+          const site = await getSiteById((booking as any).siteId);
+          const centre = site ? await getShoppingCentreById(site.centreId) : null;
+          centreName = centre?.name || centreName;
+          assetLabel = `Site ${site?.siteNumber || ""}`;
+          bookingType = "site";
+        } else if (assetType === "vs") {
+          const { getVacantShopById } = await import("./assetDb");
+          const shop = await getVacantShopById((booking as any).vacantShopId);
+          const centre = shop ? await getShoppingCentreById(shop.centreId) : null;
+          centreName = centre?.name || centreName;
+          assetLabel = `Shop ${shop?.shopNumber || ""}`;
+          bookingType = "vacant_shop";
+        } else {
+          const { getThirdLineIncomeById } = await import("./assetDb");
+          const asset = await getThirdLineIncomeById((booking as any).thirdLineIncomeId);
+          const centre = asset ? await getShoppingCentreById(asset.centreId) : null;
+          centreName = centre?.name || centreName;
+          assetLabel = `Asset ${asset?.assetNumber || ""}`;
+          bookingType = "third_line";
+        }
+
+        const totalWithGst = Math.round(
+          (Number(booking.totalAmount) + Number(booking.gstAmount)) * 100
+        );
+
+        const session = await createCheckoutSession({
+          bookingId: booking.id,
+          bookingNumber: booking.bookingNumber,
+          bookingType,
+          customerEmail: customer.email || "",
+          centreName,
+          assetLabel,
+          totalAmountCents: totalWithGst,
+          startDate: booking.startDate,
+          endDate: booking.endDate,
+        });
+        paymentUrl = session.url;
+      } catch (stripeError) {
+        console.error("[DocumentDispatch] Failed to create Stripe session:", stripeError);
       }
     }
 
@@ -86,6 +146,7 @@ export async function dispatchBookingDocuments(
     // --- Build email --------------------------------------------------------
     const bookingNumber = booking.bookingNumber;
     const hasInvoice = invoicePdfBase64 !== null;
+    const hasPaymentLink = paymentUrl !== null;
     const subject = hasInvoice
       ? `Licence Agreement & Invoice: ${bookingNumber}`
       : `Licence Agreement: ${bookingNumber}`;
@@ -110,6 +171,23 @@ export async function dispatchBookingDocuments(
       });
     }
 
+    const paymentSection = hasPaymentLink
+      ? `
+        <p>Your booking has been approved! Please complete payment using the button below:</p>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${paymentUrl}"
+             style="display: inline-block; padding: 14px 28px; background-color: #2e7d32; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
+            Pay Now
+          </a>
+        </div>
+
+        <p>Then review and sign the Licence Agreement:</p>
+      `
+      : `
+        <p>To proceed, please review and sign the Licence Agreement using the button below:</p>
+      `;
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #123047;">Your Licence Agreement${hasInvoice ? " & Invoice" : ""}</h2>
@@ -121,7 +199,7 @@ export async function dispatchBookingDocuments(
           booking <strong>${bookingNumber}</strong>.
         </p>
 
-        <p>To proceed, please review and sign the Licence Agreement using the button below:</p>
+        ${paymentSection}
 
         <div style="text-align: center; margin: 30px 0;">
           <a href="${signingUrl}"
