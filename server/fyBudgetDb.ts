@@ -328,7 +328,8 @@ export async function getCentreBreakdown(
   assignedState: string | null,
   financialYear: number,
   breakdownType: 'annual' | 'ytd',
-  state?: string
+  state?: string,
+  assignedOwnerId?: number | null
 ): Promise<Array<{
   centreId: number;
   centreName: string;
@@ -342,7 +343,7 @@ export async function getCentreBreakdown(
   if (!db) return [];
 
   // Get permitted centre IDs
-  const permittedCentreIds = await getPermittedCentreIds(userRole, assignedState);
+  const permittedCentreIds = await getPermittedCentreIds(userRole, assignedState, assignedOwnerId);
   if (permittedCentreIds.length === 0) return [];
 
   // Get FY percentages for the year

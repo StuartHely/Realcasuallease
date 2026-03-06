@@ -146,9 +146,14 @@ export const centresRouter = router({
       pdfName3: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
       const centre = await db.getShoppingCentreById(input.id);
       if (!centre) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+      }
+      if (scopedOwnerId && centre.ownerId !== scopedOwnerId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
       }
       
       // Update centre
@@ -164,7 +169,15 @@ export const centresRouter = router({
       base64Pdf: z.string(),
       originalName: z.string(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      if (scopedOwnerId) {
+        const centre = await db.getShoppingCentreById(input.centreId);
+        if (!centre || centre.ownerId !== scopedOwnerId) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+        }
+      }
       const { storagePut } = await import('../storage');
       
       // Extract base64 data
@@ -199,10 +212,15 @@ export const centresRouter = router({
       weeklyReportTimezone: z.string().optional(),
       weeklyReportNextOverrideDay: z.enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]).nullable().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
       const centre = await db.getShoppingCentreById(input.id);
       if (!centre) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+      }
+      if (scopedOwnerId && centre.ownerId !== scopedOwnerId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
       }
       
       await db.updateShoppingCentre(input.id, input);
@@ -211,7 +229,15 @@ export const centresRouter = router({
   
   sendTestWeeklyReport: ownerProcedure
     .input(z.object({ centreId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      if (scopedOwnerId) {
+        const centre = await db.getShoppingCentreById(input.centreId);
+        if (!centre || centre.ownerId !== scopedOwnerId) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+        }
+      }
       const { triggerWeeklyReport } = await import("../reportScheduler");
       const result = await triggerWeeklyReport(input.centreId);
       
