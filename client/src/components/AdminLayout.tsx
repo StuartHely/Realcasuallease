@@ -102,6 +102,9 @@ const getMenuSections = (userRole: string): MenuSection[] => {
           { icon: DollarSign, label: "Invoice Dashboard", path: "/admin/invoice-dashboard" },
           { icon: FileText, label: "Remittance Report", path: "/admin/remittance" },
           { icon: DollarSign, label: "Record Payments", path: "/admin/payments" },
+          { icon: BarChart3, label: "Occupancy Report", path: "/admin/occupancy-report" },
+          { icon: FileText, label: "Aged Debtors", path: "/admin/aged-debtors" },
+          { icon: DollarSign, label: "GST Report", path: "/admin/gst-report" },
         ],
       },
       {
@@ -145,6 +148,9 @@ const getMenuSections = (userRole: string): MenuSection[] => {
           { icon: MapPin, label: "Casual Leasing Sites", path: "/admin/sites" },
           { icon: Calendar, label: "Bookings", path: "/admin/bookings" },
           { icon: DollarSign, label: "Reports", path: "/admin/financials" },
+          { icon: BarChart3, label: "Occupancy Report", path: "/admin/occupancy-report" },
+          { icon: FileText, label: "Aged Debtors", path: "/admin/aged-debtors" },
+          { icon: DollarSign, label: "GST Report", path: "/admin/gst-report" },
         ],
       },
     ];

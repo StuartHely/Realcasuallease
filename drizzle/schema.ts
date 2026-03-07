@@ -587,7 +587,7 @@ export type InsertSearchIntentCache = typeof searchIntentCache.$inferInsert;
  */
 export const auditLog = pgTable("audit_log", {
   id: serial("id").primaryKey(),
-  userId: integer("userId").references(() => users.id, { onDelete: "cascade" }),
+  userId: integer("userId").references(() => users.id, { onDelete: "set null" }),
   action: varchar("action", { length: 255 }).notNull(),
   entityType: varchar("entityType", { length: 100 }),
   entityId: integer("entityId"),
