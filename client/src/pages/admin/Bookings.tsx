@@ -27,6 +27,7 @@ import { CheckCircle, XCircle, Clock, DollarSign, Search, X, FileText, Pencil, D
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { cleanHtmlDescription } from "@/lib/htmlUtils";
 
 type BookingStatus = "all" | "pending" | "confirmed" | "rejected" | "completed" | "unpaid";
 
@@ -268,7 +269,7 @@ export default function AdminBookings() {
           centreName: booking.centreName || '',
           category: booking.productCategory || '',
           siteNumber: booking.siteNumber || '',
-          siteDescription: booking.siteName || '',
+          siteDescription: cleanHtmlDescription(booking.siteName) || '',
           startDate: booking.startDate ? format(new Date(booking.startDate), 'dd/MM/yy') : '',
           endDate: booking.endDate ? format(new Date(booking.endDate), 'dd/MM/yy') : '',
           dateEntered: booking.createdAt ? format(new Date(booking.createdAt), 'dd/MM/yy') : '',
@@ -475,7 +476,7 @@ export default function AdminBookings() {
                             <TableCell>
                               <div>
                                 <div className="font-medium">{booking.siteNumber || "—"}</div>
-                                <div className="text-sm text-muted-foreground">{booking.siteName}</div>
+                                <div className="text-sm text-muted-foreground">{cleanHtmlDescription(booking.siteName)}</div>
                               </div>
                             </TableCell>
                             <TableCell className="whitespace-nowrap">

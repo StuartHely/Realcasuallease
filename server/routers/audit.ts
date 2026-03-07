@@ -1,8 +1,8 @@
-import { adminProcedure, router } from "../_core/trpc";
+import { ownerProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 
 export const auditRouter = router({
-  list: adminProcedure
+  list: ownerProcedure
     .input(
       z
         .object({
@@ -14,10 +14,11 @@ export const auditRouter = router({
         })
         .optional(),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const { getDb } = await import("../db");
       const { auditLog, users } = await import("../../drizzle/schema");
-      const { desc, eq, and, sql } = await import("drizzle-orm");
+      const { desc, eq, and, sql, inArray } = await import("drizzle-orm");
+      const { getScopedOwnerId } = await import("../tenantScope");
 
       const db = await getDb();
       if (!db) return { logs: [], total: 0 };
@@ -27,6 +28,21 @@ export const auditRouter = router({
       if (input?.entityType)
         conditions.push(eq(auditLog.entityType, input.entityType));
       if (input?.userId) conditions.push(eq(auditLog.userId, input.userId));
+
+      // Tenant scoping: owner-role users only see audit entries by users in their org
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      if (scopedOwnerId) {
+        const orgUsers = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.assignedOwnerId, scopedOwnerId));
+        const orgUserIds = orgUsers.map(u => u.id);
+        if (orgUserIds.length > 0) {
+          conditions.push(inArray(auditLog.userId, orgUserIds));
+        } else {
+          return { logs: [], total: 0 };
+        }
+      }
 
       const whereClause =
         conditions.length > 0 ? and(...conditions) : undefined;

@@ -16,6 +16,7 @@ import { NearbyCentresMap } from "@/components/NearbyCentresMap";
 import { SearchSkeleton } from "@/components/SearchSkeleton";
 import { parseSearchQuery } from "@/../../shared/queryParser";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
+import { cleanHtmlDescription } from "@/lib/htmlUtils";
 
 export default function Search() {
   const [, setLocation] = useLocation();
@@ -524,7 +525,7 @@ export default function Search() {
           {data?.categoryUnrecognised && data?.searchInterpretation?.productCategory && (
             <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-amber-800 font-medium text-base">
-                We couldn't match a specific category for '{data.searchInterpretation.productCategory}' — showing all available sites. You may want to check with the centre directly about permitted product categories.
+                We couldn't match a specific category for '{data.searchInterpretation.productCategory}' — showing all available sites. You may wish to check with us about permitted product categories for this centre.
               </p>
             </div>
           )}
@@ -740,7 +741,12 @@ export default function Search() {
                                             ? 'bg-blue-500 hover:bg-blue-600'
                                             : 'bg-green-500 hover:bg-green-600'
                                       } transition-colors cursor-pointer`}
-                                      title={`Shop ${shop.shopNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : 'Available - Click to select'}`}
+                                      title={(() => {
+                                        if (isSelectingStart) return `Start date selected - Click another date to set end date`;
+                                        const weeklyRate = shop.pricePerWeek ? ` - $${shop.pricePerWeek}/week` : '';
+                                        const monthlyRate = shop.pricePerMonth ? ` | $${shop.pricePerMonth}/month` : '';
+                                        return `Shop ${shop.shopNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : 'Available - Click to select'}${weeklyRate}${monthlyRate}`;
+                                      })()}
                                     >
                                       {(isStartDate || isEndDate) && (
                                         <div className="absolute inset-0 flex items-center justify-center">
@@ -795,11 +801,12 @@ export default function Search() {
                         <Card 
                           key={`shop-detail-${shop.id}`} 
                           ref={isExpanded ? expandedVSRef : null}
-                          className={`border-l-4 transition-all duration-300 ${
+                          className={`border-l-4 transition-all duration-300 cursor-pointer ${
                             isExpanded 
                               ? 'border-l-blue-600 ring-2 ring-blue-300 shadow-xl' 
                               : 'border-l-green-500'
                           }`}
+                          onClick={() => setExpandedSiteId(isExpanded ? null : shopId)}
                         >
                           <CardHeader>
                             <div className="flex items-start justify-between gap-4">
@@ -827,11 +834,11 @@ export default function Search() {
                                   )}
                                 </div>
                                 <CardDescription className="mt-2">
-                                  {shop.description}
+                                  {cleanHtmlDescription(shop.description)}
                                 </CardDescription>
                               </div>
                               <Button
-                                onClick={() => setLocation(`/vacant-shop/${shop.id}`)}
+                                onClick={(e) => { e.stopPropagation(); setLocation(`/vacant-shop/${shop.id}`); }}
                                 className="bg-green-600 hover:bg-green-700"
                               >
                                 View Details
@@ -863,6 +870,43 @@ export default function Search() {
                               </div>
                             </div>
                             
+                            {/* Mini Availability Calendar */}
+                            {dateRange.length > 0 && vsAvailability && (
+                              <div className="mt-4 pt-4 border-t">
+                                <p className="text-xs font-semibold text-gray-600 mb-2">Availability ({format(dateRange[0], "dd MMM")} – {format(dateRange[dateRange.length - 1], "dd MMM")})</p>
+                                <div className="flex gap-0.5">
+                                  {dateRange.map((date, idx) => {
+                                    const checkDate = new Date(date);
+                                    checkDate.setHours(0, 0, 0, 0);
+                                    const booked = shop.bookings?.some((b: any) => {
+                                      const s = new Date(b.startDate); s.setHours(0,0,0,0);
+                                      const e = new Date(b.endDate); e.setHours(0,0,0,0);
+                                      return checkDate >= s && checkDate <= e;
+                                    });
+                                    const weeklyStr = shop.pricePerWeek ? `$${shop.pricePerWeek}/wk` : '';
+                                    const monthlyStr = shop.pricePerMonth ? `$${shop.pricePerMonth}/mo` : '';
+                                    const rateStr = [weeklyStr, monthlyStr].filter(Boolean).join(' | ');
+                                    return (
+                                      <div
+                                        key={idx}
+                                        className={`flex-1 h-8 rounded-sm flex flex-col items-center justify-center text-[9px] font-medium ${
+                                          booked ? 'bg-red-400 text-white' : 'bg-green-400 text-white'
+                                        }`}
+                                        title={`${format(date, "EEE dd/MM")} - ${booked ? 'Booked' : `Available${rateStr ? ` - ${rateStr}` : ''}`}`}
+                                      >
+                                        <span>{format(date, "dd")}</span>
+                                        <span className="text-[8px] opacity-80">{format(date, "EEE")}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <div className="flex gap-3 mt-1 text-[10px] text-gray-500">
+                                  <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-green-400 rounded-sm" /> Available</span>
+                                  <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-red-400 rounded-sm" /> Booked</span>
+                                </div>
+                              </div>
+                            )}
+
                             {/* Expanded Booking Section */}
                             {hasSelectedDates && isExpanded && (
                               <div className="mt-6 pt-6 border-t border-green-200 bg-green-50 -mx-6 -mb-6 px-6 pb-6 rounded-b-lg">
@@ -1131,7 +1175,12 @@ export default function Search() {
                                             ? 'bg-purple-500 hover:bg-purple-600'
                                             : 'bg-green-500 hover:bg-green-600'
                                       } transition-colors cursor-pointer`}
-                                      title={`${asset.assetNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : 'Available - Click to select'}`}
+                                      title={(() => {
+                                        if (isSelectingStart) return `Start date selected - Click another date to set end date`;
+                                        const weeklyRate = asset.pricePerWeek ? ` - $${asset.pricePerWeek}/week` : '';
+                                        const monthlyRate = asset.pricePerMonth ? ` | $${asset.pricePerMonth}/month` : '';
+                                        return `${asset.assetNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : 'Available - Click to select'}${weeklyRate}${monthlyRate}`;
+                                      })()}
                                     >
                                       {(isStartDate || isEndDate) && (
                                         <div className="absolute inset-0 flex items-center justify-center">
@@ -1185,11 +1234,12 @@ export default function Search() {
                         <Card 
                           key={`asset-detail-${asset.id}`} 
                           ref={isExpanded ? expandedTLIRef : null}
-                          className={`border-l-4 transition-all duration-300 ${
+                          className={`border-l-4 transition-all duration-300 cursor-pointer ${
                             isExpanded 
                               ? 'border-l-purple-600 ring-2 ring-purple-300 shadow-xl' 
                               : 'border-l-purple-500'
                           }`}
+                          onClick={() => setExpandedSiteId(isExpanded ? null : assetId)}
                         >
                           <CardHeader>
                             <div className="flex items-start justify-between gap-4">
@@ -1220,11 +1270,11 @@ export default function Search() {
                                   )}
                                 </div>
                                 <CardDescription className="mt-2">
-                                  {asset.description}
+                                  {cleanHtmlDescription(asset.description)}
                                 </CardDescription>
                               </div>
                               <Button
-                                onClick={() => setLocation(`/third-line/${asset.id}`)}
+                                onClick={(e) => { e.stopPropagation(); setLocation(`/third-line/${asset.id}`); }}
                                 className="bg-purple-600 hover:bg-purple-700"
                               >
                                 View Details
@@ -1253,6 +1303,43 @@ export default function Search() {
                               </div>
                             </div>
                             
+                            {/* Mini Availability Calendar */}
+                            {dateRange.length > 0 && tliAvailability && (
+                              <div className="mt-4 pt-4 border-t">
+                                <p className="text-xs font-semibold text-gray-600 mb-2">Availability ({format(dateRange[0], "dd MMM")} – {format(dateRange[dateRange.length - 1], "dd MMM")})</p>
+                                <div className="flex gap-0.5">
+                                  {dateRange.map((date, idx) => {
+                                    const checkDate = new Date(date);
+                                    checkDate.setHours(0, 0, 0, 0);
+                                    const booked = asset.bookings?.some((b: any) => {
+                                      const s = new Date(b.startDate); s.setHours(0,0,0,0);
+                                      const e = new Date(b.endDate); e.setHours(0,0,0,0);
+                                      return checkDate >= s && checkDate <= e;
+                                    });
+                                    const weeklyStr = asset.pricePerWeek ? `$${asset.pricePerWeek}/wk` : '';
+                                    const monthlyStr = asset.pricePerMonth ? `$${asset.pricePerMonth}/mo` : '';
+                                    const rateStr = [weeklyStr, monthlyStr].filter(Boolean).join(' | ');
+                                    return (
+                                      <div
+                                        key={idx}
+                                        className={`flex-1 h-8 rounded-sm flex flex-col items-center justify-center text-[9px] font-medium ${
+                                          booked ? 'bg-red-400 text-white' : 'bg-green-400 text-white'
+                                        }`}
+                                        title={`${format(date, "EEE dd/MM")} - ${booked ? 'Booked' : `Available${rateStr ? ` - ${rateStr}` : ''}`}`}
+                                      >
+                                        <span>{format(date, "dd")}</span>
+                                        <span className="text-[8px] opacity-80">{format(date, "EEE")}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <div className="flex gap-3 mt-1 text-[10px] text-gray-500">
+                                  <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-green-400 rounded-sm" /> Available</span>
+                                  <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-red-400 rounded-sm" /> Booked</span>
+                                </div>
+                              </div>
+                            )}
+
                             {/* Expanded Booking Section */}
                             {hasSelectedDates && isExpanded && (
                               <div className="mt-6 pt-6 border-t border-purple-200 bg-purple-50 -mx-6 -mb-6 px-6 pb-6 rounded-b-lg">
@@ -1432,9 +1519,9 @@ export default function Search() {
                     </div>
                     
                     {/* Filter explanation notice */}
-                    {(parsedQuery.minSizeM2 !== undefined || parsedQuery.productCategory) && (() => {
+                    {(parsedQuery.minSizeM2 !== undefined || (parsedQuery.productCategory && !data?.categoryUnrecognised)) && (() => {
                       const hasSizeFilter = parsedQuery.minSizeM2 !== undefined;
-                      const hasCategoryFilter = parsedQuery.productCategory;
+                      const hasCategoryFilter = parsedQuery.productCategory && !data?.categoryUnrecognised;
                       
                       let noticeText = '';
                       if (hasSizeFilter && hasCategoryFilter) {
@@ -1776,15 +1863,16 @@ export default function Search() {
                                                   : 'bg-green-500 hover:bg-green-600'
                                             } transition-colors cursor-pointer`}
                                             title={(() => {
-                                              const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                                              const rate = isWeekend && site.weekendPricePerDay 
-                                                ? `$${site.weekendPricePerDay}` 
-                                                : `$${site.pricePerDay}`;
-                                              if (isSelectingStart) {
-                                                return `Start date selected - Click another date to set end date`;
-                                              }
-                                              return `Site ${site.siteNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : 'Available - Click to select'} - ${rate}/day`;
-                                            })()}
+                                               const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                                               const rate = isWeekend && site.weekendPricePerDay 
+                                                 ? `$${site.weekendPricePerDay}` 
+                                                 : `$${site.pricePerDay}`;
+                                               const weeklyRate = site.pricePerWeek ? ` | $${site.pricePerWeek}/week` : '';
+                                               if (isSelectingStart) {
+                                                 return `Start date selected - Click another date to set end date`;
+                                               }
+                                               return `Site ${site.siteNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : 'Available - Click to select'} - ${rate}/day${weeklyRate}`;
+                                             })()}
                                           >
                                             {(isStartDate || isEndDate) && (
                                               <div className="absolute inset-0 flex items-center justify-center">
@@ -1862,13 +1950,14 @@ export default function Search() {
                           <Card 
                             key={`site-detail-casual-${centre.id}-${site.id}`} 
                             ref={isExpanded ? expandedSiteRef : null}
-                            className={`border-l-4 transition-all duration-300 ${
+                            className={`border-l-4 transition-all duration-300 cursor-pointer ${
                               isExpanded 
                                 ? 'border-l-blue-600 ring-2 ring-blue-300 shadow-xl' 
                                 : isMatchedSite(site.id) 
                                   ? 'border-l-yellow-500 bg-yellow-50 shadow-lg' 
                                   : 'border-l-blue-500'
                             }`}
+                            onClick={() => setExpandedSiteId(isExpanded ? null : site.id)}
                           >
                             <CardHeader>
                               <div className="flex items-start justify-between gap-4">
@@ -1953,12 +2042,12 @@ export default function Search() {
                                     })()}
                                   </div>
                                   <CardDescription className="mt-2">
-                                    {site.description?.replace(/<[^>]*>/g, '')}
+                                    {cleanHtmlDescription(site.description)}
                                   </CardDescription>
 
                                 </div>
                                 <Button
-                                  onClick={() => setLocation(`/site/${site.id}`)}
+                                  onClick={(e) => { e.stopPropagation(); setLocation(`/site/${site.id}`); }}
                                   className="bg-blue-600 hover:bg-blue-700"
                                 >
                                   View Details
@@ -1990,13 +2079,44 @@ export default function Search() {
                                     </p>
                                   )}
                                   {site.restrictions && (
-                                    <p className="text-sm">
+                                    <p className="text-sm text-muted-foreground font-medium">
                                       <span className="font-semibold">Restrictions:</span> {site.restrictions}
                                     </p>
                                   )}
                                 </div>
                               </div>
                               
+                              {/* Mini Availability Calendar */}
+                              {dateRange.length > 0 && (
+                                <div className="mt-4 pt-4 border-t">
+                                  <p className="text-xs font-semibold text-gray-600 mb-2">Availability ({format(dateRange[0], "dd MMM")} – {format(dateRange[dateRange.length - 1], "dd MMM")})</p>
+                                  <div className="flex gap-0.5">
+                                    {dateRange.map((date, idx) => {
+                                      const booked = isBookedOnDate(site.id, date);
+                                      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                                      const rate = isWeekend && site.weekendPricePerDay ? site.weekendPricePerDay : site.pricePerDay;
+                                      const weeklyStr = site.pricePerWeek ? ` | $${site.pricePerWeek}/wk` : '';
+                                      return (
+                                        <div
+                                          key={idx}
+                                          className={`flex-1 h-8 rounded-sm flex flex-col items-center justify-center text-[9px] font-medium ${
+                                            booked ? 'bg-red-400 text-white' : 'bg-green-400 text-white'
+                                          }`}
+                                          title={`${format(date, "EEE dd/MM")} - ${booked ? 'Booked' : `Available - $${rate}/day${weeklyStr}`}`}
+                                        >
+                                          <span>{format(date, "dd")}</span>
+                                          <span className="text-[8px] opacity-80">{format(date, "EEE")}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  <div className="flex gap-3 mt-1 text-[10px] text-gray-500">
+                                    <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-green-400 rounded-sm" /> Available</span>
+                                    <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-red-400 rounded-sm" /> Booked</span>
+                                  </div>
+                                </div>
+                              )}
+
                               {/* Expanded Booking Section - shows when dates are selected from calendar */}
                               {hasSelectedDates && isExpanded && (
                                 <div className="mt-6 pt-6 border-t border-blue-200 bg-blue-50 -mx-6 -mb-6 px-6 pb-6 rounded-b-lg">

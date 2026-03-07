@@ -465,7 +465,7 @@ export async function getBookingAuditHistory(
 ): Promise<
   Array<{
     id: number;
-    userId: number;
+    userId: number | null;
     userName: string | null;
     action: string;
     changes: string | null;
@@ -485,7 +485,7 @@ export async function getBookingAuditHistory(
       createdAt: auditLog.createdAt,
     })
     .from(auditLog)
-    .innerJoin(users, eq(auditLog.userId, users.id))
+    .leftJoin(users, eq(auditLog.userId, users.id))
     .where(and(eq(auditLog.entityType, "booking"), eq(auditLog.entityId, bookingId)))
     .orderBy(desc(auditLog.createdAt));
 

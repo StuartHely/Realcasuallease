@@ -284,6 +284,13 @@ export async function dispatchBookingDocuments(
     }
 
     console.log("[DocumentDispatch] Documents dispatched for booking:", bookingId);
+
+    import("./auditHelper").then(m => m.writeAudit({
+      action: "invoice_generated",
+      entityType: assetType === "cl" ? "booking" : assetType === "vs" ? "vs_booking" : "tli_booking",
+      entityId: bookingId,
+      changes: { assetType, bookingNumber: (booking as any).bookingNumber },
+    })).catch(() => {});
   } catch (error) {
     console.error("[DocumentDispatch] Failed for booking", bookingId, error);
   }

@@ -74,15 +74,23 @@ export const adminRouter = router({
         paymentMode: z.enum(["stripe", "stripe_with_exceptions", "invoice_only"]).default("stripe_with_exceptions"),
         portfolioId: z.number().nullable().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         // Force invoice_only if the owner is an agency
         const owner = await db.getOwnerById(input.ownerId);
         const paymentMode = owner?.isAgency ? "invoice_only" : input.paymentMode;
 
-        return await db.createShoppingCentre({
+        const result = await db.createShoppingCentre({
           ...input,
           paymentMode,
         });
+        import("../auditHelper").then(m => m.writeAudit({
+          userId: ctx.user.id,
+          action: "centre_created",
+          entityType: "centre",
+          entityId: (result as any)?.id,
+          changes: { name: input.name, ownerId: input.ownerId },
+        })).catch(() => {});
+        return result;
       }),
 
     updateCentre: ownerProcedure
@@ -116,12 +124,26 @@ export const adminRouter = router({
           throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
         }
         const { id, ...updates } = input;
-        return await db.updateShoppingCentre(id, updates);
+        const result = await db.updateShoppingCentre(id, updates);
+        import("../auditHelper").then(m => m.writeAudit({
+          userId: ctx.user.id,
+          action: "centre_updated",
+          entityType: "centre",
+          entityId: id,
+          changes: updates,
+        })).catch(() => {});
+        return result;
       }),
 
     deleteCentre: adminProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        import("../auditHelper").then(m => m.writeAudit({
+          userId: ctx.user.id,
+          action: "centre_deleted",
+          entityType: "centre",
+          entityId: input.id,
+        })).catch(() => {});
         return await db.deleteShoppingCentre(input.id);
       }),
 
@@ -151,13 +173,21 @@ export const adminRouter = router({
           }
         }
         const { dailyRate, weeklyRate, weekendRate, outgoingsPerDay, ...rest } = input;
-        return await db.createSite({
+        const result = await db.createSite({
           ...rest,
           pricePerDay: dailyRate && dailyRate.trim() ? dailyRate : null,
           pricePerWeek: weeklyRate && weeklyRate.trim() ? weeklyRate : null,
           weekendPricePerDay: weekendRate && weekendRate.trim() ? weekendRate : null,
           outgoingsPerDay: outgoingsPerDay && outgoingsPerDay.trim() ? outgoingsPerDay : null,
         });
+        import("../auditHelper").then(m => m.writeAudit({
+          userId: ctx.user.id,
+          action: "site_created",
+          entityType: "site",
+          entityId: (result as any)?.id,
+          changes: { centreId: input.centreId, siteNumber: input.siteNumber },
+        })).catch(() => {});
+        return result;
       }),
 
     updateSite: ownerProcedure
@@ -208,6 +238,13 @@ export const adminRouter = router({
         
         try {
           const result = await db.updateSite(id, data);
+          import("../auditHelper").then(m => m.writeAudit({
+            userId: ctx.user.id,
+            action: "site_updated",
+            entityType: "site",
+            entityId: id,
+            changes: data,
+          })).catch(() => {});
           return result;
         } catch (error: any) {
           console.error('[updateSite] Error:', error.message, { id, data });
@@ -769,7 +806,14 @@ export const adminRouter = router({
     recordPayment: ownerProcedure
       .input(z.object({ bookingId: z.number() }))
       .mutation(async ({ input, ctx }) => {
-        return await db.recordPayment(input.bookingId, ctx.user.name || 'Admin');
+        const result = await db.recordPayment(input.bookingId, ctx.user.name || 'Admin');
+        import("../auditHelper").then(m => m.writeAudit({
+          userId: ctx.user.id,
+          action: "payment_recorded",
+          entityType: "booking",
+          entityId: input.bookingId,
+        })).catch(() => {});
+        return result;
       }),
 
     triggerPaymentReminders: ownerProcedure
@@ -912,6 +956,14 @@ export const adminRouter = router({
           });
         }
 
+        import("../auditHelper").then(m => m.writeAudit({
+          userId: ctx.user.id,
+          action: "user_created",
+          entityType: "user",
+          entityId: newUser.id,
+          changes: { email: input.email, role: input.role, assignedOwnerId: input.assignedOwnerId },
+        })).catch(() => {});
+
         return { success: true, message: 'User registered successfully' };
       }),
 
@@ -951,7 +1003,7 @@ export const adminRouter = router({
         insuranceExpiry: z.string().optional(),
         insuranceDocumentUrl: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const { getDb } = await import('../db');
         const { users, customerProfiles } = await import('../../drizzle/schema');
         const { eq } = await import('drizzle-orm');
@@ -1002,6 +1054,14 @@ export const adminRouter = router({
             });
           }
         }
+
+        import("../auditHelper").then(m => m.writeAudit({
+          userId: ctx.user.id,
+          action: "user_updated",
+          entityType: "user",
+          entityId: input.userId,
+          changes: userUpdates,
+        })).catch(() => {});
 
         return { success: true, message: 'User updated successfully' };
       }),

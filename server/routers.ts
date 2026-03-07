@@ -23,6 +23,7 @@ import { aiRouter } from "./routers/ai";
 import { auditRouter } from "./routers/audit";
 import { licenceRouter } from "./routers/licence";
 import { tenantRouter } from "./routers/tenant";
+import { reportsRouter } from "./routers/reports";
 import {
   thirdLineCategoriesRouter,
   vacantShopsRouter,
@@ -64,6 +65,7 @@ export const appRouter = router({
   pricingAnalytics: pricingAnalyticsRouter,
   licence: licenceRouter,
   tenant: tenantRouter,
+  reports: reportsRouter,
 });
 
 export type AppRouter = typeof appRouter;
