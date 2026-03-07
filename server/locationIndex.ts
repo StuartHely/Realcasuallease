@@ -20,6 +20,19 @@ type AreaAlias = {
   postcodeRanges?: [number, number][];
 };
 
+/** Extra aliases that map to a canonical AREA_ALIASES key. */
+const ALIAS_VARIANTS: Record<string, string[]> = {
+  "western sydney": ["sydney west", "sydneys west", "west sydney", "west of sydney", "greater west", "sydneys western", "sydney's west"],
+  "eastern suburbs": ["east suburbs", "sydneys east", "sydney east", "east of sydney", "sydney's east"],
+  "inner west": ["sydneys inner west", "sydney inner west", "sydney's inner west"],
+  "north shore": ["sydneys north shore", "sydney north shore", "northern suburbs sydney", "sydney's north shore"],
+  "sydney cbd": ["sydney city", "the city sydney"],
+  "gold coast": ["goldcoast"],
+  "sunshine coast": ["sunshinecoast", "sunny coast"],
+  "central coast": ["centralcoast"],
+  "melbourne cbd": ["melbourne city"],
+};
+
 const AREA_ALIASES: Record<string, AreaAlias> = {
   "brisbane": { cities: ["Brisbane"], suburbs: ["Deagon", "Kallangur", "Chermside", "Indooroopilly", "Carindale", "Mt Gravatt", "Strathpine", "Aspley", "Nundah", "Toowong"], states: ["QLD"] },
   "gold coast": { cities: ["Gold Coast"], states: ["QLD"] },
@@ -29,7 +42,9 @@ const AREA_ALIASES: Record<string, AreaAlias> = {
   "eastern suburbs": { suburbs: ["Bondi", "Bondi Junction", "Maroubra", "Randwick", "Coogee"], states: ["NSW"] },
   "inner west": { suburbs: ["Ashfield", "Burwood", "Strathfield", "Canterbury"], states: ["NSW"] },
   "north shore": { suburbs: ["Chatswood", "Hornsby", "Gordon", "Macquarie Park"], states: ["NSW"] },
+  "melbourne": { states: ["VIC"] },
   "melbourne cbd": { postcodeRanges: [[3000, 3008]], states: ["VIC"] },
+  "sydney": { states: ["NSW"] },
   "sydney cbd": { postcodeRanges: [[2000, 2011]], states: ["NSW"] },
   "perth": { cities: ["Perth"], states: ["WA"] },
   "adelaide": { cities: ["Adelaide"], states: ["SA"] },
@@ -42,6 +57,60 @@ const AREA_ALIASES: Record<string, AreaAlias> = {
   "townsville": { cities: ["Townsville"], states: ["QLD"] },
   "cairns": { cities: ["Cairns"], states: ["QLD"] },
 };
+
+/**
+ * Build a reverse lookup: variant → canonical key.
+ * Lazily computed once and cached.
+ */
+let _variantMap: Map<string, string> | null = null;
+function getVariantMap(): Map<string, string> {
+  if (_variantMap) return _variantMap;
+  _variantMap = new Map<string, string>();
+  for (const [canonical, variants] of Object.entries(ALIAS_VARIANTS)) {
+    for (const v of variants) {
+      _variantMap.set(v.toLowerCase(), canonical);
+    }
+  }
+  return _variantMap;
+}
+
+/**
+ * Resolve a query to a canonical AREA_ALIASES key using:
+ *  1. Exact key match
+ *  2. Exact variant alias match
+ *  3. Fuzzy (Levenshtein ≤ 2) match against all keys and variant aliases
+ * Returns the AreaAlias or undefined if nothing matches.
+ */
+function resolveAreaAlias(normalised: string): AreaAlias | undefined {
+  // 1. Exact key match
+  if (AREA_ALIASES[normalised]) return AREA_ALIASES[normalised];
+
+  // 2. Exact variant match
+  const variantMap = getVariantMap();
+  const canonicalFromVariant = variantMap.get(normalised);
+  if (canonicalFromVariant) return AREA_ALIASES[canonicalFromVariant];
+
+  // 3. Fuzzy match against all keys + variants (Levenshtein ≤ 2)
+  let bestMatch: string | undefined;
+  let bestDist = 3; // threshold
+
+  for (const key of Object.keys(AREA_ALIASES)) {
+    const dist = levenshtein(normalised, key);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestMatch = key;
+    }
+  }
+  variantMap.forEach((canonical, variant) => {
+    const dist = levenshtein(normalised, variant);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestMatch = canonical;
+    }
+  });
+
+  return bestMatch ? AREA_ALIASES[bestMatch] : undefined;
+}
 
 let locationIndex: LocationEntry[] | null = null;
 
@@ -161,8 +230,8 @@ export async function findCentresByArea(areaQuery: string): Promise<LocationEntr
   const index = await ensureIndex();
   const normalised = areaQuery.trim().toLowerCase();
 
-  // Check area aliases first
-  const alias = AREA_ALIASES[normalised];
+  // Check area aliases (exact key → variant alias → fuzzy)
+  const alias = resolveAreaAlias(normalised);
   if (alias) {
     return index.filter((entry) => matchesAlias(entry, alias));
   }

@@ -29,6 +29,12 @@ export const systemConfigRouter = router({
         throw new TRPCError({ code: "FORBIDDEN", message: "Only SuperAdmin can change GST percentage" });
       }
       await setConfigValue("gst_percentage", input.gstPercentage.toString());
+      import("../auditHelper").then(m => m.writeAudit({
+        userId: ctx.user.id,
+        action: "gst_percentage_changed",
+        entityType: "system_config",
+        changes: { gstPercentage: input.gstPercentage },
+      })).catch(() => {});
       return { success: true, gstPercentage: input.gstPercentage };
     }),
 

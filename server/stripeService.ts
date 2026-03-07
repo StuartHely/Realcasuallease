@@ -202,6 +202,13 @@ export async function handleCheckoutCompleted(session: {
     import("./invoiceDispatch").then(m => m.dispatchInvoiceIfRequired(bookingId)).catch(() => {});
   }
 
+  import("./auditHelper").then(m => m.writeAudit({
+    action: "payment_received_stripe",
+    entityType: bookingType === "site" ? "booking" : bookingType === "vacant_shop" ? "vs_booking" : "tli_booking",
+    entityId: bookingId,
+    changes: { stripeSessionId: session.id, bookingNumber: session.metadata?.bookingNumber },
+  })).catch(() => {});
+
   console.log(
     `[Stripe Webhook] ${bookingType} booking ${session.metadata?.bookingNumber || bookingId} marked as paid (PI: ${session.payment_intent})`,
   );

@@ -1,5 +1,6 @@
 import { adminProcedure, router } from "../_core/trpc";
 import { z } from "zod";
+import { sql, type SQL } from "drizzle-orm";
 
 export const financialsRouter = router({
   summary: adminProcedure
@@ -15,45 +16,44 @@ export const financialsRouter = router({
     )
     .query(async ({ input }) => {
       const { getDb } = await import("../db");
-      const { sql } = await import("drizzle-orm");
 
       const db = await getDb();
       if (!db) return null;
 
       // Build WHERE fragments for each booking table
-      const clConditions: string[] = [`b.status = 'confirmed'`];
-      const vsConditions: string[] = [`b.status = 'confirmed'`];
-      const tlConditions: string[] = [`b.status = 'confirmed'`];
+      const clConditions: SQL[] = [sql`b.status = 'confirmed'`];
+      const vsConditions: SQL[] = [sql`b.status = 'confirmed'`];
+      const tlConditions: SQL[] = [sql`b.status = 'confirmed'`];
 
       if (input?.startDate) {
         const d = input.startDate;
-        clConditions.push(`b."createdAt" >= '${d}'`);
-        vsConditions.push(`b."createdAt" >= '${d}'`);
-        tlConditions.push(`b."createdAt" >= '${d}'`);
+        clConditions.push(sql`b."createdAt" >= ${d}`);
+        vsConditions.push(sql`b."createdAt" >= ${d}`);
+        tlConditions.push(sql`b."createdAt" >= ${d}`);
       }
       if (input?.endDate) {
         const d = input.endDate + "T23:59:59";
-        clConditions.push(`b."createdAt" <= '${d}'`);
-        vsConditions.push(`b."createdAt" <= '${d}'`);
-        tlConditions.push(`b."createdAt" <= '${d}'`);
+        clConditions.push(sql`b."createdAt" <= ${d}`);
+        vsConditions.push(sql`b."createdAt" <= ${d}`);
+        tlConditions.push(sql`b."createdAt" <= ${d}`);
       }
       if (input?.centreId) {
-        clConditions.push(`s."centreId" = ${input.centreId}`);
-        vsConditions.push(`a."centreId" = ${input.centreId}`);
-        tlConditions.push(`a."centreId" = ${input.centreId}`);
+        clConditions.push(sql`s."centreId" = ${input.centreId}`);
+        vsConditions.push(sql`a."centreId" = ${input.centreId}`);
+        tlConditions.push(sql`a."centreId" = ${input.centreId}`);
       }
       if (input?.ownerId) {
-        clConditions.push(`c."ownerId" = ${input.ownerId}`);
-        vsConditions.push(`c."ownerId" = ${input.ownerId}`);
-        tlConditions.push(`c."ownerId" = ${input.ownerId}`);
+        clConditions.push(sql`c."ownerId" = ${input.ownerId}`);
+        vsConditions.push(sql`c."ownerId" = ${input.ownerId}`);
+        tlConditions.push(sql`c."ownerId" = ${input.ownerId}`);
       }
 
-      const clWhere = clConditions.join(" AND ");
-      const vsWhere = vsConditions.join(" AND ");
-      const tlWhere = tlConditions.join(" AND ");
+      const clWhere = sql.join(clConditions, sql` AND `);
+      const vsWhere = sql.join(vsConditions, sql` AND `);
+      const tlWhere = sql.join(tlConditions, sql` AND `);
 
       // Unified booking view across all 3 booking tables
-      const unionQuery = `
+      const unionQuery = sql`
         SELECT b."totalAmount", b."gstAmount", b."ownerAmount", b."platformFee",
                b."paidAt", b."paymentMethod", b."createdAt",
                s."centreId" AS "centreId", c.name AS "centreName", c.state AS state
@@ -84,7 +84,7 @@ export const financialsRouter = router({
       `;
 
       // Summary totals
-      const totalsResult = await db.execute(sql.raw(`
+      const totalsResult = await db.execute(sql`
         SELECT
           COALESCE(SUM(CAST(u."totalAmount" AS DECIMAL)), 0) AS "totalRevenue",
           COALESCE(SUM(CAST(u."gstAmount" AS DECIMAL)), 0) AS "totalGst",
@@ -93,11 +93,11 @@ export const financialsRouter = router({
           COUNT(*) AS "bookingCount",
           SUM(CASE WHEN u."paidAt" IS NOT NULL THEN 1 ELSE 0 END) AS "paidCount"
         FROM (${unionQuery}) u
-      `));
+      `);
       const totals = totalsResult.rows[0] as any;
 
       // Revenue by centre
-      const revenueByCentreResult = await db.execute(sql.raw(`
+      const revenueByCentreResult = await db.execute(sql`
         SELECT
           u."centreId",
           u."centreName",
@@ -110,11 +110,11 @@ export const financialsRouter = router({
         FROM (${unionQuery}) u
         GROUP BY u."centreId", u."centreName", u.state
         ORDER BY SUM(CAST(u."totalAmount" AS DECIMAL)) DESC
-      `));
+      `);
       const revenueByCentre = revenueByCentreResult.rows as any[];
 
       // Revenue by month
-      const revenueByMonthResult = await db.execute(sql.raw(`
+      const revenueByMonthResult = await db.execute(sql`
         SELECT
           TO_CHAR(u."createdAt", 'YYYY-MM') AS month,
           COALESCE(SUM(CAST(u."totalAmount" AS DECIMAL)), 0) AS "totalRevenue",
@@ -123,18 +123,18 @@ export const financialsRouter = router({
         FROM (${unionQuery}) u
         GROUP BY TO_CHAR(u."createdAt", 'YYYY-MM')
         ORDER BY TO_CHAR(u."createdAt", 'YYYY-MM')
-      `));
+      `);
       const revenueByMonth = revenueByMonthResult.rows as any[];
 
       // Payment method breakdown
-      const paymentBreakdownResult = await db.execute(sql.raw(`
+      const paymentBreakdownResult = await db.execute(sql`
         SELECT
           u."paymentMethod",
           COUNT(*) AS count,
           COALESCE(SUM(CAST(u."totalAmount" AS DECIMAL)), 0) AS total
         FROM (${unionQuery}) u
         GROUP BY u."paymentMethod"
-      `));
+      `);
       const paymentBreakdown = paymentBreakdownResult.rows as any[];
 
       return {

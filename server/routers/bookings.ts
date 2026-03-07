@@ -259,6 +259,15 @@ export const bookingsRouter = router({
           }).catch(() => {});
         }
 
+        // Audit: booking created
+        import("../auditHelper").then(m => m.writeAudit({
+          userId: ctx.user.id,
+          action: "booking_created",
+          entityType: "booking",
+          entityId: bookingId,
+          changes: { bookingNumber, siteId: input.siteId, totalAmount, paymentMethod },
+        })).catch(() => {});
+
         // Fire-and-forget document dispatch (licence agreement + invoice + Stripe payment link)
         if (initialStatus === "confirmed") {
           import("../documentDispatch").then(m => m.dispatchBookingDocuments(bookingId, "cl")).catch(() => {});
@@ -483,6 +492,15 @@ export const bookingsRouter = router({
         }
 
         await db.approveBooking(input.bookingId, ctx.user.id, ctx.user.name || undefined);
+
+        // Audit: booking approved
+        import("../auditHelper").then(m => m.writeAudit({
+          userId: ctx.user.id,
+          action: "booking_approved",
+          entityType: "booking",
+          entityId: input.bookingId,
+          changes: { bookingNumber: booking.bookingNumber },
+        })).catch(() => {});
         
         // Fire-and-forget document dispatch (licence agreement + invoice + Stripe payment link)
         import("../documentDispatch").then(m => m.dispatchBookingDocuments(input.bookingId, "cl")).catch(() => {});
@@ -516,6 +534,15 @@ export const bookingsRouter = router({
         }
 
         await db.rejectBooking(input.bookingId, input.reason, ctx.user.id, ctx.user.name || undefined);
+
+        // Audit: booking rejected
+        import("../auditHelper").then(m => m.writeAudit({
+          userId: ctx.user.id,
+          action: "booking_rejected",
+          entityType: "booking",
+          entityId: input.bookingId,
+          changes: { bookingNumber: booking.bookingNumber, reason: input.reason },
+        })).catch(() => {});
         
         // Send rejection email to customer with reason
         const site = await db.getSiteById(booking.siteId);

@@ -68,7 +68,7 @@ export const tenantRouter = router({
       hostname: z.string().trim().toLowerCase().min(3),
       isPrimary: z.boolean().default(false),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { getDb } = await import("../db");
       const { tenantDomains } = await import("../../drizzle/schema");
       const dbInstance = await getDb();
@@ -92,12 +92,19 @@ export const tenantRouter = router({
       const { invalidateTenantCache } = await import("../tenantResolver");
       invalidateTenantCache(input.ownerId);
 
+      import("../auditHelper").then(m => m.writeAudit({
+        userId: ctx.user.id,
+        action: "tenant_domain_added",
+        entityType: "tenant_domain",
+        changes: { ownerId: input.ownerId, hostname: input.hostname },
+      })).catch(() => {});
+
       return { success: true };
     }),
 
   removeDomain: adminProcedure
     .input(z.object({ domainId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { getDb } = await import("../db");
       const { tenantDomains } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
@@ -111,6 +118,14 @@ export const tenantRouter = router({
 
       const { invalidateTenantCache } = await import("../tenantResolver");
       invalidateTenantCache(domain.ownerId);
+
+      import("../auditHelper").then(m => m.writeAudit({
+        userId: ctx.user.id,
+        action: "tenant_domain_removed",
+        entityType: "tenant_domain",
+        entityId: input.domainId,
+        changes: { hostname: domain.hostname, ownerId: domain.ownerId },
+      })).catch(() => {});
 
       return { success: true };
     }),
@@ -157,9 +172,16 @@ export const tenantRouter = router({
       supportEmail: z.string().email().nullable().optional(),
       supportPhone: z.string().nullable().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { ownerId, ...updates } = input;
       await db.updateOwner(ownerId, updates);
+      import("../auditHelper").then(m => m.writeAudit({
+        userId: ctx.user.id,
+        action: "tenant_branding_updated",
+        entityType: "owner",
+        entityId: input.ownerId,
+        changes: updates,
+      })).catch(() => {});
       return { success: true };
     }),
 });

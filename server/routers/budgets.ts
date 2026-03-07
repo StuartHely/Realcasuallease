@@ -32,7 +32,14 @@ export const budgetsRouter = router({
           throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
         }
       }
-      return await db.createBudget(input);
+      const result = await db.createBudget(input);
+      import("../auditHelper").then(m => m.writeAudit({
+        userId: ctx.user.id,
+        action: "budget_created",
+        entityType: "budget",
+        changes: { siteId: input.siteId, month: input.month, year: input.year, budgetAmount: input.budgetAmount },
+      })).catch(() => {});
+      return result;
     }),
 
   update: ownerProcedure
@@ -54,7 +61,15 @@ export const budgetsRouter = router({
           throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
         }
       }
-      return await db.updateBudget(input.id, input.budgetAmount);
+      const result = await db.updateBudget(input.id, input.budgetAmount);
+      import("../auditHelper").then(m => m.writeAudit({
+        userId: ctx.user.id,
+        action: "budget_updated",
+        entityType: "budget",
+        entityId: input.id,
+        changes: { budgetAmount: input.budgetAmount },
+      })).catch(() => {});
+      return result;
     }),
 
   delete: ownerProcedure
@@ -73,7 +88,14 @@ export const budgetsRouter = router({
           throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
         }
       }
-      return await db.deleteBudget(input.id);
+      const result = await db.deleteBudget(input.id);
+      import("../auditHelper").then(m => m.writeAudit({
+        userId: ctx.user.id,
+        action: "budget_deleted",
+        entityType: "budget",
+        entityId: input.id,
+      })).catch(() => {});
+      return result;
     }),
 
   getBySite: ownerProcedure
@@ -115,7 +137,14 @@ export const budgetsRouter = router({
           }
         }
       }
-      return await db.bulkImportBudgets(input.budgets);
+      const result = await db.bulkImportBudgets(input.budgets);
+      import("../auditHelper").then(m => m.writeAudit({
+        userId: ctx.user.id,
+        action: "budget_imported",
+        entityType: "budget",
+        changes: { count: input.budgets.length },
+      })).catch(() => {});
+      return result;
     }),
 
   // Financial Year Budget Management

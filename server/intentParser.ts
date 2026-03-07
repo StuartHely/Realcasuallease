@@ -55,6 +55,14 @@ Extract structured fields from the user's search query. Return ONLY valid JSON w
 - maxPricePerDay: max daily price (number)
 - maxPricePerWeek: max weekly price (number)
 - maxBudget: total budget (number)
+
+For the location field, normalise to one of these known regions where applicable:
+western sydney, eastern suburbs, inner west, north shore, sydney cbd, sydney,
+melbourne cbd, melbourne, brisbane, gold coast, sunshine coast, central coast,
+perth, adelaide, hobart, darwin, canberra, newcastle, wollongong, geelong, townsville, cairns.
+For example "sydneys west" → "western sydney", "east of sydney" → "eastern suburbs".
+If the location doesn't match a known region, return the suburb or city name as-is.
+
 Only include fields you are confident about. Return {} if nothing can be extracted.`,
         },
         { role: "user", content: query },

@@ -48,8 +48,14 @@ export const ownersRouter = router({
       remittanceEmail4: z.string().nullable(),
       remittanceEmail5: z.string().nullable(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       await db.createOwner(input);
+      import("../auditHelper").then(m => m.writeAudit({
+        userId: ctx.user.id,
+        action: "owner_created",
+        entityType: "owner",
+        changes: { name: input.name },
+      })).catch(() => {});
       return { success: true };
     }),
 
@@ -89,9 +95,16 @@ export const ownersRouter = router({
       remittanceEmail4: z.string().nullable(),
       remittanceEmail5: z.string().nullable(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { id, ...data } = input;
       await db.updateOwner(id, data);
+      import("../auditHelper").then(m => m.writeAudit({
+        userId: ctx.user.id,
+        action: "owner_updated",
+        entityType: "owner",
+        entityId: id,
+        changes: { name: input.name },
+      })).catch(() => {});
       return { success: true };
     }),
 

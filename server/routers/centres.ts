@@ -159,6 +159,14 @@ export const centresRouter = router({
       // Update centre
       await db.updateShoppingCentre(input.id, input);
       
+      import("../auditHelper").then(m => m.writeAudit({
+        userId: ctx.user.id,
+        action: "centre_updated",
+        entityType: "centre",
+        entityId: input.id,
+        changes: input,
+      })).catch(() => {});
+      
       return { success: true, message: "Centre updated successfully" };
     }),
   

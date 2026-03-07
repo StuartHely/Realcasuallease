@@ -10,26 +10,57 @@ import { Shield, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Loader2 } fr
 
 const ACTION_OPTIONS = [
   { value: "all", label: "All Actions" },
+  { value: "booking_created", label: "Booking Created" },
   { value: "booking_approved", label: "Booking Approved" },
   { value: "booking_rejected", label: "Booking Rejected" },
+  { value: "booking_auto_approved", label: "Booking Auto-Approved" },
   { value: "booking_cancelled", label: "Booking Cancelled" },
-  { value: "refund_processed", label: "Refund Processed" },
+  { value: "vs_booking_confirmed", label: "VS Booking Confirmed" },
+  { value: "vs_booking_rejected", label: "VS Booking Rejected" },
+  { value: "tli_booking_confirmed", label: "TLI Booking Confirmed" },
+  { value: "tli_booking_rejected", label: "TLI Booking Rejected" },
+  { value: "invoice_generated", label: "Invoice Generated" },
+  { value: "payment_recorded", label: "Payment Recorded" },
+  { value: "payment_received_stripe", label: "Payment Received (Stripe)" },
   { value: "payment_method_converted", label: "Payment Method Converted" },
-  { value: "user_updated", label: "User Updated" },
+  { value: "refund_processed", label: "Refund Processed" },
+  { value: "licence_signed", label: "Licence Signed" },
+  { value: "admin_booking_create", label: "Admin Booking Create" },
+  { value: "admin_booking_update", label: "Admin Booking Update" },
+  { value: "admin_booking_cancel", label: "Admin Booking Cancel" },
+  { value: "budget_created", label: "Budget Created" },
+  { value: "budget_updated", label: "Budget Updated" },
+  { value: "budget_deleted", label: "Budget Deleted" },
+  { value: "budget_imported", label: "Budget Imported" },
+  { value: "centre_created", label: "Centre Created" },
   { value: "centre_updated", label: "Centre Updated" },
-  { value: "site_updated", label: "Site Updated" },
+  { value: "centre_deleted", label: "Centre Deleted" },
   { value: "site_created", label: "Site Created" },
-  { value: "site_deleted", label: "Site Deleted" },
+  { value: "site_updated", label: "Site Updated" },
+  { value: "user_created", label: "User Created" },
+  { value: "user_updated", label: "User Updated" },
+  { value: "owner_created", label: "Owner Created" },
+  { value: "owner_updated", label: "Owner Updated" },
+  { value: "gst_percentage_changed", label: "GST % Changed" },
+  { value: "tenant_domain_added", label: "Tenant Domain Added" },
+  { value: "tenant_domain_removed", label: "Tenant Domain Removed" },
+  { value: "tenant_branding_updated", label: "Tenant Branding Updated" },
 ];
 
 const ENTITY_TYPE_OPTIONS = [
   { value: "all", label: "All Entity Types" },
   { value: "booking", label: "Booking" },
+  { value: "vs_booking", label: "VS Booking" },
+  { value: "tli_booking", label: "TLI Booking" },
   { value: "centre", label: "Centre" },
   { value: "site", label: "Site" },
   { value: "user", label: "User" },
+  { value: "owner", label: "Owner" },
+  { value: "budget", label: "Budget" },
   { value: "refund", label: "Refund" },
   { value: "payment", label: "Payment" },
+  { value: "system_config", label: "System Config" },
+  { value: "tenant_domain", label: "Tenant Domain" },
 ];
 
 const PAGE_SIZE = 100;
@@ -46,11 +77,23 @@ function formatDate(date: Date | string): string {
 
 function formatActionBadge(action: string) {
   const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+    booking_created: "default",
     booking_approved: "default",
+    booking_auto_approved: "default",
+    vs_booking_confirmed: "default",
+    tli_booking_confirmed: "default",
     booking_rejected: "destructive",
     booking_cancelled: "destructive",
+    vs_booking_rejected: "destructive",
+    tli_booking_rejected: "destructive",
+    centre_deleted: "destructive",
+    budget_deleted: "destructive",
     refund_processed: "secondary",
+    payment_recorded: "secondary",
+    payment_received_stripe: "secondary",
+    invoice_generated: "secondary",
     payment_method_converted: "outline",
+    licence_signed: "outline",
   };
   return (
     <Badge variant={variants[action] ?? "secondary"}>
@@ -227,8 +270,14 @@ export default function AdminAudit() {
                             {formatDate(log.createdAt)}
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm font-medium">{log.userName ?? "Unknown"}</div>
-                            <div className="text-xs text-muted-foreground">{log.userEmail ?? ""}</div>
+                            {log.userId ? (
+                              <>
+                                <div className="text-sm font-medium">{log.userName ?? "Unknown"}</div>
+                                <div className="text-xs text-muted-foreground">{log.userEmail ?? ""}</div>
+                              </>
+                            ) : (
+                              <span className="text-sm text-muted-foreground italic">System</span>
+                            )}
                           </TableCell>
                           <TableCell>{formatActionBadge(log.action)}</TableCell>
                           <TableCell>

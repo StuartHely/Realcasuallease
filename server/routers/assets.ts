@@ -728,6 +728,24 @@ export const vacantShopBookingsRouter = router({
 
       await assetDb.updateVacantShopBooking(input.id, updateData);
 
+      if (input.status === "confirmed") {
+        import("../auditHelper").then(m => m.writeAudit({
+          userId: ctx.user.id,
+          action: "vs_booking_confirmed",
+          entityType: "vs_booking",
+          entityId: input.id,
+          changes: { bookingNumber: booking.bookingNumber },
+        })).catch(() => {});
+      } else if (input.status === "rejected") {
+        import("../auditHelper").then(m => m.writeAudit({
+          userId: ctx.user.id,
+          action: "vs_booking_rejected",
+          entityType: "vs_booking",
+          entityId: input.id,
+          changes: { bookingNumber: booking.bookingNumber, reason: input.rejectionReason },
+        })).catch(() => {});
+      }
+
       // Log status change to audit trail
       const { logAssetBookingStatusChange } = await import("../bookingStatusHelper");
       await logAssetBookingStatusChange({
@@ -1146,6 +1164,24 @@ export const thirdLineBookingsRouter = router({
       }
 
       await assetDb.updateThirdLineBooking(input.id, updateData);
+
+      if (input.status === "confirmed") {
+        import("../auditHelper").then(m => m.writeAudit({
+          userId: ctx.user.id,
+          action: "tli_booking_confirmed",
+          entityType: "tli_booking",
+          entityId: input.id,
+          changes: { bookingNumber: booking.bookingNumber },
+        })).catch(() => {});
+      } else if (input.status === "rejected") {
+        import("../auditHelper").then(m => m.writeAudit({
+          userId: ctx.user.id,
+          action: "tli_booking_rejected",
+          entityType: "tli_booking",
+          entityId: input.id,
+          changes: { bookingNumber: booking.bookingNumber, reason: input.rejectionReason },
+        })).catch(() => {});
+      }
 
       // Log status change to audit trail
       const { logAssetBookingStatusChange } = await import("../bookingStatusHelper");
