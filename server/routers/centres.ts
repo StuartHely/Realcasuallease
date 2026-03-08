@@ -235,6 +235,67 @@ export const centresRouter = router({
       return { success: true, message: "Weekly report settings updated successfully" };
     }),
   
+  geocodeAll: adminProcedure
+    .mutation(async () => {
+      const centres = await db.getShoppingCentres();
+      const missing = centres.filter(
+        (c) => !c.latitude || !c.longitude || c.latitude === "0" || c.longitude === "0",
+      );
+
+      const results: Array<{ id: number; name: string; success: boolean; error?: string }> = [];
+
+      async function nominatimSearch(query: string): Promise<{ lat: string; lon: string } | null> {
+        const url = new URL("https://nominatim.openstreetmap.org/search");
+        url.searchParams.set("q", query);
+        url.searchParams.set("format", "json");
+        url.searchParams.set("limit", "1");
+        url.searchParams.set("countrycodes", "au");
+
+        const res = await fetch(url.toString(), {
+          headers: { "User-Agent": "CasualLease/1.0" },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json() as Array<{ lat: string; lon: string }>;
+        await new Promise((r) => setTimeout(r, 1100));
+        return data.length > 0 ? data[0] : null;
+      }
+
+      for (const centre of missing) {
+        // Try multiple search strategies in order of specificity
+        const queries = [
+          [centre.name, centre.address, centre.suburb, centre.state, centre.postcode].filter(Boolean).join(", "),
+          [centre.name, centre.suburb, centre.state].filter(Boolean).join(", "),
+          [centre.address, centre.suburb, centre.state].filter(Boolean).join(", "),
+          [centre.suburb, centre.state, "Australia"].filter(Boolean).join(", "),
+        ];
+
+        try {
+          let found = false;
+          for (const query of queries) {
+            if (!query.trim()) continue;
+            const result = await nominatimSearch(query);
+            if (result) {
+              await db.updateShoppingCentre(centre.id, {
+                latitude: result.lat,
+                longitude: result.lon,
+              });
+              results.push({ id: centre.id, name: centre.name, success: true });
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            results.push({ id: centre.id, name: centre.name, success: false, error: "No results for any query variation" });
+          }
+        } catch (err: any) {
+          results.push({ id: centre.id, name: centre.name, success: false, error: err.message });
+        }
+      }
+
+      return { total: centres.length, geocoded: results.filter((r) => r.success).length, failed: results.filter((r) => !r.success).length, results };
+    }),
+
   sendTestWeeklyReport: ownerProcedure
     .input(z.object({ centreId: z.number() }))
     .mutation(async ({ input, ctx }) => {
