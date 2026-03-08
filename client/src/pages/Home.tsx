@@ -11,8 +11,100 @@ import Logo from "@/components/Logo";
 import { format } from "date-fns";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { parseSearchQuery } from "@shared/queryParser";
 import { useTenant } from "@/contexts/TenantContext";
+
+
+function FeedbackForm() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [category, setCategory] = useState("general");
+  const [message, setMessage] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const submitMutation = trpc.feedback.submit.useMutation({
+    onSuccess: () => {
+      setSubmitted(true);
+      setName("");
+      setEmail("");
+      setCategory("general");
+      setMessage("");
+      setTimeout(() => setSubmitted(false), 5000);
+    },
+    onError: () => {
+      toast.error("Failed to submit feedback. Please try again.");
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (message.trim().length < 10) {
+      toast.error("Message must be at least 10 characters.");
+      return;
+    }
+    submitMutation.mutate({
+      name: name.trim() || undefined,
+      email: email.trim() || undefined,
+      category: category as "general" | "suggestion" | "bug" | "complaint",
+      message: message.trim(),
+    });
+  };
+
+  if (submitted) {
+    return (
+      <div className="text-center py-8">
+        <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Thank you for your feedback!</h3>
+        <p className="text-muted-foreground">We appreciate you taking the time to share your thoughts.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium mb-1 block">Name (optional)</label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+        </div>
+        <div>
+          <label className="text-sm font-medium mb-1 block">Email (optional)</label>
+          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" />
+        </div>
+      </div>
+      <div>
+        <label className="text-sm font-medium mb-1 block">Category</label>
+        <Select value={category} onValueChange={setCategory}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="general">General</SelectItem>
+            <SelectItem value="suggestion">Suggestion</SelectItem>
+            <SelectItem value="bug">Bug Report</SelectItem>
+            <SelectItem value="complaint">Complaint</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <label className="text-sm font-medium mb-1 block">Message *</label>
+        <Textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Tell us what you think..."
+          rows={4}
+          required
+          minLength={10}
+        />
+      </div>
+      <Button type="submit" className="w-full" disabled={submitMutation.isPending}>
+        {submitMutation.isPending ? "Submitting..." : "Submit Feedback"}
+      </Button>
+    </form>
+  );
+}
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -423,6 +515,21 @@ export default function Home() {
 
         {/* FAQ Section */}
         <FAQ />
+
+        {/* Feedback & Suggestions Section */}
+        <section className="py-16 bg-gray-50">
+          <div className="container mx-auto px-4 max-w-2xl">
+            <Card>
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Feedback & Suggestions</CardTitle>
+                <CardDescription>We'd love to hear from you. Share your thoughts, ideas, or report an issue.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FeedbackForm />
+              </CardContent>
+            </Card>
+          </div>
+        </section>
       </main>
 
       {/* Footer */}

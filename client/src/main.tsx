@@ -7,6 +7,19 @@ import superjson from "superjson";
 import App from "./App";
 import "./index.css";
 
+// Suppress Google Maps API errors that crash React in dev mode.
+const _origOnerror = window.onerror;
+window.onerror = function (message, source, lineno, colno, error) {
+  const msg = String(message);
+  const src = String(source ?? "");
+  if (msg.includes("Google Maps") || src.includes("maps.googleapis.com")) {
+    console.warn("[Google Maps suppressed]", message);
+    return true; // Prevent propagation
+  }
+  if (_origOnerror) return _origOnerror.call(this, message, source, lineno, colno, error);
+  return false;
+};
+
 const queryClient = new QueryClient();
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
