@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { Building2, Edit, Eye, EyeOff, MapPin, Plus, Trash2, Upload, FileText, X } from "lucide-react";
+import { Building2, Edit, Eye, EyeOff, Globe, MapPin, Plus, Trash2, Upload, FileText, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
@@ -32,6 +32,19 @@ export default function AdminCentres() {
   const updateMutation = trpc.admin.updateCentre.useMutation();
   const deleteMutation = trpc.admin.deleteCentre.useMutation();
   const uploadPdfMutation = trpc.centres.uploadPdf.useMutation();
+  const geocodeMutation = trpc.centres.geocodeAll.useMutation({
+    onSuccess: (data) => {
+      if (data.geocoded > 0) {
+        toast.success(`Geocoded ${data.geocoded} of ${data.total} centres`);
+      }
+      if (data.failed > 0) {
+        const errors = data.results.filter((r: any) => !r.success).map((r: any) => `${r.name}: ${r.error}`).join("\n");
+        toast.error(`${data.failed} centres failed geocoding`, { description: errors, duration: 10000 });
+      }
+      refetch();
+    },
+    onError: (err) => toast.error(err.message || "Geocoding failed"),
+  });
 
   const [formData, setFormData] = useState({
     ownerId: 0,
@@ -203,13 +216,22 @@ export default function AdminCentres() {
               Manage shopping centres and their details
             </p>
           </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Centre
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => geocodeMutation.mutate()}
+              disabled={geocodeMutation.isPending}
+            >
+              <Globe className="mr-2 h-4 w-4" />
+              {geocodeMutation.isPending ? "Geocoding..." : "Geocode All"}
+            </Button>
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Centre
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <form onSubmit={handleCreate}>
                 <DialogHeader>
@@ -313,7 +335,8 @@ export default function AdminCentres() {
                 </DialogFooter>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         {/* Edit Dialog */}

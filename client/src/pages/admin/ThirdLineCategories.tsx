@@ -21,7 +21,7 @@ export default function ThirdLineCategories() {
     isActive: true,
   });
 
-  const { data: categories, isLoading, refetch } = trpc.thirdLineCategories.list.useQuery();
+  const { data: categories, isLoading, error, refetch } = trpc.thirdLineCategories.list.useQuery();
   const createMutation = trpc.thirdLineCategories.create.useMutation({
     onSuccess: () => {
       toast.success("Category created successfully");
@@ -114,6 +114,14 @@ export default function ThirdLineCategories() {
           <CardContent>
             {isLoading ? (
               <div className="text-center py-8 text-muted-foreground">Loading categories...</div>
+            ) : error ? (
+              <div className="text-center py-8 text-destructive">
+                Failed to load categories: {error.message}
+                <br />
+                <Button variant="outline" size="sm" className="mt-2" onClick={() => refetch()}>
+                  Retry
+                </Button>
+              </div>
             ) : categories && categories.length > 0 ? (
               <Table>
                 <TableHeader>

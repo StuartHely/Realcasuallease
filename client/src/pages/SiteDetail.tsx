@@ -9,9 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, MapPin, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle, FileText } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { ArrowLeft, MapPin, Calendar, CalendarDays, ChevronLeft, ChevronRight, X, AlertTriangle, FileText } from "lucide-react";
+import { format, getDaysInMonth, getDay, addDays, subDays, isSameDay, isBefore, startOfDay } from "date-fns";
 import { toast } from "sonner";
 import { PriceCalculator } from "@/components/PriceCalculator";
+import { cleanHtmlDescription } from "@/lib/htmlUtils";
 
 export default function SiteDetail() {
   const [, params] = useRoute("/site/:id");
@@ -30,6 +34,23 @@ export default function SiteDetail() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   
+  const calendarDays = 14;
+  const now = new Date();
+  const [calStartDate, setCalStartDate] = useState(startOfDay(now));
+  const calEndDate = addDays(calStartDate, calendarDays - 1);
+  const { data: monthAvail } = trpc.sites.checkAvailability.useQuery(
+    { siteId, startDate: calStartDate, endDate: calEndDate },
+    { enabled: siteId > 0 }
+  );
+  const dateRange = Array.from({ length: calendarDays }, (_, i) => addDays(calStartDate, i));
+
+  // Calendar click-to-select state (start/end date picking)
+  const [calSelection, setCalSelection] = useState<{
+    start: Date | null;
+    end: Date | null;
+    isSelecting: boolean;
+  }>({ start: null, end: null, isSelecting: false });
+
   // Read pre-filled dates from URL parameters (from calendar selection)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -393,7 +414,7 @@ export default function SiteDetail() {
               <CardContent className="space-y-4">
                 <div>
                   <h3 className="font-semibold mb-2">Description</h3>
-                  <p className="text-gray-600">{site.description?.replace(/<[^>]*>/g, '')}</p>
+                  <p className="text-gray-600">{cleanHtmlDescription(site.description)}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -445,6 +466,252 @@ export default function SiteDetail() {
                         <p className="text-lg font-semibold text-gray-700">${site.outgoingsPerDay}/day</p>
                       </div>
                     )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Availability Calendar — 14-day heatmap (matches Search page) */}
+          <div className="md:col-span-2">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Availability
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Legend */}
+                <div className="flex items-center gap-6 mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-green-500 rounded"></div>
+                    <span className="text-sm font-medium">Available</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-red-500 rounded"></div>
+                    <span className="text-sm font-medium">Booked</span>
+                  </div>
+                </div>
+
+                {/* Date Range Indicator */}
+                <div className="text-center mb-3">
+                  <span className="text-sm text-muted-foreground">
+                    Viewing <span className="font-medium text-foreground">{format(dateRange[0], 'MMM d')}</span> – <span className="font-medium text-foreground">{format(dateRange[dateRange.length - 1], 'MMM d, yyyy')}</span>
+                  </span>
+                </div>
+
+                {/* Calendar Navigation */}
+                <div className="flex items-center justify-center mb-3">
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          New Date
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={calStartDate}
+                          onSelect={(date) => {
+                            if (date) setCalStartDate(startOfDay(date));
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCalStartDate(startOfDay(new Date()))}
+                      className="flex items-center gap-1"
+                    >
+                      <CalendarDays className="h-4 w-4" />
+                      Today
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Date selection instruction */}
+                {calSelection.isSelecting && (
+                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-blue-800 font-medium flex items-center gap-2 text-sm">
+                      <Calendar className="h-4 w-4" />
+                      Click on another date to set your end date
+                    </p>
+                  </div>
+                )}
+
+                {/* Heatmap Table */}
+                <div className="overflow-x-auto">
+                  <div className="inline-block min-w-full">
+                    <table className="w-full border-separate border-spacing-0">
+                      <thead>
+                        {/* Navigation row */}
+                        <tr>
+                          <th className="sticky left-0 bg-white z-10 px-1 py-1 border-r-2"></th>
+                          <th className="px-1 py-1 text-left" colSpan={1}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCalStartDate(subDays(calStartDate, 7))}
+                              className="flex items-center gap-1 text-xs"
+                              disabled={isBefore(subDays(calStartDate, 7), startOfDay(new Date()))}
+                            >
+                              <ChevronLeft className="h-3 w-3" />
+                              Previous Week
+                            </Button>
+                          </th>
+                          <th colSpan={dateRange.length > 2 ? dateRange.length - 2 : 1}></th>
+                          <th className="px-1 py-1 text-right" colSpan={1}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCalStartDate(addDays(calStartDate, 7))}
+                              className="flex items-center gap-1 text-xs"
+                            >
+                              Next Week
+                              <ChevronRight className="h-3 w-3" />
+                            </Button>
+                          </th>
+                        </tr>
+                        {/* Date headers */}
+                        <tr>
+                          <th className="sticky left-0 bg-white z-10 px-3 py-2 text-left text-sm font-semibold border-b-2 border-r-2">
+                            Site
+                          </th>
+                          {dateRange.map((date, idx) => {
+                            const dayOfWeek = date.getDay();
+                            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                            const isToday = isSameDay(date, new Date());
+                            const prevDate = idx > 0 ? dateRange[idx - 1] : null;
+                            const nextDate = idx < dateRange.length - 1 ? dateRange[idx + 1] : null;
+                            const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
+                            const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+
+                            return (
+                              <th
+                                key={idx}
+                                className={`px-2 py-2 text-center text-xs font-medium min-w-[80px] border border-gray-200 ${
+                                  isToday ? 'bg-blue-50' : isWeekend ? 'bg-gray-100' : ''
+                                } ${
+                                  isWeekend ? '!border-t-[3px] !border-t-green-700 !border-solid' : 'border-b-2'
+                                } ${
+                                  isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
+                                } ${
+                                  isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
+                                } ${
+                                  isToday ? 'border-l-4 border-r-4 border-blue-500' : ''
+                                }`}
+                              >
+                                {isToday && (
+                                  <div className="text-blue-600 font-bold text-[10px] mb-1">TODAY</div>
+                                )}
+                                <div className={isToday ? 'font-bold text-blue-700' : isWeekend ? 'font-semibold' : ''}>{format(date, "dd/MM")}</div>
+                                <div className={isToday ? 'text-blue-600' : isWeekend ? 'text-gray-700 font-medium' : 'text-gray-500'}>{format(date, "EEE")}</div>
+                              </th>
+                            );
+                          })}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="hover:bg-gray-50">
+                          <td className="sticky left-0 bg-white z-10 px-3 py-2 font-medium border-r-2 border-b">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm font-semibold">{site.siteNumber}</span>
+                              <div className="flex gap-2 text-xs text-gray-600">
+                                {site.size && <span>{site.size}</span>}
+                                {site.maxTables ? <span>• {site.maxTables} tables</span> : null}
+                              </div>
+                            </div>
+                          </td>
+                          {dateRange.map((date, dateIdx) => {
+                            const isBooked = monthAvail?.bookings?.some((b: any) => {
+                              const s = new Date(b.startDate); s.setHours(0, 0, 0, 0);
+                              const e = new Date(b.endDate); e.setHours(0, 0, 0, 0);
+                              return date >= s && date <= e;
+                            });
+                            const isToday = isSameDay(date, new Date());
+                            const dayOfWeek = date.getDay();
+                            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                            const prevDate = dateIdx > 0 ? dateRange[dateIdx - 1] : null;
+                            const nextDate = dateIdx < dateRange.length - 1 ? dateRange[dateIdx + 1] : null;
+                            const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
+                            const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+                            const rate = isWeekend && site.weekendPricePerDay ? site.weekendPricePerDay : site.pricePerDay;
+                            const weeklyStr = site.pricePerWeek ? ` | $${site.pricePerWeek}/wk` : '';
+
+                            // Selection state for this cell
+                            const isStartDate = calSelection.start && isSameDay(date, calSelection.start);
+                            const isEndDate = calSelection.end && isSameDay(date, calSelection.end);
+                            const isInRange = calSelection.start && calSelection.end &&
+                              date >= calSelection.start && date <= calSelection.end;
+                            const isSelectingStart = calSelection.isSelecting && calSelection.start && isSameDay(date, calSelection.start);
+
+                            return (
+                              <td
+                                key={dateIdx}
+                                className={`border border-gray-200 border-solid p-0 ${
+                                  isToday ? 'border-l-4 border-r-4 border-blue-500' : ''
+                                } ${
+                                  isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
+                                } ${
+                                  isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
+                                } ${
+                                  isWeekend ? '!border-b-[3px] !border-b-green-700 !border-solid bg-gray-50' : ''
+                                }`}
+                                onClick={() => {
+                                  if (isBooked) return;
+                                  if (!calSelection.isSelecting) {
+                                    // First click — set start date
+                                    setCalSelection({ start: date, end: null, isSelecting: true });
+                                    setStartDate(format(date, 'yyyy-MM-dd'));
+                                    setEndDate('');
+                                  } else {
+                                    // Second click — set end date
+                                    const s = calSelection.start!;
+                                    const finalStart = s <= date ? s : date;
+                                    const finalEnd = s <= date ? date : s;
+                                    setCalSelection({ start: finalStart, end: finalEnd, isSelecting: false });
+                                    setStartDate(format(finalStart, 'yyyy-MM-dd'));
+                                    setEndDate(format(finalEnd, 'yyyy-MM-dd'));
+                                  }
+                                }}
+                              >
+                                <div
+                                  className={`h-12 w-full relative ${
+                                    isBooked
+                                      ? 'bg-red-500 hover:bg-red-600'
+                                      : isInRange || isSelectingStart
+                                        ? 'bg-blue-500 hover:bg-blue-600'
+                                        : 'bg-green-500 hover:bg-green-600'
+                                  } transition-colors cursor-pointer`}
+                                  title={(() => {
+                                    if (isSelectingStart) return 'Start date selected — click another date to set end date';
+                                    return `Site ${site.siteNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : `Available - $${rate}/day${weeklyStr}`}`;
+                                  })()}
+                                >
+                                  {(isStartDate || isEndDate) && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      <span className="text-white text-xs font-bold">
+                                        {isStartDate && isEndDate ? 'START/END' : isStartDate ? 'START' : 'END'}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {isSelectingStart && !isEndDate && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      <span className="text-white text-xs font-bold">START</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </CardContent>

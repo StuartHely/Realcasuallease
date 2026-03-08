@@ -20,7 +20,7 @@ import { eq, and, asc, sql, gte, lte, or, ne } from "drizzle-orm";
 
 export async function getAllThirdLineCategories() {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) throw new Error("Database not available");
   return db
     .select()
     .from(thirdLineCategories)

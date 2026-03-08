@@ -374,7 +374,10 @@ export const searchRouter = router({
 
         // Flag when category keyword was provided but no sites matched it via
         // fuzzyMatchCategory — the user sees unfiltered results with a notice.
-        const categoryUnrecognised = !!enhancedQuery.productCategory && siteResults.length === 0 && allSites.length > 0;
+        // Only flag if some sites actually have categories assigned (otherwise it's
+        // just that the centre hasn't configured categories yet, not that ours is unrecognised).
+        const anySiteHasCategories = allSites.some((s: any) => (siteCategories[s.id] || []).length > 0);
+        const categoryUnrecognised = !!enhancedQuery.productCategory && siteResults.length === 0 && allSites.length > 0 && anySiteHasCategories;
 
         // --- Score and rank sites ---
         const { scoreAndRankSites } = await import("../siteScoring");

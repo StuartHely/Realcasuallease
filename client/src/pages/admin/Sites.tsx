@@ -614,6 +614,12 @@ export default function AdminSites() {
                         <p className="font-medium">${site.outgoingsPerDay}</p>
                       </div>
                     )}
+                    {site.restrictions && (
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">Restrictions:</span>
+                        <p className="font-medium">{site.restrictions}</p>
+                      </div>
+                    )}
                   </div>
                   {site.instantBooking && (
                     <div className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded">

@@ -13,10 +13,18 @@
 export const CATEGORY_SYNONYMS: Record<string, string[]> = {
   // Footwear variations
   "shoes": ["shoe", "footwear", "sneakers", "boots"],
+  "shoe": ["shoes", "footwear"],
+  "footwear": ["shoes", "shoe", "boots", "sneakers", "sandals"],
   "ugg": ["uggs", "ugg boots", "sheepskin boots", "shoes", "footwear"],
   "uggs": ["ugg", "ugg boots", "sheepskin boots", "shoes", "footwear"],
   "boots": ["boot", "footwear", "shoes"],
+  "boot": ["boots", "footwear", "shoes"],
   "sneakers": ["sneaker", "shoes", "footwear", "trainers"],
+  "sneaker": ["sneakers", "shoes", "footwear"],
+  "sandals": ["sandal", "footwear", "shoes", "thongs"],
+  "sandal": ["sandals", "footwear", "shoes"],
+  "heels": ["heel", "shoes", "footwear", "fashion"],
+  "heel": ["heels", "shoes", "footwear", "fashion"],
   "socks": ["sock", "footwear", "clothing", "apparel", "fashion"],
   "sock": ["socks", "footwear", "clothing", "apparel", "fashion"],
   "thongs": ["thong", "footwear", "sandals", "shoes"],
@@ -24,6 +32,7 @@ export const CATEGORY_SYNONYMS: Record<string, string[]> = {
   // Clothing & Apparel variations
   "clothes": ["clothing", "apparel", "fashion", "wear"],
   "clothing": ["clothes", "apparel", "fashion", "wear"],
+  "apparel": ["clothing", "clothes", "fashion"],
   "fashion": ["clothes", "clothing", "apparel"],
   "beanies": ["beanie", "clothing", "apparel", "fashion", "accessories"],
   "beanie": ["beanies", "clothing", "apparel", "fashion", "accessories"],
@@ -55,53 +64,171 @@ export const CATEGORY_SYNONYMS: Record<string, string[]> = {
   "sunglasses": ["sunnies", "eyewear", "fashion", "accessories"],
   "sunnies": ["sunglasses", "eyewear", "fashion", "accessories"],
   
-  // Watches (extend existing jewellery group)
+  // Jewellery & Watches
   "watches": ["watch", "jewellery", "jewelry", "accessories"],
   "watch": ["watches", "jewellery", "jewelry", "accessories"],
+  "rings": ["ring", "jewellery", "jewelry", "accessories"],
+  "ring": ["rings", "jewellery", "jewelry", "accessories"],
+  "necklaces": ["necklace", "jewellery", "jewelry", "accessories"],
+  "necklace": ["necklaces", "jewellery", "jewelry", "accessories"],
   "accessories": ["accessory", "fashion", "jewellery", "jewelry"],
   "accessory": ["accessories", "fashion", "jewellery", "jewelry"],
-  
-  // Food & Beverage variations
-  "food": ["foods", "dining", "restaurant", "cafe", "eatery"],
-  "cafe": ["coffee", "cafes", "coffee shop"],
-  "coffee": ["cafe", "cafes", "coffee shop"],
-  
-  // Electronics variations
-  "electronics": ["electronic", "tech", "technology", "gadgets"],
-  "tech": ["technology", "electronics", "gadgets"],
-  
-  // Beauty variations
-  "beauty": ["cosmetics", "makeup", "skincare"],
-  "cosmetics": ["beauty", "makeup", "skincare"],
-  
-  // Pet variations
-  "pets": ["pet", "animals", "pet supplies"],
-  "pet": ["pets", "animals", "pet supplies"],
-  
-  // Jewelry variations
   "jewelry": ["jewellery", "jeweler", "jeweller", "accessories"],
   "jewellery": ["jewelry", "jeweler", "jeweller", "accessories"],
   
-  // Books variations
+  // Food & Beverage variations
+  "food": ["foods", "dining", "restaurant", "cafe", "eatery"],
+  "beverage": ["beverages", "drinks", "food", "cafe"],
+  "cafe": ["coffee", "cafes", "coffee shop", "food"],
+  "coffee": ["cafe", "cafes", "coffee shop", "food"],
+  "restaurant": ["dining", "food", "eatery"],
+  "bakery": ["baked goods", "food", "cafe"],
+  "wine": ["liquor", "alcohol", "beverages"],
+  "liquor": ["alcohol", "wine", "beverages"],
+  "alcohol": ["liquor", "wine", "beverages"],
+  
+  // Electronics & Technology
+  "electronics": ["electronic", "tech", "technology", "gadgets"],
+  "electronic": ["electronics", "tech", "technology"],
+  "tech": ["technology", "electronics", "gadgets"],
+  "technology": ["tech", "electronics", "gadgets"],
+  "gadgets": ["gadget", "electronics", "tech"],
+  "gadget": ["gadgets", "electronics", "tech"],
+  "phones": ["phone", "telecommunications", "electronics", "mobile"],
+  "phone": ["phones", "telecommunications", "electronics", "mobile"],
+  "computers": ["computer", "electronics", "tech", "technology"],
+  "computer": ["computers", "electronics", "tech", "technology"],
+  "telecommunications": ["phones", "phone", "electronics", "mobile"],
+  
+  // Books & Stationery
   "books": ["book", "bookstore", "bookshop", "reading"],
   "book": ["books", "bookstore", "bookshop", "reading"],
+  "stationery": ["office supplies", "paper", "pens"],
+  "calendars": ["calendar", "stationery", "books"],
+  "calendar": ["calendars", "stationery", "books"],
+  "news": ["newsagent", "newspapers", "magazines", "books"],
   
-  // Toys variations
-  "toys": ["toy", "games", "playthings"],
-  "toy": ["toys", "games", "playthings"],
+  // Art & Craft
+  "art": ["arts", "craft", "gallery", "creative"],
+  "craft": ["crafts", "art", "handmade", "creative"],
+  "handmade": ["craft", "art", "artisan"],
+  "hobbies": ["hobby", "craft", "recreation"],
+  "hobby": ["hobbies", "craft", "recreation"],
+  "photography": ["photo", "photos", "camera", "art"],
+  "picture": ["pictures", "art", "frame", "photography"],
+  "pictures": ["picture", "art", "frame", "photography"],
+  "display": ["displays", "exhibition", "art"],
+  "displays": ["display", "exhibition", "art"],
+  "frame": ["frames", "framing", "picture", "art"],
+  "frames": ["frame", "framing", "picture", "art"],
+  "framing": ["frame", "frames", "picture", "art"],
+  "canvas": ["art", "painting", "craft"],
   
-  // Sports variations
-  "sports": ["sport", "sporting goods", "athletics", "fitness"],
-  "sport": ["sports", "sporting goods", "athletics", "fitness"],
-  "gym": ["fitness", "sports", "exercise"],
+  // Beauty & Cosmetics
+  "beauty": ["cosmetics", "makeup", "skincare"],
+  "cosmetics": ["beauty", "makeup", "skincare"],
+  "cosmetic": ["cosmetics", "beauty", "makeup"],
+  "skincare": ["beauty", "cosmetics", "skin care"],
+  "makeup": ["beauty", "cosmetics", "skincare"],
+  "salon": ["beauty", "hair", "barber"],
+  "barber": ["salon", "hair", "beauty"],
   
-  // Home & Garden variations
+  // Health & Wellness
+  "health": ["wellness", "medical", "pharmacy", "fitness"],
+  "fitness": ["health", "gym", "sports", "wellness"],
+  "wellness": ["health", "fitness", "medical"],
+  "pharmacy": ["pharmaceutical", "medical", "health", "chemist"],
+  "medical": ["health", "pharmacy", "pharmaceutical"],
+  "pharmaceuticals": ["pharmaceutical", "pharmacy", "medical", "health"],
+  "pharmaceutical": ["pharmaceuticals", "pharmacy", "medical", "health"],
+  
+  // Toys & Kids
+  "toys": ["toy", "games", "playthings", "children"],
+  "toy": ["toys", "games", "playthings", "children"],
+  "games": ["game", "toys", "entertainment", "recreation"],
+  "game": ["games", "toys", "entertainment"],
+  "kids": ["kid", "children", "child", "toys", "baby"],
+  "kid": ["kids", "children", "child", "toys"],
+  "children": ["child", "kids", "kid", "toys", "baby"],
+  "child": ["children", "kids", "kid", "toys"],
+  "baby": ["toddler", "children", "kids", "infant"],
+  "toddler": ["baby", "children", "kids", "infant"],
+  
+  // Home & Furniture
   "home": ["homeware", "homewares", "household"],
-  "garden": ["gardening", "plants", "nursery"],
+  "furniture": ["home", "homewares", "household", "decor"],
+  "decor": ["home", "homewares", "decoration", "interior"],
+  "homewares": ["home", "homeware", "household", "decor"],
+  "bedding": ["home", "homewares", "linen", "household"],
+  "household": ["home", "homewares", "homeware"],
   
-  // Charity variations
+  // Candles & Gifts
+  "candles": ["candle", "home", "homewares", "gifts", "decor"],
+  "candle": ["candles", "home", "homewares", "gifts", "decor"],
+  
+  // Pets & Animals
+  "pets": ["pet", "animals", "pet supplies"],
+  "pet": ["pets", "animals", "pet supplies"],
+  "animals": ["animal", "pets", "pet"],
+  "animal": ["animals", "pets", "pet"],
+  
+  // Gardening & Outdoor
+  "flowers": ["florist", "plants", "garden"],
+  "florist": ["flowers", "plants", "garden"],
+  "plants": ["garden", "flowers", "nursery"],
+  "garden": ["gardening", "plants", "nursery"],
+  "gardening": ["garden", "plants", "nursery", "outdoor"],
+  "outdoor": ["garden", "sporting", "recreation"],
+  
+  // Automotive & Marine
+  "automotive": ["vehicles", "car", "auto"],
+  "vehicles": ["automotive", "car", "auto"],
+  "machinery": ["equipment", "tools", "industrial"],
+  "boating": ["marine", "boats", "water"],
+  "marine": ["boating", "boats", "water"],
+  
+  // Services & Community
   "charity": ["charities", "non-profit", "nonprofit", "fundraising", "community"],
   "charities": ["charity", "non-profit", "nonprofit", "fundraising", "community"],
+  "government": ["community", "public", "council"],
+  "community": ["charity", "government", "non-profit"],
+  "finance": ["financial", "banking", "insurance"],
+  "financial": ["finance", "banking", "insurance"],
+  "insurance": ["finance", "financial", "banking"],
+  "real estate": ["property", "realty", "housing"],
+  "property": ["real estate", "realty", "housing"],
+  "education": ["training", "learning", "school"],
+  "recruitment": ["employment", "jobs", "staffing"],
+  "training": ["education", "learning", "courses"],
+  "tourism": ["travel", "holiday", "tours"],
+  "travel": ["tourism", "holiday", "luggage"],
+  
+  // Entertainment & Music
+  "entertainment": ["music", "recreation", "events"],
+  "music": ["entertainment", "musical", "instruments"],
+  "sporting": ["sports", "sport", "recreation", "fitness"],
+  "sports": ["sport", "sporting goods", "athletics", "fitness"],
+  "sport": ["sports", "sporting goods", "athletics", "fitness"],
+  "recreation": ["entertainment", "sports", "hobbies"],
+  "gym": ["fitness", "sports", "exercise"],
+  
+  // Tools & Electrical
+  "tools": ["hardware", "equipment", "electrical"],
+  "electrical": ["electronics", "tools", "hardware"],
+  
+  // Security & Safety
+  "security": ["safety", "surveillance", "protection"],
+  "safety": ["security", "protection", "first aid"],
+  
+  // Energy & Utilities
+  "renewable": ["energy", "solar", "green"],
+  "energy": ["renewable", "utilities", "solar"],
+  "utilities": ["energy", "services"],
+  
+  // Smoking & Vaping
+  "vaping": ["vape", "e-cigarette", "smoking", "tobacco"],
+  "smoking": ["tobacco", "cigarettes", "vaping"],
+  "tobacco": ["smoking", "cigarettes", "vaping"],
 };
 
 /**

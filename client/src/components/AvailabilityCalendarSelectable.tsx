@@ -421,7 +421,15 @@ export function AvailabilityCalendarSelectable({
                                       ? colors.selected
                                       : "bg-green-500 hover:bg-green-600"
                                   }`}
-                                  title={`${getAssetLabel(asset)} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? "Booked" : "Available"}`}
+                                  title={(() => {
+                                    const weekendRateVal = Number(asset.weekendRate || asset.weekendPricePerDay) || 0;
+                                    const weekdayRateVal = Number(asset.pricePerDay) || 0;
+                                    const dayRate = isWeekend && weekendRateVal ? weekendRateVal : weekdayRateVal;
+                                    const weeklyRateVal = Number(asset.pricePerWeek) || 0;
+                                    const rateStr = dayRate > 0 ? ` - $${dayRate.toFixed(2)}/day` : '';
+                                    const weeklyStr = weeklyRateVal > 0 ? ` | $${weeklyRateVal.toFixed(2)}/week` : '';
+                                    return `${getAssetLabel(asset)} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? "Booked" : "Available"}${rateStr}${weeklyStr}`;
+                                  })()}
                                 >
                                   {selectionState === 'start' && (
                                     <span className="text-white text-[10px] font-bold">START</span>
@@ -447,7 +455,30 @@ export function AvailabilityCalendarSelectable({
                               ) : selectionState ? (
                                 <p>{selectionState === 'start' ? 'Start Date' : selectionState === 'end' ? 'End Date' : 'Selected'}</p>
                               ) : (
-                                <p>Click to select</p>
+                                <div className="text-sm">
+                                  <p className="font-semibold">{format(date, "EEE dd MMM")}</p>
+                                  {(() => {
+                                    const weekendRateVal = Number(asset.weekendRate || asset.weekendPricePerDay) || 0;
+                                    const weekdayRateVal = Number(asset.pricePerDay) || 0;
+                                    const dayRate = isWeekend && weekendRateVal ? weekendRateVal : weekdayRateVal;
+                                    const weeklyRateVal = Number(asset.pricePerWeek) || 0;
+                                    return (
+                                      <>
+                                        {dayRate > 0 && (
+                                          <p className="text-xs text-gray-500">
+                                            {isWeekend ? "Weekend" : "Weekday"} rate: ${dayRate.toFixed(2)}/day
+                                          </p>
+                                        )}
+                                        {weeklyRateVal > 0 && (
+                                          <p className="text-xs text-gray-500">
+                                            Weekly rate: ${weeklyRateVal.toFixed(2)}/week
+                                          </p>
+                                        )}
+                                      </>
+                                    );
+                                  })()}
+                                  <p className="text-xs text-green-600 mt-1">Click to select</p>
+                                </div>
                               )}
                             </TooltipContent>
                           </Tooltip>

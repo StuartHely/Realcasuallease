@@ -43,7 +43,8 @@ import {
   Layers,
   CalendarPlus,
   BarChart3,
-  Globe
+  Globe,
+  MessageSquare
 } from "lucide-react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -120,6 +121,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
           { icon: Search, label: "Search Analytics", path: "/admin/search-analytics" },
           { icon: Image, label: "Image Analytics", path: "/admin/image-analytics" },
           { icon: BarChart3, label: "Pricing Analytics", path: "/admin/pricing-analytics" },
+          { icon: MessageSquare, label: "Feedback", path: "/admin/feedback" },
           { icon: FileText, label: "Audit Log", path: "/admin/audit" },
           { icon: Settings, label: "Settings", path: "/admin/settings" },
         ],

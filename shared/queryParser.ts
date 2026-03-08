@@ -126,6 +126,8 @@ function extractProductCategory(query: string): string | undefined {
     'jewelry', 'jewellery', 'watches', 'watch', 'rings', 'ring', 'necklaces', 'necklace',
     // Food & Beverage
     'food', 'beverage', 'cafe', 'coffee', 'restaurant', 'bakery', 'wine', 'liquor', 'alcohol',
+    'fish', 'seafood', 'meat', 'butcher', 'fruit', 'fruits', 'vegetables', 'veggies', 'produce', 'grocery', 'groceries',
+    'snacks', 'snack', 'drinks', 'drink', 'juice', 'smoothie', 'smoothies', 'ice cream', 'gelato', 'donuts', 'donut', 'pizza', 'sushi', 'noodles', 'kebab', 'kebabs',
     // Electronics & Technology
     'electronics', 'electronic', 'tech', 'technology', 'gadgets', 'gadget', 'phones', 'phone', 'computers', 'computer', 'telecommunications',
     // Books & Stationery
@@ -378,14 +380,14 @@ function extractCentreName(query: string): string {
   let centreName = query;
   
   // Remove common filler words that don't help with location matching
-  centreName = centreName.replace(/\b(i'm\s+looking\s+for|i\s+want\s+to|want\s+to|looking\s+for|need\s+to|would\s+like\s+to|can\s+i|where\s+can\s+i|i\s+need|where\s+is|show\s+me|any\s+available|do\s+you\s+have|is\s+there|are\s+there|sell|buy|rent|lease|leasing|find|get|have|put|place|set\s+up|open|start|promote|showcase|display|run|operate|host|launch|market|advertise|store|stall|shop|stand|booth|space|spot|area|site|centres?|shopping\s+centres?|malls?|plazas?|available|spots?|spaces?|options?|locations?)\b/gi, '');
+  centreName = centreName.replace(/\b(i'm\s+looking\s+for|i\s+want\s+to|want\s+to|looking\s+for|need\s+to|would\s+like\s+to|can\s+i|where\s+can\s+i|i\s+need|where\s+is|show\s+me|any\s+available|do\s+you\s+have|is\s+there|are\s+there|sell|buy|rent|lease|leasing|find|get|have|put|place|set\s+up|open|start|promote|showcase|display|run|operate|host|launch|market|advertise|store|stall|shop|stand|booth|space|spot|area|sites?|centres?|shopping\s+centres?|malls?|plazas?|available|spots?|spaces?|options?|locations?)\b/gi, '');
 
   // Remove budget/price patterns so they don't pollute the centre name
   centreName = centreName.replace(/(?:under|less\s+than|max(?:imum)?|budget\s*(?:of|is|:)?)\s*\$\d+(?:\.\d+)?(?:\s*(?:per\s*)?(?:day|daily|week|weekly|month|monthly))?/gi, '');
   centreName = centreName.replace(/\$\d+(?:\.\d+)?\s*(?:\/|per\s*|a\s+)(?:day|week|month)/gi, '');
   
   // Remove prepositions that don't help
-  centreName = centreName.replace(/\b(in|at|near|around|close\s+to|next\s+to|by|from|for|the|a|an|my|some)\b/gi, '');
+  centreName = centreName.replace(/\b(in|at|near|around|close\s+to|next\s+to|by|from|for|to|the|a|an|my|some|with|and|or|that|this|where|who|how)\b/gi, '');
 
   // Remove asset type patterns
   centreName = centreName.replace(/\b(vacant\s+shop|vs|vending\s+machine|vending|atm|car\s+wash|digital\s+signage|third\s+line|3rd\s+line|3rdl|casual\s+leasing|casual|pop\s*-?\s*up|popup|pop-up|installation|kiosk|phone\s+booth|mailbox|bike\s+rack|seating|water\s+fountain|bin|trash|recycling|charging\s+station|charger)\b/gi, '');
@@ -415,6 +417,8 @@ function extractCentreName(query: string): string {
     'jewelry', 'jewellery', 'watches', 'watch', 'rings', 'ring', 'necklaces', 'necklace',
     // Food & Beverage
     'food', 'beverage', 'cafe', 'coffee', 'restaurant', 'bakery', 'wine', 'liquor', 'alcohol',
+    'fish', 'seafood', 'meat', 'butcher', 'fruit', 'fruits', 'vegetables', 'veggies', 'produce', 'grocery', 'groceries',
+    'snacks', 'snack', 'drinks', 'drink', 'juice', 'smoothie', 'smoothies', 'ice cream', 'gelato', 'donuts', 'donut', 'pizza', 'sushi', 'noodles', 'kebab', 'kebabs',
     // Electronics & Technology
     'electronics', 'electronic', 'tech', 'technology', 'gadgets', 'gadget', 'phones', 'phone', 'computers', 'computer', 'telecommunications',
     // Books & Stationery

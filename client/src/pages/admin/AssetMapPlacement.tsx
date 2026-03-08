@@ -186,14 +186,14 @@ export default function AssetMapPlacement() {
         if (selectedAssetType === "vacant_shops") {
           await updateVacantShopMutation.mutateAsync({
             id: marker.assetId,
-            mapMarkerX: marker.x,
-            mapMarkerY: marker.y,
+            mapMarkerX: String(marker.x),
+            mapMarkerY: String(marker.y),
           });
         } else {
           await updateThirdLineMutation.mutateAsync({
             id: marker.assetId,
-            mapMarkerX: marker.x,
-            mapMarkerY: marker.y,
+            mapMarkerX: String(marker.x),
+            mapMarkerY: String(marker.y),
           });
         }
       }

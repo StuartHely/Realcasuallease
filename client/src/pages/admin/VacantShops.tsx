@@ -87,6 +87,7 @@ export default function VacantShops() {
     imageUrl2: "",
     pricePerWeek: "",
     pricePerMonth: "",
+    outgoingsPerDay: "",
     floorLevelId: null as number | null,
     isActive: true,
   });
@@ -234,6 +235,7 @@ export default function VacantShops() {
       imageUrl2: "",
       pricePerWeek: "",
       pricePerMonth: "",
+      outgoingsPerDay: "",
       floorLevelId: null,
       isActive: true,
     });
@@ -253,6 +255,7 @@ export default function VacantShops() {
         imageUrl2: shop.imageUrl2 || "",
         pricePerWeek: shop.pricePerWeek || "",
         pricePerMonth: shop.pricePerMonth || "",
+        outgoingsPerDay: shop.outgoingsPerDay || "",
         floorLevelId: shop.floorLevelId || null,
         isActive: shop.isActive ?? true,
       });
@@ -479,6 +482,17 @@ export default function VacantShops() {
                   placeholder="e.g., 1800"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="outgoingsPerDay">Outgoings/Day ($)</Label>
+                <Input
+                  id="outgoingsPerDay"
+                  type="number"
+                  step="0.01"
+                  value={formData.outgoingsPerDay}
+                  onChange={(e) => setFormData({ ...formData, outgoingsPerDay: e.target.value })}
+                  placeholder="e.g., 25.00"
+                />
+              </div>
               <div className="col-span-2 space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
@@ -573,21 +587,23 @@ export default function VacantShops() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between">
-                <Label htmlFor="powered">Powered</Label>
-                <Switch
-                  id="powered"
-                  checked={formData.powered}
-                  onCheckedChange={(checked) => setFormData({ ...formData, powered: checked })}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="isActive">Active</Label>
-                <Switch
-                  id="isActive"
-                  checked={formData.isActive}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                />
+              <div className="col-span-2 flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="isActive"
+                    checked={formData.isActive}
+                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                  />
+                  <Label htmlFor="isActive">Active</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="powered"
+                    checked={formData.powered}
+                    onCheckedChange={(checked) => setFormData({ ...formData, powered: checked })}
+                  />
+                  <Label htmlFor="powered">Powered</Label>
+                </div>
               </div>
             </div>
             <DialogFooter>
