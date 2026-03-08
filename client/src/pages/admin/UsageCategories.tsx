@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Loader2, Plus, Pencil, Trash2, GripVertical, BarChart3 } from "lucide-react";
+import { cleanHtmlDescription } from "@/lib/htmlUtils";
 
 export default function UsageCategories() {
   const [selectedCentreId, setSelectedCentreId] = useState<number | null>(null);
@@ -409,7 +410,7 @@ export default function UsageCategories() {
                   <SelectContent>
                     {sitesWithCategories.map((site) => (
                       <SelectItem key={site.id} value={site.id.toString()}>
-                        {site.siteNumber} - {site.description?.replace(/<[^>]*>/g, '') || "No description"}
+                        {site.siteNumber} - {cleanHtmlDescription(site.description) || "No description"}
                       </SelectItem>
                     ))}
                   </SelectContent>

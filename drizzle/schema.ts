@@ -772,6 +772,26 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
 }));
 
 // =============================================================================
+// Feedback & Suggestions
+// =============================================================================
+
+/**
+ * User feedback and suggestions
+ */
+export const feedback = pgTable("feedback", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }),
+  email: varchar("email", { length: 320 }),
+  category: varchar("category", { length: 50 }).notNull().default("general"),
+  message: text("message").notNull(),
+  userId: integer("userId").references(() => users.id, { onDelete: "set null" }),
+  isRead: boolean("isRead").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  createdAtIdx: index("feedback_createdAt_idx").on(table.createdAt),
+}));
+
+// =============================================================================
 // Type Exports
 // =============================================================================
 
@@ -822,3 +842,5 @@ export type FAQ = typeof faqs.$inferSelect;
 export type InsertFAQ = typeof faqs.$inferInsert;
 export type TenantDomain = typeof tenantDomains.$inferSelect;
 export type InsertTenantDomain = typeof tenantDomains.$inferInsert;
+export type Feedback = typeof feedback.$inferSelect;
+export type InsertFeedback = typeof feedback.$inferInsert;

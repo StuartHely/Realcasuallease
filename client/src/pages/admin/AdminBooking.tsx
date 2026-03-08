@@ -739,6 +739,10 @@ export default function AdminBooking() {
                         <span className="font-semibold">Cost Breakdown</span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>Weekday rate: ${costPreview.pricePerDay}/day</div>
+                        <div>Weekend rate: ${costPreview.weekendPricePerDay || costPreview.pricePerDay}/day</div>
+                        <div>Weekly rate: ${costPreview.pricePerWeek}/week</div>
+                        <div></div>
                         <div>Weekdays: {costPreview.weekdayCount} × ${costPreview.pricePerDay}</div>
                         <div>Weekends: {costPreview.weekendCount} × ${costPreview.weekendPricePerDay || costPreview.pricePerDay}</div>
                         <div>Rent Subtotal: ${costPreview.totalAmount.toFixed(2)}</div>
@@ -928,6 +932,10 @@ export default function AdminBooking() {
                   setShowEditDialog(false);
                   setShowCancelDialog(true);
                 }}
+                onClose={() => {
+                  setShowEditDialog(false);
+                  setEditingBookingId(null);
+                }}
                 isPending={updateBookingMutation.isPending}
               />
             )}
@@ -996,6 +1004,7 @@ function EditBookingContent({
   setEditFormData,
   onSave,
   onCancel,
+  onClose,
   isPending,
 }: {
   bookingId: number;
@@ -1003,6 +1012,7 @@ function EditBookingContent({
   setEditFormData: React.Dispatch<React.SetStateAction<typeof editFormData>>;
   onSave: () => void;
   onCancel: () => void;
+  onClose: () => void;
   isPending: boolean;
 }) {
   const [showPriceBreakdown, setShowPriceBreakdown] = useState(false);
@@ -1336,7 +1346,7 @@ function EditBookingContent({
           <Trash2 className="h-4 w-4 mr-2" />
           Cancel Booking
         </Button>
-        <Button variant="outline" onClick={() => setEditFormData(prev => ({ ...prev }))}>
+        <Button variant="outline" onClick={onClose}>
           Close
         </Button>
         <Button onClick={onSave} disabled={isPending}>

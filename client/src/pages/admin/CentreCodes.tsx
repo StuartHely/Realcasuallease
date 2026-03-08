@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
+import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,14 +54,17 @@ export default function CentreCodes() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="container py-8">
+    <AdminLayout>
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Centre Code Management</CardTitle>
@@ -176,5 +180,6 @@ export default function CentreCodes() {
         </CardContent>
       </Card>
     </div>
+    </AdminLayout>
   );
 }

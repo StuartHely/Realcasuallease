@@ -67,6 +67,7 @@ import SignLicence from "./pages/SignLicence";
 import OccupancyReport from "./pages/admin/OccupancyReport";
 import AgedDebtorsReport from "./pages/admin/AgedDebtorsReport";
 import GSTReport from "./pages/admin/GSTReport";
+import FeedbackAdmin from "./pages/admin/FeedbackAdmin";
 
 function Router() {
   return (
@@ -126,6 +127,7 @@ function Router() {
       <Route path="/admin/occupancy-report" component={OccupancyReport} />
       <Route path="/admin/aged-debtors" component={AgedDebtorsReport} />
       <Route path="/admin/gst-report" component={GSTReport} />
+      <Route path="/admin/feedback" component={FeedbackAdmin} />
       <Route path="/admin/audit" component={AdminAudit} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/site/:id" component={SiteDetail} />

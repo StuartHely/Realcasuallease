@@ -16,6 +16,7 @@ import { AvailabilityCalendarSelectable } from "@/components/AvailabilityCalenda
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import SitePanoramaViewer from "@/components/SitePanoramaViewer";
+import { cleanHtmlDescription } from "@/lib/htmlUtils";
 
 type AssetType = "casual_leasing" | "vacant_shops" | "third_line" | "all";
 
@@ -526,7 +527,7 @@ export default function CentreDetail() {
                         </CardTitle>
                         <Badge className="bg-blue-100 text-blue-800">Casual Leasing</Badge>
                       </div>
-                      <CardDescription>{site.description?.replace(/<[^>]*>/g, '') || "Casual leasing site"}</CardDescription>
+                      <CardDescription>{cleanHtmlDescription(site.description) || "Casual leasing site"}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -634,7 +635,7 @@ export default function CentreDetail() {
                         </CardTitle>
                         <Badge className="bg-green-100 text-green-800">Vacant Shop</Badge>
                       </div>
-                      <CardDescription>{shop.description?.replace(/<[^>]*>/g, '') || "Short-term retail tenancy"}</CardDescription>
+                      <CardDescription>{cleanHtmlDescription(shop.description) || "Short-term retail tenancy"}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {shop.totalSizeM2 && (
@@ -767,7 +768,7 @@ export default function CentreDetail() {
                           {asset.categoryName || "Third Line"}
                         </Badge>
                       </div>
-                      <CardDescription>{asset.description?.replace(/<[^>]*>/g, '') || "Non-tenancy asset"}</CardDescription>
+                      <CardDescription>{cleanHtmlDescription(asset.description) || "Non-tenancy asset"}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {asset.dimensions && (

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { useImageWithFallback } from "@/components/ImageWithFallback";
+import { cleanHtmlDescription } from "@/lib/htmlUtils";
 
 type AssetType = "casual_leasing" | "vacant_shops" | "third_line" | "all";
 
@@ -285,7 +286,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
 
                 {hoveredSite.description && (
                   <p className="text-sm text-gray-700 line-clamp-2">
-                    {hoveredSite.description?.replace(/<[^>]*>/g, '')}
+                    {cleanHtmlDescription(hoveredSite.description)}
                   </p>
                 )}
 
@@ -584,7 +585,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
                   </span>
                 </div>
                 {hoveredSite.description && (
-                  <p className="text-sm text-gray-700 line-clamp-2">{hoveredSite.description?.replace(/<[^>]*>/g, '')}</p>
+                  <p className="text-sm text-gray-700 line-clamp-2">{cleanHtmlDescription(hoveredSite.description)}</p>
                 )}
                 {(hoveredSite.size || hoveredSite.totalSizeM2 || hoveredSite.dimensions) && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">

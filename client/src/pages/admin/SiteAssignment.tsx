@@ -121,7 +121,7 @@ export default function AdminSiteAssignment() {
 
       {selectedCentreId > 0 && (
         <>
-          {floorLevels.length === 0 ? (
+          {floorLevels.length === 0 && (
             <Card className="mt-6">
               <CardContent className="pt-6">
                 <p className="text-center text-muted-foreground">
@@ -129,7 +129,7 @@ export default function AdminSiteAssignment() {
                 </p>
               </CardContent>
             </Card>
-          ) : (
+          )}
             <Card className="mt-6">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -202,7 +202,6 @@ export default function AdminSiteAssignment() {
                 </Table>
               </CardContent>
             </Card>
-          )}
         </>
       )}
       </div>

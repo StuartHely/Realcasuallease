@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useLocation } from "wouter";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { toast } from "sonner";
+import { cleanHtmlDescription } from "@/lib/htmlUtils";
 
 // Rate Validation Alerts Component
 function RateValidationAlerts() {
@@ -85,7 +86,7 @@ function RateValidationAlerts() {
             <div className="text-sm text-red-800 space-y-1">
               {alerts.map((alert: any, index: number) => (
                 <div key={index}>
-                  Check the rate in {alert.centreName} – Site {alert.siteNumber}, {alert.siteName.replace(/<[^>]*>/g, '')}
+                  Check the rate in {alert.centreName} – Site {alert.siteNumber}, {cleanHtmlDescription(alert.siteName)}
                 </div>
               ))}
             </div>
