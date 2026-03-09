@@ -33,6 +33,7 @@ import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { RateValidationAlerts } from "@/components/RateValidationAlerts";
 
 export default function AdminSites() {
   const [location] = useLocation();
@@ -511,6 +512,9 @@ export default function AdminSites() {
           </div>
         </div>
 
+        {/* Rate Validation Alerts */}
+        <RateValidationAlerts />
+
         {/* Centre Selector */}
         <Card>
           <CardHeader>
@@ -624,6 +628,11 @@ export default function AdminSites() {
                   {site.instantBooking && (
                     <div className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded">
                       ✓ Instant Booking
+                    </div>
+                  )}
+                  {(!site.pricePerDay || parseFloat(site.pricePerDay) <= 0 || !site.pricePerWeek || parseFloat(site.pricePerWeek) <= 0) && (
+                    <div className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded border border-amber-200 font-medium">
+                      ⚠ Missing rates — this site won't appear in search
                     </div>
                   )}
                   {siteCategoryMap.has(site.id) && siteCategoryMap.get(site.id) === 0 && (

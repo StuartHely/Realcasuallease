@@ -37,9 +37,15 @@ export const searchRouter = router({
         let areaCentres: any[] | null = null;
 
         // Extract the area name — could be from rule parser or LLM
+        // Try centreName first, then the original matched alias (e.g. "maroubra")
         const areaQuery = enhancedQuery.centreName || enhancedQuery.matchedLocation || "";
-        if (areaQuery) {
-          const areaMatches = await findCentresByArea(areaQuery);
+        const areaCandidates = [areaQuery, enhancedQuery.matchedLocation].filter(
+          (q): q is string => !!q && q !== areaQuery,
+        );
+        // Include the primary query and any distinct alias
+        for (const candidate of [areaQuery, ...areaCandidates]) {
+          if (!candidate) continue;
+          const areaMatches = await findCentresByArea(candidate);
           if (areaMatches.length > 0) {
             areaCentres = areaMatches.map(m => ({
               id: m.centreId,
@@ -49,6 +55,7 @@ export const searchRouter = router({
               city: m.city,
               state: m.state,
             }));
+            break;
           }
         }
 
@@ -131,43 +138,32 @@ export const searchRouter = router({
         // If centreName is empty string, keep it empty (don't fall back to original query)
         const searchQuery = enhancedQuery.centreName;
         
-        // If we found specific sites with category filter, extract their centres
+        // -----------------------------------------------------------
+        // Determine which CENTRES to show.
+        // Priority: 1) area index  2) centre-name search  3) fallbacks
+        // Category is used later to filter/rank SITES within those centres,
+        // NOT to decide which centres appear.
+        // -----------------------------------------------------------
         let centres: any[] = [];
-        if (siteResults.length > 0 && enhancedQuery.productCategory) {
-          const centresMap = new Map();
-          for (const result of siteResults) {
-            if (!centresMap.has(result.site.centreId) && result.centre) {
-              // Apply state filter if specified
-              if (!enhancedQuery.stateFilter || result.centre.state === enhancedQuery.stateFilter) {
-                centresMap.set(result.site.centreId, result.centre);
-              }
-            }
-          }
-          
-          centres = Array.from(centresMap.values());
+
+        // 1. Area index matched a known region (e.g. "western sydney", "maroubra")
+        if (areaCentres && areaCentres.length > 0) {
+          centres = areaCentres;
         }
-        
-        // If no centres found from category search, fall back to centre-only search
-        // This handles cases like "Fashion in VIC" where VIC centres may not have fashion-approved sites
+
+        // 2. Centre-name fuzzy search
         if (centres.length === 0) {
           centres = await db.searchShoppingCentres(searchQuery, enhancedQuery.stateFilter, ctx.tenantOwnerId ?? undefined);
         }
 
-        // If centre name search returned nothing (likely because the "centre name" is
-        // just leftover natural-language noise) but we have a state filter, show all
-        // centres in that state so the user still gets results.
+        // 3. If centre name search returned nothing but we have a state filter,
+        //    show all centres in that state.
         if (centres.length === 0 && enhancedQuery.stateFilter && searchQuery) {
           centres = await db.searchShoppingCentres('', enhancedQuery.stateFilter, ctx.tenantOwnerId ?? undefined);
         }
 
-        // If still no results and we have area matches, use those
-        if (centres.length === 0 && areaCentres && areaCentres.length > 0) {
-          centres = areaCentres;
-        }
-
-        // Fallback: if area search found nothing but we can infer a state, show all centres in that state
+        // 4. Infer state from area name as last resort
         if (centres.length === 0 && !enhancedQuery.stateFilter && areaQuery) {
-          // Check if the area name maps to a known state
           const AREA_STATE_MAP: Record<string, string> = {
             brisbane: 'QLD', 'gold coast': 'QLD', 'sunshine coast': 'QLD',
             cairns: 'QLD', townsville: 'QLD',
@@ -222,8 +218,11 @@ export const searchRouter = router({
         const allSites: any[] = [];
         const availability: any[] = [];
         
-        // Populate matchedSiteIds based on the earlier computed hasSiteSpecificQuery
-        const matchedSiteIds: number[] = hasSiteSpecificQuery ? siteResults.map(r => r.site.id) : [];
+        // Populate matchedSiteIds — only from sites within the selected centres
+        const locationCentreIdSet = new Set(centres.map((c: any) => c.id));
+        const matchedSiteIds: number[] = hasSiteSpecificQuery
+          ? siteResults.filter(r => locationCentreIdSet.has(r.site.centreId)).map(r => r.site.id)
+          : [];
         
         // Track if any sites match the size requirement
         let hasMatchingSites = false;
@@ -246,22 +245,24 @@ export const searchRouter = router({
           endOfNextWeek
         );
         
-        // Override sitesByCentre if we have category-filtered sites from searchSitesWithCategory
-        if (enhancedQuery.productCategory) {
-          if (siteResults.length > 0) {
-            // We have matching sites - only show those sites
-            const tempSitesByCentre = new Map();
-            for (const result of siteResults) {
-              const centreId = result.site.centreId;
-              if (!tempSitesByCentre.has(centreId)) {
-                tempSitesByCentre.set(centreId, []);
-              }
-              tempSitesByCentre.get(centreId)!.push(result.site);
+        // If category filter matched specific sites, restrict to those sites
+        // BUT only within the location-determined centres.
+        if (enhancedQuery.productCategory && siteResults.length > 0) {
+          const centreIdSet = new Set(centreIds);
+          const tempSitesByCentre = new Map();
+          for (const result of siteResults) {
+            const centreId = result.site.centreId;
+            if (!centreIdSet.has(centreId)) continue; // ignore sites outside our location
+            if (!tempSitesByCentre.has(centreId)) {
+              tempSitesByCentre.set(centreId, []);
             }
+            tempSitesByCentre.get(centreId)!.push(result.site);
+          }
+          // Only override if we found category-matched sites within the location centres
+          if (tempSitesByCentre.size > 0) {
             sitesByCentre = tempSitesByCentre;
           }
-          // When no sites match the category, keep all sites — scoring will rank them
-          // lower for category mismatch, and they'll appear in "Other Options"
+          // Otherwise keep all sites — scoring will rank by category match
         }
         
         // First pass: check if any sites match the requirements and find closest match
@@ -368,16 +369,33 @@ export const searchRouter = router({
         // Return flag indicating if size requirement was met
         const sizeNotAvailable = hasRequirements && !hasMatchingSites;
         
-        // Only flag category as unavailable if we have NO sites at all
-        // (when sites exist but don't match the category, scoring handles it via lower ranks)
-        const categoryNotAvailable = !!enhancedQuery.productCategory && siteResults.length === 0 && allSites.length === 0;
+        // Check how many category-matched sites are within the selected centres
+        const centreIdSet = new Set(centres.map((c: any) => c.id));
+        const localCategorySiteCount = siteResults.filter(r => centreIdSet.has(r.site.centreId)).length;
 
-        // Flag when category keyword was provided but no sites matched it via
-        // fuzzyMatchCategory — the user sees unfiltered results with a notice.
-        // Only flag if some sites actually have categories assigned (otherwise it's
-        // just that the centre hasn't configured categories yet, not that ours is unrecognised).
-        const anySiteHasCategories = allSites.some((s: any) => (siteCategories[s.id] || []).length > 0);
-        const categoryUnrecognised = !!enhancedQuery.productCategory && siteResults.length === 0 && allSites.length > 0 && anySiteHasCategories;
+        // Only flag category as unavailable if we have NO sites at all
+        const categoryNotAvailable = !!enhancedQuery.productCategory && localCategorySiteCount === 0 && allSites.length === 0;
+
+        // Flag when category keyword was provided but no sites in the location match it.
+        // First check if the keyword matches a *known* database category — if so,
+        // it's not "unrecognised", just no sites are approved for it yet.
+        let categoryUnrecognised = false;
+        let matchedCategoryName: string | null = null;
+        if (enhancedQuery.productCategory && localCategorySiteCount === 0 && allSites.length > 0) {
+          const { getAllUsageCategories } = await import("../usageCategoriesDb");
+          const { fuzzyMatchCategory } = await import("../../shared/stringSimilarity");
+          const allCategories = await getAllUsageCategories();
+          const matched = allCategories.find((cat: any) =>
+            fuzzyMatchCategory(enhancedQuery.productCategory!, cat.name, 0.6)
+          );
+          if (matched) {
+            matchedCategoryName = matched.name;
+          } else {
+            // Keyword doesn't match any known DB category — truly unrecognised
+            const anySiteHasCategories = allSites.some((s: any) => (siteCategories[s.id] || []).length > 0);
+            categoryUnrecognised = anySiteHasCategories;
+          }
+        }
 
         // --- Score and rank sites ---
         const { scoreAndRankSites } = await import("../siteScoring");
@@ -459,6 +477,7 @@ export const searchRouter = router({
           sizeNotAvailable,
           categoryNotAvailable,
           categoryUnrecognised,
+          matchedCategoryName,
           closestMatch,
           siteCategories,
           siteScores: scored.scores,

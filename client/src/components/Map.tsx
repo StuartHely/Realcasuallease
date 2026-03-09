@@ -104,7 +104,7 @@ function getScriptUrl(): string {
 let mapScriptLoaded = false;
 let mapScriptPromise: Promise<void> | null = null;
 
-function loadMapScript() {
+export function loadMapScript() {
   if (mapScriptLoaded && window.google?.maps) {
     return Promise.resolve();
   }
@@ -148,6 +148,7 @@ interface MapViewProps {
   className?: string;
   initialCenter?: google.maps.LatLngLiteral;
   initialZoom?: number;
+  styles?: google.maps.MapTypeStyle[];
   onMapReady?: (map: google.maps.Map) => void;
 }
 
@@ -155,6 +156,7 @@ export function MapView({
   className,
   initialCenter = { lat: 37.7749, lng: -122.4194 },
   initialZoom = 12,
+  styles,
   onMapReady,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -175,7 +177,7 @@ export function MapView({
         fullscreenControl: true,
         zoomControl: true,
         streetViewControl: true,
-        mapId: "DEMO_MAP_ID",
+        ...(styles ? { styles } : { mapId: "DEMO_MAP_ID" }),
       });
       if (onMapReady) {
         onMapReady(map.current);

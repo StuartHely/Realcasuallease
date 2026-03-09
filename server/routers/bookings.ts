@@ -37,6 +37,12 @@ export const bookingsRouter = router({
         const site = await db.getSiteById(input.siteId);
         if (!site) throw new TRPCError({ code: "NOT_FOUND", message: "Site not found" });
 
+        // Validate tables against site maximum — clamp to maxTables if exceeded
+        const siteMaxTables = site.maxTables || 0;
+        const tablesRequested = (siteMaxTables > 0 && (input.tablesRequested || 0) > siteMaxTables)
+          ? siteMaxTables
+          : (input.tablesRequested || 0);
+
         // Calculate booking duration and price with weekend rate support
         const { totalAmount, weekdayCount, weekendCount } = await import("../bookingCalculation").then(m => 
           m.calculateBookingCost(site, input.startDate, input.endDate)
@@ -68,13 +74,13 @@ export const bookingsRouter = router({
 
         // Check equipment availability if requested
         let equipmentWarning: string | undefined;
-        if ((input.tablesRequested || 0) > 0 || (input.chairsRequested || 0) > 0) {
+        if (tablesRequested > 0 || (input.chairsRequested || 0) > 0) {
           const { checkEquipmentAvailability } = await import("../equipmentAvailability");
           const equipmentCheck = await checkEquipmentAvailability(
             site.centreId,
             input.startDate,
             input.endDate,
-            input.tablesRequested || 0,
+            tablesRequested,
             input.chairsRequested || 0
           );
           
@@ -232,7 +238,7 @@ export const bookingsRouter = router({
           paymentDueDate: paymentDueDate,
           status: requiresApproval ? "pending" : (site.instantBooking ? "confirmed" : "pending"),
           requiresApproval,
-          tablesRequested: input.tablesRequested || 0,
+          tablesRequested,
           chairsRequested: input.chairsRequested || 0,
           bringingOwnTables: input.bringingOwnTables || false,
         });

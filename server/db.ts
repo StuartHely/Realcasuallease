@@ -627,19 +627,14 @@ export async function searchSitesWithCategory(query: string, categoryKeyword?: s
       const queryWordsWithoutCategory = lowerQuery.split(/\s+/).filter(word => 
         word !== categoryKeyword.toLowerCase() && 
         !expandCategoryKeyword(categoryKeyword).includes(word) &&
-        !stopWords.includes(word)
+        !stopWords.includes(word) &&
+        !/^\d+$/.test(word) &&
+        !['table', 'tables', 'trestle', 'chair', 'chairs'].includes(word)
       );
       
-      // If no other query words, return true (just a category search)
-      if (queryWordsWithoutCategory.length === 0) {
-        return true;
-      }
-      
-      // Check if all remaining words appear in the centre name (word-by-word matching)
-      const allWordsMatch = queryWordsWithoutCategory.every(word => centreName.includes(word));
-      if (allWordsMatch) {
-        return true;
-      }
+      // Category matched — accept this site.
+      // Location filtering is handled separately by the search router.
+      return true;
     }
     
     // If searching for a specific site number, check if this site matches
@@ -817,7 +812,11 @@ export async function getBookingsBySiteId(siteId: number, startDate?: Date, endD
   const db = await getDb();
   if (!db) return [];
 
-  let conditions = [eq(bookings.siteId, siteId)];
+  let conditions: any[] = [
+    eq(bookings.siteId, siteId),
+    // Only consider active bookings — cancelled/rejected should not block availability
+    or(eq(bookings.status, "pending"), eq(bookings.status, "confirmed"), eq(bookings.status, "completed")),
+  ];
   
   if (startDate && endDate) {
     // Find bookings that overlap with the requested date range

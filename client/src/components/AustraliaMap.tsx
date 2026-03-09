@@ -37,9 +37,28 @@ class MapErrorBoundary extends Component<{ children: ReactNode }, { error: strin
   }
 }
 
+const SILVER_MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { elementType: "geometry", stylers: [{ color: "#f5f5f5" }] },
+  { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#f5f5f5" }] },
+  { featureType: "administrative.land_parcel", elementType: "labels.text.fill", stylers: [{ color: "#bdbdbd" }] },
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+  { featureType: "road.arterial", elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#dadada" }] },
+  { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
+  { featureType: "road.local", elementType: "labels.text.fill", stylers: [{ color: "#9e9e9e" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#c9d6e3" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#9e9e9e" }] },
+];
+
+const MARKER_SVG = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42"><defs><filter id="s" x="-20%" y="-10%" width="140%" height="130%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="rgba(26,43,76,0.35)"/></filter></defs><path filter="url(#s)" d="M16 2C8.27 2 2 8.27 2 16c0 10.5 14 24 14 24s14-13.5 14-24C30 8.27 23.73 2 16 2z" fill="#1A2B4C"/><circle cx="16" cy="16" r="5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>`)}`;
+
 function AustraliaMapInner({ centres }: AustraliaMapProps) {
   const [, setLocation] = useLocation();
-  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const markersRef = useRef<google.maps.Marker[]>([]);
   const markerClustererRef = useRef<any>(null);
   const [mapError, setMapError] = useState<string | null>(null);
 
@@ -72,60 +91,34 @@ function AustraliaMapInner({ centres }: AustraliaMapProps) {
     );
   }
 
-  const handleMapReady = async (map: google.maps.Map) => {
+  const handleMapReady = (map: google.maps.Map) => {
     try {
       // Clear existing markers
-      markersRef.current.forEach((marker) => marker.map = null);
+      markersRef.current.forEach((m) => m.setMap(null));
       markersRef.current = [];
 
       const infoWindowInstance = new google.maps.InfoWindow();
 
-      const { AdvancedMarkerElement } = await window.google.maps.importLibrary("marker") as google.maps.MarkerLibrary;
-      
       const markers = validCentres.map((centre) => {
         const lat = parseFloat(centre.latitude!);
         const lng = parseFloat(centre.longitude!);
 
-        const markerDiv = document.createElement("div");
-        markerDiv.className = "custom-marker";
-        markerDiv.innerHTML = `
-          <div style="
-            width: 32px;
-            height: 32px;
-            background-color: #123047;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            transition: transform 0.2s;
-          ">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5F7FA" stroke-width="2">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
-            </svg>
-          </div>
-        `;
-
-        markerDiv.addEventListener("mouseenter", () => {
-          markerDiv.style.transform = "scale(1.2)";
-        });
-        markerDiv.addEventListener("mouseleave", () => {
-          markerDiv.style.transform = "scale(1)";
-        });
-
-        const marker = new AdvancedMarkerElement({
+        const marker = new google.maps.Marker({
           map,
           position: { lat, lng },
-          content: markerDiv,
           title: centre.name,
+          icon: {
+            url: MARKER_SVG,
+            scaledSize: new google.maps.Size(32, 42),
+            anchor: new google.maps.Point(16, 42),
+          },
+          optimized: false,
         });
 
-        markerDiv.addEventListener("mouseenter", () => {
+        marker.addListener("mouseover", () => {
           const content = `
             <div style="padding: 12px; max-width: 300px;">
-              <h3 style="font-weight: bold; font-size: 16px; margin-bottom: 8px; color: #123047;">
+              <h3 style="font-weight: bold; font-size: 16px; margin-bottom: 8px; color: #1A2B4C;">
                 ${centre.name}
               </h3>
               ${centre.suburb ? `
@@ -152,10 +145,10 @@ function AustraliaMapInner({ centres }: AustraliaMapProps) {
             </div>
           `;
           infoWindowInstance.setContent(content);
-          infoWindowInstance.open({ map, anchor: marker });
+          infoWindowInstance.open(map, marker);
         });
 
-        markerDiv.addEventListener("click", () => {
+        marker.addListener("click", () => {
           setLocation(`/centre/${centre.slug || centre.id}`);
         });
 
@@ -170,36 +163,25 @@ function AustraliaMapInner({ centres }: AustraliaMapProps) {
 
       const renderer = {
         render: ({ count, position }: { count: number; position: google.maps.LatLng }) => {
-          const clusterDiv = document.createElement('div');
-          clusterDiv.style.cssText = `
-            background-color: #123047;
-            color: #F5F7FA;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 16px;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            border: 2px solid #F5F7FA;
-          `;
-          clusterDiv.textContent = String(count);
-
-          const clusterMarker = new AdvancedMarkerElement({
+          return new google.maps.Marker({
             position,
-            content: clusterDiv,
             map,
+            label: {
+              text: String(count),
+              color: "#FFFFFF",
+              fontWeight: "bold",
+              fontSize: "14px",
+            },
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 24,
+              fillColor: "#1A2B4C",
+              fillOpacity: 1,
+              strokeColor: "rgba(255,255,255,0.9)",
+              strokeWeight: 2,
+            },
+            zIndex: Number(google.maps.Marker.MAX_ZINDEX) + count,
           });
-
-          clusterDiv.addEventListener('click', () => {
-            map.setCenter(position);
-            map.setZoom((map.getZoom() || 4) + 2);
-          });
-
-          return clusterMarker;
         },
       };
 
@@ -229,6 +211,7 @@ function AustraliaMapInner({ centres }: AustraliaMapProps) {
         onMapReady={handleMapReady}
         initialCenter={{ lat: -25.2744, lng: 133.7751 }}
         initialZoom={4}
+        styles={SILVER_MAP_STYLES}
       />
     </div>
   );

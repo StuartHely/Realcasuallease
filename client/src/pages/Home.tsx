@@ -323,17 +323,17 @@ export default function Home() {
 
       {/* Hero Section */}
       <main className="flex-1">
-        <section className="py-12 md:py-20 px-4">
+        <section className="pt-12 md:pt-16 pb-6 px-4">
           <div className="container mx-auto max-w-5xl text-center">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-blue-900 mb-4 md:mb-6 leading-tight">
-              The Easiest Way to Book Casual Leasing in Shopping Centres
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-blue-900 mb-4 md:mb-6 leading-tight font-playfair">
+              The Intelligent Way to Book Casual Leasing in Shopping Centres
             </h2>
             <p className="text-xl md:text-2xl text-blue-900 font-semibold mb-8 md:mb-12 max-w-3xl mx-auto animate-fade-in" style={{ fontSize: '120%' }}>
-              Describe the space you need in any order. We'll handle the rest.
+              Describe the space you need and we'll handle the rest.
             </p>
 
             {/* Search Box */}
-            <Card className="shadow-xl">
+            <Card className="shadow-[0_4px_20px_rgba(0,0,0,0.08),0_1px_6px_rgba(0,0,0,0.04)] border-0">
               <CardContent className="pt-6 md:pt-8 space-y-4">
                 <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="flex flex-col gap-4">
                   <div className="flex flex-col md:flex-row gap-4">
@@ -414,9 +414,6 @@ export default function Home() {
                 
                 {/* State Filter Buttons */}
                 <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-200">
-                  <p className="text-base font-medium text-gray-800 mb-4 text-center">
-                    Browse all available spaces
-                  </p>
                   <div className="flex flex-wrap justify-center gap-3">
                                 {[
                   { code: "NSW", name: "New South Wales" },
@@ -444,7 +441,7 @@ export default function Home() {
             </Card>
 
             {/* Australia Map with Centre Markers */}
-            <div className="mt-12">
+            <div className="mt-8">
               <Card className="shadow-xl">
                 <CardHeader>
                   <CardTitle className="text-2xl">Explore Centres Across Australia</CardTitle>
@@ -461,11 +458,8 @@ export default function Home() {
         </section>
 
         {/* How It Works */}
-        <section className="py-16 px-4 bg-white">
+        <section className="pt-4 pb-10 px-4 bg-white">
           <div className="container mx-auto max-w-6xl">
-            <p className="text-base text-center text-blue-800 mb-4 max-w-4xl mx-auto leading-relaxed">
-              The most advanced Casual Leasing Platform ever created — Years of hands-on experience delivering unmatched control for landlords and managing agents — plus a seamless booking experience for users.
-            </p>
             <h3 className="text-3xl font-bold text-center text-blue-900 mb-12">
               How It Works
             </h3>

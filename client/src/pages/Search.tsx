@@ -522,10 +522,17 @@ export default function Search() {
               </p>
             </div>
           )}
-          {data?.categoryUnrecognised && data?.searchInterpretation?.productCategory && (
+          {data?.matchedCategoryName && data?.searchInterpretation?.productCategory && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-800 font-medium text-base">
+                Searching for '{data.matchedCategoryName}' — showing all available sites. Contact us to confirm category availability at specific centres.
+              </p>
+            </div>
+          )}
+          {data?.categoryUnrecognised && data?.searchInterpretation?.productCategory && !data?.matchedCategoryName && (
             <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-amber-800 font-medium text-base">
-                We couldn't match a specific category for '{data.searchInterpretation.productCategory}' — showing all available sites. You may wish to check with us about permitted product categories for this centre.
+                We couldn't match a specific category for '{data.searchInterpretation.productCategory}' — showing all available sites. You may wish to check with us about permitted product categories.
               </p>
             </div>
           )}
@@ -1519,9 +1526,9 @@ export default function Search() {
                     </div>
                     
                     {/* Filter explanation notice */}
-                    {(parsedQuery.minSizeM2 !== undefined || (parsedQuery.productCategory && !data?.categoryUnrecognised)) && (() => {
+                    {(parsedQuery.minSizeM2 !== undefined || (parsedQuery.productCategory && !data?.categoryUnrecognised && !data?.matchedCategoryName)) && (() => {
                       const hasSizeFilter = parsedQuery.minSizeM2 !== undefined;
-                      const hasCategoryFilter = parsedQuery.productCategory && !data?.categoryUnrecognised;
+                      const hasCategoryFilter = parsedQuery.productCategory && !data?.categoryUnrecognised && !data?.matchedCategoryName;
                       
                       let noticeText = '';
                       if (hasSizeFilter && hasCategoryFilter) {

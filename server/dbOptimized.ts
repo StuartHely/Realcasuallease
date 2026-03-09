@@ -114,8 +114,14 @@ export async function getSearchDataOptimized(
     .from(sites)
     .where(inArray(sites.centreId, centreIds));
   
-  // Only return casual leasing sites
-  const allSites = casualLeasingSites.map(s => ({ ...s, assetType: "casual_leasing" }));
+  // Only return casual leasing sites with valid rates (exclude sites missing pricing)
+  const allSites = casualLeasingSites
+    .filter(s => {
+      const daily = parseFloat(s.pricePerDay || "0");
+      const weekly = parseFloat(s.pricePerWeek || "0");
+      return daily > 0 && weekly > 0;
+    })
+    .map(s => ({ ...s, assetType: "casual_leasing" }));
 
   // Group sites by centre
   const sitesByCentre = new Map<number, any[]>();
