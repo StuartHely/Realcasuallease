@@ -150,6 +150,7 @@ export async function getSiteAvailabilityGrid(
     customerId: number;
     customerName: string | null;
     companyName: string | null;
+    tradingName: string | null;
     productCategory: string | null;
     contactPhone: string | null;
     contactEmail: string | null;
@@ -216,6 +217,7 @@ export async function getSiteAvailabilityGrid(
       status: bookings.status,
       paymentMethod: bookings.paymentMethod,
       paidAt: bookings.paidAt,
+      usageCategoryId: bookings.usageCategoryId,
     })
     .from(bookings)
     .innerJoin(users, eq(bookings.customerId, users.id))
@@ -237,6 +239,7 @@ export async function getSiteAvailabilityGrid(
           .select({
             userId: customerProfiles.userId,
             companyName: customerProfiles.companyName,
+            tradingName: customerProfiles.tradingName,
             productCategory: customerProfiles.productCategory,
             phone: customerProfiles.phone,
           })
@@ -245,6 +248,17 @@ export async function getSiteAvailabilityGrid(
       : [];
 
   const profileMap = new Map(profiles.map((p) => [p.userId, p]));
+
+  // Get usage category names for bookings
+  const categoryIds = Array.from(new Set(bookingsList.map((b) => b.usageCategoryId).filter((id): id is number => id != null)));
+  const categories =
+    categoryIds.length > 0
+      ? await db
+          .select({ id: usageCategories.id, name: usageCategories.name })
+          .from(usageCategories)
+          .where(inArray(usageCategories.id, categoryIds))
+      : [];
+  const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
 
   // Get user emails
   const userEmails =
@@ -271,7 +285,8 @@ export async function getSiteAvailabilityGrid(
         customerId: b.customerId,
         customerName: b.customerName,
         companyName: profile?.companyName || null,
-        productCategory: profile?.productCategory || null,
+        tradingName: profile?.tradingName || null,
+        productCategory: (b.usageCategoryId ? categoryMap.get(b.usageCategoryId) : null) || profile?.productCategory || null,
         contactPhone: profile?.phone || null,
         contactEmail: emailMap.get(b.customerId) || null,
         startDate: b.startDate,

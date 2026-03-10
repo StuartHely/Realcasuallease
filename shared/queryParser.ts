@@ -114,9 +114,11 @@ function extractProductCategory(query: string): string | undefined {
   const lowerQuery = query.toLowerCase();
   
   // Common product category keywords (will be matched against database categories)
+  // Multi-word phrases first for priority matching
   const categoryKeywords = [
-    // Footwear
-    'shoes', 'shoe', 'footwear', 'boots', 'boot', 'ugg', 'sneakers', 'sneaker', 'sandals', 'sandal', 'heels', 'heel', 'socks', 'sock', 'thongs',
+    // Footwear (multi-word first)
+    'ugg boots', 'ugg boot',
+    'shoes', 'shoe', 'footwear', 'boots', 'boot', 'ugg', 'uggs', 'sneakers', 'sneaker', 'sandals', 'sandal', 'heels', 'heel', 'socks', 'sock', 'thongs',
     // Clothing & Fashion
     'clothing', 'apparel', 'fashion', 'accessories', 'accessory',
     'beanies', 'beanie', 'scarves', 'scarf', 'gloves', 'belts', 'belt', 'hats', 'hat', 'caps', 'cap',

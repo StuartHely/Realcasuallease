@@ -131,6 +131,9 @@
   input[type="radio"]:not(:disabled) {
     @apply cursor-pointer;
   }
+  .font-playfair {
+    font-family: 'Playfair Display', serif;
+  }
 }
 
 @layer components {

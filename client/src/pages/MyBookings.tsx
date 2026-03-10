@@ -18,6 +18,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { MapPin, Calendar, ArrowLeft, DollarSign, TrendingUp, Star, RefreshCw, CreditCard, XCircle, Repeat } from "lucide-react";
 import { format } from "date-fns";
+import { cleanHtmlDescription } from "@/lib/htmlUtils";
 import { toast } from "sonner";
 
 export default function MyBookings() {
@@ -147,7 +148,7 @@ export default function MyBookings() {
           id: b.id,
           bookingNumber: b.bookingNumber,
           bookingType: "site",
-          assetLabel: b.siteName || `Site ${b.siteNumber}`,
+          assetLabel: cleanHtmlDescription(b.siteName) || `Site ${b.siteNumber}`,
           centreName: b.centreName,
           startDate: b.startDate,
           endDate: b.endDate,

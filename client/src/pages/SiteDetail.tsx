@@ -30,6 +30,10 @@ export default function SiteDetail() {
     { enabled: !!site?.centreId }
   );
   const { data: usageCategories } = trpc.usageCategories.list.useQuery();
+  const { data: siteApprovedCategories } = trpc.sites.getApprovedCategories.useQuery(
+    { siteId },
+    { enabled: siteId > 0 }
+  );
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -68,6 +72,7 @@ export default function SiteDetail() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [showTableLimitDialog, setShowTableLimitDialog] = useState(false);
   const [showCentreEquipmentDialog, setShowCentreEquipmentDialog] = useState(false);
+  const [showUsageNotPermittedDialog, setShowUsageNotPermittedDialog] = useState(false);
   const [centreEquipmentMessage, setCentreEquipmentMessage] = useState("");
   const [pendingBookingData, setPendingBookingData] = useState<{
     siteId: number;
@@ -157,6 +162,27 @@ export default function SiteDetail() {
       return;
     }
 
+    // Check if the selected usage category is approved for this site
+    const selectedCatId = parseInt(usageCategoryId);
+    if (siteApprovedCategories && siteApprovedCategories.length > 0) {
+      const isApproved = siteApprovedCategories.some((cat: any) => cat.id === selectedCatId);
+      if (!isApproved) {
+        const requestedTables = parseInt(tablesRequested) || 0;
+        const requestedChairs = parseInt(chairsRequested) || 0;
+        setPendingBookingData({
+          siteId,
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+          usageCategoryId: selectedCatId,
+          additionalCategoryText: additionalCategoryText || undefined,
+          tablesRequested: requestedTables,
+          chairsRequested: requestedChairs,
+        });
+        setShowUsageNotPermittedDialog(true);
+        return;
+      }
+    }
+
     const requestedTables = parseInt(tablesRequested) || 0;
     const requestedChairs = parseInt(chairsRequested) || 0;
     const maxTables = site?.maxTables || 0;
@@ -240,6 +266,27 @@ export default function SiteDetail() {
     setShowCentreEquipmentDialog(false);
     setPendingBookingData(null);
     // Navigate back to home/search
+    setLocation('/');
+  };
+
+  const handleUsageNotPermittedProceed = () => {
+    if (pendingBookingData) {
+      createBookingMutation.mutate(pendingBookingData);
+      setShowUsageNotPermittedDialog(false);
+      setPendingBookingData(null);
+    }
+  };
+
+  const handleUsageNotPermittedFindAnother = () => {
+    setShowUsageNotPermittedDialog(false);
+    setPendingBookingData(null);
+    setStartDate("");
+    setEndDate("");
+    setUsageCategoryId("");
+    setAdditionalCategoryText("");
+    setTablesRequested("0");
+    setChairsRequested("0");
+    setCalSelection({ start: null, end: null, isSelecting: false });
     setLocation('/');
   };
 
@@ -408,7 +455,7 @@ export default function SiteDetail() {
           <div>
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl">Site {site.siteNumber}</CardTitle>
+                <CardTitle className="text-2xl font-bold">Site {site.siteNumber}</CardTitle>
                 <CardDescription>{centre?.name}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -448,12 +495,12 @@ export default function SiteDetail() {
                   <div className="space-y-2">
                     <div>
                       <p className="text-sm text-gray-600">Mon-Fri</p>
-                      <p className="text-2xl font-bold text-blue-600">${site.pricePerDay}/day</p>
+                      <p className="text-lg font-semibold text-gray-700">${site.pricePerDay}/day</p>
                     </div>
                     {site.weekendPricePerDay && site.weekendPricePerDay !== site.pricePerDay && (
                       <div>
                         <p className="text-sm text-gray-600">Weekend (Sat-Sun)</p>
-                        <p className="text-2xl font-bold text-purple-600">${site.weekendPricePerDay}/day</p>
+                        <p className="text-lg font-semibold text-gray-700">${site.weekendPricePerDay}/day</p>
                       </div>
                     )}
                     <div className="pt-2 border-t">
@@ -472,7 +519,153 @@ export default function SiteDetail() {
             </Card>
           </div>
 
-          {/* Availability Calendar — 14-day heatmap (matches Search page) */}
+          {/* Booking Form — beside site details on the right */}
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                  <Calendar className="h-6 w-6" />
+                  Book This Space
+                </CardTitle>
+                <CardDescription>
+                  {isAuthenticated
+                    ? "Fill in the details below to make a booking"
+                    : "Please log in to make a booking"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!isAuthenticated && (
+                  <Button
+                    onClick={() => (window.location.href = "/login")}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
+                    Log In to Book
+                  </Button>
+                )}
+
+                {isAuthenticated && (
+                  <>
+                    <div>
+                      <Label htmlFor="startDate">Start Date</Label>
+                      <Input
+                        id="startDate"
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="endDate">End Date</Label>
+                      <Input
+                        id="endDate"
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="usageCategory">Usage Category *</Label>
+                      <Select value={usageCategoryId} onValueChange={setUsageCategoryId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select usage category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {usageCategories?.map((category) => (
+                            <SelectItem key={category.id} value={String(category.id)}>
+                              {category.name}{category.isFree && " (FREE)"}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {usageCategoryId && (
+                      <div>
+                        <Label htmlFor="additionalCategoryText">Additional Details (optional)</Label>
+                        <Textarea
+                          id="additionalCategoryText"
+                          placeholder="Provide any additional information about your usage..."
+                          value={additionalCategoryText}
+                          onChange={(e) => setAdditionalCategoryText(e.target.value)}
+                        />
+                      </div>
+                    )}
+
+                    {/* Equipment Request — always show when site has maxTables or centre has equipment */}
+                    {((site?.maxTables && site.maxTables > 0) || (centre && ((centre.totalTablesAvailable || 0) > 0 || (centre.totalChairsAvailable || 0) > 0))) && (
+                      <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                        <h3 className="font-semibold text-sm">Equipment Request (Optional)</h3>
+                        
+                        {((site?.maxTables && site.maxTables > 0) || (centre?.totalTablesAvailable || 0) > 0) && (
+                          <div>
+                            <Label htmlFor="tablesRequested">
+                              Tables Required (Max: {site?.maxTables || 0} for this site)
+                            </Label>
+                            <Input
+                              id="tablesRequested"
+                              type="number"
+                              min="0"
+                              max={site?.maxTables || 0}
+                              value={tablesRequested}
+                              onChange={(e) => setTablesRequested(e.target.value)}
+                            />
+                          </div>
+                        )}
+                        
+                        {(centre && (centre.totalChairsAvailable || 0) > 0) && (
+                          <div>
+                            <Label htmlFor="chairsRequested">Chairs Required</Label>
+                            <Input
+                              id="chairsRequested"
+                              type="number"
+                              min="0"
+                              value={chairsRequested}
+                              onChange={(e) => setChairsRequested(e.target.value)}
+                            />
+                          </div>
+                        )}
+                        
+                        <p className="text-xs text-muted-foreground">
+                          Equipment availability will be checked when you submit your booking.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Price Calculator */}
+                    {startDate && endDate && (
+                      <PriceCalculator
+                        siteId={siteId}
+                        startDate={new Date(startDate)}
+                        endDate={new Date(endDate)}
+                      />
+                    )}
+
+                    {centre?.paymentMode === "invoice_only" && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+                        <FileText className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-blue-800">
+                          This centre processes payments by invoice. You will receive an invoice once your booking is confirmed.
+                        </p>
+                      </div>
+                    )}
+
+                    <Button
+                      onClick={handleBooking}
+                      disabled={createBookingMutation.isPending}
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      {createBookingMutation.isPending ? "Processing..." : 
+                        centre?.paymentMode === "invoice_only" ? "Submit Booking Request" : "Confirm Booking"}
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Availability Calendar — 14-day heatmap (full width below) */}
           <div className="md:col-span-2">
             <Card>
               <CardHeader className="pb-2">
@@ -650,11 +843,21 @@ export default function SiteDetail() {
                               date >= calSelection.start && date <= calSelection.end;
                             const isSelectingStart = calSelection.isSelecting && calSelection.start && isSameDay(date, calSelection.start);
 
+                            // Check if this date falls within the booking dates entered in the form
+                            const formStart = startDate ? startOfDay(new Date(startDate)) : null;
+                            const formEnd = endDate ? startOfDay(new Date(endDate)) : null;
+                            const isBookingDate = formStart && formEnd && date >= formStart && date <= formEnd;
+                            const isBookingEdge = (formStart && isSameDay(date, formStart)) || (formEnd && isSameDay(date, formEnd));
+
                             return (
                               <td
                                 key={dateIdx}
                                 className={`border border-gray-200 border-solid p-0 ${
-                                  isToday ? 'border-l-4 border-r-4 border-blue-500' : ''
+                                  isBookingDate ? 'ring-2 ring-inset ring-blue-600' : ''
+                                } ${
+                                  isBookingEdge ? 'ring-[3px] ring-inset ring-blue-700' : ''
+                                } ${
+                                  isToday && !isBookingDate ? 'border-l-4 border-r-4 border-blue-500' : ''
                                 } ${
                                   isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
                                 } ${
@@ -718,151 +921,7 @@ export default function SiteDetail() {
             </Card>
           </div>
 
-          {/* Booking Form */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Book This Space
-                </CardTitle>
-                <CardDescription>
-                  {isAuthenticated
-                    ? "Fill in the details below to make a booking"
-                    : "Please log in to make a booking"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {!isAuthenticated && (
-                  <Button
-                    onClick={() => (window.location.href = "/login")}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
-                    Log In to Book
-                  </Button>
-                )}
 
-                {isAuthenticated && (
-                  <>
-                    <div>
-                      <Label htmlFor="startDate">Start Date</Label>
-                      <Input
-                        id="startDate"
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="endDate">End Date</Label>
-                      <Input
-                        id="endDate"
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="usageCategory">Usage Category *</Label>
-                      <Select value={usageCategoryId} onValueChange={setUsageCategoryId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select usage category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {usageCategories?.map((category) => (
-                            <SelectItem key={category.id} value={String(category.id)}>
-                              {category.name}{category.isFree && " (FREE)"}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {usageCategoryId && (
-                      <div>
-                        <Label htmlFor="additionalCategoryText">Additional Details (optional)</Label>
-                        <Textarea
-                          id="additionalCategoryText"
-                          placeholder="Provide any additional information about your usage..."
-                          value={additionalCategoryText}
-                          onChange={(e) => setAdditionalCategoryText(e.target.value)}
-                        />
-                      </div>
-                    )}
-
-                    {/* Equipment Request */}
-                    {centre && ((centre.totalTablesAvailable || 0) > 0 || (centre.totalChairsAvailable || 0) > 0) && (
-                      <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                        <h3 className="font-semibold text-sm">Equipment Request (Optional)</h3>
-                        
-                        {(centre.totalTablesAvailable || 0) > 0 && (
-                          <div>
-                            <Label htmlFor="tablesRequested">
-                              Tables Required (Max: {site?.maxTables || 0} for this site)
-                            </Label>
-                            <Input
-                              id="tablesRequested"
-                              type="number"
-                              min="0"
-                              max={site?.maxTables || 0}
-                              value={tablesRequested}
-                              onChange={(e) => setTablesRequested(e.target.value)}
-                            />
-                          </div>
-                        )}
-                        
-                        {(centre.totalChairsAvailable || 0) > 0 && (
-                          <div>
-                            <Label htmlFor="chairsRequested">Chairs Required</Label>
-                            <Input
-                              id="chairsRequested"
-                              type="number"
-                              min="0"
-                              value={chairsRequested}
-                              onChange={(e) => setChairsRequested(e.target.value)}
-                            />
-                          </div>
-                        )}
-                        
-                        <p className="text-xs text-muted-foreground">
-                          Equipment availability will be checked when you submit your booking.
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Price Calculator */}
-                    {startDate && endDate && (
-                      <PriceCalculator
-                        siteId={siteId}
-                        startDate={new Date(startDate)}
-                        endDate={new Date(endDate)}
-                      />
-                    )}
-
-                    {centre?.paymentMode === "invoice_only" && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
-                        <FileText className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                        <p className="text-sm text-blue-800">
-                          This centre processes payments by invoice. You will receive an invoice once your booking is confirmed.
-                        </p>
-                      </div>
-                    )}
-
-                    <Button
-                      onClick={handleBooking}
-                      disabled={createBookingMutation.isPending}
-                      className="w-full bg-blue-600 hover:bg-blue-700"
-                    >
-                      {createBookingMutation.isPending ? "Processing..." : 
-                        centre?.paymentMode === "invoice_only" ? "Submit Booking Request" : "Confirm Booking"}
-                    </Button>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </main>
 
@@ -925,6 +984,39 @@ export default function SiteDetail() {
               disabled={createBookingMutation.isPending}
             >
               {createBookingMutation.isPending ? "Processing..." : "Yes - Proceed with my own tables"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Usage Not Permitted Dialog */}
+      <Dialog open={showUsageNotPermittedDialog} onOpenChange={setShowUsageNotPermittedDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Usage Not Permitted
+            </DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              Sorry but your selected location does not accept the requested usage and your booking is unlikely to be approved.
+              <br /><br />
+              Would you still like to put in the booking request or choose another site or centre?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={handleUsageNotPermittedFindAnother}
+              className="flex-1 sm:flex-none"
+            >
+              Find a different location
+            </Button>
+            <Button
+              onClick={handleUsageNotPermittedProceed}
+              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700"
+              disabled={createBookingMutation.isPending}
+            >
+              {createBookingMutation.isPending ? "Processing..." : "Proceed with request"}
             </Button>
           </DialogFooter>
         </DialogContent>

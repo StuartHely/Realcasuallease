@@ -28,6 +28,9 @@ export async function createCheckoutSession(params: {
   startDate: Date;
   endDate: Date;
 }): Promise<{ sessionId: string; url: string }> {
+  if (!ENV.stripeSecretKey) {
+    throw new Error("Stripe is not configured. Please set STRIPE_SECRET_KEY or use invoice payment method.");
+  }
   const Stripe = (await import("stripe")).default;
   const stripe = new Stripe(ENV.stripeSecretKey);
 

@@ -22,7 +22,8 @@ type AreaAlias = {
 
 /** Extra aliases that map to a canonical AREA_ALIASES key. */
 const ALIAS_VARIANTS: Record<string, string[]> = {
-  "western sydney": ["sydney west", "sydneys west", "west sydney", "west of sydney", "greater west", "sydneys western", "sydney's west"],
+  "western sydney": ["sydney west", "sydneys west", "west sydney", "west of sydney", "greater west", "sydneys western", "sydney's west", "greater western sydney"],
+  "southern sydney": ["south sydney", "sydney south", "sydneys south", "sydney's south", "south of sydney", "st george"],
   "eastern suburbs": ["east suburbs", "sydneys east", "sydney east", "east of sydney", "sydney's east"],
   "inner west": ["sydneys inner west", "sydney inner west", "sydney's inner west"],
   "north shore": ["sydneys north shore", "sydney north shore", "northern suburbs sydney", "sydney's north shore"],
@@ -38,7 +39,8 @@ const AREA_ALIASES: Record<string, AreaAlias> = {
   "gold coast": { cities: ["Gold Coast"], states: ["QLD"] },
   "sunshine coast": { cities: ["Sunshine Coast"], states: ["QLD"] },
   "central coast": { postcodeRanges: [[2250, 2263]], states: ["NSW"] },
-  "western sydney": { suburbs: ["Campbelltown", "Penrith", "Parramatta", "Liverpool", "Blacktown", "Fairfield"], states: ["NSW"] },
+  "western sydney": { suburbs: ["Campbelltown", "Penrith", "Parramatta", "Liverpool", "Blacktown", "Fairfield", "Carnes Hill", "Horningsea Park", "Bass Hill", "Bankstown", "Auburn", "Merrylands", "Wetherill Park", "Mt Druitt", "Rooty Hill"], states: ["NSW"] },
+  "southern sydney": { suburbs: ["Kogarah", "Rockdale", "Hurstville", "Miranda", "Sutherland", "Cronulla", "Caringbah", "Gymea"], states: ["NSW"] },
   "eastern suburbs": { suburbs: ["Bondi", "Bondi Junction", "Maroubra", "Randwick", "Coogee"], states: ["NSW"] },
   "inner west": { suburbs: ["Ashfield", "Burwood", "Strathfield", "Canterbury"], states: ["NSW"] },
   "north shore": { suburbs: ["Chatswood", "Hornsby", "Gordon", "Macquarie Park"], states: ["NSW"] },
@@ -150,6 +152,7 @@ async function ensureIndex(): Promise<LocationEntry[]> {
     return locationIndex;
   }
 
+  const { eq } = await import("drizzle-orm");
   const rows = await db
     .select({
       id: shoppingCentres.id,
@@ -162,7 +165,8 @@ async function ensureIndex(): Promise<LocationEntry[]> {
       latitude: shoppingCentres.latitude,
       longitude: shoppingCentres.longitude,
     })
-    .from(shoppingCentres);
+    .from(shoppingCentres)
+    .where(eq(shoppingCentres.includeInMainSite, true));
 
   locationIndex = rows.map((r) => ({
     centreId: r.id,
@@ -195,9 +199,17 @@ function matchesAlias(entry: LocationEntry, alias: AreaAlias): boolean {
 
   if (alias.suburbs && alias.suburbs.length > 0) {
     hasAnyCriteria = true;
-    if (entry.suburb) {
-      const entrySuburb = entry.suburb.toLowerCase().trim();
-      if (alias.suburbs.some((s) => s.toLowerCase() === entrySuburb)) return true;
+    const entrySuburb = (entry.suburb || "").toLowerCase().trim();
+    const entryName = (entry.centreName || "").toLowerCase().trim();
+    const entryCity = (entry.city || "").toLowerCase().trim();
+    for (const s of alias.suburbs) {
+      const sl = s.toLowerCase();
+      // Check suburb (partial: "Maroubra" matches "Maroubra Junction")
+      if (entrySuburb && (entrySuburb.includes(sl) || sl.includes(entrySuburb))) return true;
+      // Check centre name (e.g. "Campbelltown Mall" contains "Campbelltown")
+      if (entryName.includes(sl)) return true;
+      // Check city
+      if (entryCity && (entryCity.includes(sl) || sl.includes(entryCity))) return true;
     }
   }
 
@@ -271,9 +283,11 @@ export async function findCentresBySuburbOrCity(query: string): Promise<Location
   return index.filter((entry) => {
     const suburb = entry.suburb?.trim().toLowerCase() ?? "";
     const city = entry.city?.trim().toLowerCase() ?? "";
+    const name = entry.centreName?.trim().toLowerCase() ?? "";
 
-    // Exact partial match
+    // Exact partial match on suburb, city, or centre name
     if (suburb.includes(normalised) || city.includes(normalised)) return true;
+    if (name.includes(normalised)) return true;
 
     // Fuzzy match on whole suburb/city names
     if (suburb && levenshtein(suburb, normalised) <= 2) return true;

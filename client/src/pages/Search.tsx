@@ -202,19 +202,7 @@ export default function Search() {
     return () => observer.disconnect();
   });
 
-  // Auto-scroll to matched site when data loads
-  useEffect(() => {
-    if (data && data.matchedSiteIds && data.matchedSiteIds.length > 0) {
-      // Wait a bit for the DOM to render
-      setTimeout(() => {
-        const firstMatchedId = data.matchedSiteIds[0];
-        const element = document.getElementById(`site-${firstMatchedId}`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 500);
-    }
-  }, [data]);
+
 
   // Generate date range for heatmap (14 or 30 days)
   const generateDateRange = () => {
@@ -358,11 +346,13 @@ export default function Search() {
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-widest text-white/50 mb-1.5">Search Results</p>
               <div className="flex flex-wrap items-center gap-2">
-                {data?.centres?.[0] ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                    <MapPin className="h-3.5 w-3.5" />
-                    {data.centres[0].name}{data.centres[0].suburb ? `, ${data.centres[0].suburb}` : ''}
-                  </span>
+                {data?.centres && data.centres.length > 0 ? (
+                  data.centres.map((c: any) => (
+                    <span key={c.id} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                      <MapPin className="h-3.5 w-3.5" />
+                      {c.name}{c.suburb ? `, ${c.suburb}` : ''}
+                    </span>
+                  ))
                 ) : (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>
                     <MapPin className="h-3.5 w-3.5" />
@@ -522,10 +512,17 @@ export default function Search() {
               </p>
             </div>
           )}
-          {data?.categoryUnrecognised && data?.searchInterpretation?.productCategory && (
+          {data?.matchedCategoryName && data?.searchInterpretation?.productCategory && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-800 font-medium text-base">
+                Searching for '{data.matchedCategoryName}' — showing all available sites. Contact us to confirm category availability at specific centres.
+              </p>
+            </div>
+          )}
+          {data?.categoryUnrecognised && data?.searchInterpretation?.productCategory && !data?.matchedCategoryName && (
             <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-amber-800 font-medium text-base">
-                We couldn't match a specific category for '{data.searchInterpretation.productCategory}' — showing all available sites. You may wish to check with us about permitted product categories for this centre.
+                We couldn't match a specific category for '{data.searchInterpretation.productCategory}' — showing all available sites. You may wish to check with us about permitted product categories.
               </p>
             </div>
           )}
@@ -1445,16 +1442,29 @@ export default function Search() {
             {/* Calendar Heatmap - Casual Leasing Sites */}
             {(selectedAssetType === "casual_leasing" || selectedAssetType === "all") && data.centres.map((centre: any) => {
               // Use casualLeasingSites if fetched (when search was for VS/3rdL), otherwise filter from data.sites
-              const sitesSource = casualLeasingSites || data.sites;
+              // When using casualLeasingSites (fetched separately), restrict to only
+              // sites that appear in data.sites so the server-side category filter is honoured.
+              let sitesSource = casualLeasingSites || data.sites;
+              if (casualLeasingSites && data.sites) {
+                const apiSiteIds = new Set(data.sites.map((s: any) => s.id));
+                sitesSource = casualLeasingSites.filter((s: any) => apiSiteIds.has(s.id));
+              }
               let centreSites = sitesSource.filter((s: any) => s.centreId === centre.id && (!s.assetType || s.assetType === 'casual_leasing'));
               
+              // If the search had a product category, only show sites the API returned
+              // (which have already been filtered by category on the server)
+              if (data.searchInterpretation?.productCategory && data.siteCategories) {
+                centreSites = centreSites.filter((site: any) => {
+                  // Only include sites that were in the API response (already category-filtered)
+                  return data.sites.some((s: any) => s.id === site.id);
+                });
+              }
+
               // Filter by selected category if one is chosen
               if (selectedCategoryId && data.siteCategories) {
                 centreSites = centreSites.filter((site: any) => {
                   const siteCategories = data.siteCategories[site.id];
-                  // If no categories configured (empty array), site accepts all categories
                   if (!siteCategories || siteCategories.length === 0) return true;
-                  // Otherwise check if selected category is in the approved list
                   return siteCategories.some((cat: any) => cat.id === selectedCategoryId);
                 });
               }
@@ -1519,9 +1529,9 @@ export default function Search() {
                     </div>
                     
                     {/* Filter explanation notice */}
-                    {(parsedQuery.minSizeM2 !== undefined || (parsedQuery.productCategory && !data?.categoryUnrecognised)) && (() => {
+                    {(parsedQuery.minSizeM2 !== undefined || (parsedQuery.productCategory && !data?.categoryUnrecognised && !data?.matchedCategoryName)) && (() => {
                       const hasSizeFilter = parsedQuery.minSizeM2 !== undefined;
-                      const hasCategoryFilter = parsedQuery.productCategory && !data?.categoryUnrecognised;
+                      const hasCategoryFilter = parsedQuery.productCategory && !data?.categoryUnrecognised && !data?.matchedCategoryName;
                       
                       let noticeText = '';
                       if (hasSizeFilter && hasCategoryFilter) {
@@ -2341,126 +2351,67 @@ export default function Search() {
                       })()}
                     </div>
                   </CardContent>
+
+                  {/* Per-Centre Floor Plan Map */}
+                  {(() => {
+                    const centreFloorLevels = data.floorLevelsByCentre?.[centre.id] || [];
+                    const centreMapSites = combinedSites.filter((s: any) => s.centreId === centre.id);
+                    const hasFloorPlan = (centreFloorLevels.length > 0 && centreFloorLevels.some((fl: any) => fl.mapImageUrl)) || centre.mapImageUrl || centreMapSites.some((s: any) => s.mapMarkerX != null && s.mapMarkerY != null);
+                    
+                    if (hasFloorPlan) {
+                      return (
+                        <CardContent className="pt-0">
+                          <div className="border-t border-gray-200 pt-6">
+                            <h3 className="text-lg font-semibold mb-2">Centre Floor Plan</h3>
+                            <p className="text-sm text-muted-foreground mb-4">Click on any site marker to view details and book</p>
+                            <InteractiveMap
+                              centreId={centre.id}
+                              mapUrl={centreFloorLevels.find((fl: any) => fl.mapImageUrl)?.mapImageUrl || centre.mapImageUrl || ''}
+                              sites={centreMapSites}
+                              centreName={centre.name}
+                              assetTypeFilter={selectedAssetType}
+                            />
+                          </div>
+                        </CardContent>
+                      );
+                    }
+                    return null;
+                  })()}
+
+                  {/* Per-Centre Description */}
+                  {centre.description && (
+                    <CardContent className="pt-0">
+                      <div className="border-t border-gray-200 pt-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3">About {centre.name}</h3>
+                        <div className="text-gray-600 whitespace-pre-line leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: centre.description }} />
+                        {(centre.pdfUrl1 || centre.pdfUrl2 || centre.pdfUrl3) && (
+                          <div className="mt-4 flex flex-wrap gap-3">
+                            {centre.pdfUrl1 && (
+                              <a href={centre.pdfUrl1} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline">
+                                <FileText className="h-4 w-4" />
+                                {centre.pdfName1 || 'Document 1'}
+                              </a>
+                            )}
+                            {centre.pdfUrl2 && (
+                              <a href={centre.pdfUrl2} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline">
+                                <FileText className="h-4 w-4" />
+                                {centre.pdfName2 || 'Document 2'}
+                              </a>
+                            )}
+                            {centre.pdfUrl3 && (
+                              <a href={centre.pdfUrl3} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline">
+                                <FileText className="h-4 w-4" />
+                                {centre.pdfName3 || 'Document 3'}
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  )}
                 </Card>
               );
             })}
-            
-            {/* Centre Floor Plan Map - Show below sites listing */}
-            {((data.floorLevels && data.floorLevels.length > 0 && data.floorLevels.some((fl: any) => fl.mapImageUrl)) || data.centres[0]?.mapImageUrl || combinedSites.some((s: any) => s.mapMarkerX != null && s.mapMarkerY != null)) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Centre Floor Plan</CardTitle>
-                  <CardDescription>
-                    Click on any site marker to view details and book
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <InteractiveMap
-                    centreId={data.centres[0].id}
-                    mapUrl={data.floorLevels?.find((fl: any) => fl.mapImageUrl)?.mapImageUrl || data.centres[0]?.mapImageUrl || ''}
-                    sites={combinedSites}
-                    centreName={data.centres[0].name}
-                    assetTypeFilter={selectedAssetType}
-                  />
-                  
-                  {/* Centre Description - Show below the map */}
-                  {data.centres[0]?.description && (
-                    <div className="mt-6 pt-6 border-t border-gray-200">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">About {data.centres[0].name}</h3>
-                      <div className="text-gray-600 whitespace-pre-line leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: data.centres[0].description }} />
-                      {/* PDF Document Links */}
-                      {(data.centres[0].pdfUrl1 || data.centres[0].pdfUrl2 || data.centres[0].pdfUrl3) && (
-                        <div className="mt-4 flex flex-wrap gap-3">
-                          {data.centres[0].pdfUrl1 && (
-                            <a
-                              href={data.centres[0].pdfUrl1}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
-                            >
-                              <FileText className="h-4 w-4" />
-                              {data.centres[0].pdfName1 || 'Document 1'}
-                            </a>
-                          )}
-                          {data.centres[0].pdfUrl2 && (
-                            <a
-                              href={data.centres[0].pdfUrl2}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
-                            >
-                              <FileText className="h-4 w-4" />
-                              {data.centres[0].pdfName2 || 'Document 2'}
-                            </a>
-                          )}
-                          {data.centres[0].pdfUrl3 && (
-                            <a
-                              href={data.centres[0].pdfUrl3}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
-                            >
-                              <FileText className="h-4 w-4" />
-                              {data.centres[0].pdfName3 || 'Document 3'}
-                            </a>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-            
-            {/* Centre Description - Show as standalone card if no floor plan map */}
-            {data.centres[0]?.description && (!data.floorLevels || data.floorLevels.length === 0 || !data.floorLevels.some((fl: any) => fl.mapImageUrl)) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>About {data.centres[0].name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-gray-600 whitespace-pre-line leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: data.centres[0].description }} />
-                  {/* PDF Document Links */}
-                  {(data.centres[0].pdfUrl1 || data.centres[0].pdfUrl2 || data.centres[0].pdfUrl3) && (
-                    <div className="mt-4 flex flex-wrap gap-3">
-                      {data.centres[0].pdfUrl1 && (
-                        <a
-                          href={data.centres[0].pdfUrl1}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                          <FileText className="h-4 w-4" />
-                          {data.centres[0].pdfName1 || 'Document 1'}
-                        </a>
-                      )}
-                      {data.centres[0].pdfUrl2 && (
-                        <a
-                          href={data.centres[0].pdfUrl2}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                          <FileText className="h-4 w-4" />
-                          {data.centres[0].pdfName2 || 'Document 2'}
-                        </a>
-                      )}
-                      {data.centres[0].pdfUrl3 && (
-                        <a
-                          href={data.centres[0].pdfUrl3}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                          <FileText className="h-4 w-4" />
-                          {data.centres[0].pdfName3 || 'Document 3'}
-                        </a>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
             
             {/* Nearby Centres Map */}
             {data.centres.length > 0 && data.centres[0].latitude && data.centres[0].longitude && (

@@ -11,23 +11,25 @@
  */
 
 export const CATEGORY_SYNONYMS: Record<string, string[]> = {
-  // Footwear variations
-  "shoes": ["shoe", "footwear", "sneakers", "boots"],
-  "shoe": ["shoes", "footwear"],
-  "footwear": ["shoes", "shoe", "boots", "sneakers", "sandals"],
-  "ugg": ["uggs", "ugg boots", "sheepskin boots", "shoes", "footwear"],
-  "uggs": ["ugg", "ugg boots", "sheepskin boots", "shoes", "footwear"],
-  "boots": ["boot", "footwear", "shoes"],
-  "boot": ["boots", "footwear", "shoes"],
-  "sneakers": ["sneaker", "shoes", "footwear", "trainers"],
-  "sneaker": ["sneakers", "shoes", "footwear"],
-  "sandals": ["sandal", "footwear", "shoes", "thongs"],
-  "sandal": ["sandals", "footwear", "shoes"],
-  "heels": ["heel", "shoes", "footwear", "fashion"],
-  "heel": ["heels", "shoes", "footwear", "fashion"],
-  "socks": ["sock", "footwear", "clothing", "apparel", "fashion"],
-  "sock": ["socks", "footwear", "clothing", "apparel", "fashion"],
-  "thongs": ["thong", "footwear", "sandals", "shoes"],
+  // Footwear variations — each subcategory is distinct; don't cross-match
+  "shoes": ["shoe"],
+  "shoe": ["shoes"],
+  "footwear": ["shoes", "shoe"],
+  "ugg boots": ["ugg boot", "ugg", "uggs", "sheepskin boots"],
+  "ugg boot": ["ugg boots", "ugg", "uggs", "sheepskin boots"],
+  "ugg": ["uggs", "ugg boots", "sheepskin boots"],
+  "uggs": ["ugg", "ugg boots", "sheepskin boots"],
+  "boots": ["boot"],
+  "boot": ["boots"],
+  "sneakers": ["sneaker", "trainers"],
+  "sneaker": ["sneakers"],
+  "sandals": ["sandal", "thongs"],
+  "sandal": ["sandals"],
+  "heels": ["heel"],
+  "heel": ["heels"],
+  "socks": ["sock"],
+  "sock": ["socks"],
+  "thongs": ["thong", "sandals"],
   
   // Clothing & Apparel variations
   "clothes": ["clothing", "apparel", "fashion", "wear"],

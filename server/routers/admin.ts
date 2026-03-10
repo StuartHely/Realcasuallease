@@ -444,6 +444,12 @@ export const adminRouter = router({
         return await db.unhideFloorLevel(input.floorLevelId);
       }),
 
+    renameFloorLevel: ownerProcedure
+      .input(z.object({ floorLevelId: z.number(), levelName: z.string().min(1).max(100) }))
+      .mutation(async ({ input }) => {
+        return await db.updateFloorLevel(input.floorLevelId, { levelName: input.levelName });
+      }),
+
     uploadFloorLevelMap: ownerProcedure
       .input(z.object({
         floorLevelId: z.number(),
@@ -608,7 +614,6 @@ export const adminRouter = router({
                         .from(bookingsTable)
                         .innerJoin(sitesTable, eq(bookingsTable.siteId, sitesTable.id))
                         .where(and(
-                          ne(bookingsTable.customerId, booking.customerId),
                           eq(bookingsTable.usageCategoryId, booking.usageCategoryId),
                           eq(sitesTable.centreId, site.centreId),
                           ne(bookingsTable.id, booking.id),
@@ -621,19 +626,20 @@ export const adminRouter = router({
                         ));
                       
                       if (overlappingBookings.length > 0) {
-                        reasons.push('Category conflict: another customer has overlapping booking with same category at this centre');
+                        reasons.push('Same or Similar Usage on the same date');
                       }
                     }
                   }
                 }
               }
               
-              if (!site?.instantBooking) {
-                reasons.push('Site requires manual approval for all bookings');
-              }
-              
               if (booking.customUsage) {
                 reasons.push('Custom usage type specified');
+              }
+              
+              // Only show the generic reason if no specific reasons were identified
+              if (reasons.length === 0 && !site?.instantBooking) {
+                reasons.push('Site requires manual approval for all bookings');
               }
               
               if (reasons.length > 0) {

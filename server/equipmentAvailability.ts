@@ -40,8 +40,8 @@ export async function getEquipmentAvailability(
         continue;
       }
       
-      // Only count confirmed bookings
-      if (booking.status === 'confirmed' || booking.status === 'completed') {
+      // Only count active bookings (pending, confirmed, completed)
+      if (booking.status === 'pending' || booking.status === 'confirmed' || booking.status === 'completed') {
         tablesUsed += booking.tablesRequested || 0;
         chairsUsed += booking.chairsRequested || 0;
       }

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Calendar, MapPin, User, DollarSign, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { cleanHtmlDescription } from "@/lib/htmlUtils";
 import { InsuranceStatusDisplay, INSURANCE_REJECTION_TEMPLATES } from "@/components/InsuranceStatusDisplay";
 import {
   Dialog,
@@ -146,7 +147,7 @@ export default function PendingApprovals() {
                         <p className="font-semibold text-gray-900">{booking.centreName}</p>
                         <p className="text-sm text-gray-600">Site {booking.siteNumber}</p>
                         {booking.siteDescription && (
-                          <p className="text-sm text-gray-500">{booking.siteDescription}</p>
+                        <p className="text-sm text-gray-500">{cleanHtmlDescription(booking.siteDescription)}</p>
                         )}
                       </div>
                     </div>
@@ -178,10 +179,13 @@ export default function PendingApprovals() {
                       </div>
                     </div>
 
-                    {booking.usageTypeName && (
+                    {(booking.productCategory || booking.usageTypeName) && (
                       <div>
-                        <p className="font-semibold text-gray-900">Usage Type</p>
-                        <p className="text-sm text-gray-600">{booking.usageTypeName}</p>
+                        <p className="font-semibold text-gray-900">Category</p>
+                        <p className="text-sm text-gray-600">{booking.productCategory || booking.usageTypeName}</p>
+                        {booking.additionalCategoryText && (
+                          <p className="text-sm text-gray-500 italic">{booking.additionalCategoryText}</p>
+                        )}
                         {booking.customUsage && (
                           <p className="text-sm text-gray-500 italic">{booking.customUsage}</p>
                         )}

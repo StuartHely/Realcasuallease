@@ -37,6 +37,12 @@ export const bookingsRouter = router({
         const site = await db.getSiteById(input.siteId);
         if (!site) throw new TRPCError({ code: "NOT_FOUND", message: "Site not found" });
 
+        // Validate tables against site maximum — clamp to maxTables if exceeded
+        const siteMaxTables = site.maxTables || 0;
+        const tablesRequested = (siteMaxTables > 0 && (input.tablesRequested || 0) > siteMaxTables)
+          ? siteMaxTables
+          : (input.tablesRequested || 0);
+
         // Calculate booking duration and price with weekend rate support
         const { totalAmount, weekdayCount, weekendCount } = await import("../bookingCalculation").then(m => 
           m.calculateBookingCost(site, input.startDate, input.endDate)
@@ -68,13 +74,13 @@ export const bookingsRouter = router({
 
         // Check equipment availability if requested
         let equipmentWarning: string | undefined;
-        if ((input.tablesRequested || 0) > 0 || (input.chairsRequested || 0) > 0) {
+        if (tablesRequested > 0 || (input.chairsRequested || 0) > 0) {
           const { checkEquipmentAvailability } = await import("../equipmentAvailability");
           const equipmentCheck = await checkEquipmentAvailability(
             site.centreId,
             input.startDate,
             input.endDate,
-            input.tablesRequested || 0,
+            tablesRequested,
             input.chairsRequested || 0
           );
           
@@ -110,11 +116,11 @@ export const bookingsRouter = router({
               if (!isApproved) {
                 requiresApproval = true;
               } else {
-                // Category is explicitly approved - check for overlapping bookings from OTHER customers
-                // This ensures category exclusivity: only one vendor per category at a time
+                // Category is explicitly approved - check for Same or Similar Usage on the same date
+                // Any duplicate category at the same centre on overlapping dates triggers manual approval
               const { getDb } = await import("../db");
               const { bookings, sites: sitesTable } = await import("../../drizzle/schema");
-              const { eq, and, ne, or, lte, gte } = await import("drizzle-orm");
+              const { eq, and, or, lte, gte } = await import("drizzle-orm");
               const dbInstance = await getDb();
               if (dbInstance) {
                 // Get the centre ID for the current site
@@ -125,7 +131,7 @@ export const bookingsRouter = router({
                 if (currentSite.length > 0) {
                   const centreId = currentSite[0].centreId;
                   
-                  // Find overlapping bookings from DIFFERENT customers with same category at same centre
+                  // Find ANY overlapping bookings with same category at same centre (Same or Similar Usage on the same date)
                   // Date overlap logic: (newStart <= existingEnd) AND (newEnd >= existingStart)
                   const overlappingBookings = await dbInstance.select({
                     bookingId: bookings.id,
@@ -136,7 +142,6 @@ export const bookingsRouter = router({
                     .from(bookings)
                     .innerJoin(sitesTable, eq(bookings.siteId, sitesTable.id))
                     .where(and(
-                      ne(bookings.customerId, ctx.user.id), // DIFFERENT customer
                       eq(bookings.usageCategoryId, input.usageCategoryId), // SAME category
                       eq(sitesTable.centreId, centreId), // SAME centre
                       or(
@@ -232,7 +237,7 @@ export const bookingsRouter = router({
           paymentDueDate: paymentDueDate,
           status: requiresApproval ? "pending" : (site.instantBooking ? "confirmed" : "pending"),
           requiresApproval,
-          tablesRequested: input.tablesRequested || 0,
+          tablesRequested,
           chairsRequested: input.chairsRequested || 0,
           bringingOwnTables: input.bringingOwnTables || false,
         });
