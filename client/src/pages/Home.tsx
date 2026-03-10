@@ -279,12 +279,13 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-white">
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-6 flex items-center justify-between">
           <div 
-            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => setLocation("/")}
+           className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity relative z-50"
+           onClick={() => setLocation("/")}
+           style={{ marginBottom: '-30px' }}
           >
-            <Logo height={48} className="h-12" />
+           <Logo width={240} height={61} />
           </div>
           <nav className="flex items-center gap-2">
             {isAuthenticated ? (
@@ -323,19 +324,19 @@ export default function Home() {
 
       {/* Hero Section */}
       <main className="flex-1">
-        <section className="pt-12 md:pt-16 pb-6 px-4">
+        <section className="pt-16 md:pt-24 pb-8 px-4" style={{ background: 'linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%)' }}>
           <div className="container mx-auto max-w-5xl text-center">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-blue-900 mb-4 md:mb-6 leading-tight font-playfair">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-blue-900 mb-10 md:mb-14 leading-tight font-playfair">
               The Intelligent Way to Book Casual Leasing in Shopping Centres
             </h2>
-            <p className="text-xl md:text-2xl text-blue-900 font-semibold mb-8 md:mb-12 max-w-3xl mx-auto animate-fade-in" style={{ fontSize: '120%' }}>
-              Describe the space you need and we'll handle the rest.
-            </p>
 
             {/* Search Box */}
-            <Card className="shadow-[0_4px_20px_rgba(0,0,0,0.08),0_1px_6px_rgba(0,0,0,0.04)] border-0">
+            <Card className="shadow-[0_6px_28px_rgba(0,0,0,0.10),0_2px_8px_rgba(0,0,0,0.05)] border-0">
               <CardContent className="pt-6 md:pt-8 space-y-4">
                 <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="flex flex-col gap-4">
+                  <p className="text-left font-bold text-slate-600" style={{ fontSize: '17px' }}>
+                    Describe the space you need and we'll handle the rest.
+                  </p>
                   <div className="flex flex-col md:flex-row gap-4">
                     <div className="flex-1 relative">
                       <Input
@@ -350,7 +351,7 @@ export default function Home() {
                             setShowSuggestions(true);
                           }
                         }}
-                        className="h-14 text-xl pl-12 placeholder:text-gray-700 placeholder:text-xl"
+                        className="h-16 pl-12 placeholder:text-gray-500" style={{ fontSize: '26px' }}
                         autoComplete="off"
                       />
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -383,7 +384,7 @@ export default function Home() {
                     <Button
                       type="submit"
                       size="lg"
-                      className="h-14 px-8 bg-blue-600 hover:bg-blue-700"
+                      className="h-16 px-10 bg-blue-700 hover:bg-blue-800 text-base font-semibold shadow-md hover:shadow-lg transition-shadow"
                       disabled={!searchQuery.trim()}
                     >
                       <Search className="mr-2 h-5 w-5" />
@@ -391,57 +392,58 @@ export default function Home() {
                     </Button>
                   </div>
                   
-                  {/* Show detected date feedback */}
+                  {/* Show detected date feedback — subdued styling */}
                   {searchQuery.trim() && (
-                    <div className="flex items-center justify-center gap-2 text-sm">
+                    <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
                       {hasDetectedDate ? (
-                        <span className="text-green-600 flex items-center gap-1">
-                          <CheckCircle className="h-4 w-4" />
+                        <span className="flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
                           Date detected: {format(new Date(parsedQuery.parsedDate!), "EEEE, d MMMM yyyy")}
                           {parsedQuery.dateRangeEnd && (
                             <span> to {format(new Date(parsedQuery.dateRangeEnd), "d MMMM yyyy")}</span>
                           )}
                         </span>
                       ) : (
-                        <span className="text-amber-600 flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          No date detected - will use today's date
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          No date detected — will use today's date
                         </span>
                       )}
                     </div>
                   )}
                 </form>
                 
-                {/* State Filter Buttons */}
-                <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-200">
-                  <div className="flex flex-wrap justify-center gap-3">
-                                {[
-                  { code: "NSW", name: "New South Wales" },
-                  { code: "VIC", name: "Victoria" },
-                  { code: "QLD", name: "Queensland" },
-                  { code: "SA", name: "South Australia" },
-                  { code: "WA", name: "Western Australia" },
-                  { code: "TAS", name: "Tasmania" },
-                  { code: "ACT", name: "Australian Capital Territory" },
-                  { code: "NT", name: "Northern Territory" },
-                ].map((state) => (
-                  <Button
-                    key={state.code}
-                    onClick={() => setLocation(`/centres?state=${state.code}`)}
-                    variant="outline"
-                    className="bg-white/90 hover:bg-white border-2 border-blue-200 hover:border-blue-400 text-blue-900 font-semibold px-6 py-3 h-auto"
-                  >
-                    <MapPin className="mr-2 h-4 w-4" />
-                    {state.code}
-                  </Button>
-                ))}
+                {/* State Filter Chips */}
+                <div className="mt-3 pt-4 rounded-lg bg-gray-50/80 -mx-6 px-6 pb-4">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Or filter by state</p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {[
+                      { code: "NSW", name: "New South Wales" },
+                      { code: "VIC", name: "Victoria" },
+                      { code: "QLD", name: "Queensland" },
+                      { code: "SA", name: "South Australia" },
+                      { code: "WA", name: "Western Australia" },
+                      { code: "TAS", name: "Tasmania" },
+                      { code: "ACT", name: "Australian Capital Territory" },
+                      { code: "NT", name: "Northern Territory" },
+                    ].map((state) => (
+                      <Button
+                        key={state.code}
+                        onClick={() => setLocation(`/centres?state=${state.code}`)}
+                        variant="outline"
+                        className="bg-white hover:bg-white border border-blue-200 hover:border-blue-400 text-blue-900 font-semibold px-5 py-2 h-auto text-sm"
+                      >
+                        <MapPin className="mr-1.5 h-3.5 w-3.5" />
+                        {state.code}
+                      </Button>
+                    ))}
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Australia Map with Centre Markers */}
-            <div className="mt-8">
+            <div className="mt-4">
               <Card className="shadow-xl">
                 <CardHeader>
                   <CardTitle className="text-2xl">Explore Centres Across Australia</CardTitle>

@@ -31,11 +31,15 @@ export function scoreSite(
   const reasons: string[] = [];
 
   // --- Category match (0–30) ---
+  // When the user explicitly searched for a category, sites that don't accept it
+  // receive a heavy penalty so they never rank as "Good Match" or "Best Match".
   let categoryMatch = 0;
+  let categoryPenalty = 0;
   if (!query.productCategory) {
     categoryMatch = 25;
   } else if (categories.length === 0) {
-    categoryMatch = 10;
+    categoryMatch = 5;
+    categoryPenalty = 20;
     reasons.push("Category needs manual approval at this site");
   } else {
     const lowerCat = query.productCategory.toLowerCase();
@@ -47,6 +51,7 @@ export function scoreSite(
       reasons.push(`✅ ${query.productCategory} is an approved category`);
     } else {
       categoryMatch = 0;
+      categoryPenalty = 25;
       reasons.push(`⚠️ ${query.productCategory} is not approved here`);
     }
   }
@@ -136,7 +141,7 @@ export function scoreSite(
     }
   }
 
-  const total = categoryMatch + locationMatch + availability + priceMatch + sizeMatch;
+  const total = Math.max(0, categoryMatch + locationMatch + availability + priceMatch + sizeMatch - categoryPenalty);
 
   return {
     siteId: site.id,

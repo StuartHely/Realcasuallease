@@ -30,6 +30,10 @@ export default function SiteDetail() {
     { enabled: !!site?.centreId }
   );
   const { data: usageCategories } = trpc.usageCategories.list.useQuery();
+  const { data: siteApprovedCategories } = trpc.sites.getApprovedCategories.useQuery(
+    { siteId },
+    { enabled: siteId > 0 }
+  );
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -68,6 +72,7 @@ export default function SiteDetail() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [showTableLimitDialog, setShowTableLimitDialog] = useState(false);
   const [showCentreEquipmentDialog, setShowCentreEquipmentDialog] = useState(false);
+  const [showUsageNotPermittedDialog, setShowUsageNotPermittedDialog] = useState(false);
   const [centreEquipmentMessage, setCentreEquipmentMessage] = useState("");
   const [pendingBookingData, setPendingBookingData] = useState<{
     siteId: number;
@@ -157,6 +162,27 @@ export default function SiteDetail() {
       return;
     }
 
+    // Check if the selected usage category is approved for this site
+    const selectedCatId = parseInt(usageCategoryId);
+    if (siteApprovedCategories && siteApprovedCategories.length > 0) {
+      const isApproved = siteApprovedCategories.some((cat: any) => cat.id === selectedCatId);
+      if (!isApproved) {
+        const requestedTables = parseInt(tablesRequested) || 0;
+        const requestedChairs = parseInt(chairsRequested) || 0;
+        setPendingBookingData({
+          siteId,
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+          usageCategoryId: selectedCatId,
+          additionalCategoryText: additionalCategoryText || undefined,
+          tablesRequested: requestedTables,
+          chairsRequested: requestedChairs,
+        });
+        setShowUsageNotPermittedDialog(true);
+        return;
+      }
+    }
+
     const requestedTables = parseInt(tablesRequested) || 0;
     const requestedChairs = parseInt(chairsRequested) || 0;
     const maxTables = site?.maxTables || 0;
@@ -240,6 +266,27 @@ export default function SiteDetail() {
     setShowCentreEquipmentDialog(false);
     setPendingBookingData(null);
     // Navigate back to home/search
+    setLocation('/');
+  };
+
+  const handleUsageNotPermittedProceed = () => {
+    if (pendingBookingData) {
+      createBookingMutation.mutate(pendingBookingData);
+      setShowUsageNotPermittedDialog(false);
+      setPendingBookingData(null);
+    }
+  };
+
+  const handleUsageNotPermittedFindAnother = () => {
+    setShowUsageNotPermittedDialog(false);
+    setPendingBookingData(null);
+    setStartDate("");
+    setEndDate("");
+    setUsageCategoryId("");
+    setAdditionalCategoryText("");
+    setTablesRequested("0");
+    setChairsRequested("0");
+    setCalSelection({ start: null, end: null, isSelecting: false });
     setLocation('/');
   };
 
@@ -448,12 +495,12 @@ export default function SiteDetail() {
                   <div className="space-y-2">
                     <div>
                       <p className="text-sm text-gray-600">Mon-Fri</p>
-                      <p className="text-2xl font-bold text-blue-600">${site.pricePerDay}/day</p>
+                      <p className="text-lg font-semibold text-gray-700">${site.pricePerDay}/day</p>
                     </div>
                     {site.weekendPricePerDay && site.weekendPricePerDay !== site.pricePerDay && (
                       <div>
                         <p className="text-sm text-gray-600">Weekend (Sat-Sun)</p>
-                        <p className="text-2xl font-bold text-purple-600">${site.weekendPricePerDay}/day</p>
+                        <p className="text-lg font-semibold text-gray-700">${site.weekendPricePerDay}/day</p>
                       </div>
                     )}
                     <div className="pt-2 border-t">
@@ -937,6 +984,39 @@ export default function SiteDetail() {
               disabled={createBookingMutation.isPending}
             >
               {createBookingMutation.isPending ? "Processing..." : "Yes - Proceed with my own tables"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Usage Not Permitted Dialog */}
+      <Dialog open={showUsageNotPermittedDialog} onOpenChange={setShowUsageNotPermittedDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Usage Not Permitted
+            </DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              Sorry but your selected location does not accept the requested usage and your booking is unlikely to be approved.
+              <br /><br />
+              Would you still like to put in the booking request or choose another site or centre?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={handleUsageNotPermittedFindAnother}
+              className="flex-1 sm:flex-none"
+            >
+              Find a different location
+            </Button>
+            <Button
+              onClick={handleUsageNotPermittedProceed}
+              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700"
+              disabled={createBookingMutation.isPending}
+            >
+              {createBookingMutation.isPending ? "Processing..." : "Proceed with request"}
             </Button>
           </DialogFooter>
         </DialogContent>

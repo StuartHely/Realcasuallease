@@ -20,6 +20,10 @@ export default function AdminMaps() {
   const [showUnhideConfirm, setShowUnhideConfirm] = useState(false);
   const [floorToHide, setFloorToHide] = useState<{ id: number; name: string } | null>(null);
   const [floorToUnhide, setFloorToUnhide] = useState<{ id: number; name: string } | null>(null);
+  const [editingFloorId, setEditingFloorId] = useState<number | null>(null);
+  const [editingFloorName, setEditingFloorName] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [floorToDelete, setFloorToDelete] = useState<{ id: number; name: string; siteCount: number } | null>(null);
   const [mapPreviewUrl, setMapPreviewUrl] = useState<string>("");
   const [markers, setMarkers] = useState<Array<{ siteId: number; x: number; y: number; siteNumber: string }>>([]);
   const [isDragging, setIsDragging] = useState<number | null>(null);
@@ -89,6 +93,34 @@ export default function AdminMaps() {
     },
   });
 
+  // Rename floor level mutation
+  const renameFloorLevelMutation = trpc.admin.renameFloorLevel.useMutation({
+    onSuccess: () => {
+      toast.success("Floor level renamed successfully");
+      refetchFloorLevels();
+      setEditingFloorId(null);
+      setEditingFloorName("");
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to rename floor level: ${error.message}`);
+    },
+  });
+
+  // Delete floor level mutation (also clears map markers on affected sites server-side)
+  const deleteFloorLevelMutation = trpc.admin.deleteFloorLevel.useMutation({
+    onSuccess: () => {
+      toast.success("Floor level deleted. Affected sites are now unassigned.");
+      refetchFloorLevels();
+      setSelectedFloorLevelId(null);
+      setMarkers([]);
+      utils.centres.getSites.invalidate();
+      utils.admin.getSitesByFloorLevel.invalidate();
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to delete floor level: ${error.message}`);
+    },
+  });
+
   // Upload map mutation (for both single-level and multi-level)
   const uploadMapMutation = trpc.admin.uploadCentreMap.useMutation({
     onSuccess: (data: any) => {
@@ -139,18 +171,18 @@ export default function AdminMaps() {
   // Load map and markers when floor level changes
   useEffect(() => {
     if (floorLevels.length > 0 && selectedFloorLevelId) {
+      // Multi-level: only show the selected floor's own map.
+      // Never fall back to another floor's map — markers are % positioned
+      // relative to a specific image, so cross-floor fallback gives wrong positions.
       const currentFloor = floorLevels.find((fl: any) => fl.id === selectedFloorLevelId);
-      if (currentFloor?.mapImageUrl) {
-        setMapPreviewUrl(currentFloor.mapImageUrl);
-      } else if (centre?.mapImageUrl) {
-        // Floor level has no dedicated map — fall back to the centre-level map
-        setMapPreviewUrl(centre.mapImageUrl);
-      } else {
-        setMapPreviewUrl("");
-      }
+      setMapPreviewUrl(currentFloor?.mapImageUrl || "");
     } else if (centre?.mapImageUrl) {
       // Single-level centre or no floor level selected yet
       setMapPreviewUrl(centre.mapImageUrl);
+    } else if (floorLevels.length > 0) {
+      // Centre has no mapImageUrl but floor levels exist — pick the selected or first with map
+      const anyFloorWithMap = floorLevels.find((fl: any) => fl.mapImageUrl);
+      setMapPreviewUrl(anyFloorWithMap?.mapImageUrl || "");
     } else {
       setMapPreviewUrl("");
     }
@@ -181,9 +213,11 @@ export default function AdminMaps() {
   }, [centre?.mapImageUrl, centre?.id, sites, selectedCentreId, selectedFloorLevelId, floorLevels]);
 
   // Auto-select first floor level when floor levels are loaded
+  // Prefer a floor that has a map image so the map canvas appears immediately
   useEffect(() => {
     if (floorLevels.length > 0 && !selectedFloorLevelId) {
-      setSelectedFloorLevelId(floorLevels[0].id);
+      const floorWithMap = floorLevels.find((fl: any) => fl.mapImageUrl);
+      setSelectedFloorLevelId(floorWithMap?.id ?? floorLevels[0].id);
     } else if (floorLevels.length === 0) {
       setSelectedFloorLevelId(null);
     }
@@ -275,6 +309,41 @@ export default function AdminMaps() {
     }
     setShowUnhideConfirm(false);
     setFloorToUnhide(null);
+  };
+
+  const handleStartRename = (floorId: number, currentName: string) => {
+    setEditingFloorId(floorId);
+    setEditingFloorName(currentName);
+  };
+
+  const handleConfirmRename = async () => {
+    if (!editingFloorId || !editingFloorName.trim()) return;
+    await renameFloorLevelMutation.mutateAsync({
+      floorLevelId: editingFloorId,
+      levelName: editingFloorName.trim(),
+    });
+  };
+
+  const handleCancelRename = () => {
+    setEditingFloorId(null);
+    setEditingFloorName("");
+  };
+
+  const handleDeleteFloorLevel = (floorId: number, levelName: string) => {
+    const siteCount = sites.length;
+    setFloorToDelete({ id: floorId, name: levelName, siteCount });
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteFloor = async () => {
+    if (!floorToDelete) return;
+    try {
+      await deleteFloorLevelMutation.mutateAsync({ floorLevelId: floorToDelete.id });
+    } catch (error) {
+      console.error('Delete mutation failed:', error);
+    }
+    setShowDeleteConfirm(false);
+    setFloorToDelete(null);
   };
 
   const handleCreateFloorLevel = async () => {
@@ -494,29 +563,72 @@ export default function AdminMaps() {
                         </TabsList>
                       </Tabs>
                       {selectedFloorLevelId && (
-                        <div className="flex justify-end gap-2">
+                        <div className="space-y-3">
                           {(() => {
                             const floor = floorLevels.find((f: any) => f.id === selectedFloorLevelId);
                             if (!floor) return null;
-                            return floor.isHidden ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleUnhideFloorLevel(floor.id, floor.levelName)}
-                                disabled={unhideFloorLevelMutation.isPending}
-                                className="border-green-500 text-green-600 hover:bg-green-50"
-                              >
-                                {unhideFloorLevelMutation.isPending ? "Restoring..." : "Restore to Public"}
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleHideFloorLevel(floor.id, floor.levelName)}
-                                disabled={hideFloorLevelMutation.isPending}
-                              >
-                                {hideFloorLevelMutation.isPending ? "Hiding..." : "Hide Selected Floor"}
-                              </Button>
+
+                            if (editingFloorId === floor.id) {
+                              return (
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    value={editingFloorName}
+                                    onChange={(e) => setEditingFloorName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") handleConfirmRename();
+                                      if (e.key === "Escape") handleCancelRename();
+                                    }}
+                                    className="max-w-xs"
+                                    autoFocus
+                                  />
+                                  <Button size="sm" onClick={handleConfirmRename} disabled={renameFloorLevelMutation.isPending}>
+                                    {renameFloorLevelMutation.isPending ? "Saving..." : "Save"}
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={handleCancelRename}>
+                                    Cancel
+                                  </Button>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleStartRename(floor.id, floor.levelName)}
+                                >
+                                  Rename
+                                </Button>
+                                {floor.isHidden ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleUnhideFloorLevel(floor.id, floor.levelName)}
+                                    disabled={unhideFloorLevelMutation.isPending}
+                                    className="border-green-500 text-green-600 hover:bg-green-50"
+                                  >
+                                    {unhideFloorLevelMutation.isPending ? "Restoring..." : "Restore to Public"}
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleHideFloorLevel(floor.id, floor.levelName)}
+                                    disabled={hideFloorLevelMutation.isPending}
+                                  >
+                                    {hideFloorLevelMutation.isPending ? "Hiding..." : "Hide Floor"}
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteFloorLevel(floor.id, floor.levelName)}
+                                  disabled={deleteFloorLevelMutation.isPending}
+                                >
+                                  Delete Floor
+                                </Button>
+                              </div>
                             );
                           })()}
                         </div>
@@ -736,6 +848,34 @@ export default function AdminMaps() {
               </Button>
               <Button className="bg-green-600 hover:bg-green-700" onClick={confirmUnhideFloor} disabled={unhideFloorLevelMutation.isPending}>
                 {unhideFloorLevelMutation.isPending ? "Restoring..." : "Restore Floor"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Floor Confirmation Dialog */}
+      {showDeleteConfirm && floorToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-semibold mb-2 text-red-600">Delete Floor Level</h3>
+            <p className="text-gray-600 mb-2">
+              Are you sure you want to permanently delete "{floorToDelete.name}"?
+            </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-amber-800">
+                <strong>Warning:</strong> This will permanently remove this floor level. Sites assigned to it will become unassigned and their map markers will be cleared. This cannot be undone.
+              </p>
+              <p className="text-sm text-amber-700 mt-1">
+                Consider using "Hide Floor" instead if you want to preserve historical data.
+              </p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => { setShowDeleteConfirm(false); setFloorToDelete(null); }}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmDeleteFloor} disabled={deleteFloorLevelMutation.isPending}>
+                {deleteFloorLevelMutation.isPending ? "Deleting..." : "Delete Permanently"}
               </Button>
             </div>
           </div>

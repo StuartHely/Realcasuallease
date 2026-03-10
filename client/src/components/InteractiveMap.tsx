@@ -412,7 +412,9 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
 
   // Multi-level centre with side-by-side layout (2 per row)
   if (isMultiLevel && floorLevels.length > 0) {
-    // Get floors with their maps and sites, falling back to centre-level map if needed
+    // Get floors with their maps and sites.
+    // Each floor must use its OWN map — never fall back to another floor's map
+    // because markers are positioned as % coordinates relative to that specific image.
     const floorsWithMaps = floorLevels.map((floor: any) => {
       const floorSites = sites.filter((site: Site) => {
         const hasMarkers = site.mapMarkerX !== null && site.mapMarkerY !== null;
@@ -420,7 +422,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
         if (assetTypeFilter !== "all" && siteAssetType !== assetTypeFilter) return false;
         return hasMarkers && site.floorLevelId === floor.id;
       });
-      return { ...floor, effectiveMapUrl: floor.mapImageUrl || mapUrl || "", sites: floorSites };
+      return { ...floor, effectiveMapUrl: floor.mapImageUrl || "", sites: floorSites };
     });
 
     return (

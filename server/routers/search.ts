@@ -176,6 +176,24 @@ export const searchRouter = router({
             centres = await db.searchShoppingCentres('', inferredState, ctx.tenantOwnerId ?? undefined);
           }
         }
+
+        // 5. Category-only search (no location matched) — derive centres from
+        //    the category-matched siteResults so all centres with approved
+        //    sites for the searched category are shown.
+        if (centres.length === 0 && enhancedQuery.productCategory && siteResults.length > 0) {
+          const centreIdsSeen = new Set<number>();
+          const categoryCentresRaw: any[] = [];
+          for (const result of siteResults) {
+            const c = result.centre;
+            if (c && !centreIdsSeen.has(c.id)) {
+              centreIdsSeen.add(c.id);
+              categoryCentresRaw.push(c);
+            }
+          }
+          if (categoryCentresRaw.length > 0) {
+            centres = categoryCentresRaw;
+          }
+        }
         
         if (centres.length === 0) {
           // Get search suggestions when no results found
@@ -258,11 +276,11 @@ export const searchRouter = router({
             }
             tempSitesByCentre.get(centreId)!.push(result.site);
           }
-          // Only override if we found category-matched sites within the location centres
-          if (tempSitesByCentre.size > 0) {
-            sitesByCentre = tempSitesByCentre;
-          }
-          // Otherwise keep all sites — scoring will rank by category match
+          // Always override — only show sites approved for the searched category
+          sitesByCentre = tempSitesByCentre;
+        } else if (enhancedQuery.productCategory && siteResults.length === 0) {
+          // Category was searched but no sites anywhere have it approved — show nothing
+          sitesByCentre = new Map();
         }
         
         // First pass: check if any sites match the requirements and find closest match
@@ -366,6 +384,28 @@ export const searchRouter = router({
           allSites.push(...filteredSites);
         }
 
+        // Filter out sites where the searched category is not approved.
+        // Sites with no categories defined are also excluded — if the user
+        // explicitly searched for a category we should only show sites that
+        // are confirmed to accept it.
+        if (enhancedQuery.productCategory) {
+          const { fuzzyMatchCategory } = await import("../../shared/stringSimilarity");
+          const lowerCat = enhancedQuery.productCategory.toLowerCase();
+          const filteredSites = allSites.filter((site: any) => {
+            const categories = siteCategories[site.id] || [];
+            if (categories.length === 0) return false; // no categories defined — exclude
+            return categories.some((cat: any) =>
+              fuzzyMatchCategory(lowerCat, cat.name, 0.6)
+            );
+          });
+          allSites.length = 0;
+          allSites.push(...filteredSites);
+
+          // Remove centres that have no remaining sites after category filtering
+          const centreIdsWithSites = new Set(allSites.map((s: any) => s.centreId));
+          centres = centres.filter((c: any) => centreIdsWithSites.has(c.id));
+        }
+
         // Return flag indicating if size requirement was met
         const sizeNotAvailable = hasRequirements && !hasMatchingSites;
         
@@ -462,10 +502,13 @@ export const searchRouter = router({
           })
         ).catch(() => {});
         
-        // Fetch floor levels for the first centre to display floor plan map
+        // Fetch floor levels for all matched centres (keyed by centreId for per-centre maps)
         let floorLevels: any[] = [];
-        if (centres.length > 0) {
-          floorLevels = await db.getFloorLevelsByCentre(centres[0].id);
+        const floorLevelsByCentre: Record<number, any[]> = {};
+        for (const c of centres) {
+          const levels = await db.getFloorLevelsByCentre(c.id);
+          floorLevelsByCentre[c.id] = levels;
+          if (floorLevels.length === 0) floorLevels = levels; // backward compat
         }
         
         const result = {
@@ -482,6 +525,7 @@ export const searchRouter = router({
           siteCategories,
           siteScores: scored.scores,
           floorLevels,
+          floorLevelsByCentre,
           searchInterpretation: {
             productCategory: enhancedQuery.productCategory || null,
             location: enhancedQuery.centreName || enhancedQuery.matchedLocation || null,

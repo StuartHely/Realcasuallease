@@ -437,7 +437,7 @@ export async function searchShoppingCentres(query: string, stateFilter?: string,
     allCentres = await db.select().from(shoppingCentres);
   }
   
-  if (!centreQuery.trim() && stateFilter) {
+  if (!centreQuery.trim()) {
     const filtered = allCentres.filter(centre => centre.includeInMainSite);
     return await enrichCentresWithFloorLevelMaps(db, filtered);
   }
@@ -604,37 +604,14 @@ export async function searchSitesWithCategory(query: string, categoryKeyword?: s
     const categoryNames = categories.map(c => c.name.toLowerCase()).join(" ");
     const combined = `${centreName} ${siteNumber} ${description} ${categoryNames}`.toLowerCase();
     
-    // If category keyword is provided, filter by category first using fuzzy matching
+    // If category keyword is provided, ONLY match sites that have this as an approved category.
+    // Do NOT fall through to description/name matching — otherwise a site named
+    // "Next to Shoes Shop" would match a "shoes" search even if shoes isn't approved.
     if (categoryKeyword) {
       const categoryMatch = categories.some(cat => 
         fuzzyMatchCategory(categoryKeyword, cat.name, 0.6)
       );
-      if (!categoryMatch) return false;
-      // Category matched - now check if the centre name matches the remaining query
-      // Extract non-category words from query, also removing common prepositions
-      const stopWords = [
-        // prepositions & articles
-        'at', 'in', 'on', 'for', 'near', 'by', 'from', 'to', 'the', 'a', 'an', 'of', 'with',
-        // conversational filler
-        'where', 'can', 'i', 'me', 'my', 'we', 'find', 'sell', 'buy', 'get', 'want',
-        'place', 'spot', 'space', 'looking', 'need', 'please', 'show', 'is', 'are',
-        'there', 'any', 'some', 'do', 'does', 'have', 'has', 'would', 'like', 'that',
-        // Australian state codes & names (state filtering handled separately)
-        'nsw', 'vic', 'qld', 'sa', 'wa', 'tas', 'nt', 'act',
-        'new', 'south', 'wales', 'victoria', 'queensland', 'western', 'australia',
-        'tasmania', 'northern', 'territory', 'australian', 'capital', 'canberra',
-      ];
-      const queryWordsWithoutCategory = lowerQuery.split(/\s+/).filter(word => 
-        word !== categoryKeyword.toLowerCase() && 
-        !expandCategoryKeyword(categoryKeyword).includes(word) &&
-        !stopWords.includes(word) &&
-        !/^\d+$/.test(word) &&
-        !['table', 'tables', 'trestle', 'chair', 'chairs'].includes(word)
-      );
-      
-      // Category matched — accept this site.
-      // Location filtering is handled separately by the search router.
-      return true;
+      return categoryMatch;
     }
     
     // If searching for a specific site number, check if this site matches
@@ -890,7 +867,6 @@ export async function getBookingsByStatus(status?: "pending" | "confirmed" | "ca
       customerEmail: users.email,
       companyName: customerProfiles.companyName,
       tradingName: customerProfiles.tradingName,
-      productCategory: customerProfiles.productCategory,
       siteName: sites.description,
       siteNumber: sites.siteNumber,
       centreName: shoppingCentres.name,
@@ -918,6 +894,7 @@ export async function getBookingsByStatus(status?: "pending" | "confirmed" | "ca
       centreId: shoppingCentres.id,
       licenceSignedAt: bookings.licenceSignedAt,
       licenceSignatureToken: bookings.licenceSignatureToken,
+      rejectionReason: bookings.rejectionReason,
     })
     .from(bookings)
     .innerJoin(users, eq(bookings.customerId, users.id))
@@ -926,11 +903,20 @@ export async function getBookingsByStatus(status?: "pending" | "confirmed" | "ca
     .innerJoin(shoppingCentres, eq(sites.centreId, shoppingCentres.id))
     .orderBy(desc(bookings.createdAt));
 
-  if (status) {
-    return await query.where(eq(bookings.status, status));
+  const rows = status ? await query.where(eq(bookings.status, status)) : await query;
+
+  // Resolve usage category names (separate query to avoid column name conflicts with joins)
+  const categoryIds = Array.from(new Set(rows.map(r => r.usageCategoryId).filter((id): id is number => id != null)));
+  const categoryMap = new Map<number, string>();
+  if (categoryIds.length > 0) {
+    const cats = await db.select({ id: usageCategories.id, name: usageCategories.name }).from(usageCategories).where(inArray(usageCategories.id, categoryIds));
+    for (const c of cats) categoryMap.set(c.id, c.name);
   }
 
-  return await query;
+  return rows.map(r => ({
+    ...r,
+    productCategory: (r.usageCategoryId ? categoryMap.get(r.usageCategoryId) : null) || null,
+  }));
 }
 
 // Get unpaid invoice bookings (regardless of status)
@@ -938,7 +924,7 @@ export async function getUnpaidInvoiceBookings() {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  return await db
+  const rows = await db
     .select({
       id: bookings.id,
       bookingNumber: bookings.bookingNumber,
@@ -948,7 +934,6 @@ export async function getUnpaidInvoiceBookings() {
       customerEmail: users.email,
       companyName: customerProfiles.companyName,
       tradingName: customerProfiles.tradingName,
-      productCategory: customerProfiles.productCategory,
       siteName: sites.description,
       siteNumber: sites.siteNumber,
       centreName: shoppingCentres.name,
@@ -976,6 +961,7 @@ export async function getUnpaidInvoiceBookings() {
       centreId: shoppingCentres.id,
       licenceSignedAt: bookings.licenceSignedAt,
       licenceSignatureToken: bookings.licenceSignatureToken,
+      rejectionReason: bookings.rejectionReason,
     })
     .from(bookings)
     .innerJoin(users, eq(bookings.customerId, users.id))
@@ -989,6 +975,19 @@ export async function getUnpaidInvoiceBookings() {
       )
     )
     .orderBy(desc(bookings.createdAt));
+
+  // Resolve usage category names
+  const categoryIds = Array.from(new Set(rows.map(r => r.usageCategoryId).filter((id): id is number => id != null)));
+  const categoryMap = new Map<number, string>();
+  if (categoryIds.length > 0) {
+    const cats = await db.select({ id: usageCategories.id, name: usageCategories.name }).from(usageCategories).where(inArray(usageCategories.id, categoryIds));
+    for (const c of cats) categoryMap.set(c.id, c.name);
+  }
+
+  return rows.map(r => ({
+    ...r,
+    productCategory: (r.usageCategoryId ? categoryMap.get(r.usageCategoryId) : null) || null,
+  }));
 }
 
 export async function approveBooking(bookingId: number, approvedBy: number, approvedByName?: string) {
@@ -1114,6 +1113,12 @@ export async function updateFloorLevel(id: number, updates: Partial<InsertFloorL
 export async function deleteFloorLevel(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+
+  // Clear map markers on sites assigned to this floor — their coordinates
+  // were positioned relative to this floor's map image which is being deleted.
+  await db.update(sites)
+    .set({ mapMarkerX: null, mapMarkerY: null })
+    .where(eq(sites.floorLevelId, id));
 
   return await db.delete(floorLevels).where(eq(floorLevels.id, id));
 }

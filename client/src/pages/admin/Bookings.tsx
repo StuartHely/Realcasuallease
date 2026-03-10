@@ -29,7 +29,7 @@ import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { cleanHtmlDescription } from "@/lib/htmlUtils";
 
-type BookingStatus = "all" | "pending" | "confirmed" | "rejected" | "completed" | "unpaid";
+type BookingStatus = "all" | "pending" | "confirmed" | "cancelled" | "rejected" | "completed" | "unpaid";
 
 export default function AdminBookings() {
   const [, setLocation] = useLocation();
@@ -53,12 +53,13 @@ export default function AdminBookings() {
 
   // Calculate counts for each status
   const statusCounts = useMemo(() => {
-    if (!allBookings) return { all: 0, pending: 0, confirmed: 0, rejected: 0, completed: 0, unpaid: 0 };
+    if (!allBookings) return { all: 0, pending: 0, confirmed: 0, cancelled: 0, rejected: 0, completed: 0, unpaid: 0 };
     
     return {
       all: allBookings.length,
       pending: allBookings.filter(b => b.status === 'pending').length,
       confirmed: allBookings.filter(b => b.status === 'confirmed').length,
+      cancelled: allBookings.filter(b => b.status === 'cancelled').length,
       rejected: allBookings.filter(b => b.status === 'rejected').length,
       completed: allBookings.filter(b => b.status === 'completed').length,
       // Unpaid should exclude rejected bookings - rejected bookings are not eligible for payment
@@ -379,6 +380,11 @@ export default function AdminBookings() {
             <CheckCircle className="h-4 w-4 mr-2" />
             Confirmed
             <span className="ml-1.5 text-xs opacity-70">({statusCounts.confirmed})</span>
+          </TabsTrigger>
+          <TabsTrigger value="cancelled">
+            <XCircle className="h-4 w-4 mr-2" />
+            Cancelled
+            <span className="ml-1.5 text-xs opacity-70">({statusCounts.cancelled})</span>
           </TabsTrigger>
           <TabsTrigger value="rejected">
             <XCircle className="h-4 w-4 mr-2" />
