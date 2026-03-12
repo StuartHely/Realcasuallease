@@ -511,6 +511,20 @@ export const searchRouter = router({
           if (floorLevels.length === 0) floorLevels = levels; // backward compat
         }
         
+        // Enrich sites with seasonal rates for the displayed 14-day range
+        const { getSeasonalRatesForDateRange } = await import("../seasonalRatesDb");
+        const rangeStart = input.date.toISOString().split('T')[0];
+        const rangeEndDate = new Date(input.date);
+        rangeEndDate.setDate(rangeEndDate.getDate() + 13);
+        const rangeEnd = rangeEndDate.toISOString().split('T')[0];
+        const seasonalRatesBySite: Record<number, any[]> = {};
+        for (const site of allSites) {
+          const rates = await getSeasonalRatesForDateRange(site.id, rangeStart, rangeEnd);
+          if (rates.length > 0) {
+            seasonalRatesBySite[site.id] = rates;
+          }
+        }
+
         const result = {
           centres,
           sites: allSites,
@@ -526,6 +540,7 @@ export const searchRouter = router({
           siteScores: scored.scores,
           floorLevels,
           floorLevelsByCentre,
+          seasonalRatesBySite,
           searchInterpretation: {
             productCategory: enhancedQuery.productCategory || null,
             location: enhancedQuery.centreName || enhancedQuery.matchedLocation || null,
