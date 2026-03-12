@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { ArrowLeft, MapPin, Calendar, CalendarDays, ChevronLeft, ChevronRight, X, AlertTriangle, FileText } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, CalendarDays, ChevronLeft, ChevronRight, X, AlertTriangle, FileText, TrendingUp } from "lucide-react";
+import Logo from "@/components/Logo";
 import { format, getDaysInMonth, getDay, addDays, subDays, isSameDay, isBefore, startOfDay } from "date-fns";
 import { toast } from "sonner";
 import { PriceCalculator } from "@/components/PriceCalculator";
@@ -47,6 +48,33 @@ export default function SiteDetail() {
     { enabled: siteId > 0 }
   );
   const dateRange = Array.from({ length: calendarDays }, (_, i) => addDays(calStartDate, i));
+
+  // Fetch seasonal rates for the visible calendar range
+  const calStartStr = format(calStartDate, 'yyyy-MM-dd');
+  const calEndStr = format(calEndDate, 'yyyy-MM-dd');
+  const { data: calSeasonalRates } = trpc.sites.getSeasonalRates.useQuery(
+    { siteId, startDate: calStartStr, endDate: calEndStr },
+    { enabled: siteId > 0 }
+  );
+
+  // Build a map of date string → seasonal rate for quick lookup
+  const seasonalRateMap = new Map<string, { name: string; weekdayRate: string | null; weekendRate: string | null }>();
+  if (calSeasonalRates) {
+    for (const rate of calSeasonalRates) {
+      const rStart = new Date(rate.startDate + 'T00:00:00');
+      const rEnd = new Date(rate.endDate + 'T00:00:00');
+      const rangeStart = rStart > calStartDate ? rStart : calStartDate;
+      const rangeEnd = rEnd < calEndDate ? rEnd : calEndDate;
+      let cur = new Date(rangeStart);
+      while (cur <= rangeEnd) {
+        const ds = format(cur, 'yyyy-MM-dd');
+        if (!seasonalRateMap.has(ds)) {
+          seasonalRateMap.set(ds, { name: rate.name, weekdayRate: rate.weekdayRate, weekendRate: rate.weekendRate });
+        }
+        cur = addDays(cur, 1);
+      }
+    }
+  }
 
   // Calendar click-to-select state (start/end date picking)
   const [calSelection, setCalSelection] = useState<{
@@ -324,7 +352,7 @@ export default function SiteDetail() {
               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setLocation("/")}
             >
-              <img src="/logo.png" alt="Real Casual Leasing" className="h-12" />
+              <Logo height={48} width={144} className="h-12" />
             </div>
           </div>
           <nav className="flex items-center gap-4">
@@ -513,6 +541,19 @@ export default function SiteDetail() {
                         <p className="text-lg font-semibold text-gray-700">${site.outgoingsPerDay}/day</p>
                       </div>
                     )}
+                    {calSeasonalRates && calSeasonalRates.length > 0 && (
+                      <div className="pt-2 border-t">
+                        <div className="flex items-center gap-2 mb-1">
+                          <TrendingUp className="h-4 w-4 text-amber-600" />
+                          <p className="text-sm font-semibold text-amber-700">Seasonal Pricing Active</p>
+                        </div>
+                        {calSeasonalRates.map((sr) => (
+                          <div key={sr.id} className="text-xs text-amber-600 ml-6">
+                            {sr.name}: {sr.weekdayRate ? `$${sr.weekdayRate}/day` : ''}{sr.weekendRate && sr.weekendRate !== sr.weekdayRate ? ` (wknd $${sr.weekendRate})` : ''} — {sr.startDate} to {sr.endDate}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -685,6 +726,12 @@ export default function SiteDetail() {
                     <div className="w-6 h-6 bg-red-500 rounded"></div>
                     <span className="text-sm font-medium">Booked</span>
                   </div>
+                  {seasonalRateMap.size > 0 && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-amber-500 rounded"></div>
+                      <span className="text-sm font-medium">Seasonal Pricing</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Date Range Indicator */}
@@ -833,7 +880,10 @@ export default function SiteDetail() {
                             const nextDate = dateIdx < dateRange.length - 1 ? dateRange[dateIdx + 1] : null;
                             const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
                             const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
-                            const rate = isWeekend && site.weekendPricePerDay ? site.weekendPricePerDay : site.pricePerDay;
+                            const seasonalInfo = seasonalRateMap.get(format(date, 'yyyy-MM-dd'));
+                            const rate = seasonalInfo
+                              ? (isWeekend && seasonalInfo.weekendRate ? seasonalInfo.weekendRate : seasonalInfo.weekdayRate || (isWeekend && site.weekendPricePerDay ? site.weekendPricePerDay : site.pricePerDay))
+                              : (isWeekend && site.weekendPricePerDay ? site.weekendPricePerDay : site.pricePerDay);
                             const weeklyStr = site.pricePerWeek ? ` | $${site.pricePerWeek}/wk` : '';
 
                             // Selection state for this cell
@@ -889,11 +939,16 @@ export default function SiteDetail() {
                                       ? 'bg-red-500 hover:bg-red-600'
                                       : isInRange || isSelectingStart
                                         ? 'bg-blue-500 hover:bg-blue-600'
-                                        : 'bg-green-500 hover:bg-green-600'
+                                        : seasonalInfo
+                                          ? 'bg-amber-500 hover:bg-amber-600'
+                                          : 'bg-green-500 hover:bg-green-600'
                                   } transition-colors cursor-pointer`}
                                   title={(() => {
                                     if (isSelectingStart) return 'Start date selected — click another date to set end date';
-                                    return `Site ${site.siteNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : `Available - $${rate}/day${weeklyStr}`}`;
+                                    if (isBooked) return `Site ${site.siteNumber} - ${format(date, "dd/MM/yyyy")} - Booked`;
+                                    const rateStr = `$${rate}/day`;
+                                    const seasonalStr = seasonalInfo ? ` (${seasonalInfo.name})` : '';
+                                    return `Site ${site.siteNumber} - ${format(date, "dd/MM/yyyy")} - Available - ${rateStr}${seasonalStr}${weeklyStr}`;
                                   })()}
                                 >
                                   {(isStartDate || isEndDate) && (

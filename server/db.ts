@@ -55,6 +55,12 @@ async function ensureUniqueSlug(slug: string, excludeId?: number): Promise<strin
   }
 }
 
+/** Strip HTML tags and decode common entities from rich text fields */
+function stripHtml(html: string | null | undefined): string | null {
+  if (!html) return null;
+  return html.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ").trim();
+}
+
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
@@ -849,7 +855,7 @@ export async function getBookingsByCustomerId(customerId: number) {
     .where(eq(bookings.customerId, customerId))
     .orderBy(desc(bookings.createdAt));
 
-  return bookingsList;
+  return bookingsList.map(b => ({ ...b, siteName: stripHtml(b.siteName) }));
 }
 
 // Booking management
@@ -915,6 +921,7 @@ export async function getBookingsByStatus(status?: "pending" | "confirmed" | "ca
 
   return rows.map(r => ({
     ...r,
+    siteName: stripHtml(r.siteName),
     productCategory: (r.usageCategoryId ? categoryMap.get(r.usageCategoryId) : null) || null,
   }));
 }
@@ -986,6 +993,7 @@ export async function getUnpaidInvoiceBookings() {
 
   return rows.map(r => ({
     ...r,
+    siteName: stripHtml(r.siteName),
     productCategory: (r.usageCategoryId ? categoryMap.get(r.usageCategoryId) : null) || null,
   }));
 }

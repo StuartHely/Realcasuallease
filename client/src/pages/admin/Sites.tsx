@@ -23,8 +23,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
-import { Edit, Image as ImageIcon, MapPin, Plus, Trash2, Upload, Tag, X, RotateCw, Crop } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { Edit, Image as ImageIcon, MapPin, Plus, Trash2, Upload, Tag, X, RotateCw, Crop, Download, FileSpreadsheet } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import BulkImageImport from "@/components/BulkImageImport";
@@ -37,6 +37,7 @@ import { RateValidationAlerts } from "@/components/RateValidationAlerts";
 
 export default function AdminSites() {
   const [location] = useLocation();
+  const utils = trpc.useUtils();
   const [selectedCentreId, setSelectedCentreId] = useState<number | null>(null);
   
   // Update selectedCentreId when URL changes
@@ -54,6 +55,57 @@ export default function AdminSites() {
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [categoriesSite, setCategoriesSite] = useState<any>(null);
   
+  // Import/Export states
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importResult, setImportResult] = useState<{ created: number; updated: number; errors: string[] } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const importMutation = trpc.siteImportExport.importSites.useMutation();
+
+  const handleImportFile = async (file: File) => {
+    if (!selectedCentreId) {
+      toast.error("Please select a shopping centre first");
+      return;
+    }
+    try {
+      const text = await file.text();
+      const result = await importMutation.mutateAsync({
+        scopeType: "centre",
+        scopeId: selectedCentreId,
+        csvContent: text,
+      });
+      setImportResult(result);
+      refetch();
+      toast.success(`Import complete: ${result.created} created, ${result.updated} updated${result.errors.length ? `, ${result.errors.length} errors` : ""}`);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to import");
+    }
+  };
+
+  const handleExport = async () => {
+    if (!selectedCentreId) {
+      toast.error("Please select a shopping centre first");
+      return;
+    }
+    try {
+      const result = await utils.siteImportExport.exportSites.fetch({
+        scopeType: "centre",
+        scopeId: selectedCentreId,
+      });
+      const blob = new Blob([result.csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const centreName = selectedCentre?.name?.replace(/[^a-z0-9]/gi, "_") || "sites";
+      a.download = `${centreName}_sites.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${result.count} sites`);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to export");
+    }
+  };
+
   // Image preview and crop states
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
@@ -360,9 +412,19 @@ export default function AdminSites() {
               Manage retail sites and spaces
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {selectedCentreId && (
-              <BulkImageImport centreId={selectedCentreId} onComplete={refetch} />
+              <>
+                <Button variant="outline" onClick={handleExport}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Spreadsheet
+                </Button>
+                <Button variant="outline" onClick={() => { setImportResult(null); setIsImportOpen(true); }}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Import from Spreadsheet
+                </Button>
+                <BulkImageImport centreId={selectedCentreId} onComplete={refetch} />
+              </>
             )}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
@@ -1083,6 +1145,69 @@ export default function AdminSites() {
           centreName={selectedCentre?.name || ""}
         />
       )}
+
+      {/* Import from Spreadsheet Dialog */}
+      <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Import Sites from Spreadsheet</DialogTitle>
+            <DialogDescription>
+              Upload a CSV file to bulk create or update sites for <strong>{selectedCentre?.name}</strong>.
+              Sites are matched by Site Number — existing sites will be updated, new ones created.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>CSV File</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.txt"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImportFile(file);
+                }}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mt-2"
+              />
+            </div>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p><strong>Required headers:</strong> Site Number</p>
+              <p><strong>Optional headers:</strong> Size, Description, Max Tables, Power Available Y/N/R, Restrictions, Mon-Fri Daily Rate ($), Weekend Daily Rate ($), Weekly Rate ($), Outgoings/Day ($), Enable instant booking Y/N, URL</p>
+            </div>
+
+            {importMutation.isPending && (
+              <div className="text-sm text-blue-600 flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full" />
+                Importing...
+              </div>
+            )}
+
+            {importResult && (
+              <div className="space-y-2">
+                <div className="flex gap-4 text-sm">
+                  <span className="text-green-700 font-medium">{importResult.created} created</span>
+                  <span className="text-blue-700 font-medium">{importResult.updated} updated</span>
+                  {importResult.errors.length > 0 && (
+                    <span className="text-red-700 font-medium">{importResult.errors.length} errors</span>
+                  )}
+                </div>
+                {importResult.errors.length > 0 && (
+                  <div className="bg-red-50 border border-red-200 rounded p-3 max-h-40 overflow-y-auto text-xs">
+                    {importResult.errors.map((err, i) => (
+                      <div key={i} className="text-red-700">{err}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsImportOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }

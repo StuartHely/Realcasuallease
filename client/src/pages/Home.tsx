@@ -326,7 +326,7 @@ export default function Home() {
       <main className="flex-1">
         <section className="pt-16 md:pt-24 pb-8 px-4" style={{ background: 'linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%)' }}>
           <div className="container mx-auto max-w-5xl text-center">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-blue-900 mb-10 md:mb-14 leading-tight font-playfair">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-blue-900 mb-6 md:mb-8 leading-tight font-playfair">
               The Intelligent Way to Book Casual Leasing in Shopping Centres
             </h2>
 
@@ -334,7 +334,7 @@ export default function Home() {
             <Card className="shadow-[0_6px_28px_rgba(0,0,0,0.10),0_2px_8px_rgba(0,0,0,0.05)] border-0">
               <CardContent className="pt-6 md:pt-8 space-y-4">
                 <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="flex flex-col gap-4">
-                  <p className="text-left font-bold text-slate-600" style={{ fontSize: '17px' }}>
+                  <p className="text-left font-bold text-slate-600" style={{ fontSize: '19px' }}>
                     Describe the space you need and we'll handle the rest.
                   </p>
                   <div className="flex flex-col md:flex-row gap-4">
