@@ -9,6 +9,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 env:
@@ -63,6 +66,7 @@ jobs:
   # ---------------------------------------------------------------------------
   build-and-deploy:
     name: Build and Deploy
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04-arm
     needs: typecheck
     
