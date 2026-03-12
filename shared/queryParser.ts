@@ -509,9 +509,15 @@ function parseDateFromQuery(query: string): { date?: string; endDate?: string; c
   };
   
   // Helper to get next occurrence of a date (if date has passed this year, use next year)
-  const getNextOccurrence = (month: number, day: number): Date => {
+  const getNextOccurrence = (month: number, day: number, monthOnly: boolean = false): Date => {
     const date = new Date(currentYear, month, day);
-    if (date < now) {
+    if (monthOnly) {
+      // For month-only queries like "march", only jump to next year if the entire month has passed
+      const endOfMonth = new Date(currentYear, month + 1, 0);
+      if (endOfMonth < now) {
+        date.setFullYear(currentYear + 1);
+      }
+    } else if (date < now) {
       date.setFullYear(currentYear + 1);
     }
     return date;
@@ -648,8 +654,12 @@ function parseDateFromQuery(query: string): { date?: string; endDate?: string; c
       const month = monthNames[monthOnlyMatch[1].toLowerCase()];
       const year = monthOnlyMatch[2] ? parseInt(monthOnlyMatch[2]) : currentYear;
       
-      // Set start date to 1st of the month
-      const startDate = getNextOccurrence(month, 1);
+      // Set start date to 1st of the month (or today if we're currently in that month)
+      const startDate = getNextOccurrence(month, 1, true);
+      // If we're currently in this month, start from today instead of the 1st
+      if (startDate.getFullYear() === currentYear && month === now.getMonth() && now.getDate() > 1) {
+        startDate.setDate(now.getDate());
+      }
       if (monthOnlyMatch[2]) startDate.setFullYear(year);
       parsedDate = formatDate(startDate);
       

@@ -17,6 +17,7 @@ import { SearchSkeleton } from "@/components/SearchSkeleton";
 import { parseSearchQuery } from "@/../../shared/queryParser";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { cleanHtmlDescription } from "@/lib/htmlUtils";
+import Logo from "@/components/Logo";
 
 export default function Search() {
   const [, setLocation] = useLocation();
@@ -216,7 +217,28 @@ export default function Search() {
   };
 
   const dateRange = generateDateRange();
-  
+
+  // Build per-site per-date seasonal rate lookup from server data
+  const seasonalRateMap = useMemo(() => {
+    const map = new Map<string, { weekdayRate: string | null; weekendRate: string | null; weeklyRate: string | null; name: string }>();
+    const bySite = (data as any)?.seasonalRatesBySite;
+    if (!bySite) return map;
+    for (const [siteIdStr, rates] of Object.entries(bySite) as [string, any[]][]) {
+      for (const rate of rates) {
+        for (const date of dateRange) {
+          const ds = format(date, 'yyyy-MM-dd');
+          if (ds >= rate.startDate && ds <= rate.endDate) {
+            const key = `${siteIdStr}|${ds}`;
+            if (!map.has(key)) {
+              map.set(key, { weekdayRate: rate.weekdayRate, weekendRate: rate.weekendRate, weeklyRate: rate.weeklyRate, name: rate.name });
+            }
+          }
+        }
+      }
+    }
+    return map;
+  }, [data, dateRange]);
+
   // Parse query to check if filters are applied
   const parsedQuery = searchParams?.query ? parseSearchQuery(searchParams.query) : { minSizeM2: undefined, productCategory: undefined };
 
@@ -328,7 +350,7 @@ export default function Search() {
               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setLocation("/")}
             >
-              <img src="/logo.png" alt="Real Casual Leasing" className="h-24" />
+              <Logo height={96} width={288} className="h-24" />
             </div>
           </div>
           <nav className="flex items-center gap-4">
@@ -595,6 +617,10 @@ export default function Search() {
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-red-500 rounded"></div>
                       <span className="text-sm font-medium">Booked</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-amber-500 rounded"></div>
+                      <span className="text-sm font-medium">Seasonal Rate</span>
                     </div>
                   </div>
                   
@@ -899,6 +925,7 @@ export default function Search() {
                                 </div>
                                 <div className="flex gap-3 mt-1 text-[10px] text-gray-500">
                                   <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-green-400 rounded-sm" /> Available</span>
+                                  <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-amber-400 rounded-sm" /> Seasonal Rate</span>
                                   <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-red-400 rounded-sm" /> Booked</span>
                                 </div>
                               </div>
@@ -1029,6 +1056,10 @@ export default function Search() {
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-red-500 rounded"></div>
                       <span className="text-sm font-medium">Booked</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-amber-500 rounded"></div>
+                      <span className="text-sm font-medium">Seasonal Rate</span>
                     </div>
                   </div>
                   
@@ -1332,6 +1363,7 @@ export default function Search() {
                                 </div>
                                 <div className="flex gap-3 mt-1 text-[10px] text-gray-500">
                                   <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-green-400 rounded-sm" /> Available</span>
+                                  <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-amber-400 rounded-sm" /> Seasonal Rate</span>
                                   <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-red-400 rounded-sm" /> Booked</span>
                                 </div>
                               </div>
@@ -1525,6 +1557,10 @@ export default function Search() {
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 bg-red-500 rounded"></div>
                         <span className="text-sm font-medium">Booked</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-amber-500 rounded"></div>
+                        <span className="text-sm font-medium">Seasonal Rate</span>
                       </div>
                     </div>
                     
@@ -1862,6 +1898,7 @@ export default function Search() {
                                         const isInRange = dateSelection?.siteId === site.id && dateSelection?.startDate && dateSelection?.endDate &&
                                           date >= dateSelection.startDate && date <= dateSelection.endDate;
                                         const isSelectingStart = dateSelection?.siteId === site.id && dateSelection?.isSelecting && dateSelection?.startDate && isSameDay(date, dateSelection.startDate);
+                                        const hasSeasonal = seasonalRateMap.has(`${site.id}|${format(date, 'yyyy-MM-dd')}`);
                                         
                                         return (
                                           <div 
@@ -1870,18 +1907,23 @@ export default function Search() {
                                                 ? 'bg-red-500 hover:bg-red-600' 
                                                 : isInRange || isSelectingStart
                                                   ? 'bg-blue-500 hover:bg-blue-600'
-                                                  : 'bg-green-500 hover:bg-green-600'
+                                                  : hasSeasonal
+                                                    ? 'bg-amber-500 hover:bg-amber-600'
+                                                    : 'bg-green-500 hover:bg-green-600'
                                             } transition-colors cursor-pointer`}
                                             title={(() => {
                                                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                                               const rate = isWeekend && site.weekendPricePerDay 
-                                                 ? `$${site.weekendPricePerDay}` 
-                                                 : `$${site.pricePerDay}`;
+                                               const dateKey = `${site.id}|${format(date, 'yyyy-MM-dd')}`;
+                                               const seasonal = seasonalRateMap.get(dateKey);
+                                               const rate = seasonal
+                                                 ? `$${isWeekend && seasonal.weekendRate ? seasonal.weekendRate : seasonal.weekdayRate || site.pricePerDay}`
+                                                 : (isWeekend && site.weekendPricePerDay ? `$${site.weekendPricePerDay}` : `$${site.pricePerDay}`);
                                                const weeklyRate = site.pricePerWeek ? ` | $${site.pricePerWeek}/week` : '';
+                                               const seasonalLabel = seasonal ? ` (${seasonal.name})` : '';
                                                if (isSelectingStart) {
                                                  return `Start date selected - Click another date to set end date`;
                                                }
-                                               return `Site ${site.siteNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : 'Available - Click to select'} - ${rate}/day${weeklyRate}`;
+                                               return `Site ${site.siteNumber} - ${format(date, "dd/MM/yyyy")} - ${isBooked ? 'Booked' : 'Available - Click to select'} - ${rate}/day${weeklyRate}${seasonalLabel}`;
                                              })()}
                                           >
                                             {(isStartDate || isEndDate) && (
@@ -2078,11 +2120,20 @@ export default function Search() {
                                   </p>
                                 </div>
                                 <div className="space-y-2">
-                                  <p className="text-sm">
-                                    <span className="font-semibold">Price:</span> ${site.pricePerDay}/day
-                                    {site.weekendPricePerDay && ` (Mon-Fri), $${site.weekendPricePerDay}/day (Sat-Sun)`}
-                                    {' '}or ${site.pricePerWeek}/week
-                                  </p>
+                                  {(() => {
+                                    const hasSeasonal = !!(data as any)?.seasonalRatesBySite?.[site.id];
+                                    const seasonalSample = hasSeasonal ? Object.values((data as any).seasonalRatesBySite[site.id])[0] as any : null;
+                                    return (
+                                      <p className="text-sm">
+                                        <span className="font-semibold">Price:</span> ${site.pricePerDay}/day
+                                        {site.weekendPricePerDay && ` (Mon-Fri), $${site.weekendPricePerDay}/day (Sat-Sun)`}
+                                        {' '}or ${site.pricePerWeek}/week
+                                        {hasSeasonal && (
+                                          <span className="ml-2 text-amber-600 font-medium text-xs">⚡ {seasonalSample?.name} (${seasonalSample?.weekdayRate}/day)</span>
+                                        )}
+                                      </p>
+                                    );
+                                  })()}
                                   {parseFloat(site.outgoingsPerDay || "0") > 0 && (
                                     <p className="text-sm">
                                       <span className="font-semibold">Outgoings:</span> ${site.outgoingsPerDay}/day
@@ -2104,15 +2155,20 @@ export default function Search() {
                                     {dateRange.map((date, idx) => {
                                       const booked = isBookedOnDate(site.id, date);
                                       const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                                      const rate = isWeekend && site.weekendPricePerDay ? site.weekendPricePerDay : site.pricePerDay;
+                                      const dateKey = `${site.id}|${format(date, 'yyyy-MM-dd')}`;
+                                      const seasonal = seasonalRateMap.get(dateKey);
+                                      const rate = seasonal
+                                        ? (isWeekend && seasonal.weekendRate ? seasonal.weekendRate : seasonal.weekdayRate || site.pricePerDay)
+                                        : (isWeekend && site.weekendPricePerDay ? site.weekendPricePerDay : site.pricePerDay);
                                       const weeklyStr = site.pricePerWeek ? ` | $${site.pricePerWeek}/wk` : '';
+                                      const seasonalLabel = seasonal ? ` (${seasonal.name})` : '';
                                       return (
                                         <div
                                           key={idx}
                                           className={`flex-1 h-8 rounded-sm flex flex-col items-center justify-center text-[9px] font-medium ${
-                                            booked ? 'bg-red-400 text-white' : 'bg-green-400 text-white'
+                                            booked ? 'bg-red-400 text-white' : seasonal ? 'bg-amber-400 text-white' : 'bg-green-400 text-white'
                                           }`}
-                                          title={`${format(date, "EEE dd/MM")} - ${booked ? 'Booked' : `Available - $${rate}/day${weeklyStr}`}`}
+                                          title={`${format(date, "EEE dd/MM")} - ${booked ? 'Booked' : `Available - $${rate}/day${weeklyStr}${seasonalLabel}`}`}
                                         >
                                           <span>{format(date, "dd")}</span>
                                           <span className="text-[8px] opacity-80">{format(date, "EEE")}</span>
@@ -2122,6 +2178,7 @@ export default function Search() {
                                   </div>
                                   <div className="flex gap-3 mt-1 text-[10px] text-gray-500">
                                     <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-green-400 rounded-sm" /> Available</span>
+                                    <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-amber-400 rounded-sm" /> Seasonal Rate</span>
                                     <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 bg-red-400 rounded-sm" /> Booked</span>
                                   </div>
                                 </div>
@@ -2171,22 +2228,37 @@ export default function Search() {
                                               current.setDate(current.getDate() + 1);
                                             }
                                             const totalDays = weekdays + weekends;
-                                            const weekdayRate = Number(site.pricePerDay) || 0;
-                                            const weekendRate = Number(site.weekendPricePerDay) || weekdayRate;
+                                            const baseWeekdayRate = Number(site.pricePerDay) || 0;
+                                            const baseWeekendRate = Number(site.weekendPricePerDay) || baseWeekdayRate;
                                             const weeklyRate = Number(site.pricePerWeek) || 0;
                                             
-                                            let subtotal: number;
+                                            // Calculate subtotal day-by-day to account for seasonal rates
+                                            let subtotal = 0;
+                                            let hasSeasonalDays = false;
+                                            const calcCur = new Date(start);
+                                            while (calcCur <= end) {
+                                              const dayOfWeek = calcCur.getDay();
+                                              const isWknd = dayOfWeek === 0 || dayOfWeek === 6;
+                                              const dk = `${site.id}|${format(calcCur, 'yyyy-MM-dd')}`;
+                                              const sr = seasonalRateMap.get(dk);
+                                              if (sr) {
+                                                hasSeasonalDays = true;
+                                                subtotal += Number(isWknd && sr.weekendRate ? sr.weekendRate : sr.weekdayRate) || (isWknd ? baseWeekendRate : baseWeekdayRate);
+                                              } else {
+                                                subtotal += isWknd ? baseWeekendRate : baseWeekdayRate;
+                                              }
+                                              calcCur.setDate(calcCur.getDate() + 1);
+                                            }
+                                            
                                             let weeksApplied = 0;
                                             let weeklyRateApplied = false;
                                             
-                                            if (weeklyRate > 0 && totalDays >= 7) {
+                                            if (!hasSeasonalDays && weeklyRate > 0 && totalDays >= 7) {
                                               weeksApplied = Math.floor(totalDays / 7);
                                               const remainderDays = totalDays - weeksApplied * 7;
-                                              const avgDailyRate = totalDays > 0 ? ((weekdays * weekdayRate) + (weekends * weekendRate)) / totalDays : weekdayRate;
+                                              const avgDailyRate = totalDays > 0 ? ((weekdays * baseWeekdayRate) + (weekends * baseWeekendRate)) / totalDays : baseWeekdayRate;
                                               subtotal = (weeksApplied * weeklyRate) + (remainderDays * avgDailyRate);
                                               weeklyRateApplied = true;
-                                            } else {
-                                              subtotal = (weekdays * weekdayRate) + (weekends * weekendRate);
                                             }
                                             
                                             const outgoingsRate = parseFloat(site.outgoingsPerDay || "0");
@@ -2205,8 +2277,9 @@ export default function Search() {
                                                   </>
                                                 ) : (
                                                   <>
-                                                    {weekdays > 0 && <p><span className="text-gray-600">Weekdays:</span> {weekdays} × ${weekdayRate.toFixed(2)} = ${(weekdays * weekdayRate).toFixed(2)}</p>}
-                                                    {weekends > 0 && <p><span className="text-gray-600">Weekends:</span> {weekends} × ${weekendRate.toFixed(2)} = ${(weekends * weekendRate).toFixed(2)}</p>}
+                                                    {weekdays > 0 && <p><span className="text-gray-600">Weekdays:</span> {weekdays} × ${baseWeekdayRate.toFixed(2)} = ${(weekdays * baseWeekdayRate).toFixed(2)}</p>}
+                                                    {weekends > 0 && <p><span className="text-gray-600">Weekends:</span> {weekends} × ${baseWeekendRate.toFixed(2)} = ${(weekends * baseWeekendRate).toFixed(2)}</p>}
+                                                    {hasSeasonalDays && <p className="text-amber-600 text-xs font-medium">⚡ Includes seasonal rate adjustments</p>}
                                                   </>
                                                 )}
                                                 <div className="border-t border-gray-200 mt-2 pt-2">

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Calendar, CalendarDays, Trash } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { BulkIncreaseForm } from "@/components/BulkIncreaseForm";
 import { SeasonalRateCalendar } from "@/components/SeasonalRateCalendar";
@@ -26,10 +26,16 @@ export default function SeasonalRates() {
     { centreId: parseInt(selectedCentreId) },
     { enabled: !!selectedCentreId }
   );
-  const { data: seasonalRates, refetch } = trpc.admin.getSeasonalRatesBySite.useQuery(
+  const { data: seasonalRatesBySite, refetch: refetchBySite } = trpc.admin.getSeasonalRatesBySite.useQuery(
     { siteId: parseInt(selectedSiteId) },
-    { enabled: !!selectedSiteId }
+    { enabled: !!selectedSiteId && selectedSiteId !== "all" }
   );
+  const { data: seasonalRatesByCentre, refetch: refetchByCentre } = trpc.admin.getSeasonalRatesByCentre.useQuery(
+    { centreId: parseInt(selectedCentreId) },
+    { enabled: !!selectedCentreId && selectedSiteId === "all" }
+  );
+  const seasonalRates = selectedSiteId === "all" ? seasonalRatesByCentre : seasonalRatesBySite;
+  const refetch = () => { refetchBySite(); refetchByCentre(); };
 
   const createMutation = trpc.admin.createSeasonalRate.useMutation({
     onSuccess: () => {
@@ -60,16 +66,6 @@ export default function SeasonalRates() {
     },
     onError: (error) => {
       toast.error("Failed to delete seasonal rate: " + error.message);
-    },
-  });
-
-  const cleanupMutation = trpc.admin.cleanupZeroSeasonalRates.useMutation({
-    onSuccess: (data) => {
-      toast.success(`Cleaned up ${data.deleted} seasonal rates with $0 pricing`);
-      refetch();
-    },
-    onError: (error) => {
-      toast.error("Failed to clean up $0 rates: " + error.message);
     },
   });
 
@@ -113,19 +109,6 @@ export default function SeasonalRates() {
               <Calendar className="h-6 w-6" />
               Seasonal Pricing Management
             </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (confirm("This will delete all seasonal rates where every rate is $0. Continue?")) {
-                  cleanupMutation.mutate();
-                }
-              }}
-              disabled={cleanupMutation.isPending}
-            >
-              <Trash className="h-4 w-4 mr-2" />
-              {cleanupMutation.isPending ? "Cleaning..." : "Clean Up $0 Rates"}
-            </Button>
           </div>
           <CardDescription>
             Set special rates for holidays, events, and peak seasons
@@ -173,6 +156,7 @@ export default function SeasonalRates() {
                   <SelectValue placeholder="Select a site" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">All Sites</SelectItem>
                   {sites?.map((site) => (
                     <SelectItem key={site.id} value={site.id.toString()}>
                       {site.siteNumber}
@@ -203,7 +187,7 @@ export default function SeasonalRates() {
                     <CalendarDays className="h-4 w-4 mr-2" />
                     Calendar View
                   </Button>
-                  <Button onClick={() => setIsCreateOpen(true)}>
+                  <Button onClick={() => setIsCreateOpen(true)} disabled={selectedSiteId === "all"}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Seasonal Rate
                   </Button>
@@ -214,6 +198,7 @@ export default function SeasonalRates() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      {selectedSiteId === "all" && <TableHead>Site</TableHead>}
                       <TableHead>Name</TableHead>
                       <TableHead>Start Date</TableHead>
                       <TableHead>End Date</TableHead>
@@ -226,16 +211,21 @@ export default function SeasonalRates() {
                   <TableBody>
                     {seasonalRates?.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-gray-500">
+                        <TableCell colSpan={selectedSiteId === "all" ? 8 : 7} className="text-center text-gray-500">
                           No seasonal rates configured
                         </TableCell>
                       </TableRow>
                     )}
                     {seasonalRates?.map((rate) => (
                       <TableRow key={rate.id}>
+                        {selectedSiteId === "all" && (
+                          <TableCell className="text-muted-foreground">
+                            {sites?.find(s => s.id === rate.siteId)?.siteNumber || rate.siteId}
+                          </TableCell>
+                        )}
                         <TableCell className="font-medium">{rate.name}</TableCell>
-                        <TableCell>{rate.startDate}</TableCell>
-                        <TableCell>{rate.endDate}</TableCell>
+                        <TableCell>{rate.startDate.split('-').reverse().join('/')}</TableCell>
+                        <TableCell>{rate.endDate.split('-').reverse().join('/')}</TableCell>
                         <TableCell>${rate.weekdayRate || "-"}</TableCell>
                         <TableCell>${rate.weekendRate || "-"}</TableCell>
                         <TableCell>${rate.weeklyRate || "-"}</TableCell>

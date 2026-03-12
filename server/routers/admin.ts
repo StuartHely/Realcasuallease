@@ -4,7 +4,7 @@ import * as db from "../db";
 import { TRPCError } from "@trpc/server";
 import { getSystemConfig as getSystemConfigDb, updateSystemConfig as updateSystemConfigDb } from "../systemConfigDb";
 import { trackImageView, trackImageClick, getTopPerformingImages, getImageAnalyticsBySite } from "../imageAnalyticsDb";
-import { getSeasonalRatesBySiteId, createSeasonalRate, updateSeasonalRate, deleteSeasonalRate } from "../seasonalRatesDb";
+import { getSeasonalRatesBySiteId, getSeasonalRatesByCentreId, createSeasonalRate, updateSeasonalRate, deleteSeasonalRate, getSeasonalRatesForDateRange } from "../seasonalRatesDb";
 import { notifyOwner } from "../_core/notification";
 
 export const adminRouter = router({
@@ -484,6 +484,12 @@ export const adminRouter = router({
         return await getSeasonalRatesBySiteId(input.siteId);
       }),
 
+    getSeasonalRatesByCentre: ownerProcedure
+      .input(z.object({ centreId: z.number() }))
+      .query(async ({ input }) => {
+        return await getSeasonalRatesByCentreId(input.centreId);
+      }),
+
     createSeasonalRate: ownerProcedure
       .input(z.object({
         siteId: z.number(),
@@ -495,7 +501,10 @@ export const adminRouter = router({
         weeklyRate: z.number().positive().optional(),
       }))
       .mutation(async ({ input }) => {
-        return await createSeasonalRate(input);
+        const result = await createSeasonalRate(input);
+        const { clearSearchCache } = await import("../searchCache");
+        clearSearchCache();
+        return result;
       }),
 
     updateSeasonalRate: ownerProcedure
@@ -510,13 +519,19 @@ export const adminRouter = router({
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
-        return await updateSeasonalRate(id, data);
+        const result = await updateSeasonalRate(id, data);
+        const { clearSearchCache } = await import("../searchCache");
+        clearSearchCache();
+        return result;
       }),
 
     deleteSeasonalRate: ownerProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
-        return await deleteSeasonalRate(input.id);
+        const result = await deleteSeasonalRate(input.id);
+        const { clearSearchCache } = await import("../searchCache");
+        clearSearchCache();
+        return result;
       }),
 
     getOwners: ownerProcedure
@@ -741,6 +756,7 @@ export const adminRouter = router({
 
         let created = 0;
         let skipped = 0;
+        let updated = 0;
         for (const site of allSites) {
           const multiplier = 1 + (percentageIncrease / 100);
           const baseWeekdayRate = site.pricePerDay ? parseFloat(site.pricePerDay) : 0;
@@ -759,47 +775,31 @@ export const adminRouter = router({
             : (baseWeekdayRate > 0 ? Math.round(baseWeekdayRate * multiplier * 100) / 100 : undefined);
           const weeklyRate = baseWeeklyRate > 0 ? Math.round(baseWeeklyRate * multiplier * 100) / 100 : undefined;
 
-          await createSeasonalRate({
-            siteId: site.id,
-            name,
-            startDate,
-            endDate,
-            weekdayRate,
-            weekendRate,
-            weeklyRate,
-          });
-          created++;
-        }
+          // Check for existing seasonal rate with same name and overlapping dates
+          const existing = await getSeasonalRatesForDateRange(site.id, startDate, endDate);
+          const duplicate = existing.find(r => r.name === name && r.startDate === startDate && r.endDate === endDate);
 
-        return { created, skipped, totalSites: allSites.length };
-      }),
-
-    cleanupZeroSeasonalRates: adminProcedure
-      .mutation(async () => {
-        const { getDb } = await import('../db');
-        const { seasonalRates } = await import('../../drizzle/schema');
-        const { inArray } = await import('drizzle-orm');
-        const dbInstance = await getDb();
-        if (!dbInstance) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
-
-        const allRates = await dbInstance.select().from(seasonalRates);
-        const idsToDelete: number[] = [];
-
-        for (const rate of allRates) {
-          const weekday = rate.weekdayRate ? parseFloat(rate.weekdayRate) : 0;
-          const weekend = rate.weekendRate ? parseFloat(rate.weekendRate) : 0;
-          const weekly = rate.weeklyRate ? parseFloat(rate.weeklyRate) : 0;
-
-          if (weekday === 0 && weekend === 0 && weekly === 0) {
-            idsToDelete.push(rate.id);
+          if (duplicate) {
+            // Update existing record instead of creating a duplicate
+            await updateSeasonalRate(duplicate.id, { weekdayRate, weekendRate, weeklyRate });
+            updated++;
+          } else {
+            await createSeasonalRate({
+              siteId: site.id,
+              name,
+              startDate,
+              endDate,
+              weekdayRate,
+              weekendRate,
+              weeklyRate,
+            });
+            created++;
           }
         }
 
-        if (idsToDelete.length > 0) {
-          await dbInstance.delete(seasonalRates).where(inArray(seasonalRates.id, idsToDelete));
-        }
-
-        return { deleted: idsToDelete.length, total: allRates.length };
+        const { clearSearchCache } = await import("../searchCache");
+        clearSearchCache();
+        return { created, updated, skipped, totalSites: allSites.length };
       }),
 
     // Invoice Payment Management

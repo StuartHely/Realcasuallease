@@ -22,7 +22,10 @@ export function BulkIncreaseForm({ centres, onSuccess }: BulkIncreaseFormProps) 
 
   const bulkCreateMutation = trpc.admin.bulkCreateSeasonalRates.useMutation({
     onSuccess: (result: any) => {
-      toast.success(`Successfully created ${result.created} seasonal rates`);
+      const parts = [];
+      if (result.created > 0) parts.push(`${result.created} created`);
+      if (result.updated > 0) parts.push(`${result.updated} updated`);
+      toast.success(`Seasonal rates: ${parts.join(', ') || 'no changes needed'}`);
       // Reset form
       setSelectedCentres([]);
       setName("");
