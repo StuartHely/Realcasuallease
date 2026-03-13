@@ -26,6 +26,7 @@ import { tenantRouter } from "./routers/tenant";
 import { reportsRouter } from "./routers/reports";
 import { feedbackRouter } from "./routers/feedback";
 import { siteImportExportRouter } from "./routers/siteImportExport";
+import { eftPaymentsRouter } from "./routers/eftPayments";
 import {
   thirdLineCategoriesRouter,
   vacantShopsRouter,
@@ -70,6 +71,7 @@ export const appRouter = router({
   reports: reportsRouter,
   feedback: feedbackRouter,
   siteImportExport: siteImportExportRouter,
+  eftPayments: eftPaymentsRouter,
 });
 
 export type AppRouter = typeof appRouter;

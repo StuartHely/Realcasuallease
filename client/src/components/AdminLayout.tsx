@@ -44,7 +44,8 @@ import {
   CalendarPlus,
   BarChart3,
   Globe,
-  MessageSquare
+  MessageSquare,
+  Banknote
 } from "lucide-react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -102,6 +103,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
           { icon: DollarSign, label: "Financial Reports", path: "/admin/financials" },
           { icon: FileText, label: "Remittance Report", path: "/admin/remittance" },
           { icon: DollarSign, label: "Record Payments", path: "/admin/payments" },
+          { icon: Banknote, label: "EFT Payment Matching", path: "/admin/eft-payments" },
           { icon: BarChart3, label: "Occupancy Report", path: "/admin/occupancy-report" },
           { icon: FileText, label: "Aged Debtors", path: "/admin/aged-debtors" },
           { icon: DollarSign, label: "GST Report", path: "/admin/gst-report" },

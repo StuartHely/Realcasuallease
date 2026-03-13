@@ -18,6 +18,8 @@ export interface ParsedQuery {
   maxPricePerDay?: number;
   maxPricePerWeek?: number;
   maxBudget?: number;
+  nearMe?: boolean; // "near me" / "close to me" detected — use logged-in user's address
+  radiusKm?: number; // Distance radius in km (e.g., "within 20km of me")
 }
 
 /**
@@ -336,11 +338,14 @@ const areaAliases: Record<string, string[]> = {
   'eastern suburbs': ['east suburbs', 'sydneys east', 'sydney east', 'east of sydney'],
   'inner west': ['sydneys inner west', 'sydney inner west'],
   'north shore': ['sydneys north shore', 'sydney north shore', 'northern suburbs sydney'],
-  'sydney cbd': ['sydney city', 'the city sydney'],
+  'sydney': ['sydney cbd', 'sydney city', 'the city sydney', 'greater sydney'],
+  'brisbane': ['brisbane cbd', 'greater brisbane'],
+  'melbourne': ['melbourne cbd', 'melbourne city', 'greater melbourne'],
+  'perth': ['perth cbd', 'greater perth'],
+  'adelaide': ['adelaide cbd', 'greater adelaide'],
   'gold coast': ['goldcoast'],
   'sunshine coast': ['sunshinecoast', 'sunny coast'],
   'central coast': ['centralcoast'],
-  'melbourne cbd': ['melbourne city'],
 };
 
 export function extractLocationFromQuery(query: string): { location: string; matchedAlias?: string; matchedCentre?: string } {
@@ -352,16 +357,18 @@ export function extractLocationFromQuery(query: string): { location: string; mat
   
   // Zero pass: check area/region aliases first (multi-word phrases like "sydneys west")
   // This prevents extractCentreName from splitting these compound location phrases.
-  for (const [canonical, variants] of Object.entries(areaAliases)) {
-    // Check canonical name
-    if (lowerQuery.includes(canonical)) {
-      return { location: canonical, matchedAlias: canonical };
-    }
-    // Check each variant
+  // Sort by key length descending so "western sydney" matches before "sydney".
+  const sortedAreaAliases = Object.entries(areaAliases).sort((a, b) => b[0].length - a[0].length);
+  for (const [canonical, variants] of sortedAreaAliases) {
+    // Check each variant first (they tend to be more specific)
     for (const variant of variants) {
       if (lowerQuery.includes(variant)) {
         return { location: canonical, matchedAlias: variant };
       }
+    }
+    // Check canonical name
+    if (lowerQuery.includes(canonical)) {
+      return { location: canonical, matchedAlias: canonical };
     }
   }
   
@@ -423,8 +430,15 @@ function extractCentreName(query: string): string {
   centreName = centreName.replace(/(?:under|less\s+than|max(?:imum)?|budget\s*(?:of|is|:)?)\s*\$\d+(?:\.\d+)?(?:\s*(?:per\s*)?(?:day|daily|week|weekly|month|monthly))?/gi, '');
   centreName = centreName.replace(/\$\d+(?:\.\d+)?\s*(?:\/|per\s*|a\s+)(?:day|week|month)/gi, '');
   
+  // Remove "near me" / "close to me" / "of me" patterns
+  centreName = centreName.replace(/\b(?:near|close\s+to|from|of|around)\s+me\b/gi, '');
+
+  // Remove distance patterns (e.g., "within 20km", "20 km radius")
+  centreName = centreName.replace(/\b(?:within|radius\s+of?)\s+\d+\s*(?:km|kilometres?|kilometers?|miles?|mi)\b/gi, '');
+  centreName = centreName.replace(/\b\d+\s*(?:km|kilometres?|kilometers?|miles?|mi)\s*(?:radius|away|from|of)?\b/gi, '');
+
   // Remove prepositions that don't help
-  centreName = centreName.replace(/\b(in|at|near|around|close\s+to|next\s+to|by|from|for|to|the|a|an|my|some|with|and|or|that|this|where|who|how)\b/gi, '');
+  centreName = centreName.replace(/\b(in|at|near|around|close\s+to|next\s+to|by|from|for|to|the|a|an|my|some|with|and|or|that|this|where|who|how|within)\b/gi, '');
 
   // Remove asset type patterns
   centreName = centreName.replace(/\b(vacant\s+shop|vs|vending\s+machine|vending|atm|car\s+wash|digital\s+signage|third\s+line|3rd\s+line|3rdl|casual\s+leasing|casual|pop\s*-?\s*up|popup|pop-up|installation|kiosk|phone\s+booth|mailbox|bike\s+rack|seating|water\s+fountain|bin|trash|recycling|charging\s+station|charger)\b/gi, '');
@@ -774,6 +788,22 @@ function parseDateFromQuery(query: string): { date?: string; endDate?: string; c
 }
 
 /**
+ * Detect "near me" / "close to me" patterns and extract radius
+ */
+function extractNearMe(query: string): { nearMe: boolean; radiusKm?: number } {
+  const lower = query.toLowerCase();
+  // Match patterns: "near me", "close to me", "from me", "of me", "around me"
+  const nearMePattern = /\b(?:near|close\s+to|from|of|around)\s+me\b/i;
+  if (!nearMePattern.test(lower)) return { nearMe: false };
+
+  // Extract radius: "within 20km", "20km of me", "20 km from me"
+  const radiusMatch = lower.match(/(?:within\s+)?(\d+)\s*(?:km|kilometres?|kilometers?)\b/);
+  const radiusKm = radiusMatch ? parseInt(radiusMatch[1]) : undefined;
+
+  return { nearMe: true, radiusKm };
+}
+
+/**
  * Parse a search query to extract centre name and site requirements
  */
 export function parseSearchQuery(query: string): ParsedQuery {
@@ -782,6 +812,9 @@ export function parseSearchQuery(query: string): ParsedQuery {
   // First extract date from query
   const { date: parsedDate, endDate, cleanedQuery } = parseDateFromQuery(trimmedQuery);
   
+  // Check for "near me" before location extraction
+  const nearMeResult = extractNearMe(cleanedQuery);
+
   // Extract location with alias matching (prioritized)
   const locationResult = extractLocationFromQuery(cleanedQuery);
   
@@ -806,6 +839,8 @@ export function parseSearchQuery(query: string): ParsedQuery {
     maxPricePerDay: budget.maxPricePerDay,
     maxPricePerWeek: budget.maxPricePerWeek,
     maxBudget: budget.maxBudget,
+    nearMe: nearMeResult.nearMe || undefined,
+    radiusKm: nearMeResult.radiusKm,
   };
 }
 
