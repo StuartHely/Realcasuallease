@@ -1108,7 +1108,73 @@ export async function createFloorLevel(level: InsertFloorLevel) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return await db.insert(floorLevels).values(level);
+  const [result] = await db.insert(floorLevels).values(level).returning({ id: floorLevels.id });
+  return result;
+}
+
+export async function migrateCentreMapToFloorLevel(centreId: number): Promise<{ floorLevelId: number; mapUrl: string } | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Check centre has a map but no floor levels
+  const [centre] = await db.select({ mapImageUrl: shoppingCentres.mapImageUrl })
+    .from(shoppingCentres).where(eq(shoppingCentres.id, centreId));
+  if (!centre?.mapImageUrl) return null;
+
+  const existing = await db.select({ id: floorLevels.id })
+    .from(floorLevels).where(eq(floorLevels.centreId, centreId));
+  if (existing.length > 0) return null;
+
+  // Create "Ground Floor" and move the map URL to it
+  const [newFloor] = await db.insert(floorLevels).values({
+    centreId,
+    levelName: "Ground Floor",
+    levelNumber: "1",
+    displayOrder: 0,
+    mapImageUrl: centre.mapImageUrl,
+    isHidden: false,
+  }).returning({ id: floorLevels.id });
+
+  // Clear centre-level map (now on the floor level)
+  await db.update(shoppingCentres)
+    .set({ mapImageUrl: null })
+    .where(eq(shoppingCentres.id, centreId));
+
+  return { floorLevelId: newFloor.id, mapUrl: centre.mapImageUrl };
+}
+
+export async function migrateAllCentreMapsToFloorLevels(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  // Find all centres with a centre-level map but no floor levels
+  const allCentres = await db.select({ id: shoppingCentres.id, name: shoppingCentres.name, mapImageUrl: shoppingCentres.mapImageUrl })
+    .from(shoppingCentres);
+
+  let migrated = 0;
+  for (const centre of allCentres) {
+    if (!centre.mapImageUrl) continue;
+    const existing = await db.select({ id: floorLevels.id })
+      .from(floorLevels).where(eq(floorLevels.centreId, centre.id));
+    if (existing.length > 0) continue;
+
+    await db.insert(floorLevels).values({
+      centreId: centre.id,
+      levelName: "Ground Floor",
+      levelNumber: "1",
+      displayOrder: 0,
+      mapImageUrl: centre.mapImageUrl,
+      isHidden: false,
+    });
+
+    await db.update(shoppingCentres)
+      .set({ mapImageUrl: null })
+      .where(eq(shoppingCentres.id, centre.id));
+
+    console.log(`[MapMigration] Migrated "${centre.name}" (id=${centre.id}) map to Ground Floor`);
+    migrated++;
+  }
+  return migrated;
 }
 
 export async function updateFloorLevel(id: number, updates: Partial<InsertFloorLevel>) {

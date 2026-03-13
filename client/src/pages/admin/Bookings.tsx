@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Clock, DollarSign, Search, X, FileText, Pencil, Download, ExternalLink, FileSignature, Mail } from "lucide-react";
+import { CheckCircle, XCircle, Clock, DollarSign, Search, X, FileText, Pencil, Download, ExternalLink, FileSignature, Mail, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -66,6 +66,29 @@ export default function AdminBookings() {
       unpaid: allBookings.filter(b => b.paymentMethod === 'invoice' && !b.paidAt && b.status !== 'rejected').length,
     };
   }, [allBookings]);
+
+  const invoiceStats = useMemo(() => {
+    if (!allBookings) return { totalOutstanding: 0, totalOverdue: 0, outstandingCount: 0, overdueCount: 0 };
+    const now = new Date();
+    let totalOutstanding = 0, totalOverdue = 0, outstandingCount = 0, overdueCount = 0;
+    for (const b of allBookings) {
+      if (b.status !== 'confirmed' || b.paidAt || !b.approvedAt) continue;
+      const total = Number(b.totalAmount || 0) + Number(b.gstAmount || 0);
+      const dueDate = new Date(b.approvedAt);
+      dueDate.setDate(dueDate.getDate() + 14);
+      if (dueDate < now) {
+        totalOverdue += total;
+        overdueCount++;
+      } else {
+        totalOutstanding += total;
+        outstandingCount++;
+      }
+    }
+    return { totalOutstanding, totalOverdue, outstandingCount, overdueCount };
+  }, [allBookings]);
+
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(amount);
 
   // Filter and sort bookings based on search query
   const filteredBookings = useMemo(() => {
@@ -366,6 +389,66 @@ export default function AdminBookings() {
         </div>
       </div>
 
+      {/* Invoice Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Outstanding</CardTitle>
+            <Clock className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(invoiceStats.totalOutstanding)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {invoiceStats.outstandingCount} invoice{invoiceStats.outstandingCount !== 1 ? 's' : ''}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Overdue</CardTitle>
+            <AlertCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {formatCurrency(invoiceStats.totalOverdue)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {invoiceStats.overdueCount} invoice{invoiceStats.overdueCount !== 1 ? 's' : ''}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Unpaid</CardTitle>
+            <DollarSign className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(invoiceStats.totalOutstanding + invoiceStats.totalOverdue)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {invoiceStats.outstandingCount + invoiceStats.overdueCount} total
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Action Required</CardTitle>
+            <AlertCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {invoiceStats.overdueCount}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Overdue invoices need follow-up
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Tabs value={selectedStatus} onValueChange={(v) => {
           setSearchQuery(""); // Clear search when switching tabs
           setSelectedStatus(v as BookingStatus);
@@ -447,6 +530,7 @@ export default function AdminBookings() {
                         <TableHead className="text-right">GST</TableHead>
                         <TableHead className="text-right">Total</TableHead>
                         <TableHead>Paid?</TableHead>
+                        {selectedStatus === "unpaid" && <TableHead>Due Date</TableHead>}
                         <TableHead>Licence</TableHead>
                         <TableHead>Invoice PDF</TableHead>
                         <TableHead>Edit</TableHead>
@@ -507,6 +591,25 @@ export default function AdminBookings() {
                             <TableCell>
                               {getPaymentBadge(booking)}
                             </TableCell>
+                            {selectedStatus === "unpaid" && (
+                              <TableCell>
+                                {booking.approvedAt ? (() => {
+                                  const dueDate = new Date(booking.approvedAt);
+                                  dueDate.setDate(dueDate.getDate() + 14);
+                                  const daysUntilDue = Math.floor((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                                  return (
+                                    <div>
+                                      <div>{format(dueDate, "dd/MM/yy")}</div>
+                                      <div className={`text-xs ${daysUntilDue < 0 ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
+                                        {daysUntilDue < 0
+                                          ? `${Math.abs(daysUntilDue)}d overdue`
+                                          : `${daysUntilDue}d remaining`}
+                                      </div>
+                                    </div>
+                                  );
+                                })() : '—'}
+                              </TableCell>
+                            )}
                             <TableCell>
                               <button
                                 onClick={() => {

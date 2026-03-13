@@ -83,6 +83,9 @@ export const adminRouter = router({
           ...input,
           paymentMode,
         });
+        // Refresh location index and search cache for new centre
+        import("../locationIndex").then(m => m.refreshLocationIndex()).catch(() => {});
+        import("../searchCache").then(m => m.clearSearchCache()).catch(() => {});
         import("../auditHelper").then(m => m.writeAudit({
           userId: ctx.user.id,
           action: "centre_created",
@@ -125,6 +128,11 @@ export const adminRouter = router({
         }
         const { id, ...updates } = input;
         const result = await db.updateShoppingCentre(id, updates);
+        // Refresh location index and search cache when location-relevant fields change
+        if (updates.name || updates.suburb || updates.state || updates.postcode || updates.includeInMainSite !== undefined) {
+          import("../locationIndex").then(m => m.refreshLocationIndex()).catch(() => {});
+          import("../searchCache").then(m => m.clearSearchCache()).catch(() => {});
+        }
         import("../auditHelper").then(m => m.writeAudit({
           userId: ctx.user.id,
           action: "centre_updated",
@@ -144,7 +152,10 @@ export const adminRouter = router({
           entityType: "centre",
           entityId: input.id,
         })).catch(() => {});
-        return await db.deleteShoppingCentre(input.id);
+        const result = await db.deleteShoppingCentre(input.id);
+        import("../locationIndex").then(m => m.refreshLocationIndex()).catch(() => {});
+        import("../searchCache").then(m => m.clearSearchCache()).catch(() => {});
+        return result;
       }),
 
     // Site Management
@@ -424,6 +435,12 @@ export const adminRouter = router({
       }))
       .mutation(async ({ input }) => {
         return await db.createFloorLevel(input);
+      }),
+
+    migrateCentreMap: ownerProcedure
+      .input(z.object({ centreId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.migrateCentreMapToFloorLevel(input.centreId);
       }),
 
     deleteFloorLevel: ownerProcedure
@@ -826,36 +843,6 @@ export const adminRouter = router({
       .mutation(async () => {
         const { sendPaymentReminders } = await import('../paymentReminders');
         return await sendPaymentReminders();
-      }),
-
-    // Invoice Dashboard
-    getInvoiceStats: ownerProcedure
-      .input(z.object({
-        paymentMode: z.enum(['all', 'invoice', 'stripe']).optional(),
-      }))
-      .query(async ({ input }) => {
-        const { getInvoiceStats } = await import('../invoiceDashboardDb');
-        return await getInvoiceStats(input.paymentMode);
-      }),
-
-    getInvoiceList: ownerProcedure
-      .input(z.object({
-        filter: z.enum(['all', 'outstanding', 'overdue', 'paid']).default('all'),
-        paymentMode: z.enum(['all', 'invoice', 'stripe']).optional(),
-      }))
-      .query(async ({ input }) => {
-        const { getInvoiceList } = await import('../invoiceDashboardDb');
-        return await getInvoiceList(input.filter, input.paymentMode);
-      }),
-
-    getPaymentHistory: ownerProcedure
-      .input(z.object({
-        searchTerm: z.string().optional(),
-        paymentMode: z.enum(['all', 'invoice', 'stripe']).optional(),
-      }))
-      .query(async ({ input }) => {
-        const { getPaymentHistory } = await import('../invoiceDashboardDb');
-        return await getPaymentHistory(input.searchTerm, input.paymentMode);
       }),
 
     // User Registration

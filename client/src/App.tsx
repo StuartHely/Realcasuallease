@@ -39,7 +39,6 @@ import AdminSettings from "./pages/admin/Settings";
 import UsageCategories from "./pages/admin/UsageCategories";
 import CentreCodes from "./pages/admin/CentreCodes";
 import Payments from "./pages/admin/Payments";
-import InvoiceDashboard from "./pages/admin/InvoiceDashboard";
 import SearchAnalytics from "./pages/admin/SearchAnalytics";
 import PortfolioDashboard from "./pages/admin/PortfolioDashboard";
 import FYBudgetManagement from "./pages/admin/FYBudgetManagement";
@@ -117,7 +116,6 @@ function Router() {
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/customer/:id" component={CustomerProfile} />
       <Route path="/admin/payments" component={Payments} />
-      <Route path="/admin/invoice-dashboard" component={InvoiceDashboard} />
       <Route path="/admin/owners" component={AdminOwners} />
       <Route path="/admin/operators" component={OperatorManagement} />
       <Route path="/admin/portfolios" component={Portfolios} />

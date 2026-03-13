@@ -159,6 +159,12 @@ export const centresRouter = router({
       // Update centre
       await db.updateShoppingCentre(input.id, input);
       
+      // Refresh location index and search cache when location-relevant fields change
+      if (input.name || input.suburb || input.state || input.postcode) {
+        import("../locationIndex").then(m => m.refreshLocationIndex()).catch(() => {});
+        import("../searchCache").then(m => m.clearSearchCache()).catch(() => {});
+      }
+      
       import("../auditHelper").then(m => m.writeAudit({
         userId: ctx.user.id,
         action: "centre_updated",

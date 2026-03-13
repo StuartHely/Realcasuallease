@@ -303,7 +303,7 @@ function isFuzzyMatch(input: string, target: string, maxDistance?: number): bool
  */
 const locationAliases: Record<string, string[]> = {
   'eastgate bondi junction': ['bondi', 'bondi junction', 'eastgate'],
-  'campbelltown mall': ['campbelltown', 'campbelltown mall'],
+  'campbelltown mall': ['campbelltown', 'campbelltown mall', 'camptown', 'camptown mall'],
   'carnes hill marketplace': ['carnes hill', 'carnes'],
   'highlands marketplace': ['highlands', 'highland', 'mittagong'],
   'waverley gardens': ['waverley', 'waverly'],
@@ -324,13 +324,48 @@ const locationAliases: Record<string, string[]> = {
  * Extract location/centre name from query, recognizing aliases with fuzzy matching
  * Returns both the extracted location and any matched alias
  */
+/**
+ * Known area/region phrases that map to a canonical area name.
+ * These are checked before centre aliases so compound phrases like
+ * "sydneys west" or "western sydney" are recognised early and not
+ * broken apart by extractCentreName().
+ */
+const areaAliases: Record<string, string[]> = {
+  'western sydney': ['sydney west', 'sydneys west', 'west sydney', 'west of sydney', 'greater west', 'sydneys western', 'greater western sydney'],
+  'southern sydney': ['south sydney', 'sydney south', 'sydneys south', 'south of sydney', 'st george'],
+  'eastern suburbs': ['east suburbs', 'sydneys east', 'sydney east', 'east of sydney'],
+  'inner west': ['sydneys inner west', 'sydney inner west'],
+  'north shore': ['sydneys north shore', 'sydney north shore', 'northern suburbs sydney'],
+  'sydney cbd': ['sydney city', 'the city sydney'],
+  'gold coast': ['goldcoast'],
+  'sunshine coast': ['sunshinecoast', 'sunny coast'],
+  'central coast': ['centralcoast'],
+  'melbourne cbd': ['melbourne city'],
+};
+
 export function extractLocationFromQuery(query: string): { location: string; matchedAlias?: string; matchedCentre?: string } {
-  const lowerQuery = query.toLowerCase();
+  // Normalize apostrophes / possessives so "sydney's west" → "sydneys west"
+  const lowerQuery = query.toLowerCase().replace(/['']/g, "'").replace(/(\w)'s\b/g, "$1s");
   
   // Extract words from query for fuzzy matching
   const queryWords = lowerQuery.split(/\s+/).filter(w => w.length > 2);
   
-  // First pass: exact word boundary matching
+  // Zero pass: check area/region aliases first (multi-word phrases like "sydneys west")
+  // This prevents extractCentreName from splitting these compound location phrases.
+  for (const [canonical, variants] of Object.entries(areaAliases)) {
+    // Check canonical name
+    if (lowerQuery.includes(canonical)) {
+      return { location: canonical, matchedAlias: canonical };
+    }
+    // Check each variant
+    for (const variant of variants) {
+      if (lowerQuery.includes(variant)) {
+        return { location: canonical, matchedAlias: variant };
+      }
+    }
+  }
+  
+  // First pass: exact word boundary matching against centre aliases
   for (const [centreName, aliases] of Object.entries(locationAliases)) {
     for (const alias of aliases) {
       const regex = new RegExp(`\\b${alias}\\b`, 'i');
@@ -382,7 +417,7 @@ function extractCentreName(query: string): string {
   let centreName = query;
   
   // Remove common filler words that don't help with location matching
-  centreName = centreName.replace(/\b(i'm\s+looking\s+for|i\s+want\s+to|want\s+to|looking\s+for|need\s+to|would\s+like\s+to|can\s+i|where\s+can\s+i|i\s+need|where\s+is|show\s+me|any\s+available|do\s+you\s+have|is\s+there|are\s+there|sell|buy|rent|lease|leasing|find|get|have|put|place|set\s+up|open|start|promote|showcase|display|run|operate|host|launch|market|advertise|store|stall|shop|stand|booth|space|spot|area|sites?|centres?|shopping\s+centres?|malls?|plazas?|available|spots?|spaces?|options?|locations?)\b/gi, '');
+  centreName = centreName.replace(/\b(i'm\s+looking\s+for|i\s+want\s+to|want\s+to|looking\s+for|need\s+to|would\s+like\s+to|can\s+i|where\s+can\s+i|i\s+need|where\s+is|show\s+me|any\s+available|do\s+you\s+have|is\s+there|are\s+there|sell|see|buy|rent|lease|leasing|find|get|have|put|place|set\s+up|open|start|promote|showcase|display|run|operate|host|launch|market|advertise|store|stall|shop|stand|booth|space|spot|area|sites?|centres?|shopping\s+centres?|malls?|plazas?|available|spots?|spaces?|options?|locations?)\b/gi, '');
 
   // Remove budget/price patterns so they don't pollute the centre name
   centreName = centreName.replace(/(?:under|less\s+than|max(?:imum)?|budget\s*(?:of|is|:)?)\s*\$\d+(?:\.\d+)?(?:\s*(?:per\s*)?(?:day|daily|week|weekly|month|monthly))?/gi, '');
