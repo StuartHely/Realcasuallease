@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -327,7 +328,7 @@ export default function MyBookings() {
               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setLocation("/")}
             >
-              <img src="/logo.png" alt="Real Casual Leasing" className="h-12" />
+              <Logo height={48} width={144} className="h-12" />
             </div>
           </div>
           <nav className="flex items-center gap-4">

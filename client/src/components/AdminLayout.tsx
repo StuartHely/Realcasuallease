@@ -100,7 +100,6 @@ const getMenuSections = (userRole: string): MenuSection[] => {
         items: [
           { icon: DollarSign, label: "Budget Management", path: "/admin/fy-budgets" },
           { icon: DollarSign, label: "Financial Reports", path: "/admin/financials" },
-          { icon: DollarSign, label: "Invoice Dashboard", path: "/admin/invoice-dashboard" },
           { icon: FileText, label: "Remittance Report", path: "/admin/remittance" },
           { icon: DollarSign, label: "Record Payments", path: "/admin/payments" },
           { icon: BarChart3, label: "Occupancy Report", path: "/admin/occupancy-report" },

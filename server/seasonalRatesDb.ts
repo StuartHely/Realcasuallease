@@ -1,6 +1,6 @@
 import { getDb } from "./db";
-import { seasonalRates } from "../drizzle/schema";
-import { eq, and, lte, gte, or, desc } from "drizzle-orm";
+import { seasonalRates, sites } from "../drizzle/schema";
+import { eq, and, lte, gte, or, desc, inArray } from "drizzle-orm";
 
 export interface SeasonalRate {
   id: number;
@@ -20,6 +20,19 @@ export async function getSeasonalRatesBySiteId(siteId: number): Promise<Seasonal
   
   return await db.select().from(seasonalRates)
     .where(eq(seasonalRates.siteId, siteId))
+    .orderBy(seasonalRates.startDate);
+}
+
+export async function getSeasonalRatesByCentreId(centreId: number): Promise<SeasonalRate[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const centreSites = await db.select({ id: sites.id }).from(sites).where(eq(sites.centreId, centreId));
+  const siteIds = centreSites.map(s => s.id);
+  if (siteIds.length === 0) return [];
+
+  return await db.select().from(seasonalRates)
+    .where(inArray(seasonalRates.siteId, siteIds))
     .orderBy(seasonalRates.startDate);
 }
 

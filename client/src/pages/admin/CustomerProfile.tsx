@@ -1,23 +1,94 @@
 import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, User, Building2, Mail, Phone, Globe, FileText, Calendar, DollarSign, MapPin } from "lucide-react";
+import { ArrowLeft, User, Building2, Mail, Phone, Globe, FileText, Calendar, DollarSign, MapPin, ExternalLink, Upload } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function CustomerProfile() {
   const [, params] = useRoute("/admin/customer/:id");
   const [, setLocation] = useLocation();
   const customerId = params?.id ? parseInt(params.id) : 0;
 
-  const { data, isLoading, error } = trpc.users.getById.useQuery(
+  const { user: currentUser } = useAuth();
+  const [uploadingInsurance, setUploadingInsurance] = useState(false);
+  const [scanWarnings, setScanWarnings] = useState<string[] | null>(null);
+
+  const { data, isLoading, error, refetch } = trpc.users.getById.useQuery(
     { userId: customerId },
     { enabled: customerId > 0 }
   );
+
+  const uploadInsuranceMutation = trpc.profile.uploadInsurance.useMutation();
+  const scanInsuranceMutation = trpc.profile.scanInsurance.useMutation();
+  const updateUserMutation = trpc.admin.updateUser.useMutation();
+
+  const canUpload = currentUser?.role === "mega_admin" || currentUser?.role === "mega_state_admin";
+
+  const handleInsuranceUpload = async (file: File) => {
+    setUploadingInsurance(true);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const uploadResult = await uploadInsuranceMutation.mutateAsync({
+        fileData: base64,
+        fileName: file.name,
+        mimeType: file.type,
+      });
+
+      // Save the document URL to the user's profile
+      const updatePayload: {
+        userId: number;
+        insuranceDocumentUrl: string;
+        insuranceCompany?: string;
+        insurancePolicyNo?: string;
+        insuranceAmount?: string;
+        insuranceExpiry?: string;
+      } = {
+        userId: customerId,
+        insuranceDocumentUrl: uploadResult.url,
+      };
+
+      // Try to scan the document for details
+      try {
+        const scanRes = await scanInsuranceMutation.mutateAsync({ documentUrl: uploadResult.url });
+        if (scanRes.insuranceCompany) updatePayload.insuranceCompany = scanRes.insuranceCompany;
+        if (scanRes.policyNumber) updatePayload.insurancePolicyNo = scanRes.policyNumber;
+        if (scanRes.insuredAmount) updatePayload.insuranceAmount = String(scanRes.insuredAmount * 1000000);
+        if (scanRes.expiryDate) updatePayload.insuranceExpiry = scanRes.expiryDate;
+
+        if (scanRes.warnings && scanRes.warnings.length > 0) {
+          setScanWarnings(scanRes.warnings);
+          toast.warning("Document scanned with warnings — please review");
+        } else {
+          setScanWarnings(null);
+        }
+      } catch (scanErr: any) {
+        setScanWarnings([`Automatic scanning failed: ${scanErr.message || "Unknown error"}. Please update insurance details manually via Admin → Users.`]);
+        toast.warning("Document uploaded but scanning failed");
+      }
+
+      await updateUserMutation.mutateAsync(updatePayload);
+      toast.success("Insurance document uploaded successfully");
+      refetch();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload insurance document");
+    } finally {
+      setUploadingInsurance(false);
+    }
+  };
 
   const formatDate = (date: Date | string | null) => {
     if (!date) return "—";
@@ -222,6 +293,68 @@ export default function CustomerProfile() {
                 </div>
               ) : (
                 <p className="text-muted-foreground">No insurance details on file</p>
+              )}
+
+              {/* Insurance Document Link */}
+              {profile?.insuranceDocumentUrl && (
+                <div className="pt-2 border-t">
+                  <p className="text-sm text-muted-foreground mb-2">Insurance Document</p>
+                  <div className="flex items-center gap-3">
+                    {profile.insuranceDocumentUrl.match(/\.(jpg|jpeg|png)$/i) ? (
+                      <img
+                        src={profile.insuranceDocumentUrl}
+                        alt="Insurance document"
+                        className="w-20 h-20 object-cover rounded border cursor-pointer"
+                        onClick={() => window.open(profile.insuranceDocumentUrl!, '_blank')}
+                      />
+                    ) : (
+                      <div className="w-20 h-20 bg-gray-100 rounded border flex items-center justify-center">
+                        <FileText className="h-8 w-8 text-gray-400" />
+                      </div>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(profile.insuranceDocumentUrl!, '_blank')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      View Document
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Upload for MegaAdmin / MegaStateAdmin */}
+              {canUpload && (
+                <div className={profile?.insuranceDocumentUrl ? "pt-2 border-t" : "pt-2"}>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {profile?.insuranceDocumentUrl ? "Replace Insurance Document" : "Upload Insurance Document"}
+                  </p>
+                  <Input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    disabled={uploadingInsurance}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleInsuranceUpload(file);
+                    }}
+                    className="max-w-sm"
+                  />
+                  {uploadingInsurance && (
+                    <p className="text-sm text-blue-600 mt-2 flex items-center gap-2">
+                      <span className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full inline-block" />
+                      Uploading and scanning...
+                    </p>
+                  )}
+                  {scanWarnings && scanWarnings.length > 0 && (
+                    <div className="mt-3 bg-amber-50 border border-amber-200 rounded p-3">
+                      <p className="text-sm font-medium text-amber-800 mb-1">⚠ Scan Warnings</p>
+                      {scanWarnings.map((w, i) => (
+                        <p key={i} className="text-sm text-amber-700">{w}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>

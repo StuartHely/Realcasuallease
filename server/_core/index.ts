@@ -89,6 +89,12 @@ async function startServer() {
   // Backfill slugs for any centres that don't have them yet
   const { backfillCentreSlugs } = await import('../slugMigration');
   backfillCentreSlugs().catch(err => console.error('[SlugMigration] Error:', err));
+
+  // Migrate centre-level maps to floor levels (one-time for existing data)
+  const { migrateAllCentreMapsToFloorLevels } = await import('../db');
+  migrateAllCentreMapsToFloorLevels()
+    .then(count => { if (count > 0) console.log(`[MapMigration] Migrated ${count} centre maps to floor levels`); })
+    .catch(err => console.error('[MapMigration] Error:', err));
 }
 
 startServer().catch(console.error);

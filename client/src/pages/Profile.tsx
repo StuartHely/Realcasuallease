@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, ArrowLeft, Save } from "lucide-react";
+import Logo from "@/components/Logo";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { toast } from "sonner";
 
@@ -146,7 +147,7 @@ export default function Profile() {
               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setLocation("/")}
             >
-              <img src="/logo.png" alt="Real Casual Leasing" className="h-12" />
+              <Logo height={48} width={144} className="h-12" />
             </div>
           </div>
           <nav className="flex items-center gap-4">

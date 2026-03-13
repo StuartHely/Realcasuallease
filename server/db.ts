@@ -55,6 +55,12 @@ async function ensureUniqueSlug(slug: string, excludeId?: number): Promise<strin
   }
 }
 
+/** Strip HTML tags and decode common entities from rich text fields */
+function stripHtml(html: string | null | undefined): string | null {
+  if (!html) return null;
+  return html.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ").trim();
+}
+
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
@@ -849,7 +855,7 @@ export async function getBookingsByCustomerId(customerId: number) {
     .where(eq(bookings.customerId, customerId))
     .orderBy(desc(bookings.createdAt));
 
-  return bookingsList;
+  return bookingsList.map(b => ({ ...b, siteName: stripHtml(b.siteName) }));
 }
 
 // Booking management
@@ -915,6 +921,7 @@ export async function getBookingsByStatus(status?: "pending" | "confirmed" | "ca
 
   return rows.map(r => ({
     ...r,
+    siteName: stripHtml(r.siteName),
     productCategory: (r.usageCategoryId ? categoryMap.get(r.usageCategoryId) : null) || null,
   }));
 }
@@ -986,6 +993,7 @@ export async function getUnpaidInvoiceBookings() {
 
   return rows.map(r => ({
     ...r,
+    siteName: stripHtml(r.siteName),
     productCategory: (r.usageCategoryId ? categoryMap.get(r.usageCategoryId) : null) || null,
   }));
 }
@@ -1100,7 +1108,73 @@ export async function createFloorLevel(level: InsertFloorLevel) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return await db.insert(floorLevels).values(level);
+  const [result] = await db.insert(floorLevels).values(level).returning({ id: floorLevels.id });
+  return result;
+}
+
+export async function migrateCentreMapToFloorLevel(centreId: number): Promise<{ floorLevelId: number; mapUrl: string } | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Check centre has a map but no floor levels
+  const [centre] = await db.select({ mapImageUrl: shoppingCentres.mapImageUrl })
+    .from(shoppingCentres).where(eq(shoppingCentres.id, centreId));
+  if (!centre?.mapImageUrl) return null;
+
+  const existing = await db.select({ id: floorLevels.id })
+    .from(floorLevels).where(eq(floorLevels.centreId, centreId));
+  if (existing.length > 0) return null;
+
+  // Create "Ground Floor" and move the map URL to it
+  const [newFloor] = await db.insert(floorLevels).values({
+    centreId,
+    levelName: "Ground Floor",
+    levelNumber: "1",
+    displayOrder: 0,
+    mapImageUrl: centre.mapImageUrl,
+    isHidden: false,
+  }).returning({ id: floorLevels.id });
+
+  // Clear centre-level map (now on the floor level)
+  await db.update(shoppingCentres)
+    .set({ mapImageUrl: null })
+    .where(eq(shoppingCentres.id, centreId));
+
+  return { floorLevelId: newFloor.id, mapUrl: centre.mapImageUrl };
+}
+
+export async function migrateAllCentreMapsToFloorLevels(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  // Find all centres with a centre-level map but no floor levels
+  const allCentres = await db.select({ id: shoppingCentres.id, name: shoppingCentres.name, mapImageUrl: shoppingCentres.mapImageUrl })
+    .from(shoppingCentres);
+
+  let migrated = 0;
+  for (const centre of allCentres) {
+    if (!centre.mapImageUrl) continue;
+    const existing = await db.select({ id: floorLevels.id })
+      .from(floorLevels).where(eq(floorLevels.centreId, centre.id));
+    if (existing.length > 0) continue;
+
+    await db.insert(floorLevels).values({
+      centreId: centre.id,
+      levelName: "Ground Floor",
+      levelNumber: "1",
+      displayOrder: 0,
+      mapImageUrl: centre.mapImageUrl,
+      isHidden: false,
+    });
+
+    await db.update(shoppingCentres)
+      .set({ mapImageUrl: null })
+      .where(eq(shoppingCentres.id, centre.id));
+
+    console.log(`[MapMigration] Migrated "${centre.name}" (id=${centre.id}) map to Ground Floor`);
+    migrated++;
+  }
+  return migrated;
 }
 
 export async function updateFloorLevel(id: number, updates: Partial<InsertFloorLevel>) {

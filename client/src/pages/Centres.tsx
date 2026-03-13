@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { MapPin, Building2, ArrowRight, Search, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
+import Logo from "@/components/Logo";
 
 export default function Centres() {
   const [, setLocation] = useLocation();
@@ -77,7 +78,7 @@ export default function Centres() {
               className="cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setLocation("/")}
             >
-              <img src="/logo.png" alt="Real Casual Leasing" className="h-12" />
+              <Logo height={48} width={144} className="h-12" />
             </div>
             <Button
               onClick={() => setLocation("/")}

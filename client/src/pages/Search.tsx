@@ -1805,26 +1805,27 @@ export default function Search() {
                                   isMatched ? 'bg-yellow-50' : 'bg-white'
                                 }`}>
                                   <div className="flex flex-col gap-1">
-                                    <div className="flex items-center gap-2">
-                                      {isMatched && (
-                                        <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">
-                                          Matched
-                                        </Badge>
-                                      )}
-                                      <span className="text-sm font-semibold">{site.siteNumber}</span>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="h-6 px-2 text-xs"
-                                        onClick={() => setLocation(`/site/${site.id}`)}
-                                      >
-                                        View
-                                      </Button>
-                                    </div>
-                                    <div className="flex gap-2 text-xs text-gray-600">
-                                      {site.size && <span key={`${site.id}-size`}>{site.size}</span>}
-                                      {site.maxTables && <span key={`${site.id}-tables`}>• {site.maxTables} tables</span>}
-                                    </div>
+                                  <div className="flex items-center gap-2">
+                                    {isMatched && (
+                                      <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">
+                                        Matched
+                                      </Badge>
+                                    )}
+                                    <span className="text-sm font-semibold">{site.siteNumber}</span>
+                                  </div>
+                                  <div className="flex gap-2 text-xs text-gray-600">
+                                    {site.size && <span key={`${site.id}-size`}>{site.size}</span>}
+                                    {site.maxTables && <span key={`${site.id}-tables`}>• {site.maxTables} tables</span>}
+                                  </div>
+                                  {site.description && (
+                                    <button
+                                      className="text-xs text-blue-600 hover:underline text-left truncate max-w-[160px]"
+                                      onClick={() => setLocation(`/site/${site.id}`)}
+                                      title={cleanHtmlDescription(site.description)}
+                                    >
+                                      {cleanHtmlDescription(site.description).slice(0, 25)}
+                                    </button>
+                                  )}
                                   </div>
                                 </td>
                                 {dateRange.map((date, dateIdx) => {

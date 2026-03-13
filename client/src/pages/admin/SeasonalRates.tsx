@@ -216,7 +216,7 @@ export default function SeasonalRates() {
                         </TableCell>
                       </TableRow>
                     )}
-                    {seasonalRates?.map((rate) => (
+                    {seasonalRates?.map((rate: any) => (
                       <TableRow key={rate.id}>
                         {selectedSiteId === "all" && (
                           <TableCell className="text-muted-foreground">

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MapPin, Building2, ArrowLeft, Calendar, DollarSign, Ruler, Zap, Store, Layers, ChevronLeft, ChevronRight, CheckCircle, XCircle, Info, FileText } from "lucide-react";
+import Logo from "@/components/Logo";
 import { trpc } from "@/lib/trpc";
 import { format, addMonths, startOfWeek, addDays, isSameDay, getDaysInMonth, startOfMonth, getDay } from "date-fns";
 import InteractiveMap from "@/components/InteractiveMap";
@@ -17,6 +18,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import SitePanoramaViewer from "@/components/SitePanoramaViewer";
 import { cleanHtmlDescription } from "@/lib/htmlUtils";
+import { ImageWithFallback } from "@/components/ImageWithFallback";
 
 type AssetType = "casual_leasing" | "vacant_shops" | "third_line" | "all";
 
@@ -308,7 +310,7 @@ export default function CentreDetail() {
               className="cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setLocation("/")}
             >
-              <img src="/logo.png" alt="Real Casual Leasing" className="h-12" />
+              <Logo height={48} width={144} className="h-12" />
             </div>
             <Button
               onClick={() => window.history.back()}
@@ -511,15 +513,15 @@ export default function CentreDetail() {
                       </div>
                     )}
                     
-                    {site.imageUrl1 && (
                     <div className="w-full h-48 overflow-hidden rounded-t-lg">
-                        <img
-                          src={site.imageUrl1}
-                          alt={`Site ${site.siteNumber}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
+                      <ImageWithFallback
+                        src={site.imageUrl1}
+                        alt={`Site ${site.siteNumber}`}
+                        className="w-full h-full object-cover"
+                        containerClassName="w-full h-full"
+                        placeholder={{ type: "site", number: site.siteNumber || "", size: site.size || "", powered: site.powerAvailable === "Powered Site" || site.powerAvailable === "Power Available" }}
+                      />
+                    </div>
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-xl text-blue-900">
@@ -619,15 +621,15 @@ export default function CentreDetail() {
                     key={shop.id}
                     className="shadow-lg hover:shadow-xl transition-shadow border-l-4 border-l-green-500"
                   >
-                    {shop.imageUrl1 && (
-                      <div className="w-full h-48 overflow-hidden rounded-t-lg">
-                        <img
-                          src={shop.imageUrl1}
-                          alt={`Shop ${shop.shopNumber}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
+                    <div className="w-full h-48 overflow-hidden rounded-t-lg">
+                      <ImageWithFallback
+                        src={shop.imageUrl1}
+                        alt={`Shop ${shop.shopNumber}`}
+                        className="w-full h-full object-cover"
+                        containerClassName="w-full h-full"
+                        placeholder={{ type: "shop", number: shop.shopNumber || "", size: shop.totalSizeM2 || "" }}
+                      />
+                    </div>
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-xl text-green-900">
@@ -750,15 +752,15 @@ export default function CentreDetail() {
                     key={asset.id}
                     className="shadow-lg hover:shadow-xl transition-shadow border-l-4 border-l-purple-500"
                   >
-                    {asset.imageUrl1 && (
-                      <div className="w-full h-48 overflow-hidden rounded-t-lg">
-                        <img
-                          src={asset.imageUrl1}
-                          alt={`Asset ${asset.assetNumber}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
+                    <div className="w-full h-48 overflow-hidden rounded-t-lg">
+                      <ImageWithFallback
+                        src={asset.imageUrl1}
+                        alt={`Asset ${asset.assetNumber}`}
+                        className="w-full h-full object-cover"
+                        containerClassName="w-full h-full"
+                        placeholder={{ type: "asset", number: asset.assetNumber || "", label: asset.categoryName || "" }}
+                      />
+                    </div>
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-xl text-purple-900">

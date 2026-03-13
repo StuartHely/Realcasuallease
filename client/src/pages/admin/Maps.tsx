@@ -168,6 +168,30 @@ export default function AdminMaps() {
     },
   });
 
+  // Migrate centre-level map to floor level
+  const migrateCentreMapMutation = trpc.admin.migrateCentreMap.useMutation({
+    onSuccess: (data: any) => {
+      if (data) {
+        toast.success("Map migrated to 'Ground Floor' level");
+        setSelectedFloorLevelId(data.floorLevelId);
+        refetchFloorLevels();
+        utils.centres.getById.invalidate({ id: selectedCentreId });
+      }
+    },
+  });
+
+  // Auto-migrate centre-level maps to floor levels (Rockdale, Highlands, etc.)
+  useEffect(() => {
+    if (
+      selectedCentreId > 0 &&
+      centre?.mapImageUrl &&
+      floorLevels.length === 0 &&
+      !migrateCentreMapMutation.isPending
+    ) {
+      migrateCentreMapMutation.mutate({ centreId: selectedCentreId });
+    }
+  }, [selectedCentreId, centre?.mapImageUrl, floorLevels.length]);
+
   // Load map and markers when floor level changes
   useEffect(() => {
     if (floorLevels.length > 0 && selectedFloorLevelId) {
@@ -263,8 +287,30 @@ export default function AdminMaps() {
           imageData: base64,
           fileName: mapImage.name,
         });
+      } else if (floorLevels.length === 0) {
+        // No floor levels exist — auto-create "Ground Floor" and upload map to it
+        try {
+          const newFloor = await createFloorLevelMutation.mutateAsync({
+            centreId: selectedCentreId,
+            levelName: "Ground Floor",
+            levelNumber: "1",
+            displayOrder: 0,
+          });
+          const floorId = (newFloor as any)?.id;
+          if (floorId) {
+            await uploadFloorLevelMapMutation.mutateAsync({
+              floorLevelId: floorId,
+              imageData: base64,
+              fileName: mapImage.name,
+            });
+            setSelectedFloorLevelId(floorId);
+            toast.success("Created 'Ground Floor' and uploaded map");
+          }
+        } catch {
+          toast.error("Failed to auto-create floor level");
+        }
       } else {
-        // Upload to centre (single-level)
+        // Upload to centre (single-level fallback)
         await uploadMapMutation.mutateAsync({
           centreId: selectedCentreId,
           imageData: base64,

@@ -29,7 +29,7 @@ export function SeasonalRateCalendar({
   const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
   const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
   
-  const startDay = monthStart.getDay();
+  const startDay = (monthStart.getDay() + 6) % 7; // Mon=0, Tue=1, ..., Sun=6
   const daysInMonth = monthEnd.getDate();
   
   const days = [];
@@ -77,7 +77,7 @@ export function SeasonalRateCalendar({
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-2">
         {/* Day headers */}
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
           <div key={day} className="text-center font-semibold text-sm py-2">
             {day}
           </div>
@@ -90,7 +90,7 @@ export function SeasonalRateCalendar({
           }
           
           const rates = getRatesForDate(day);
-          const isWeekend = index % 7 === 0 || index % 7 === 6;
+          const isWeekend = index % 7 === 5 || index % 7 === 6; // Sat=5, Sun=6
           
           return (
             <div

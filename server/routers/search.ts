@@ -180,7 +180,10 @@ export const searchRouter = router({
         // 5. Category-only search (no location matched) — derive centres from
         //    the category-matched siteResults so all centres with approved
         //    sites for the searched category are shown.
-        if (centres.length === 0 && enhancedQuery.productCategory && siteResults.length > 0) {
+        //    Only when there was truly no location intent — if a location was
+        //    specified but not found, we should NOT broaden to all centres.
+        const hasLocationIntent = !!(enhancedQuery.centreName || enhancedQuery.matchedLocation || enhancedQuery.stateFilter);
+        if (centres.length === 0 && enhancedQuery.productCategory && siteResults.length > 0 && !hasLocationIntent) {
           const centreIdsSeen = new Set<number>();
           const categoryCentresRaw: any[] = [];
           for (const result of siteResults) {
@@ -400,10 +403,6 @@ export const searchRouter = router({
           });
           allSites.length = 0;
           allSites.push(...filteredSites);
-
-          // Remove centres that have no remaining sites after category filtering
-          const centreIdsWithSites = new Set(allSites.map((s: any) => s.centreId));
-          centres = centres.filter((c: any) => centreIdsWithSites.has(c.id));
         }
 
         // Return flag indicating if size requirement was met
@@ -502,6 +501,10 @@ export const searchRouter = router({
           })
         ).catch(() => {});
         
+        // Prune centres that have zero sites remaining after all filtering
+        const centreIdsWithSites = new Set(allSites.map((s: any) => s.centreId));
+        centres = centres.filter((c: any) => centreIdsWithSites.has(c.id));
+
         // Fetch floor levels for all matched centres (keyed by centreId for per-centre maps)
         let floorLevels: any[] = [];
         const floorLevelsByCentre: Record<number, any[]> = {};

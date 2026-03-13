@@ -43,6 +43,17 @@ export const sitesRouter = router({
       return await getApprovedCategoriesForSite(input.siteId);
     }),
 
+  getSeasonalRates: publicProcedure
+    .input(z.object({
+      siteId: z.number(),
+      startDate: z.string(),
+      endDate: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const { getSeasonalRatesForDateRange } = await import("../seasonalRatesDb");
+      return await getSeasonalRatesForDateRange(input.siteId, input.startDate, input.endDate);
+    }),
+
   setApprovedCategories: protectedProcedure
     .input(z.object({
       siteId: z.number(),
