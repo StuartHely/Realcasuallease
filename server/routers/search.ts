@@ -140,14 +140,47 @@ export const searchRouter = router({
         
         // -----------------------------------------------------------
         // Determine which CENTRES to show.
-        // Priority: 1) area index  2) centre-name search  3) fallbacks
+        // Priority: 0) "near me"  1) area index  2) centre-name search  3) fallbacks
         // Category is used later to filter/rank SITES within those centres,
         // NOT to decide which centres appear.
         // -----------------------------------------------------------
         let centres: any[] = [];
+        let nearMeUsed = false;
+
+        // 0. "Near me" — geocode user's address and find centres within radius
+        if (enhancedQuery.nearMe && ctx.user) {
+          const profile = await db.getCustomerProfileByUserId(ctx.user.id);
+          if (profile?.streetAddress || profile?.city) {
+            const addressStr = [profile.streetAddress, profile.city, profile.state, profile.postcode].filter(Boolean).join(', ');
+            try {
+              const { searchPlaces } = await import("../_core/amazonLocation");
+              const results = await searchPlaces(addressStr, { maxResults: 1 });
+              const coords = results[0]?.addressComponents;
+              if (coords?.latitude && coords?.longitude) {
+                const { findCentresNearCoordinates } = await import("../locationIndex");
+                const radiusKm = enhancedQuery.radiusKm || 25;
+                const nearby = await findCentresNearCoordinates(coords.latitude, coords.longitude, radiusKm);
+                if (nearby.length > 0) {
+                  centres = nearby.map(m => ({
+                    id: m.centreId,
+                    name: m.centreName,
+                    slug: m.slug,
+                    suburb: m.suburb,
+                    city: m.city,
+                    state: m.state,
+                    distance: m.distance,
+                  }));
+                  nearMeUsed = true;
+                }
+              }
+            } catch (e) {
+              console.error('[Search] Near-me geocode failed:', e);
+            }
+          }
+        }
 
         // 1. Area index matched a known region (e.g. "western sydney", "maroubra")
-        if (areaCentres && areaCentres.length > 0) {
+        if (centres.length === 0 && areaCentres && areaCentres.length > 0) {
           centres = areaCentres;
         }
 
@@ -182,7 +215,7 @@ export const searchRouter = router({
         //    sites for the searched category are shown.
         //    Only when there was truly no location intent — if a location was
         //    specified but not found, we should NOT broaden to all centres.
-        const hasLocationIntent = !!(enhancedQuery.centreName || enhancedQuery.matchedLocation || enhancedQuery.stateFilter);
+        const hasLocationIntent = !!(enhancedQuery.centreName || enhancedQuery.matchedLocation || enhancedQuery.stateFilter || enhancedQuery.nearMe);
         if (centres.length === 0 && enhancedQuery.productCategory && siteResults.length > 0 && !hasLocationIntent) {
           const centreIdsSeen = new Set<number>();
           const categoryCentresRaw: any[] = [];
@@ -501,9 +534,13 @@ export const searchRouter = router({
           })
         ).catch(() => {});
         
-        // Prune centres that have zero sites remaining after all filtering
-        const centreIdsWithSites = new Set(allSites.map((s: any) => s.centreId));
-        centres = centres.filter((c: any) => centreIdsWithSites.has(c.id));
+        // Prune centres that have zero sites remaining after category filtering,
+        // but only if some centres still have sites (don't blank everything out —
+        // the UI should show the location match with a "category not available" message)
+        if (allSites.length > 0) {
+          const centreIdsWithSites = new Set(allSites.map((s: any) => s.centreId));
+          centres = centres.filter((c: any) => centreIdsWithSites.has(c.id));
+        }
 
         // Fetch floor levels for all matched centres (keyed by centreId for per-centre maps)
         let floorLevels: any[] = [];
@@ -546,7 +583,9 @@ export const searchRouter = router({
           seasonalRatesBySite,
           searchInterpretation: {
             productCategory: enhancedQuery.productCategory || null,
-            location: enhancedQuery.centreName || enhancedQuery.matchedLocation || null,
+            location: nearMeUsed ? 'near me' : (enhancedQuery.centreName || enhancedQuery.matchedLocation || null),
+            nearMe: nearMeUsed || undefined,
+            radiusKm: nearMeUsed ? (enhancedQuery.radiusKm || 25) : undefined,
             state: enhancedQuery.stateFilter || null,
             assetType: enhancedQuery.assetType || null,
             dateRange: enhancedQuery.parsedDate ? {
