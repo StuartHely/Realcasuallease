@@ -348,6 +348,7 @@ export const bookings = pgTable("bookings", {
   stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
   paymentMethod: paymentMethodEnum("paymentMethod").default("stripe").notNull(),
   paidAt: timestamp("paidAt"),
+  amountPaid: decimal("amountPaid", { precision: 12, scale: 2 }).default("0").notNull(),
   cancelledAt: timestamp("cancelledAt"),
   refundStatus: refundStatusEnum("refundStatus"),
   refundPendingAt: timestamp("refundPendingAt"),
@@ -691,6 +692,7 @@ export const vacantShopBookings = pgTable("vacant_shop_bookings", {
   stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
   paymentMethod: paymentMethodEnum("paymentMethod").default("stripe").notNull(),
   paidAt: timestamp("paidAt"),
+  amountPaid: decimal("amountPaid", { precision: 12, scale: 2 }).default("0").notNull(),
   cancelledAt: timestamp("cancelledAt"),
   refundStatus: refundStatusEnum("refundStatus"),
   refundPendingAt: timestamp("refundPendingAt"),
@@ -735,6 +737,7 @@ export const thirdLineBookings = pgTable("third_line_bookings", {
   stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
   paymentMethod: paymentMethodEnum("paymentMethod").default("stripe").notNull(),
   paidAt: timestamp("paidAt"),
+  amountPaid: decimal("amountPaid", { precision: 12, scale: 2 }).default("0").notNull(),
   cancelledAt: timestamp("cancelledAt"),
   refundStatus: refundStatusEnum("refundStatus"),
   refundPendingAt: timestamp("refundPendingAt"),
@@ -791,6 +794,37 @@ export const feedback = pgTable("feedback", {
   createdAtIdx: index("feedback_createdAt_idx").on(table.createdAt),
 }));
 
+/**
+ * EFT Deposits - Bank deposits recorded by admin for manual payment matching
+ */
+export const eftDeposits = pgTable("eft_deposits", {
+  id: serial("id").primaryKey(),
+  depositAmount: decimal("depositAmount", { precision: 12, scale: 2 }).notNull(),
+  depositDate: timestamp("depositDate").notNull(),
+  bankReference: varchar("bankReference", { length: 255 }),
+  depositorName: varchar("depositorName", { length: 255 }),
+  notes: text("notes"),
+  allocatedAmount: decimal("allocatedAmount", { precision: 12, scale: 2 }).default("0").notNull(),
+  unallocatedAmount: decimal("unallocatedAmount", { precision: 12, scale: 2 }).default("0").notNull(),
+  recordedBy: integer("recordedBy").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/**
+ * EFT Allocations - Links deposits to specific bookings (supports partial payments)
+ */
+export const eftAllocations = pgTable("eft_allocations", {
+  id: serial("id").primaryKey(),
+  eftDepositId: integer("eftDepositId").notNull().references(() => eftDeposits.id, { onDelete: "cascade" }),
+  bookingId: integer("bookingId").notNull(),
+  bookingType: varchar("bookingType", { length: 20 }).notNull(), // 'cl', 'vs', 'tli'
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  eftDepositIdIdx: index("ea_eftDepositId_idx").on(table.eftDepositId),
+  bookingIdx: index("ea_booking_idx").on(table.bookingId, table.bookingType),
+}));
+
 // =============================================================================
 // Type Exports
 // =============================================================================
@@ -844,3 +878,7 @@ export type TenantDomain = typeof tenantDomains.$inferSelect;
 export type InsertTenantDomain = typeof tenantDomains.$inferInsert;
 export type Feedback = typeof feedback.$inferSelect;
 export type InsertFeedback = typeof feedback.$inferInsert;
+export type EftDeposit = typeof eftDeposits.$inferSelect;
+export type InsertEftDeposit = typeof eftDeposits.$inferInsert;
+export type EftAllocation = typeof eftAllocations.$inferSelect;
+export type InsertEftAllocation = typeof eftAllocations.$inferInsert;
