@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Layers, Building2, Upload, RotateCw } from "lucide-react";
 import { toast } from "sonner";
+import { ImageWithFallback } from "@/components/ImageWithFallback";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 
@@ -176,8 +177,12 @@ export default function ThirdLineIncome() {
         base64Image: base64,
       });
 
-      // Update editingAsset with the new image URL so it displays immediately
+      // Update editingAsset and formData with the new image URL so it displays immediately and persists on save
       setEditingAsset((prev: any) => ({
+        ...prev,
+        [`imageUrl${previewSlot}`]: result.url,
+      }));
+      setFormData((prev) => ({
         ...prev,
         [`imageUrl${previewSlot}`]: result.url,
       }));
@@ -209,6 +214,10 @@ export default function ThirdLineIncome() {
       });
 
       setEditingAsset((prev: any) => ({
+        ...prev,
+        [`imageUrl${previewSlot}`]: result.url,
+      }));
+      setFormData((prev) => ({
         ...prev,
         [`imageUrl${previewSlot}`]: result.url,
       }));
@@ -366,13 +375,13 @@ export default function ThirdLineIncome() {
                     {assets.map((asset: any) => (
                       <TableRow key={asset.id}>
                         <TableCell>
-                          {asset.imageUrl1 ? (
-                            <img src={asset.imageUrl1} alt={asset.assetNumber} className="w-12 h-12 object-cover rounded" />
-                          ) : (
-                            <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
-                              <Layers className="h-5 w-5 text-muted-foreground" />
-                            </div>
-                          )}
+                          <ImageWithFallback
+                            src={asset.imageUrl1}
+                            alt={asset.assetNumber}
+                            className="w-12 h-12 object-cover rounded"
+                            containerClassName="w-12 h-12"
+                            placeholder={{ type: "asset", number: asset.assetNumber || "", label: asset.categoryName || "" }}
+                          />
                         </TableCell>
                         <TableCell className="font-medium">{asset.assetNumber}</TableCell>
                         <TableCell>
@@ -526,10 +535,12 @@ export default function ThirdLineIncome() {
                           <div className="text-sm font-medium mb-2">Image {slot}</div>
                           {imageUrl ? (
                             <div className="relative">
-                              <img
+                              <ImageWithFallback
                                 src={imageUrl}
                                 alt={`Asset image ${slot}`}
                                 className="w-full h-32 object-contain rounded-md bg-gray-100"
+                                containerClassName="w-full h-32"
+                                placeholder={{ type: "asset", number: editingAsset?.assetNumber || "", label: "" }}
                               />
                               <Button
                                 type="button"
@@ -543,6 +554,8 @@ export default function ThirdLineIncome() {
                                       id: editingAsset.id,
                                       [`imageUrl${slot}`]: "",
                                     } as any);
+                                    setEditingAsset((prev: any) => ({ ...prev, [`imageUrl${slot}`]: "" }));
+                                    setFormData((prev) => ({ ...prev, [`imageUrl${slot}`]: "" }));
                                     toast.success(`Image ${slot} removed`);
                                     refetch();
                                   } catch (error: any) {

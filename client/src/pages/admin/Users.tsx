@@ -44,6 +44,7 @@ export default function AdminUsers() {
     insurancePolicyNo: "",
     insuranceAmount: "",
     insuranceExpiryDate: "",
+    insuranceDocumentUrl: "",
   });
   const [registrationTab, setRegistrationTab] = useState<"basic" | "company" | "insurance">("basic");
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -166,6 +167,7 @@ export default function AdminUsers() {
         insurancePolicyNo: "",
         insuranceAmount: "",
         insuranceExpiryDate: "",
+        insuranceDocumentUrl: "",
       });
       setRegistrationTab("basic");
     },
@@ -632,6 +634,131 @@ export default function AdminUsers() {
               {/* Insurance Tab */}
               {registrationTab === "insurance" && (
               <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Insurance Document</label>
+                <div className="border-2 border-dashed rounded-lg p-4">
+                  {newUserData.insuranceDocumentUrl ? (
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-3">
+                        {newUserData.insuranceDocumentUrl.match(/\.(jpg|jpeg|png)$/i) ? (
+                          <img 
+                            src={newUserData.insuranceDocumentUrl} 
+                            alt="Insurance document preview"
+                            className="w-32 h-32 object-cover rounded border"
+                          />
+                        ) : (
+                          <div className="w-32 h-32 bg-gray-100 rounded border flex items-center justify-center">
+                            <FileText className="h-12 w-12 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium mb-2">Document uploaded</p>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => window.open(newUserData.insuranceDocumentUrl, '_blank')}
+                            className="w-full"
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            View Full Document
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No document uploaded</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-3 mb-2">
+                    <input
+                      type="checkbox"
+                      id="regSkipScanning"
+                      checked={skipScanning}
+                      onChange={(e) => setSkipScanning(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    <label htmlFor="regSkipScanning" className="text-sm text-muted-foreground cursor-pointer">
+                      Skip automatic scanning (enter details manually)
+                    </label>
+                  </div>
+                  <Input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    disabled={uploadingInsurance}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      
+                      setUploadingInsurance(true);
+                      setScanError(null);
+                      try {
+                        const reader = new FileReader();
+                        const base64Promise = new Promise<string>((resolve, reject) => {
+                          reader.onload = () => resolve(reader.result as string);
+                          reader.onerror = reject;
+                          reader.readAsDataURL(file);
+                        });
+                        
+                        const base64 = await base64Promise;
+                        
+                        const uploadResult = await uploadInsuranceMutation.mutateAsync({
+                          fileData: base64,
+                          fileName: file.name,
+                          mimeType: file.type,
+                        });
+                        
+                        setNewUserData(prev => ({
+                          ...prev,
+                          insuranceDocumentUrl: uploadResult.url,
+                        }));
+                        
+                        if (!skipScanning) {
+                          try {
+                            const scanRes = await scanInsuranceMutation.mutateAsync({ documentUrl: uploadResult.url });
+                            
+                            setNewUserData(prev => ({
+                              ...prev,
+                              insuranceDocumentUrl: uploadResult.url,
+                              insuranceCompany: scanRes.insuranceCompany || prev.insuranceCompany,
+                              insurancePolicyNo: scanRes.policyNumber || prev.insurancePolicyNo,
+                              insuranceAmount: scanRes.insuredAmount ? String(scanRes.insuredAmount) : prev.insuranceAmount,
+                              insuranceExpiryDate: scanRes.expiryDate || prev.insuranceExpiryDate,
+                            }));
+                            
+                            if (scanRes.warnings && scanRes.warnings.length > 0) {
+                              setScanError(scanRes.warnings.join(', '));
+                              toast.warning('Document scanned with warnings. Please review the details.');
+                            } else {
+                              toast.success('Insurance document uploaded and scanned successfully');
+                            }
+                          } catch (scanErr: any) {
+                            console.error('Scan error:', scanErr);
+                            setScanError(`Failed to scan document: ${scanErr.message || 'Unknown error'}. Please enter insurance details manually.`);
+                            toast.warning('Document uploaded but automatic scanning failed. Please enter details manually.');
+                          }
+                        } else {
+                          toast.success('Insurance document uploaded. Please enter details manually.');
+                        }
+                      } catch (error: any) {
+                        console.error('Upload error:', error);
+                        toast.error(error.message || 'Failed to upload insurance document');
+                      } finally {
+                        setUploadingInsurance(false);
+                      }
+                    }}
+                  />
+                  {uploadingInsurance && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm text-muted-foreground">Uploading and scanning...</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {scanError && registrationTab === "insurance" && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded">
+                  <p className="text-sm text-red-600">{scanError}</p>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label htmlFor="insuranceCompany" className="text-sm font-medium">Insurance Company</label>

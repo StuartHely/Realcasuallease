@@ -68,6 +68,7 @@ import AgedDebtorsReport from "./pages/admin/AgedDebtorsReport";
 import GSTReport from "./pages/admin/GSTReport";
 import FeedbackAdmin from "./pages/admin/FeedbackAdmin";
 import EFTPayments from "./pages/admin/EFTPayments";
+import WeeklyReportPreview from "./pages/admin/WeeklyReportPreview";
 
 function Router() {
   return (
@@ -127,6 +128,7 @@ function Router() {
       <Route path="/admin/aged-debtors" component={AgedDebtorsReport} />
       <Route path="/admin/gst-report" component={GSTReport} />
       <Route path="/admin/eft-payments" component={EFTPayments} />
+      <Route path="/admin/weekly-report" component={WeeklyReportPreview} />
       <Route path="/admin/feedback" component={FeedbackAdmin} />
       <Route path="/admin/audit" component={AdminAudit} />
       <Route path="/admin/settings" component={AdminSettings} />

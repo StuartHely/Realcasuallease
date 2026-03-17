@@ -33,7 +33,7 @@ export default function AdminDashboard() {
     },
     {
       title: "Total Revenue",
-      value: `$${((stats?.totalRevenue || 0) / 100).toLocaleString()}`,
+      value: `$${(stats?.totalRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       icon: DollarSign,
       description: "All-time earnings",
       color: "text-emerald-600",
@@ -41,7 +41,7 @@ export default function AdminDashboard() {
     },
     {
       title: "This Month",
-      value: `$${((stats?.monthlyRevenue || 0) / 100).toLocaleString()}`,
+      value: `$${(stats?.monthlyRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       icon: TrendingUp,
       description: "Revenue this month",
       color: "text-orange-600",
@@ -111,7 +111,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="text-right">
                         <p className="font-medium">
-                          ${(booking.totalPrice / 100).toFixed(2)}
+                          ${booking.totalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                         <p className="text-xs text-muted-foreground capitalize">
                           {booking.status}

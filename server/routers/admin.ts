@@ -587,9 +587,10 @@ export const adminRouter = router({
         const { scanInsuranceDocument, validateInsurance } = await import('../insuranceScanner');
         const pendingBookings = await db.getBookingsByStatus('pending');
         
-        const bookingsWithDetails = await Promise.all(
+        const bookingsWithDetails = (await Promise.all(
           pendingBookings
             .map(async (booking) => {
+              try {
               const site = await db.getSiteById(booking.siteId);
               const centre = site ? await db.getShoppingCentreById(site.centreId) : null;
               const customer = await db.getUserById(booking.customerId);
@@ -686,11 +687,14 @@ export const adminRouter = router({
                   const scanResult = await scanInsuranceDocument(customerProfile.insuranceDocumentUrl);
                   insuranceScan = scanResult;
                   insuranceValidation = validateInsurance(scanResult);
-                } catch (error) {
+                } catch (error: any) {
                   console.error('[getPendingApprovals] Error scanning insurance:', error);
+                  const isApiMissing = error?.message?.includes('not configured');
                   insuranceValidation = {
                     valid: false,
-                    errors: ['Error scanning insurance document - manual review required']
+                    errors: [isApiMissing
+                      ? 'Insurance auto-scan unavailable (API key not configured) — please review the document manually'
+                      : 'Error scanning insurance document — please review the document manually']
                   };
                 }
               } else {
@@ -714,8 +718,25 @@ export const adminRouter = router({
                 insuranceValidation,
                 insuranceDocumentUrl: customerProfile?.insuranceDocumentUrl || null,
               };
+              } catch (error) {
+                console.error(`[getPendingApprovals] Error processing booking ${booking.id}:`, error);
+                return {
+                  ...booking,
+                  centreName: booking.centreName || 'Unknown Centre',
+                  siteNumber: booking.siteNumber || 'Unknown',
+                  siteDescription: booking.siteName,
+                  customerName: booking.customerName || 'Unknown Customer',
+                  customerEmail: booking.customerEmail,
+                  usageTypeName: null,
+                  approvalReason: 'Error loading details - manual review required',
+                  insuranceExpired: false,
+                  insuranceScan: null,
+                  insuranceValidation: { valid: false, errors: ['Error loading insurance details'] },
+                  insuranceDocumentUrl: null,
+                };
+              }
             })
-        );
+        )).filter(Boolean);
         
         return bookingsWithDetails;
       }),
@@ -877,6 +898,7 @@ export const adminRouter = router({
         insurancePolicyNo: z.string().optional(),
         insuranceAmount: z.string().optional(),
         insuranceExpiryDate: z.string().optional(),
+        insuranceDocumentUrl: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const isMegaAdmin = ['mega_admin', 'mega_state_admin'].includes(ctx.user.role);
@@ -929,7 +951,7 @@ export const adminRouter = router({
           loginMethod: 'password',
         }).returning({ id: users.id });
 
-        if (input.companyName || input.insuranceCompany) {
+        if (input.companyName || input.insuranceCompany || input.insuranceDocumentUrl) {
           const { customerProfiles } = await import('../../drizzle/schema');
           await dbInstance.insert(customerProfiles).values({
             userId: newUser.id,
@@ -946,6 +968,7 @@ export const adminRouter = router({
             insurancePolicyNo: input.insurancePolicyNo || null,
             insuranceAmount: input.insuranceAmount || null,
             insuranceExpiry: input.insuranceExpiryDate ? new Date(input.insuranceExpiryDate) : null,
+            insuranceDocumentUrl: input.insuranceDocumentUrl || null,
           });
         }
 

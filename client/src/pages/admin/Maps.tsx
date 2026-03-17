@@ -48,16 +48,24 @@ export default function AdminMaps() {
     { enabled: selectedCentreId > 0 }
   );
 
-  // Fetch sites for selected floor level (or all sites if no floor level selected)
-  const { data: sites = [] } = selectedFloorLevelId
-    ? trpc.admin.getSitesByFloorLevel.useQuery(
-        { floorLevelId: selectedFloorLevelId },
-        { enabled: selectedFloorLevelId > 0 }
-      )
-    : trpc.centres.getSites.useQuery(
-        { centreId: selectedCentreId },
-        { enabled: selectedCentreId > 0 && floorLevels.length === 0 }
-      );
+  // Fetch sites for selected floor level
+  const { data: floorSites = [] } = trpc.admin.getSitesByFloorLevel.useQuery(
+    { floorLevelId: selectedFloorLevelId! },
+    { enabled: !!selectedFloorLevelId && selectedFloorLevelId > 0 }
+  );
+  // Also fetch all centre sites to include unassigned ones
+  const { data: allCentreSites = [] } = trpc.centres.getSites.useQuery(
+    { centreId: selectedCentreId },
+    { enabled: selectedCentreId > 0 }
+  );
+  // When a floor level is selected, show floor-assigned sites + unassigned sites (no floorLevelId)
+  // When no floor levels exist, show all centre sites
+  const sites = selectedFloorLevelId
+    ? [
+        ...floorSites,
+        ...allCentreSites.filter((s: any) => !s.floorLevelId && !floorSites.some((fs: any) => fs.id === s.id)),
+      ]
+    : allCentreSites;
 
   // Create floor level mutation
   const createFloorLevelMutation = trpc.admin.createFloorLevel.useMutation({
@@ -214,7 +222,12 @@ export default function AdminMaps() {
     // Load existing markers from sites
     if (sites.length > 0) {
       const existingMarkers = sites
-        .filter((site: any) => site.mapMarkerX !== null && site.mapMarkerY !== null)
+        .filter((site: any) => {
+          if (site.mapMarkerX == null || site.mapMarkerY == null) return false;
+          const x = parseFloat(site.mapMarkerX);
+          const y = parseFloat(site.mapMarkerY);
+          return !isNaN(x) && !isNaN(y);
+        })
         .map((site: any) => ({
           siteId: site.id,
           x: parseFloat(site.mapMarkerX),
@@ -489,8 +502,11 @@ export default function AdminMaps() {
 
   const handleMarkerDragEnd = () => {
     if (isDragging !== null && dragOccurred) {
-      // Auto-save after repositioning so the change survives navigation
-      autoSaveMarkers(markers);
+      // Use functional update to get the latest markers after drag
+      setMarkers((currentMarkers) => {
+        autoSaveMarkers(currentMarkers);
+        return currentMarkers;
+      });
     }
     setIsDragging(null);
   };

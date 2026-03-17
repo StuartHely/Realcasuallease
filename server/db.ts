@@ -55,10 +55,16 @@ async function ensureUniqueSlug(slug: string, excludeId?: number): Promise<strin
   }
 }
 
-/** Strip HTML tags and decode common entities from rich text fields */
+/** Strip HTML tags and decode entities from rich text fields */
 function stripHtml(html: string | null | undefined): string | null {
   if (!html) return null;
-  return html.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ").trim();
+  let text = html.replace(/<[^>]*>/g, "");
+  // Decode named entities
+  text = text.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ");
+  // Decode numeric entities (&#NNN; and &#xHHH;)
+  text = text.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
+  text = text.replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+  return text.trim();
 }
 
 // Lazily create the drizzle instance so local tooling can run without a DB.

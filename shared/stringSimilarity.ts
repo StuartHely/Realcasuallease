@@ -78,9 +78,11 @@ export function fuzzyMatchCategory(keyword: string, categoryName: string, thresh
       // Check substring match for each word
       if (word.includes(expandedKw)) return true;
       
-      // Check similarity score
+      // Check similarity score — require higher threshold for short words
+      // to avoid false matches like "shoes" matching "shops" (similarity 0.8)
+      const effectiveThreshold = expandedKw.length <= 5 ? Math.max(threshold, 0.85) : threshold;
       const similarity = stringSimilarity(expandedKw, word);
-      if (similarity >= threshold) return true;
+      if (similarity >= effectiveThreshold) return true;
     }
   }
   

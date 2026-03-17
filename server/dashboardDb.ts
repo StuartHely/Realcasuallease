@@ -116,7 +116,7 @@ export async function getYTDMetrics(siteIds: number[], year: number, financialYe
   const ytdBookingsResult = await db.execute(sql`
     SELECT
       b."siteId",
-      b."ownerAmount",
+      b."totalAmount",
       b."startDate",
       b."endDate",
       s."siteNumber" as siteName,
@@ -139,7 +139,7 @@ export async function getYTDMetrics(siteIds: number[], year: number, financialYe
   
   // Debug: Check what bookings exist in the database using raw SQL
   const rawBookings = await db.execute(sql`
-    SELECT b."siteId", b.status, b."startDate", b."ownerAmount", s.id as sites_table_id
+    SELECT b."siteId", b.status, b."startDate", b."totalAmount", s.id as sites_table_id
 FROM bookings b
 LEFT JOIN sites s ON b."siteId" = s.id
 WHERE b.status = 'confirmed' AND b."startDate" >= '2025-07-01'
@@ -155,8 +155,8 @@ WHERE status = 'confirmed' AND "startDate" >= '2025-07-01' AND "startDate" < '20
   `);
   console.log('[YTD Debug] Past bookings (before today):', JSON.stringify(pastBookings, null, 2));
   
-  // Calculate total revenue (owner's share)
-  const totalRevenue = ytdBookings.reduce((sum: number, b: any) => sum + parseFloat(b.ownerAmount), 0);
+  // Calculate total revenue (site income)
+  const totalRevenue = ytdBookings.reduce((sum: number, b: any) => sum + parseFloat(b.totalAmount), 0);
   console.log('[YTD Debug] Total Revenue:', totalRevenue);
   
   // Calculate total booked days
@@ -171,7 +171,7 @@ WHERE status = 'confirmed' AND "startDate" >= '2025-07-01' AND "startDate" < '20
   const siteRevenues = new Map<number, { revenue: number; name: string; centreName: string }>();
   ytdBookings.forEach((b: any) => {
     const current = siteRevenues.get(b.siteId) || { revenue: 0, name: b.siteName, centreName: b.centreName };
-    current.revenue += parseFloat(b.ownerAmount);
+    current.revenue += parseFloat(b.totalAmount);
     siteRevenues.set(b.siteId, current);
   });
   
@@ -229,7 +229,7 @@ export async function getMonthlyMetrics(siteIds: number[], month: number, year: 
       siteId: bookings.siteId,
       siteName: sites.siteNumber,
       centreName: shoppingCentres.name,
-      ownerAmount: bookings.ownerAmount,
+      totalAmount: bookings.totalAmount,
       startDate: bookings.startDate,
       endDate: bookings.endDate,
     })
@@ -246,7 +246,7 @@ export async function getMonthlyMetrics(siteIds: number[], month: number, year: 
     );
   
   // Calculate total revenue
-  const totalRevenue = monthBookings.reduce((sum: number, b: any) => sum + parseFloat(b.ownerAmount), 0);
+  const totalRevenue = monthBookings.reduce((sum: number, b: any) => sum + parseFloat(b.totalAmount), 0);
   
   // Calculate total booked days
   const totalBookedDays = monthBookings.reduce((sum: number, b: any) => {
@@ -260,7 +260,7 @@ export async function getMonthlyMetrics(siteIds: number[], month: number, year: 
   const siteRevenues = new Map<number, { revenue: number; name: string; centreName: string }>();
   monthBookings.forEach((b: any) => {
     const current = siteRevenues.get(b.siteId) || { revenue: 0, name: b.siteName, centreName: b.centreName };
-    current.revenue += parseFloat(b.ownerAmount);
+    current.revenue += parseFloat(b.totalAmount);
     siteRevenues.set(b.siteId, current);
   });
   
@@ -459,7 +459,7 @@ export async function getSiteBreakdown(
       // Get actual revenue for the period
       const actualResult = await db
         .select({
-          total: sql<string>`COALESCE(SUM(${bookings.ownerAmount}), 0)`,
+          total: sql<string>`COALESCE(SUM(${bookings.totalAmount}), 0)`,
         })
         .from(bookings)
         .where(

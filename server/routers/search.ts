@@ -67,6 +67,12 @@ export const searchRouter = router({
           if (centres.length === 0 && enhancedQuery.stateFilter && searchQuery) {
             centres = await db.searchShoppingCentres('', enhancedQuery.stateFilter, ctx.tenantOwnerId ?? undefined);
           }
+          // Fallback: use area-based centre matches if available
+          if (centres.length === 0 && areaCentres && areaCentres.length > 0) {
+            centres = await db.searchShoppingCentres('', undefined, ctx.tenantOwnerId ?? undefined);
+            const areaCentreIds = new Set(areaCentres.map(c => c.id));
+            centres = centres.filter((c: any) => areaCentreIds.has(c.id));
+          }
           if (centres.length === 0) {
             return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'vacant_shop', floorLevels: [] };
           }
@@ -86,6 +92,12 @@ export const searchRouter = router({
           // Fallback: if centre name search failed but we have a state filter, show all centres in that state
           if (centres.length === 0 && enhancedQuery.stateFilter && searchQuery) {
             centres = await db.searchShoppingCentres('', enhancedQuery.stateFilter, ctx.tenantOwnerId ?? undefined);
+          }
+          // Fallback: use area-based centre matches if available
+          if (centres.length === 0 && areaCentres && areaCentres.length > 0) {
+            centres = await db.searchShoppingCentres('', undefined, ctx.tenantOwnerId ?? undefined);
+            const areaCentreIds = new Set(areaCentres.map(c => c.id));
+            centres = centres.filter((c: any) => areaCentreIds.has(c.id));
           }
           if (centres.length === 0) {
             return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'third_line', floorLevels: [] };
