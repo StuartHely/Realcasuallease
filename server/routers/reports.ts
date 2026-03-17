@@ -55,4 +55,32 @@ export const reportsRouter = router({
         scopedOwnerId,
       });
     }),
+
+  weeklyReportDownload: ownerProcedure
+    .input(z.object({
+      centreId: z.number(),
+      weekCommencingDate: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const { generateWeeklyBookingReport, formatWeeklyReportSubject, getWeeklyReportRecipients } = await import('../weeklyReport');
+      const db = await import('../db');
+      const centre = await db.getShoppingCentreById(input.centreId);
+      if (!centre) throw new Error('Centre not found');
+
+      const weekDate = new Date(input.weekCommencingDate + 'T00:00:00');
+      const buffer = await generateWeeklyBookingReport(input.centreId, weekDate);
+      const recipients = await getWeeklyReportRecipients(input.centreId);
+      const subject = formatWeeklyReportSubject(centre.name, weekDate);
+
+      // Convert buffer to base64 for transport over tRPC
+      const uint8 = new Uint8Array(buffer as ArrayBuffer);
+      const base64 = Buffer.from(uint8).toString('base64');
+
+      return {
+        base64,
+        filename: `${subject}.xlsx`,
+        recipients,
+        centreName: centre.name,
+      };
+    }),
 });

@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs';
 import { getDb } from './db';
 import { shoppingCentres, sites, bookings, customerProfiles, users } from '../drizzle/schema';
-import { eq, and, gte, lte, isNotNull } from 'drizzle-orm';
+import { eq, and, gte, lte } from 'drizzle-orm';
 
 /**
  * Generate weekly booking report for a shopping centre
@@ -23,20 +23,33 @@ export async function generateWeeklyBookingReport(centreId: number, weekCommenci
   const endDate = new Date(weekCommencingDate);
   endDate.setDate(endDate.getDate() + 8); // Go forward to Monday after (7 days + 1)
 
-  // Get all sites for this centre
-  const centreSites = await db.select().from(sites).where(eq(sites.centreId, centreId));
+  // Get all sites for this centre, sorted by site number
+  const { naturalSiteSort } = await import('../shared/siteSort');
+  const centreSitesRaw = await db.select().from(sites).where(eq(sites.centreId, centreId));
+  const centreSites = naturalSiteSort(centreSitesRaw.filter(s => s.siteNumber != null) as (typeof centreSitesRaw[number] & { siteNumber: string })[]);
 
   // Get all bookings in the date range
   const bookingsInRange = await db.select({
-    booking: bookings,
-    customer: customerProfiles,
-    user: users,
-    site: sites,
+    bookingId: bookings.id,
+    siteId: bookings.siteId,
+    startDate: bookings.startDate,
+    endDate: bookings.endDate,
+    tablesRequested: bookings.tablesRequested,
+    chairsRequested: bookings.chairsRequested,
+    status: bookings.status,
+    tradingName: customerProfiles.tradingName,
+    companyName: customerProfiles.companyName,
+    productCategory: customerProfiles.productCategory,
+    firstName: customerProfiles.firstName,
+    lastName: customerProfiles.lastName,
+    phone: customerProfiles.phone,
+    customerEmail: users.email,
+    siteCentreId: sites.centreId,
   })
     .from(bookings)
     .leftJoin(customerProfiles, eq(bookings.customerId, customerProfiles.userId))
-    .leftJoin(users, eq(customerProfiles.userId, users.id))
-    .leftJoin(sites, eq(bookings.siteId, sites.id))
+    .leftJoin(users, eq(bookings.customerId, users.id))
+    .innerJoin(sites, eq(bookings.siteId, sites.id))
     .where(
       and(
         eq(sites.centreId, centreId),
@@ -62,12 +75,12 @@ export async function generateWeeklyBookingReport(centreId: number, weekCommenci
   // Add header rows
   worksheet.mergeCells('A1:K1');
   worksheet.getCell('A1').value = centre.name;
-  worksheet.getCell('A1').font = { bold: true, size: 14 };
-  worksheet.getCell('A1').alignment = { horizontal: 'center' };
+  worksheet.getCell('A1').font = { bold: true, size: 16, name: 'Calibri' };
+  worksheet.getCell('A1').alignment = { horizontal: 'left' };
 
   worksheet.mergeCells('A2:K2');
   worksheet.getCell('A2').value = 'Casual Leasing Activities';
-  worksheet.getCell('A2').font = { bold: true, size: 12 };
+  worksheet.getCell('A2').font = { bold: true, size: 14, name: 'Calibri' };
   worksheet.getCell('A2').alignment = { horizontal: 'center' };
 
   // Format week commencing date
@@ -99,19 +112,32 @@ export async function generateWeeklyBookingReport(centreId: number, weekCommenci
     formatDate(new Date(startDate.getTime() + 8 * 24 * 60 * 60 * 1000)), // Monday after
   ]);
 
-  headerRow.font = { bold: true };
-  headerRow.alignment = { horizontal: 'center', vertical: 'top', wrapText: true };
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Calibri' };
+  headerRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+  for (let c = 1; c <= 11; c++) {
+    headerRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F81BD' } };
+  }
 
   // Set column widths
   worksheet.getColumn(1).width = 12; // Site Number
-  worksheet.getColumn(2).width = 30; // Site Description
+  worksheet.getColumn(1).alignment = { horizontal: 'center', vertical: 'top' };
+  worksheet.getColumn(2).width = 43; // Site Description
   for (let i = 3; i <= 11; i++) {
-    worksheet.getColumn(i).width = 20; // Date columns
+    worksheet.getColumn(i).width = 23; // Date columns
   }
+
+  const stripHtml = (html: string | null | undefined): string => {
+    if (!html) return '';
+    let text = html.replace(/<[^>]*>/g, '');
+    text = text.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ');
+    text = text.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
+    text = text.replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+    return text.trim();
+  };
 
   // Add data rows for each site
   for (const site of centreSites) {
-    const row = [site.siteNumber, site.description || ''];
+    const row = [site.siteNumber, stripHtml(site.description)];
     
     // For each of the 9 days, find bookings for this site
     for (let dayOffset = 0; dayOffset < 9; dayOffset++) {
@@ -120,30 +146,27 @@ export async function generateWeeklyBookingReport(centreId: number, weekCommenci
       
       // Find bookings that overlap with this day
       const dayBookings = bookingsInRange.filter(b => {
-        if (!b.booking || !b.site || b.site.id !== site.id) return false;
-        const bookingStart = new Date(b.booking.startDate);
-        const bookingEnd = new Date(b.booking.endDate);
+        if (b.siteId !== site.id) return false;
+        const bookingStart = new Date(b.startDate);
+        const bookingEnd = new Date(b.endDate);
         return bookingStart < nextDate && bookingEnd >= currentDate;
       });
 
       if (dayBookings.length > 0) {
         // Format booking details
         const bookingDetails = dayBookings.map(b => {
-          const customer = b.customer;
-          const booking = b.booking;
-          
           // Use Trading Name if available, otherwise Company Name
-          const businessName = customer?.tradingName || customer?.companyName || 'N/A';
-          const productCategory = customer?.productCategory || 'N/A';
-          const contactName = customer ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim() : 'N/A';
-          const contactPhone = customer?.phone || 'N/A';
-          const contactEmail = b.user?.email || 'N/A';
+          const businessName = b.tradingName || b.companyName || 'N/A';
+          const productCategory = b.productCategory || 'N/A';
+          const contactName = `${b.firstName || ''} ${b.lastName || ''}`.trim() || 'N/A';
+          const contactPhone = b.phone || 'N/A';
+          const contactEmail = b.customerEmail || 'N/A';
           
-          const startDateStr = booking ? new Date(booking.startDate).toLocaleDateString('en-AU') : '';
-          const endDateStr = booking ? new Date(booking.endDate).toLocaleDateString('en-AU') : '';
+          const startDateStr = new Date(b.startDate).toLocaleDateString('en-AU');
+          const endDateStr = new Date(b.endDate).toLocaleDateString('en-AU');
           const bookedDates = `${startDateStr} to ${endDateStr}`;
           
-          const tablesChairs = `${booking?.tablesRequested || 0} tables, ${booking?.chairsRequested || 0} chairs`;
+          const tablesChairs = `${b.tablesRequested || 0} tables, ${b.chairsRequested || 0} chairs`;
           
           return `${businessName}\n${productCategory}\n${contactName}\n${contactPhone}\n${contactEmail}\n${bookedDates}\n${tablesChairs}`;
         }).join('\n\n');
@@ -156,6 +179,7 @@ export async function generateWeeklyBookingReport(centreId: number, weekCommenci
     
     const dataRow = worksheet.addRow(row);
     dataRow.alignment = { vertical: 'top', wrapText: true };
+    dataRow.getCell(1).alignment = { horizontal: 'center', vertical: 'top' };
     
     // Make company name and product category bold (first two lines of each cell)
     for (let col = 3; col <= 11; col++) {
@@ -173,6 +197,28 @@ export async function generateWeeklyBookingReport(centreId: number, weekCommenci
             ]
           };
         }
+      }
+    }
+  }
+
+  // Add borders and tan background for booking cells
+  const thinBorder: Partial<ExcelJS.Border> = { style: 'thin' };
+  const borderStyle: Partial<ExcelJS.Borders> = {
+    top: thinBorder,
+    left: thinBorder,
+    bottom: thinBorder,
+    right: thinBorder,
+  };
+  const dataFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCE6F1' } };
+  const lastRow = worksheet.rowCount;
+  for (let r = 5; r <= lastRow; r++) {
+    const row = worksheet.getRow(r);
+    for (let c = 1; c <= 11; c++) {
+      const cell = row.getCell(c);
+      cell.border = borderStyle;
+      // Tan background for cells with content in columns C-K (data rows only)
+      if (r > 5 && c >= 3 && cell.value) {
+        cell.fill = dataFill;
       }
     }
   }

@@ -320,6 +320,7 @@ const locationAliases: Record<string, string[]> = {
   'kogarah town centre': ['kogarah'],
   'rockdale plaza': ['rockdale'],
   'wanneroo central': ['wanneroo'],
+  'ocean square': ['ocean'],
 };
 
 /**

@@ -127,6 +127,13 @@
       "when": 1773030526889,
       "tag": "0017_classy_serpent_society",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1773563574671,
+      "tag": "0018_sour_purifiers",
+      "breakpoints": true
     }
   ]
 }

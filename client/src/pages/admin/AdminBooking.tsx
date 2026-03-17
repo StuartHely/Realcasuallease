@@ -58,6 +58,8 @@ export default function AdminBooking() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"stripe" | "invoice">("stripe");
   const [adminComments, setAdminComments] = useState("");
   const [overrideAmount, setOverrideAmount] = useState<string>("");
+  const [usageCategoryId, setUsageCategoryId] = useState<string>("");
+  const [additionalCategoryText, setAdditionalCategoryText] = useState("");
   const [showAllDetails, setShowAllDetails] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   
@@ -78,6 +80,7 @@ export default function AdminBooking() {
   // Queries
   const { data: centres } = trpc.centres.list.useQuery();
   const { data: users } = trpc.adminBooking.getUsers.useQuery();
+  const { data: usageCategories } = trpc.usageCategories.list.useQuery();
   
   const { data: availabilityData, isLoading: loadingAvailability } = trpc.adminBooking.getAvailabilityGrid.useQuery(
     {
@@ -136,6 +139,8 @@ export default function AdminBooking() {
       setSelectedPaymentMethod("stripe");
       setAdminComments("");
       setOverrideAmount("");
+      setUsageCategoryId("");
+      setAdditionalCategoryText("");
       setShowConfirmDialog(false);
     },
     onError: (error) => {
@@ -366,6 +371,8 @@ export default function AdminBooking() {
       chairsRequested,
       paymentMethod: selectedPaymentMethod,
       adminComments: adminComments || undefined,
+      usageCategoryId: usageCategoryId ? Number(usageCategoryId) : undefined,
+      additionalCategoryText: additionalCategoryText || undefined,
     });
   };
 
@@ -795,6 +802,36 @@ export default function AdminBooking() {
                     )}
                   </div>
 
+                  {/* Usage Category */}
+                  <div>
+                    <Label>Usage Category</Label>
+                    <Select value={usageCategoryId} onValueChange={setUsageCategoryId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select usage category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {usageCategories?.map((category) => (
+                          <SelectItem key={category.id} value={String(category.id)}>
+                            {category.name}{category.isFree && " (FREE)"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Additional Details */}
+                  {usageCategoryId && (
+                    <div>
+                      <Label>Additional Details (optional)</Label>
+                      <Textarea
+                        value={additionalCategoryText}
+                        onChange={(e) => setAdditionalCategoryText(e.target.value)}
+                        placeholder="Provide any additional information about the usage..."
+                        rows={2}
+                      />
+                    </div>
+                  )}
+
                   {/* Admin Comments */}
                   <div>
                     <Label>Internal Admin Comments</Label>
@@ -852,6 +889,8 @@ export default function AdminBooking() {
                         setSelectedUserId(null);
                         setOverrideAmount("");
                         setAdminComments("");
+                        setUsageCategoryId("");
+                        setAdditionalCategoryText("");
                       }}
                     >
                       Clear Selection
@@ -881,6 +920,12 @@ export default function AdminBooking() {
                 <div><strong>Email:</strong> {selectedUser?.email}</div>
                 <div><strong>Tables/Chairs:</strong> {tablesRequested} / {chairsRequested}</div>
                 <div><strong>Payment:</strong> {selectedPaymentMethod === "invoice" ? "Invoice" : "Stripe"}</div>
+                {usageCategoryId && (
+                  <div><strong>Category:</strong> {usageCategories?.find(c => String(c.id) === usageCategoryId)?.name}</div>
+                )}
+                {additionalCategoryText && (
+                  <div><strong>Additional Details:</strong> {additionalCategoryText}</div>
+                )}
                 <div className="pt-2 border-t font-semibold text-lg">
                   <strong>Total:</strong> ${finalAmount.toFixed(2)} + GST
                 </div>

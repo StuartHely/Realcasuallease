@@ -522,7 +522,7 @@ export default function Search() {
           {data?.sizeNotAvailable && !data?.closestMatch && !data?.categoryNotAvailable && (
             <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-amber-800 font-medium text-2xl">
-                Your requested size is not available. Let me show you the other sites.
+                Your requested size is not available. Below are all the other sites.
               </p>
             </div>
           )}
@@ -1564,9 +1564,9 @@ export default function Search() {
                       </div>
                     </div>
                     
-                    {/* Filter explanation notice */}
-                    {(parsedQuery.minSizeM2 !== undefined || (parsedQuery.productCategory && !data?.categoryUnrecognised && !data?.matchedCategoryName)) && (() => {
-                      const hasSizeFilter = parsedQuery.minSizeM2 !== undefined;
+                    {/* Filter explanation notice - only show when size IS available (not contradicting the "not available" banner) */}
+                    {(( parsedQuery.minSizeM2 !== undefined && !data?.sizeNotAvailable) || (parsedQuery.productCategory && !data?.categoryUnrecognised && !data?.matchedCategoryName)) && (() => {
+                      const hasSizeFilter = parsedQuery.minSizeM2 !== undefined && !data?.sizeNotAvailable;
                       const hasCategoryFilter = parsedQuery.productCategory && !data?.categoryUnrecognised && !data?.matchedCategoryName;
                       
                       let noticeText = '';
@@ -1619,14 +1619,43 @@ export default function Search() {
                     {/* Date Range Indicator */}
                     {dateRange.length > 0 && (
                       <div className="text-center mb-3">
-                        <span className="text-sm text-muted-foreground">
-                          Viewing <span className="font-medium text-foreground">{format(dateRange[0], 'MMM d')}</span> - <span className="font-medium text-foreground">{format(dateRange[dateRange.length - 1], 'MMM d, yyyy')}</span>
+                        <span className="text-sm font-bold text-foreground">
+                          Viewing {format(dateRange[0], 'MMM d')} - {format(dateRange[dateRange.length - 1], 'MMM d, yyyy')}
                         </span>
                       </div>
                     )}
-                    {/* Calendar Navigation - Center buttons only */}
+                    {/* Calendar Navigation - All buttons on one line */}
                     <div className="flex items-center justify-center mb-3">
                       <div className="flex items-center gap-2">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    if (!searchParams) return;
+                                    const newDate = subDays(searchParams.date, 7);
+                                    const params = new URLSearchParams(window.location.search);
+                                    params.set('date', format(newDate, 'yyyy-MM-dd'));
+                                    window.location.search = params.toString();
+                                  }}
+                                  className="flex items-center gap-1 text-xs"
+                                  disabled={searchParams ? isBefore(subDays(searchParams.date, 7), startOfDay(new Date())) : false}
+                                >
+                                  <ChevronLeft className="h-3 w-3" />
+                                  Previous Week
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            {searchParams && isBefore(subDays(searchParams.date, 7), startOfDay(new Date())) && (
+                              <TooltipContent>
+                                <p>Cannot view past dates</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
@@ -1638,7 +1667,7 @@ export default function Search() {
                               New Date
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
+                          <PopoverContent className="w-auto p-0" align="center">
                             <CalendarComponent
                               mode="single"
                               selected={searchParams?.date}
@@ -1666,6 +1695,21 @@ export default function Search() {
                         >
                           <CalendarDays className="h-4 w-4" />
                           Today
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (!searchParams) return;
+                            const newDate = addDays(searchParams.date, 7);
+                            const params = new URLSearchParams(window.location.search);
+                            params.set('date', format(newDate, 'yyyy-MM-dd'));
+                            window.location.search = params.toString();
+                          }}
+                          className="flex items-center gap-1 text-xs"
+                        >
+                          Next Week
+                          <ChevronRight className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
@@ -1695,61 +1739,6 @@ export default function Search() {
                       <div className="inline-block min-w-full">
                         <table className="w-full border-separate border-spacing-0">
                           <thead>
-                            {/* Navigation row with Previous/Next Week buttons */}
-                            <tr>
-                              <th className="sticky left-0 bg-white z-10 px-1 py-1 border-r-2">
-                                {/* Empty cell above Site column */}
-                              </th>
-                              <th className="px-1 py-1 text-left" colSpan={1}>
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <span>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => {
-                                            if (!searchParams) return;
-                                            const newDate = subDays(searchParams.date, 7);
-                                            const params = new URLSearchParams(window.location.search);
-                                            params.set('date', format(newDate, 'yyyy-MM-dd'));
-                                            window.location.search = params.toString();
-                                          }}
-                                          className="flex items-center gap-1 text-xs"
-                                          disabled={searchParams ? isBefore(subDays(searchParams.date, 7), startOfDay(new Date())) : false}
-                                        >
-                                          <ChevronLeft className="h-3 w-3" />
-                                          Previous Week
-                                        </Button>
-                                      </span>
-                                    </TooltipTrigger>
-                                    {searchParams && isBefore(subDays(searchParams.date, 7), startOfDay(new Date())) && (
-                                      <TooltipContent>
-                                        <p>Cannot view past dates</p>
-                                      </TooltipContent>
-                                    )}
-                                  </Tooltip>
-                                </TooltipProvider>
-                              </th>
-                              <th colSpan={dateRange.length > 2 ? dateRange.length - 2 : 1}></th>
-                              <th className="px-1 py-1 text-right" colSpan={1}>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    if (!searchParams) return;
-                                    const newDate = addDays(searchParams.date, 7);
-                                    const params = new URLSearchParams(window.location.search);
-                                    params.set('date', format(newDate, 'yyyy-MM-dd'));
-                                    window.location.search = params.toString();
-                                  }}
-                                  className="flex items-center gap-1 text-xs"
-                                >
-                                  Next Week
-                                  <ChevronRight className="h-3 w-3" />
-                                </Button>
-                              </th>
-                            </tr>
                             {/* Date headers row */}
                             <tr>
                               <th className="sticky left-0 bg-white z-10 px-3 py-2 text-left text-sm font-semibold border-b-2 border-r-2">

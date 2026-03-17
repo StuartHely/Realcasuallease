@@ -94,6 +94,7 @@ const getMenuSections = (userRole: string): MenuSection[] => {
           { icon: Store, label: "VS Bookings", path: "/admin/vs-bookings" },
           { icon: Layers, label: "3rdL Bookings", path: "/admin/third-line-bookings" },
           { icon: TrendingUp, label: "Seasonal Pricing", path: "/admin/seasonal-rates" },
+          { icon: FileText, label: "Weekly Report Preview", path: "/admin/weekly-report" },
         ],
       },
       {

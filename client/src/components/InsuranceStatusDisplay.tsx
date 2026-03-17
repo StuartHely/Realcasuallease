@@ -37,15 +37,18 @@ export function InsuranceStatusDisplay({
     );
   }
 
-  // Insurance uploaded but scan failed
+  // Insurance uploaded but scan failed or not attempted
   if (!insuranceScan || !insuranceScan.success) {
+    const isApiUnavailable = !insuranceScan && insuranceValidation?.errors?.some(e => e.includes('not configured'));
     return (
-      <Alert variant="destructive" className="mb-4">
-        <AlertTriangle className="h-4 w-4" />
+      <Alert className={isApiUnavailable ? "mb-4 border-amber-200 bg-amber-50" : "mb-4"} variant={isApiUnavailable ? undefined : "destructive"}>
+        <AlertTriangle className={`h-4 w-4 ${isApiUnavailable ? "text-amber-600" : ""}`} />
         <AlertDescription>
-          <strong>Insurance Document Unreadable</strong>
+          <strong>{isApiUnavailable ? "Insurance Auto-Scan Unavailable" : "Insurance Document Unreadable"}</strong>
           <p className="mt-1 text-sm">
-            {insuranceScan?.error || "Could not extract information from the insurance document"}
+            {isApiUnavailable
+              ? "The insurance scanning API is not configured. Please review the document manually."
+              : insuranceScan?.error || "Could not extract information from the insurance document"}
           </p>
           <p className="mt-2 text-sm font-semibold">⚠️ Manual review required</p>
           <Button

@@ -27,7 +27,7 @@ export default function PendingApprovals() {
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
-  const { data: pendingBookings, isLoading, refetch } = trpc.admin.getPendingApprovals.useQuery();
+  const { data: pendingBookings, isLoading, error, refetch } = trpc.admin.getPendingApprovals.useQuery();
   const approveBookingMutation = trpc.admin.approveBooking.useMutation({
     onSuccess: () => {
       toast.success("Booking approved successfully");
@@ -104,7 +104,16 @@ export default function PendingApprovals() {
           </p>
         </div>
 
-      {!pendingBookings || pendingBookings.length === 0 ? (
+      {error ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <p className="text-gray-600">Failed to load pending approvals</p>
+            <p className="text-sm text-muted-foreground mt-1">{error.message}</p>
+            <Button variant="outline" className="mt-4" onClick={() => refetch()}>Retry</Button>
+          </CardContent>
+        </Card>
+      ) : !pendingBookings || pendingBookings.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
