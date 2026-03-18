@@ -120,7 +120,7 @@ function extractProductCategory(query: string): string | undefined {
   const categoryKeywords = [
     // Footwear (multi-word first)
     'ugg boots', 'ugg boot',
-    'shoes', 'shoe', 'footwear', 'boots', 'boot', 'ugg', 'uggs', 'sneakers', 'sneaker', 'sandals', 'sandal', 'heels', 'heel', 'socks', 'sock', 'thongs',
+    'shoes', 'shoe', 'footwear', 'boots', 'boot', 'ugg', 'uggs', 'sneakers', 'sneaker', 'sandals', 'sandal', 'heels', 'heel', 'socks', 'sock', 'sox', 'thongs',
     // Clothing & Fashion
     'clothing', 'apparel', 'fashion', 'accessories', 'accessory',
     'beanies', 'beanie', 'scarves', 'scarf', 'gloves', 'belts', 'belt', 'hats', 'hat', 'caps', 'cap',

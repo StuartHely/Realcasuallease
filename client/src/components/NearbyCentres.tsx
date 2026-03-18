@@ -14,10 +14,12 @@ interface NearbyCentresProps {
 export function NearbyCentres({ centreId, centreName, radiusKm = 10 }: NearbyCentresProps) {
   const [showNearby, setShowNearby] = useState(false);
   
-  const { data: nearbyCentres, isLoading } = trpc.centres.getNearby.useQuery(
+  const { data: nearbyData, isLoading } = trpc.centres.getNearby.useQuery(
     { centreId, radiusKm },
     { enabled: showNearby }
   );
+  const nearbyCentres = nearbyData?.centres ?? [];
+  const nearestOutside = nearbyData?.nearest ?? [];
 
   if (!showNearby) {
     return (
@@ -46,7 +48,7 @@ export function NearbyCentres({ centreId, centreName, radiusKm = 10 }: NearbyCen
     );
   }
 
-  if (!nearbyCentres || nearbyCentres.length === 0) {
+  if (nearbyCentres.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -56,6 +58,25 @@ export function NearbyCentres({ centreId, centreName, radiusKm = 10 }: NearbyCen
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {nearestOutside.length > 0 && (
+            <div className="mb-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Nearest centres:</p>
+              <div className="grid gap-2">
+                {nearestOutside.map((centre) => (
+                  <Link key={centre.id} href={`/centre/${centre.slug || centre.id}`}>
+                    <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium text-sm text-blue-600">{centre.name}</span>
+                        {centre.state && <span className="text-gray-500 text-xs">({centre.state})</span>}
+                      </div>
+                      <span className="text-sm font-medium text-gray-600">{centre.distance}km away</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
           <Button
             onClick={() => setShowNearby(false)}
             variant="outline"

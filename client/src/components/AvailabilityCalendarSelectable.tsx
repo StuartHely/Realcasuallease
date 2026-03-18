@@ -335,10 +335,8 @@ export function AvailabilityCalendarSelectable({
                   const isWeekend = isSaturday || isSunday;
                   const isToday = isSameDay(date, new Date());
                   
-                  const prevDayOfWeek = i > 0 ? getDay(new Date(calendarMonth.year, calendarMonth.month - 1, i)) : null;
-                  const nextDayOfWeek = i < daysInMonth - 1 ? getDay(new Date(calendarMonth.year, calendarMonth.month - 1, i + 2)) : null;
-                  const isPrevWeekend = prevDayOfWeek !== null && (prevDayOfWeek === 0 || prevDayOfWeek === 6);
-                  const isNextWeekend = nextDayOfWeek !== null && (nextDayOfWeek === 0 || nextDayOfWeek === 6);
+                  const isWeekBoundaryLeft = dayOfWeek === 1 || i === 0;
+                  const isWeekBoundaryRight = dayOfWeek === 0 || i === daysInMonth - 1;
 
                   return (
                     <th
@@ -346,11 +344,11 @@ export function AvailabilityCalendarSelectable({
                       className={`px-1 py-2 text-center text-xs font-medium min-w-[40px] border border-gray-200 ${
                         isWeekend ? "bg-gray-100" : ""
                       } ${
-                        isWeekend ? "!border-t-[3px] !border-t-green-700 !border-solid" : ""
+                        "!border-t-[3px] !border-t-green-700 !border-solid"
                       } ${
-                        isWeekend && !isPrevWeekend ? "!border-l-[3px] !border-l-green-700 !border-solid" : ""
+                        isWeekBoundaryLeft ? "!border-l-[3px] !border-l-green-700 !border-solid" : ""
                       } ${
-                        isWeekend && !isNextWeekend ? "!border-r-[3px] !border-r-green-700 !border-solid" : ""
+                        isWeekBoundaryRight ? "!border-r-[3px] !border-r-green-700 !border-solid" : ""
                       } ${
                         isToday ? "bg-blue-50 !border-blue-500 !border-2" : ""
                       }`}
@@ -392,10 +390,8 @@ export function AvailabilityCalendarSelectable({
                       const isBooked = !!booking;
                       const selectionState = isDateSelected(asset.id, date);
 
-                      const prevDayOfWeek = i > 0 ? getDay(new Date(calendarMonth.year, calendarMonth.month - 1, i)) : null;
-                      const nextDayOfWeek = i < daysInMonth - 1 ? getDay(new Date(calendarMonth.year, calendarMonth.month - 1, i + 2)) : null;
-                      const isPrevWeekend = prevDayOfWeek !== null && (prevDayOfWeek === 0 || prevDayOfWeek === 6);
-                      const isNextWeekend = nextDayOfWeek !== null && (nextDayOfWeek === 0 || nextDayOfWeek === 6);
+                      const isWeekBoundaryLeft = dayOfWeek === 1 || i === 0;
+                      const isWeekBoundaryRight = dayOfWeek === 0 || i === daysInMonth - 1;
 
                       return (
                         <TooltipProvider key={i}>
@@ -405,11 +401,11 @@ export function AvailabilityCalendarSelectable({
                                 className={`p-0 border border-gray-200 border-solid ${
                                   isWeekend ? "bg-gray-50" : ""
                                 } ${
-                                  isWeekend && !isPrevWeekend ? "!border-l-[3px] !border-l-green-700 !border-solid" : ""
+                                  isWeekBoundaryLeft ? "!border-l-[3px] !border-l-green-700 !border-solid" : ""
                                 } ${
-                                  isWeekend && !isNextWeekend ? "!border-r-[3px] !border-r-green-700 !border-solid" : ""
+                                  isWeekBoundaryRight ? "!border-r-[3px] !border-r-green-700 !border-solid" : ""
                                 } ${
-                                  isWeekend && isLastRow ? "!border-b-[3px] !border-b-green-700 !border-solid" : ""
+                                  isLastRow ? "!border-b-[3px] !border-b-green-700 !border-solid" : ""
                                 }`}
                                 onClick={() => handleCellClick(asset.id, date)}
                               >
@@ -508,7 +504,7 @@ export function AvailabilityCalendarSelectable({
           </div>
           <div className="flex items-center gap-2">
             <div className="w-6 h-4 bg-gray-100 border-2 border-green-700 rounded" />
-            <span>Weekend</span>
+            <span>Week</span>
           </div>
         </div>
 

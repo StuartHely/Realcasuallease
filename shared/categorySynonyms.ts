@@ -27,8 +27,9 @@ export const CATEGORY_SYNONYMS: Record<string, string[]> = {
   "sandal": ["sandals"],
   "heels": ["heel"],
   "heel": ["heels"],
-  "socks": ["sock"],
-  "sock": ["socks"],
+  "socks": ["sock", "sox"],
+  "sock": ["socks", "sox"],
+  "sox": ["socks", "sock"],
   "thongs": ["thong", "sandals"],
   
   // Clothing & Apparel variations

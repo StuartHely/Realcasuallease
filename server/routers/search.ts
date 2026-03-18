@@ -546,12 +546,15 @@ export const searchRouter = router({
           })
         ).catch(() => {});
         
-        // Prune centres that have zero sites remaining after category filtering,
-        // but only if some centres still have sites (don't blank everything out —
-        // the UI should show the location match with a "category not available" message)
+        // Prune centres that have zero sites remaining after category filtering.
+        // When a product category was searched, only show centres that actually
+        // have approved sites for that category — never show irrelevant centres.
         if (allSites.length > 0) {
           const centreIdsWithSites = new Set(allSites.map((s: any) => s.centreId));
           centres = centres.filter((c: any) => centreIdsWithSites.has(c.id));
+        } else if (enhancedQuery.productCategory) {
+          // No sites matched the category at all — don't show any centres
+          centres = [];
         }
 
         // Fetch floor levels for all matched centres (keyed by centreId for per-centre maps)

@@ -526,8 +526,8 @@ export default function Search() {
               </p>
             </div>
           )}
-          {/* Show message when category is not available at this centre */}
-          {data?.categoryNotAvailable && (
+          {/* Show message when category is not available — only if centres were found (otherwise the "no results" card handles it) */}
+          {data?.categoryNotAvailable && data.centres.length > 0 && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-800 font-medium text-lg">
                 This product category is not permitted at this centre. Please try a different centre or search without the category filter.
@@ -556,7 +556,11 @@ export default function Search() {
           <Card>
             <CardContent className="py-12">
               <div className="text-center mb-6">
-                <p className="text-gray-600 mb-4">No shopping centres found matching your search.</p>
+                <p className="text-gray-600 mb-4">
+                  {data.categoryNotAvailable && data.searchInterpretation?.productCategory
+                    ? `No centres${data.searchInterpretation.state ? ` in ${data.searchInterpretation.state}` : ''} have approved sites for '${data.searchInterpretation.productCategory}'. Try a different location or search without the category filter.`
+                    : 'No shopping centres found matching your search.'}
+                </p>
               </div>
               
               {/* Search Suggestions */}
@@ -636,13 +640,11 @@ export default function Search() {
                             {dateRange.map((date, idx) => {
                               const isSearchedDate = searchParams && isSameDay(date, searchParams.date);
                               const dayOfWeek = date.getDay();
-                              const isSaturday = dayOfWeek === 6;
+                              const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                              const isMonday = dayOfWeek === 1;
                               const isSunday = dayOfWeek === 0;
-                              const isWeekend = isSaturday || isSunday;
-                              const prevDate = idx > 0 ? dateRange[idx - 1] : null;
-                              const nextDate = idx < dateRange.length - 1 ? dateRange[idx + 1] : null;
-                              const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
-                              const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+                              const isWeekBoundaryLeft = isMonday || idx === 0;
+                              const isWeekBoundaryRight = isSunday || idx === dateRange.length - 1;
                               
                               return (
                               <th 
@@ -650,11 +652,11 @@ export default function Search() {
                                 className={`px-2 py-2 text-center text-xs font-medium min-w-[80px] border border-gray-200 ${
                                   isSearchedDate ? 'bg-blue-50' : isWeekend ? 'bg-gray-100' : ''
                                 } ${
-                                  isWeekend ? '!border-t-[3px] !border-t-green-700 !border-solid' : 'border-b-2'
+                                  '!border-t-[3px] !border-t-green-700 !border-solid'
                                 } ${
-                                  isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
+                                  isWeekBoundaryLeft ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
                                 } ${
-                                  isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
+                                  isWeekBoundaryRight ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
                                 }`}
                               >
                                 <div className={isWeekend ? 'font-semibold' : ''}>{format(date, "dd/MM")}</div>
@@ -700,11 +702,10 @@ export default function Search() {
                                   return checkDate >= bookingStart && checkDate <= bookingEnd;
                                 });
                                 const dayOfWeek = date.getDay();
-                                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                                const prevDate = dateIdx > 0 ? dateRange[dateIdx - 1] : null;
-                                const nextDate = dateIdx < dateRange.length - 1 ? dateRange[dateIdx + 1] : null;
-                                const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
-                                const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+                                const isMonday = dayOfWeek === 1;
+                                const isSunday = dayOfWeek === 0;
+                                const isWeekBoundaryLeft = isMonday || dateIdx === 0;
+                                const isWeekBoundaryRight = isSunday || dateIdx === dateRange.length - 1;
                                 const isLastRow = shopIdx === vsAvailability.length - 1;
                                 
                                 // Check if this cell is part of the current selection
@@ -718,11 +719,11 @@ export default function Search() {
                                   <td 
                                     key={dateIdx}
                                     className={`p-0 border border-gray-200 ${
-                                      isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
+                                      isWeekBoundaryLeft ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
                                     } ${
-                                      isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
+                                      isWeekBoundaryRight ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
                                     } ${
-                                      isWeekend && isLastRow ? '!border-b-[3px] !border-b-green-700 !border-solid' : ''
+                                      isLastRow ? '!border-b-[3px] !border-b-green-700 !border-solid' : ''
                                     }`}
                                     onClick={() => {
                                       if (!isBooked) {
@@ -1075,13 +1076,11 @@ export default function Search() {
                             {dateRange.map((date, idx) => {
                               const isSearchedDate = searchParams && isSameDay(date, searchParams.date);
                               const dayOfWeek = date.getDay();
-                              const isSaturday = dayOfWeek === 6;
+                              const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                              const isMonday = dayOfWeek === 1;
                               const isSunday = dayOfWeek === 0;
-                              const isWeekend = isSaturday || isSunday;
-                              const prevDate = idx > 0 ? dateRange[idx - 1] : null;
-                              const nextDate = idx < dateRange.length - 1 ? dateRange[idx + 1] : null;
-                              const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
-                              const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+                              const isWeekBoundaryLeft = isMonday || idx === 0;
+                              const isWeekBoundaryRight = isSunday || idx === dateRange.length - 1;
                               
                               return (
                               <th 
@@ -1089,11 +1088,11 @@ export default function Search() {
                                 className={`px-2 py-2 text-center text-xs font-medium min-w-[80px] border border-gray-200 ${
                                   isSearchedDate ? 'bg-blue-50' : isWeekend ? 'bg-gray-100' : ''
                                 } ${
-                                  isWeekend ? '!border-t-[3px] !border-t-purple-700 !border-solid' : 'border-b-2'
+                                  '!border-t-[3px] !border-t-purple-700 !border-solid'
                                 } ${
-                                  isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-purple-700 !border-solid' : ''
+                                  isWeekBoundaryLeft ? '!border-l-[3px] !border-l-purple-700 !border-solid' : ''
                                 } ${
-                                  isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-purple-700 !border-solid' : ''
+                                  isWeekBoundaryRight ? '!border-r-[3px] !border-r-purple-700 !border-solid' : ''
                                 }`}
                               >
                                 <div className={isWeekend ? 'font-semibold' : ''}>{format(date, "dd/MM")}</div>
@@ -1139,11 +1138,10 @@ export default function Search() {
                                   return checkDate >= bookingStart && checkDate <= bookingEnd;
                                 });
                                 const dayOfWeek = date.getDay();
-                                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                                const prevDate = dateIdx > 0 ? dateRange[dateIdx - 1] : null;
-                                const nextDate = dateIdx < dateRange.length - 1 ? dateRange[dateIdx + 1] : null;
-                                const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
-                                const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+                                const isMonday = dayOfWeek === 1;
+                                const isSunday = dayOfWeek === 0;
+                                const isWeekBoundaryLeft = isMonday || dateIdx === 0;
+                                const isWeekBoundaryRight = isSunday || dateIdx === dateRange.length - 1;
                                 const isLastRow = assetIdx === tliAvailability.length - 1;
                                 
                                 // Check if this cell is part of the current selection
@@ -1157,11 +1155,11 @@ export default function Search() {
                                   <td 
                                     key={dateIdx}
                                     className={`p-0 border border-gray-200 ${
-                                      isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-purple-700 !border-solid' : ''
+                                      isWeekBoundaryLeft ? '!border-l-[3px] !border-l-purple-700 !border-solid' : ''
                                     } ${
-                                      isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-purple-700 !border-solid' : ''
+                                      isWeekBoundaryRight ? '!border-r-[3px] !border-r-purple-700 !border-solid' : ''
                                     } ${
-                                      isWeekend && isLastRow ? '!border-b-[3px] !border-b-purple-700 !border-solid' : ''
+                                      isLastRow ? '!border-b-[3px] !border-b-purple-700 !border-solid' : ''
                                     }`}
                                     onClick={() => {
                                       if (!isBooked) {
@@ -1747,14 +1745,11 @@ export default function Search() {
                               {dateRange.map((date, idx) => {
                                 const isSearchedDate = isSameDay(date, searchParams.date);
                                 const dayOfWeek = date.getDay();
-                                const isSaturday = dayOfWeek === 6;
+                                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                                const isMonday = dayOfWeek === 1;
                                 const isSunday = dayOfWeek === 0;
-                                const isWeekend = isSaturday || isSunday;
-                                // Check if previous/next day is also weekend for border styling
-                                const prevDate = idx > 0 ? dateRange[idx - 1] : null;
-                                const nextDate = idx < dateRange.length - 1 ? dateRange[idx + 1] : null;
-                                const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
-                                const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+                                const isWeekBoundaryLeft = isMonday || idx === 0;
+                                const isWeekBoundaryRight = isSunday || idx === dateRange.length - 1;
                                 
                                 return (
                                 <th 
@@ -1762,11 +1757,11 @@ export default function Search() {
                                   className={`px-2 py-2 text-center text-xs font-medium min-w-[80px] border border-gray-200 ${
                                     isSearchedDate ? 'bg-blue-50' : isWeekend ? 'bg-gray-100' : ''
                                   } ${
-                                    isWeekend ? '!border-t-[3px] !border-t-green-700 !border-solid' : 'border-b-2'
+                                    '!border-t-[3px] !border-t-green-700 !border-solid'
                                   } ${
-                                    isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
+                                    isWeekBoundaryLeft ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
                                   } ${
-                                    isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
+                                    isWeekBoundaryRight ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
                                   } ${
                                     isSearchedDate ? 'border-l-4 border-r-4 border-blue-500' : ''
                                   }`}
@@ -1823,10 +1818,10 @@ export default function Search() {
                                   const isFocused = focusedCell?.siteIndex === siteIdx && focusedCell?.dateIndex === dateIdx;
                                   const dayOfWeek = date.getDay();
                                   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                                  const prevDate = dateIdx > 0 ? dateRange[dateIdx - 1] : null;
-                                  const nextDate = dateIdx < dateRange.length - 1 ? dateRange[dateIdx + 1] : null;
-                                  const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
-                                  const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+                                  const isMonday = dayOfWeek === 1;
+                                  const isSunday = dayOfWeek === 0;
+                                  const isWeekBoundaryLeft = isMonday || dateIdx === 0;
+                                  const isWeekBoundaryRight = isSunday || dateIdx === dateRange.length - 1;
                                   const isLastRow = siteIdx === centreSites.length - 1;
                                   return (
                                     <td 
@@ -1837,11 +1832,11 @@ export default function Search() {
                                       } ${
                                         isFocused ? 'ring-4 ring-purple-500 ring-inset' : ''
                                       } ${
-                                        isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
+                                        isWeekBoundaryLeft ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
                                       } ${
-                                        isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
+                                        isWeekBoundaryRight ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
                                       } ${
-                                        isWeekend && isLastRow ? '!border-b-[3px] !border-b-green-700 !border-solid' : ''
+                                        isLastRow ? '!border-b-[3px] !border-b-green-700 !border-solid' : ''
                                       } ${
                                         isWeekend ? 'bg-gray-50' : ''
                                       }`}

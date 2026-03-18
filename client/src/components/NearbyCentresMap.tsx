@@ -25,16 +25,18 @@ export function NearbyCentresMap({
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
   
-  const { data: nearbyCentres, isLoading } = trpc.centres.getNearby.useQuery(
+  const { data: nearbyData, isLoading } = trpc.centres.getNearby.useQuery(
     { centreId, radiusKm },
     { enabled: showMap }
   );
+  const nearbyCentres = nearbyData?.centres ?? [];
+  const nearestOutside = nearbyData?.nearest ?? [];
 
   const centerLat = parseFloat(centreLatitude);
   const centerLng = parseFloat(centreLongitude);
 
   useEffect(() => {
-    if (!showMap || !mapRef.current || !nearbyCentres) return;
+    if (!showMap || !mapRef.current || !nearbyData) return;
 
     // Clear existing markers
     markersRef.current.forEach(marker => marker.map = null);
@@ -151,7 +153,7 @@ export function NearbyCentresMap({
       });
       mapRef.current.fitBounds(bounds);
     }
-  }, [showMap, nearbyCentres, centerLat, centerLng, centreName, centreId]);
+  }, [showMap, nearbyData, centerLat, centerLng, centreName, centreId]);
 
   if (!showMap) {
     return (
@@ -180,7 +182,7 @@ export function NearbyCentresMap({
     );
   }
 
-  if (!nearbyCentres || nearbyCentres.length === 0) {
+  if (nearbyCentres.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -200,6 +202,24 @@ export function NearbyCentresMap({
             </Button>
           </div>
         </CardHeader>
+        {nearestOutside.length > 0 && (
+          <CardContent>
+            <p className="text-sm font-medium text-gray-700 mb-2">Nearest centres:</p>
+            <ul className="space-y-2">
+              {nearestOutside.map((centre) => (
+                <li key={centre.id} className="flex items-center justify-between text-sm border rounded-lg p-3">
+                  <div>
+                    <a href={`/centre/${centre.slug || centre.id}`} className="font-medium text-blue-600 hover:underline">
+                      {centre.name}
+                    </a>
+                    {centre.state && <span className="text-gray-500 ml-1">({centre.state})</span>}
+                  </div>
+                  <span className="text-gray-600 font-medium">{centre.distance}km away</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        )}
       </Card>
     );
   }
