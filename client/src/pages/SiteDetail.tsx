@@ -826,10 +826,10 @@ export default function SiteDetail() {
                             const dayOfWeek = date.getDay();
                             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
                             const isToday = isSameDay(date, new Date());
-                            const prevDate = idx > 0 ? dateRange[idx - 1] : null;
-                            const nextDate = idx < dateRange.length - 1 ? dateRange[idx + 1] : null;
-                            const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
-                            const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+                            const isMonday = dayOfWeek === 1;
+                            const isSunday = dayOfWeek === 0;
+                            const isWeekBoundaryLeft = isMonday || idx === 0;
+                            const isWeekBoundaryRight = isSunday || idx === dateRange.length - 1;
 
                             return (
                               <th
@@ -837,11 +837,11 @@ export default function SiteDetail() {
                                 className={`px-2 py-2 text-center text-xs font-medium min-w-[80px] border border-gray-200 ${
                                   isToday ? 'bg-blue-50' : isWeekend ? 'bg-gray-100' : ''
                                 } ${
-                                  isWeekend ? '!border-t-[3px] !border-t-green-700 !border-solid' : 'border-b-2'
+                                  '!border-t-[3px] !border-t-green-700 !border-solid'
                                 } ${
-                                  isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
+                                  isWeekBoundaryLeft ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
                                 } ${
-                                  isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
+                                  isWeekBoundaryRight ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
                                 } ${
                                   isToday ? 'border-l-4 border-r-4 border-blue-500' : ''
                                 }`}
@@ -876,10 +876,10 @@ export default function SiteDetail() {
                             const isToday = isSameDay(date, new Date());
                             const dayOfWeek = date.getDay();
                             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                            const prevDate = dateIdx > 0 ? dateRange[dateIdx - 1] : null;
-                            const nextDate = dateIdx < dateRange.length - 1 ? dateRange[dateIdx + 1] : null;
-                            const isPrevWeekend = prevDate ? (prevDate.getDay() === 0 || prevDate.getDay() === 6) : false;
-                            const isNextWeekend = nextDate ? (nextDate.getDay() === 0 || nextDate.getDay() === 6) : false;
+                            const isMonday = dayOfWeek === 1;
+                            const isSunday = dayOfWeek === 0;
+                            const isWeekBoundaryLeft = isMonday || dateIdx === 0;
+                            const isWeekBoundaryRight = isSunday || dateIdx === dateRange.length - 1;
                             const seasonalInfo = seasonalRateMap.get(format(date, 'yyyy-MM-dd'));
                             const rate = seasonalInfo
                               ? (isWeekend && seasonalInfo.weekendRate ? seasonalInfo.weekendRate : seasonalInfo.weekdayRate || (isWeekend && site.weekendPricePerDay ? site.weekendPricePerDay : site.pricePerDay))
@@ -909,11 +909,11 @@ export default function SiteDetail() {
                                 } ${
                                   isToday && !isBookingDate ? 'border-l-4 border-r-4 border-blue-500' : ''
                                 } ${
-                                  isWeekend && !isPrevWeekend ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
+                                  isWeekBoundaryLeft ? '!border-l-[3px] !border-l-green-700 !border-solid' : ''
                                 } ${
-                                  isWeekend && !isNextWeekend ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
+                                  isWeekBoundaryRight ? '!border-r-[3px] !border-r-green-700 !border-solid' : ''
                                 } ${
-                                  isWeekend ? '!border-b-[3px] !border-b-green-700 !border-solid bg-gray-50' : ''
+                                  '!border-b-[3px] !border-b-green-700 !border-solid' + (isWeekend ? ' bg-gray-50' : '')
                                 }`}
                                 onClick={() => {
                                   if (isBooked) return;

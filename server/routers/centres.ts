@@ -68,7 +68,11 @@ export const centresRouter = router({
       radiusKm: z.number().optional().default(10),
     }))
     .query(async ({ input, ctx }) => {
-      return await db.getNearbyCentres(input.centreId, input.radiusKm, ctx.tenantOwnerId ?? undefined);
+      const nearby = await db.getNearbyCentres(input.centreId, input.radiusKm, ctx.tenantOwnerId ?? undefined);
+      if (nearby.length > 0) return { centres: nearby, nearest: [] };
+      // No centres within radius — return the 3 closest centres regardless of distance
+      const allNearby = await db.getNearbyCentres(input.centreId, 9999, ctx.tenantOwnerId ?? undefined);
+      return { centres: [], nearest: allNearby.slice(0, 3) };
     }),
 
   getFloorLevels: publicProcedure
