@@ -47,6 +47,7 @@ export const ownersRouter = router({
       remittanceEmail3: z.string().nullable(),
       remittanceEmail4: z.string().nullable(),
       remittanceEmail5: z.string().nullable(),
+      ariaKnowledgeBase: z.string().nullable().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       await db.createOwner(input);
@@ -94,6 +95,7 @@ export const ownersRouter = router({
       remittanceEmail3: z.string().nullable(),
       remittanceEmail4: z.string().nullable(),
       remittanceEmail5: z.string().nullable(),
+      ariaKnowledgeBase: z.string().nullable().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const { id, ...data } = input;

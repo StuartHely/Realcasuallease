@@ -138,6 +138,7 @@ export const centresRouter = router({
       state: z.string().trim().toUpperCase().optional(),
       postcode: z.string().trim().optional(),
       description: z.string().optional(),
+      contactName: z.string().trim().optional(),
       contactPhone: z.string().trim().optional(),
       contactEmail: z.string().email().optional(),
       operatingHours: z.string().optional(),
