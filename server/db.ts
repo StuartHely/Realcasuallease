@@ -1720,6 +1720,29 @@ export async function updateUserPasswordHash(userId: number, passwordHash: strin
 }
 
 /**
+ * Find centre contact details by partial name match (for Aria AI assistant)
+ */
+export async function findCentreContact(searchTerm: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const { ilike } = await import("drizzle-orm");
+  const results = await db.select({
+    name: shoppingCentres.name,
+    contactName: shoppingCentres.contactName,
+    contactEmail: shoppingCentres.contactEmail,
+    contactPhone: shoppingCentres.contactPhone,
+    address: shoppingCentres.address,
+    state: shoppingCentres.state,
+  })
+  .from(shoppingCentres)
+  .where(ilike(shoppingCentres.name, `%${searchTerm}%`))
+  .limit(5);
+
+  return results;
+}
+
+/**
  * Resolve bank account details for remittance.
  * Priority: centre-level → portfolio-level → owner-level.
  * Returns the most specific non-null bank account, or null if none exists.
