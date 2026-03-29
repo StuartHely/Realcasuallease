@@ -62,6 +62,9 @@ export default function AdminCentres() {
     pdfName2: "",
     pdfUrl3: "",
     pdfName3: "",
+    contactName: "",
+    contactEmail: "",
+    contactPhone: "",
     bankBsb: "",
     bankAccountNumber: "",
     bankAccountName: "",
@@ -84,6 +87,9 @@ export default function AdminCentres() {
       pdfName2: "",
       pdfUrl3: "",
       pdfName3: "",
+      contactName: "",
+      contactEmail: "",
+      contactPhone: "",
       bankBsb: "",
       bankAccountNumber: "",
       bankAccountName: "",
@@ -121,6 +127,9 @@ export default function AdminCentres() {
       pdfName2: centre.pdfName2 || "",
       pdfUrl3: centre.pdfUrl3 || "",
       pdfName3: centre.pdfName3 || "",
+      contactName: centre.contactName || "",
+      contactEmail: centre.contactEmail || "",
+      contactPhone: centre.contactPhone || "",
       bankBsb: centre.bankBsb || "",
       bankAccountNumber: centre.bankAccountNumber || "",
       bankAccountName: centre.bankAccountName || "",
@@ -417,6 +426,43 @@ export default function AdminCentres() {
                     <option value="stripe_with_exceptions">Stripe with Invoice Exceptions</option>
                     <option value="invoice_only">Invoice Only</option>
                   </select>
+                </div>
+
+                {/* Booking Enquiries Contact */}
+                <div className="grid gap-4 pt-4 border-t">
+                  <Label className="text-base font-semibold">Booking Enquiries Contact</Label>
+                  <p className="text-sm text-muted-foreground -mt-2">
+                    Contact person for booking enquiries at this centre
+                  </p>
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label>Contact Name</Label>
+                      <Input
+                        value={formData.contactName}
+                        onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                        placeholder="e.g. Jane Smith"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>Contact Email</Label>
+                        <Input
+                          type="email"
+                          value={formData.contactEmail}
+                          onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+                          placeholder="e.g. jane@example.com"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Contact Phone</Label>
+                        <Input
+                          value={formData.contactPhone}
+                          onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                          placeholder="e.g. 02 9123 4567"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Bank Account Override */}
