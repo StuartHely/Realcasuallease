@@ -20,24 +20,30 @@ export function useSpeechToText(onResult: (text: string) => void) {
     if (!SpeechRecognitionCtor) return;
     const r = new SpeechRecognitionCtor();
     r.lang = 'en-AU';
-    r.continuous = true;
+    r.continuous = false;
     r.interimResults = true;
+    r.maxAlternatives = 1;
 
-    let silenceTimer: any;
-    r.onresult = (e: any) => {
-      clearTimeout(silenceTimer);
-      let fullTranscript = '';
-      for (let i = 0; i < e.results.length; i++) {
-        fullTranscript += e.results[i][0].transcript;
-      }
-      onResultRef.current(fullTranscript);
-      silenceTimer = setTimeout(() => r.stop(), 3000);
+    let finalTranscript = '';
+
+    r.onaudiostart = () => {
+      setIsListening(true);
     };
-    r.onend = () => { clearTimeout(silenceTimer); recognitionRef.current = null; setIsListening(false); };
-    r.onerror = () => { clearTimeout(silenceTimer); recognitionRef.current = null; setIsListening(false); };
+    r.onresult = (e: any) => {
+      let interim = '';
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          finalTranscript += e.results[i][0].transcript;
+        } else {
+          interim += e.results[i][0].transcript;
+        }
+      }
+      onResultRef.current(finalTranscript || interim);
+    };
+    r.onend = () => { recognitionRef.current = null; setIsListening(false); };
+    r.onerror = () => { recognitionRef.current = null; setIsListening(false); };
     recognitionRef.current = r;
     r.start();
-    setIsListening(true);
   }, []);
 
   return { isListening, isSupported: !!SpeechRecognitionCtor, toggle };

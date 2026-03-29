@@ -4,7 +4,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Calendar, CheckCircle, MapPin, LogIn, LogOut, User, Sparkles, Mic, MicOff } from "lucide-react";
+import { Search, Calendar, CheckCircle, MapPin, LogIn, LogOut, User, Mic, MicOff } from "lucide-react";
 import { useSpeechToText } from "@/hooks/useSpeechToText";
 import AustraliaMap from "@/components/AustraliaMap";
 import FAQ from "@/components/FAQ";
@@ -409,16 +409,7 @@ export default function Home() {
                       <Search className="mr-2 h-5 w-5" />
                       Search
                     </Button>
-                    <Button
-                      type="button"
-                      size="lg"
-                      variant="outline"
-                      className="h-16 px-6 border-blue-300 text-blue-700 hover:bg-blue-50 text-base font-semibold"
-                      onClick={() => setLocation("/ai-assistant")}
-                    >
-                      <Sparkles className="mr-2 h-5 w-5" />
-                      Ask Aria
-                    </Button>
+
                   </div>
                   
                   {/* Show detected date feedback — subdued styling */}
