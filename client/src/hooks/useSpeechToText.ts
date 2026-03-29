@@ -20,7 +20,7 @@ export function useSpeechToText(onResult: (text: string) => void) {
     if (!SpeechRecognitionCtor) return;
     const r = new SpeechRecognitionCtor();
     r.lang = 'en-AU';
-    r.continuous = false;
+    r.continuous = true;
     r.interimResults = true;
     r.maxAlternatives = 1;
 
@@ -41,7 +41,7 @@ export function useSpeechToText(onResult: (text: string) => void) {
       onResultRef.current(finalTranscript || interim);
     };
     r.onend = () => { recognitionRef.current = null; setIsListening(false); };
-    r.onerror = () => { recognitionRef.current = null; setIsListening(false); };
+    r.onerror = (e: any) => { recognitionRef.current = null; setIsListening(false); };
     recognitionRef.current = r;
     r.start();
   }, []);

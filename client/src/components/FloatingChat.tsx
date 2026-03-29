@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sparkles, X } from "lucide-react";
+import { MessageCircle, X } from "lucide-react";
 import { AIChatBox, Message } from "@/components/AIChatBox";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -40,7 +40,7 @@ export default function FloatingChat() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b bg-[#1A6FA0] rounded-t-2xl max-sm:rounded-t-none">
             <div className="flex items-center gap-2 text-white">
-              <Sparkles className="h-5 w-5" />
+              <MessageCircle className="h-5 w-5" />
               <span className="font-semibold text-sm">Aria — AI Assistant</span>
             </div>
             <button
@@ -73,11 +73,19 @@ export default function FloatingChat() {
       {/* Floating button */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="fixed z-[1000] right-6 bottom-6 w-12 h-12 rounded-full bg-[#1A6FA0] text-white shadow-lg
-          hover:bg-[#155a84] transition-colors flex items-center justify-center"
+        className="fixed z-[1000] right-6 bottom-6 flex items-center gap-2 bg-[#1A6FA0] text-white shadow-lg
+          hover:bg-[#155a84] transition-all rounded-full px-4 py-3"
         aria-label="Open AI Assistant"
       >
-        {open ? <X className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
+        {open ? (
+          <X className="h-5 w-5" />
+        ) : (
+          <>
+            <MessageCircle className="h-5 w-5" />
+            <span className="text-sm font-medium whitespace-nowrap max-sm:hidden">Your AI Casual Leasing Assistant</span>
+            <span className="text-sm font-medium sm:hidden">Ask Aria</span>
+          </>
+        )}
       </button>
     </>
   );
