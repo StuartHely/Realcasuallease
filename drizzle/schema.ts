@@ -133,6 +133,7 @@ export const owners = pgTable("owners", {
   brandFooterText: text("brandFooterText"),
   supportEmail: varchar("supportEmail", { length: 320 }),
   supportPhone: varchar("supportPhone", { length: 20 }),
+  ariaKnowledgeBase: text("ariaKnowledgeBase"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
@@ -224,6 +225,7 @@ export const shoppingCentres = pgTable("shopping_centres", {
   mapImageUrl: text("mapImageUrl"),
   totalTablesAvailable: integer("totalTablesAvailable").default(0),
   totalChairsAvailable: integer("totalChairsAvailable").default(0),
+  contactName: varchar("contactName", { length: 255 }),
   contactPhone: varchar("contactPhone", { length: 20 }),
   contactEmail: varchar("contactEmail", { length: 320 }),
   operatingHours: text("operatingHours"),

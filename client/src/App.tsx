@@ -61,7 +61,7 @@ import RemittanceReport from "./pages/admin/RemittanceReport";
 import CustomerProfile from "./pages/admin/CustomerProfile";
 import PricingAnalytics from "./pages/admin/PricingAnalytics";
 import OperatorManagement from "./pages/admin/OperatorManagement";
-import AIChatAssistant from "./pages/AIChatAssistant";
+import FloatingChat from "./components/FloatingChat";
 import SignLicence from "./pages/SignLicence";
 import OccupancyReport from "./pages/admin/OccupancyReport";
 import AgedDebtorsReport from "./pages/admin/AgedDebtorsReport";
@@ -137,7 +137,6 @@ function Router() {
       <Route path="/third-line/:id" component={ThirdLineDetail} />
       <Route path="/my-bookings" component={MyBookings} />
       <Route path="/profile" component={Profile} />
-      <Route path="/ai-assistant" component={AIChatAssistant} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -164,6 +163,7 @@ function App() {
             <Toaster />
             <AuthGuard>
               <Router />
+              <FloatingChat />
             </AuthGuard>
           </TooltipProvider>
         </TenantProvider>

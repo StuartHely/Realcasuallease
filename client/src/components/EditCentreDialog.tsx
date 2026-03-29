@@ -18,6 +18,7 @@ interface EditCentreDialogProps {
     state?: string | null;
     postcode?: string | null;
     description?: string | null;
+    contactName?: string | null;
     contactPhone?: string | null;
     contactEmail?: string | null;
     operatingHours?: string | null;
@@ -42,6 +43,7 @@ export function EditCentreDialog({ centre, open, onOpenChange }: EditCentreDialo
     state: centre.state || "",
     postcode: centre.postcode || "",
     description: centre.description || "",
+    contactName: centre.contactName || "",
     contactPhone: centre.contactPhone || "",
     contactEmail: centre.contactEmail || "",
     operatingHours: centre.operatingHours || "",
@@ -67,6 +69,7 @@ export function EditCentreDialog({ centre, open, onOpenChange }: EditCentreDialo
         state: centre.state || "",
         postcode: centre.postcode || "",
         description: centre.description || "",
+        contactName: centre.contactName || "",
         contactPhone: centre.contactPhone || "",
         contactEmail: centre.contactEmail || "",
         operatingHours: centre.operatingHours || "",
@@ -304,6 +307,16 @@ export function EditCentreDialog({ centre, open, onOpenChange }: EditCentreDialo
                 id="postcode"
                 value={formData.postcode}
                 onChange={(e) => setFormData({ ...formData, postcode: e.target.value })}
+              />
+            </div>
+
+            <div className="col-span-2">
+              <Label htmlFor="contactName">Contact Name</Label>
+              <Input
+                id="contactName"
+                value={formData.contactName}
+                onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                placeholder="e.g., John Smith"
               />
             </div>
 

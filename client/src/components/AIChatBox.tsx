@@ -2,8 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { Loader2, Send, User, Sparkles } from "lucide-react";
+import { Loader2, Send, User, Sparkles, Mic, MicOff } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { Streamdown } from "streamdown";
 
 /**
@@ -125,6 +126,11 @@ export function AIChatBox({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputAreaRef = useRef<HTMLFormElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const speech = useSpeechToText((transcript) => {
+    setInput(transcript);
+    textareaRef.current?.focus();
+  });
 
   // Filter out system messages
   const displayMessages = messages.filter((msg) => msg.role !== "system");
@@ -317,6 +323,19 @@ export function AIChatBox({
           className="flex-1 max-h-32 resize-none min-h-9"
           rows={1}
         />
+        {speech.isSupported && (
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            onClick={() => { speech.toggle(); textareaRef.current?.focus(); }}
+            className={`shrink-0 h-[38px] w-[38px] ${
+              speech.isListening ? "text-red-600 animate-pulse" : ""
+            }`}
+          >
+            {speech.isListening ? <Mic className="size-4" /> : <Mic className="size-4" />}
+          </Button>
+        )}
         <Button
           type="submit"
           size="icon"

@@ -4,7 +4,8 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Calendar, CheckCircle, MapPin, LogIn, LogOut, User } from "lucide-react";
+import { Search, Calendar, CheckCircle, MapPin, LogIn, LogOut, User, Mic, MicOff } from "lucide-react";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
 import AustraliaMap from "@/components/AustraliaMap";
 import FAQ from "@/components/FAQ";
 import Logo from "@/components/Logo";
@@ -115,6 +116,11 @@ export default function Home() {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  const speech = useSpeechToText((transcript) => {
+    setSearchQuery(transcript);
+    inputRef.current?.focus();
+  });
 
   // Debounced search for autocomplete
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -283,7 +289,7 @@ export default function Home() {
           <div 
            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity relative z-50"
            onClick={() => setLocation("/")}
-           style={{ marginBottom: '-30px' }}
+           style={{}}
           >
            <Logo width={240} height={61} />
           </div>
@@ -351,10 +357,23 @@ export default function Home() {
                             setShowSuggestions(true);
                           }
                         }}
-                        className="h-16 pl-12 placeholder:text-gray-500" style={{ fontSize: '26px' }}
+                        className="h-16 pl-12 placeholder:text-gray-500" style={{ fontSize: '21px' }}
                         autoComplete="off"
                       />
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      {speech.isSupported && (
+                        <button
+                          type="button"
+                          onClick={() => { speech.toggle(); inputRef.current?.focus(); }}
+                          className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-colors ${
+                            speech.isListening
+                              ? "bg-red-100 text-red-600 animate-pulse"
+                              : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          {speech.isListening ? <Mic className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                        </button>
+                      )}
                       {showSuggestions && suggestions.length > 0 && (
                         <div
                           ref={suggestionsRef}
@@ -390,6 +409,7 @@ export default function Home() {
                       <Search className="mr-2 h-5 w-5" />
                       Search
                     </Button>
+
                   </div>
                   
                   {/* Show detected date feedback — subdued styling */}

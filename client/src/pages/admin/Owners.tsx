@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { Building2, Plus, Pencil, Trash2, Mail, DollarSign, Users, Search, Building } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
@@ -49,6 +50,7 @@ interface Owner {
   remittanceEmail5: string | null;
   isAgency: boolean;
   parentAgencyId: number | null;
+  ariaKnowledgeBase: string | null;
 }
 
 export default function AdminOwners() {
@@ -93,6 +95,7 @@ export default function AdminOwners() {
     remittanceEmail5: "",
     isAgency: false,
     parentAgencyId: null,
+    ariaKnowledgeBase: null,
   });
 
   const { data: owners, isLoading: ownersLoading, refetch: refetchOwners } = trpc.owners.list.useQuery();
@@ -161,6 +164,7 @@ export default function AdminOwners() {
       remittanceEmail5: "",
       isAgency: false,
       parentAgencyId: null,
+      ariaKnowledgeBase: null,
     });
   };
 
@@ -213,6 +217,7 @@ export default function AdminOwners() {
       remittanceEmail5: formData.remittanceEmail5 || null,
       isAgency: formData.isAgency || false,
       parentAgencyId: formData.parentAgencyId || null,
+      ariaKnowledgeBase: formData.ariaKnowledgeBase || null,
     });
   };
 
@@ -252,6 +257,7 @@ export default function AdminOwners() {
       remittanceEmail5: formData.remittanceEmail5 || null,
       isAgency: formData.isAgency || false,
       parentAgencyId: formData.parentAgencyId || null,
+      ariaKnowledgeBase: formData.ariaKnowledgeBase || null,
     });
   };
 
@@ -793,6 +799,18 @@ export default function AdminOwners() {
                     </Select>
                   </div>
                 </div>
+              </div>
+              <div>
+                <Label className="text-base font-semibold">AI Assistant Knowledge Base</Label>
+                <p className="text-sm text-muted-foreground mt-1 mb-2">
+                  Enter your centre-specific rules, policies, and information that the AI assistant should know. Write in plain English. For example: payment terms, cancellation policies, insurance requirements, trading hours, equipment rules.
+                </p>
+                <Textarea
+                  value={formData.ariaKnowledgeBase || ""}
+                  onChange={(e) => setFormData({ ...formData, ariaKnowledgeBase: e.target.value })}
+                  placeholder="e.g. All casual leasing tenants must set up by 8am. No food preparation on site without prior approval. Tables and chairs are available for hire at $15/day each..."
+                  rows={6}
+                />
               </div>
             </TabsContent>
             <TabsContent value="bank" className="space-y-4 mt-4">
