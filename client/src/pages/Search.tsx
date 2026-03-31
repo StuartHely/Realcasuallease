@@ -552,6 +552,15 @@ export default function Search() {
 
         {isLoading && <SearchSkeleton />}
 
+        {/* Category fallback banner — shown when results are from other centres */}
+        {data && data.categoryFallbackUsed && data.centres.length > 0 && (
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-blue-800 font-medium text-base">
+              No centres near {data.categoryFallbackLocation || 'your selected area'} have approved sites for '{data.searchInterpretation?.productCategory}', so we're showing other centres where it's approved.
+            </p>
+          </div>
+        )}
+
         {data && data.centres.length === 0 && (
           <Card>
             <CardContent className="py-12">
@@ -1564,17 +1573,7 @@ export default function Search() {
                     
                     {/* Filter explanation notice - only show when size IS available (not contradicting the "not available" banner) */}
                     {(( parsedQuery.minSizeM2 !== undefined && !data?.sizeNotAvailable) || (parsedQuery.productCategory && !data?.categoryUnrecognised && !data?.matchedCategoryName)) && (() => {
-                      const hasSizeFilter = parsedQuery.minSizeM2 !== undefined && !data?.sizeNotAvailable;
-                      const hasCategoryFilter = parsedQuery.productCategory && !data?.categoryUnrecognised && !data?.matchedCategoryName;
-                      
-                      let noticeText = '';
-                      if (hasSizeFilter && hasCategoryFilter) {
-                        noticeText = 'Sites below meet your stated SIZE requirement and USAGE.';
-                      } else if (hasSizeFilter) {
-                        noticeText = 'Sites below meet your stated SIZE requirement.';
-                      } else if (hasCategoryFilter) {
-                        noticeText = 'Sites below meet your stated USAGE requirement.';
-                      }
+                      let noticeText = 'Sites below meet your search criteria.';
                       
                       const handleShowAllSites = (e: React.MouseEvent) => {
                         e.preventDefault();
