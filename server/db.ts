@@ -725,7 +725,8 @@ export async function createSite(site: InsertSite) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return await db.insert(sites).values(site);
+  const [result] = await db.insert(sites).values(site).returning();
+  return result;
 }
 
 export async function updateSite(id: number, updates: Partial<InsertSite>) {
