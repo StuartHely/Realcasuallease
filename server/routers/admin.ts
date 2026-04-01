@@ -72,7 +72,20 @@ export const adminRouter = router({
         postcode: z.string().trim().optional(),
         description: z.string().optional(),
         paymentMode: z.enum(["stripe", "stripe_with_exceptions", "invoice_only"]).default("stripe_with_exceptions"),
+        includeInMainSite: z.boolean().optional(),
         portfolioId: z.number().nullable().optional(),
+        contactName: z.string().trim().optional(),
+        contactEmail: z.string().trim().optional(),
+        contactPhone: z.string().trim().optional(),
+        bankBsb: z.string().nullable().optional(),
+        bankAccountNumber: z.string().nullable().optional(),
+        bankAccountName: z.string().nullable().optional(),
+        pdfUrl1: z.string().optional(),
+        pdfName1: z.string().optional(),
+        pdfUrl2: z.string().optional(),
+        pdfName2: z.string().optional(),
+        pdfUrl3: z.string().optional(),
+        pdfName3: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         // Force invoice_only if the owner is an agency
@@ -99,6 +112,7 @@ export const adminRouter = router({
     updateCentre: ownerProcedure
       .input(z.object({
         id: z.number(),
+        ownerId: z.number().optional(),
         name: z.string().trim(),
         address: z.string().trim().optional(),
         suburb: z.string().trim().optional(),

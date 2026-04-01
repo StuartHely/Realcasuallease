@@ -241,7 +241,7 @@ export default function AdminCentres() {
                   Add Centre
                 </Button>
               </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <form onSubmit={handleCreate}>
                 <DialogHeader>
                   <DialogTitle>Create Shopping Centre</DialogTitle>
@@ -259,6 +259,24 @@ export default function AdminCentres() {
                       required
                     />
                   </div>
+
+                  {/* Owner Selection */}
+                  <div className="grid gap-2">
+                    <Label htmlFor="ownerId">Owner *</Label>
+                    <select
+                      id="ownerId"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={formData.ownerId || ""}
+                      onChange={(e) => setFormData({ ...formData, ownerId: parseInt(e.target.value) || 0 })}
+                      required
+                    >
+                      <option value="">Select owner...</option>
+                      {ownersList?.map((o: any) => (
+                        <option key={o.id} value={o.id}>{o.name}{o.isAgency ? " (Agency)" : ""}</option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div className="grid gap-2">
                     <Label htmlFor="address">Street Address</Label>
                     <Input
@@ -302,23 +320,6 @@ export default function AdminCentres() {
                     />
                   </div>
 
-                  {/* Owner Selection */}
-                  <div className="grid gap-2">
-                    <Label htmlFor="ownerId">Owner *</Label>
-                    <select
-                      id="ownerId"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      value={formData.ownerId || ""}
-                      onChange={(e) => setFormData({ ...formData, ownerId: parseInt(e.target.value) || 0 })}
-                      required
-                    >
-                      <option value="">Select owner...</option>
-                      {ownersList?.map((o: any) => (
-                        <option key={o.id} value={o.id}>{o.name}{o.isAgency ? " (Agency)" : ""}</option>
-                      ))}
-                    </select>
-                  </div>
-
                   {/* Payment Mode */}
                   <div className="grid gap-2">
                     <Label htmlFor="paymentMode">Payment Mode</Label>
@@ -332,6 +333,94 @@ export default function AdminCentres() {
                       <option value="stripe_with_exceptions">Stripe with Invoice Exceptions</option>
                       <option value="invoice_only">Invoice Only</option>
                     </select>
+                  </div>
+
+                  {/* Booking Enquiries Contact */}
+                  <div className="grid gap-4 pt-4 border-t">
+                    <Label className="text-base font-semibold">Booking Enquiries Contact</Label>
+                    <p className="text-sm text-muted-foreground -mt-2">
+                      Contact person for booking enquiries at this centre
+                    </p>
+                    <div className="grid gap-4">
+                      <div className="grid gap-2">
+                        <Label>Contact Name</Label>
+                        <Input
+                          value={formData.contactName}
+                          onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                          placeholder="e.g. Jane Smith"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label>Contact Email</Label>
+                          <Input
+                            type="email"
+                            value={formData.contactEmail}
+                            onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+                            placeholder="e.g. jane@example.com"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Contact Phone</Label>
+                          <Input
+                            value={formData.contactPhone}
+                            onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                            placeholder="e.g. 02 9123 4567"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bank Account Override */}
+                  <div className="grid gap-4 pt-4 border-t">
+                    <Label className="text-base font-semibold">Bank Account Override</Label>
+                    <p className="text-sm text-muted-foreground -mt-2">
+                      Override the owner's default bank account for this centre's invoices
+                    </p>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="grid gap-2">
+                        <Label>BSB</Label>
+                        <Input
+                          value={(formData as any).bankBsb || ""}
+                          onChange={(e) => setFormData({ ...formData, bankBsb: e.target.value } as any)}
+                          placeholder="e.g. 062-000"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Account Number</Label>
+                        <Input
+                          value={(formData as any).bankAccountNumber || ""}
+                          onChange={(e) => setFormData({ ...formData, bankAccountNumber: e.target.value } as any)}
+                          placeholder="e.g. 12345678"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Account Name</Label>
+                        <Input
+                          value={(formData as any).bankAccountName || ""}
+                          onChange={(e) => setFormData({ ...formData, bankAccountName: e.target.value } as any)}
+                          placeholder="e.g. Company Pty Ltd"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Include in Live Site */}
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="create-includeInMainSite" className="text-base font-medium">
+                        Include in Live Site
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        When enabled, this centre will appear in search results on the public site
+                      </p>
+                    </div>
+                    <Switch
+                      id="create-includeInMainSite"
+                      checked={formData.includeInMainSite}
+                      onCheckedChange={(checked) => setFormData({ ...formData, includeInMainSite: checked })}
+                    />
                   </div>
                 </div>
                 <DialogFooter>
@@ -368,6 +457,24 @@ export default function AdminCentres() {
                     required
                   />
                 </div>
+
+                {/* Owner Selection */}
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-ownerId">Owner *</Label>
+                  <select
+                    id="edit-ownerId"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={formData.ownerId || ""}
+                    onChange={(e) => setFormData({ ...formData, ownerId: parseInt(e.target.value) || 0 })}
+                    required
+                  >
+                    <option value="">Select owner...</option>
+                    {ownersList?.map((o: any) => (
+                      <option key={o.id} value={o.id}>{o.name}{o.isAgency ? " (Agency)" : ""}</option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="grid gap-2">
                   <Label htmlFor="edit-address">Street Address</Label>
                   <Input

@@ -51,6 +51,7 @@ export default function AdminSites() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<any>(null);
+  const [newlyCreatedSite, setNewlyCreatedSite] = useState<any>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [categoriesSite, setCategoriesSite] = useState<any>(null);
@@ -181,18 +182,51 @@ export default function AdminSites() {
     }
     
     try {
-      await createMutation.mutateAsync({
+      const result = await createMutation.mutateAsync({
         centreId: selectedCentreId,
         ...formData,
         maxTables: formData.maxTables ? parseInt(formData.maxTables) : undefined,
       });
-      toast.success("Site created successfully");
-      setIsCreateOpen(false);
-      resetForm();
+      toast.success("Site created — you can now upload images");
+      setNewlyCreatedSite(result);
       refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to create site");
     }
+  };
+
+  const handleCreateDialogClose = (open: boolean) => {
+    if (open) {
+      resetForm();
+      setNewlyCreatedSite(null);
+    } else {
+      setNewlyCreatedSite(null);
+      resetForm();
+    }
+    setIsCreateOpen(open);
+  };
+
+  const handleCreateImageFileSelect = (file: File, slot: number) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setPreviewImage(reader.result as string);
+      setPreviewFile(file);
+      setPreviewSlot(slot);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setRotation(0);
+      // Temporarily set selectedSite so the crop confirm handler works
+      setSelectedSite(newlyCreatedSite);
+    };
   };
 
   const handleEdit = (site: any) => {
@@ -349,7 +383,13 @@ export default function AdminSites() {
       });
       
       toast.success("Image uploaded and resized successfully");
-      refetch();
+      const refreshed = await refetch();
+      
+      // Update newlyCreatedSite if we're in the create flow
+      if (newlyCreatedSite && selectedSite?.id === newlyCreatedSite.id) {
+        const updated = refreshed.data?.find((s: any) => s.id === newlyCreatedSite.id);
+        if (updated) setNewlyCreatedSite(updated);
+      }
       
       // Close preview
       setPreviewImage(null);
@@ -426,7 +466,7 @@ export default function AdminSites() {
                 <BulkImageImport centreId={selectedCentreId} onComplete={refetch} />
               </>
             )}
-            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <Dialog open={isCreateOpen} onOpenChange={handleCreateDialogClose}>
               <DialogTrigger asChild>
                 <Button disabled={!selectedCentreId}>
                   <Plus className="mr-2 h-4 w-4" />
@@ -441,7 +481,7 @@ export default function AdminSites() {
                     Add a new retail site to {selectedCentre?.name}
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
+                <div className="grid gap-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="siteNumber">Site Number *</Label>
@@ -559,14 +599,114 @@ export default function AdminSites() {
                     />
                     <Label htmlFor="instantBooking">Enable Instant Booking</Label>
                   </div>
+
+                  {/* Image Upload Section */}
+                  <div className="space-y-3 pt-4 border-t">
+                    <Label className="text-base font-semibold">Site Images</Label>
+                    {!newlyCreatedSite ? (
+                      <div className="rounded-lg border border-dashed p-4 text-center">
+                        <p className="text-sm text-muted-foreground">
+                          Click "Create Site" first, then you can upload images
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm text-muted-foreground">
+                          Upload up to 4 images for this site
+                        </p>
+                        <div className="grid grid-cols-2 gap-4">
+                          {[1, 2, 3, 4].map((slot) => {
+                            const imageUrl = newlyCreatedSite[`imageUrl${slot}`];
+                            return (
+                              <div key={slot} className="border rounded-lg p-3">
+                                <div className="text-sm font-medium mb-2">Image {slot}</div>
+                                {imageUrl ? (
+                                  <div className="relative">
+                                    <ImageWithFallback
+                                      src={imageUrl}
+                                      alt={`Site image ${slot}`}
+                                      className="w-full h-32 object-contain rounded-md"
+                                      containerClassName="w-full h-32 bg-gray-100 rounded-md"
+                                      placeholder={{ type: "site", number: newlyCreatedSite.siteNumber || "", size: newlyCreatedSite.size || "" }}
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      size="sm"
+                                      className="absolute top-1 right-1"
+                                      disabled={updateMutation.isPending}
+                                      onClick={async () => {
+                                        try {
+                                          await updateMutation.mutateAsync({
+                                            id: newlyCreatedSite.id,
+                                            [`imageUrl${slot}`]: null,
+                                          });
+                                          toast.success(`Image ${slot} removed`);
+                                          const refreshed = await refetch();
+                                          const updated = refreshed.data?.find((s: any) => s.id === newlyCreatedSite.id);
+                                          if (updated) setNewlyCreatedSite(updated);
+                                        } catch (error) {
+                                          toast.error(`Failed to remove image`);
+                                        }
+                                      }}
+                                    >
+                                      Remove
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div
+                                    className="border-2 border-dashed rounded-md p-4 text-center hover:border-blue-400 transition-colors"
+                                    onDragOver={(e) => {
+                                      e.preventDefault();
+                                      e.currentTarget.classList.add('border-blue-500', 'bg-blue-50');
+                                    }}
+                                    onDragLeave={(e) => {
+                                      e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+                                    }}
+                                    onDrop={(e) => {
+                                      e.preventDefault();
+                                      e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+                                      const file = e.dataTransfer.files?.[0];
+                                      if (file) handleCreateImageFileSelect(file, slot);
+                                    }}
+                                  >
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      id={`create-image-upload-${slot}`}
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleCreateImageFileSelect(file, slot);
+                                      }}
+                                    />
+                                    <label htmlFor={`create-image-upload-${slot}`} className="cursor-pointer">
+                                      <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                                      <div className="text-sm text-gray-600">Click or drag to upload</div>
+                                      <div className="text-xs text-gray-400 mt-1">Max 5MB</div>
+                                    </label>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {uploadingImage && (
+                          <div className="text-sm text-blue-600">Uploading and resizing image...</div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
-                    Cancel
+                  <Button type="button" variant="outline" onClick={() => handleCreateDialogClose(false)}>
+                    {newlyCreatedSite ? "Done" : "Cancel"}
                   </Button>
-                  <Button type="submit" disabled={createMutation.isPending}>
-                    {createMutation.isPending ? "Creating..." : "Create Site"}
-                  </Button>
+                  {!newlyCreatedSite && (
+                    <Button type="submit" disabled={createMutation.isPending}>
+                      {createMutation.isPending ? "Creating..." : "Create Site"}
+                    </Button>
+                  )}
                 </DialogFooter>
               </form>
             </DialogContent>
@@ -733,7 +873,7 @@ export default function AdminSites() {
               <DialogTitle>Edit Site</DialogTitle>
               <DialogDescription>Update site details</DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-4">
               {/* Same form fields as create */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
