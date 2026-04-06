@@ -90,7 +90,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
     }
     
     if (!isMultiLevel) return hasMarkers;
-    return hasMarkers && site.floorLevelId === selectedFloorId;
+    return hasMarkers && (site.floorLevelId === selectedFloorId || !site.floorLevelId);
   });
 
   const handleMarkerHover = (site: Site, event: React.MouseEvent) => {
@@ -420,9 +420,9 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
         const hasMarkers = site.mapMarkerX !== null && site.mapMarkerY !== null;
         const siteAssetType = site.assetType || "casual_leasing";
         if (assetTypeFilter !== "all" && siteAssetType !== assetTypeFilter) return false;
-        return hasMarkers && site.floorLevelId === floor.id;
+        return hasMarkers && (site.floorLevelId === floor.id || !site.floorLevelId);
       });
-      return { ...floor, effectiveMapUrl: floor.mapImageUrl || "", sites: floorSites };
+      return { ...floor, effectiveMapUrl: floor.mapImageUrl || mapUrl || "", sites: floorSites };
     });
 
     return (

@@ -557,6 +557,7 @@ export default function AdminSites() {
                         value={formData.dailyRate}
                         onChange={(e) => setFormData({ ...formData, dailyRate: e.target.value })}
                         placeholder="150.00"
+                        autoComplete="off"
                         required
                       />
                     </div>
@@ -567,6 +568,7 @@ export default function AdminSites() {
                         value={formData.weekendRate}
                         onChange={(e) => setFormData({ ...formData, weekendRate: e.target.value })}
                         placeholder="Leave empty to use Mon-Fri rate"
+                        autoComplete="off"
                       />
                     </div>
                   </div>
@@ -577,6 +579,7 @@ export default function AdminSites() {
                       value={formData.weeklyRate}
                       onChange={(e) => setFormData({ ...formData, weeklyRate: e.target.value })}
                       placeholder="750.00"
+                      autoComplete="off"
                       required
                     />
                   </div>
@@ -589,6 +592,7 @@ export default function AdminSites() {
                       value={formData.outgoingsPerDay}
                       onChange={(e) => setFormData({ ...formData, outgoingsPerDay: e.target.value })}
                       placeholder="0.00"
+                      autoComplete="off"
                     />
                   </div>
                   <div className="flex items-center space-x-2">

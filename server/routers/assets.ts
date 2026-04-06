@@ -397,7 +397,7 @@ export const vacantShopBookingsRouter = router({
       return { url: session.url };
     }),
 
-  customerCancel: protectedProcedure
+  customerCancel: adminProcedure
     .input(z.object({
       bookingId: z.number(),
       reason: z.string().optional(),
@@ -405,9 +405,6 @@ export const vacantShopBookingsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const booking = await assetDb.getVacantShopBookingById(input.bookingId);
       if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
-      if (booking.customerId !== ctx.user.id) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Not your booking" });
-      }
       if (booking.status === "cancelled" || booking.status === "rejected") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Booking is already cancelled" });
       }
@@ -441,7 +438,7 @@ export const vacantShopBookingsRouter = router({
         previousStatus: booking.status,
         newStatus: "cancelled",
         changedBy: ctx.user.id,
-        reason: input.reason || "Cancelled by customer",
+        reason: input.reason || "Cancelled by administrator",
       });
 
       // Create reversal transaction if a booking transaction exists
@@ -832,7 +829,7 @@ export const thirdLineBookingsRouter = router({
       return { url: session.url };
     }),
 
-  customerCancel: protectedProcedure
+  customerCancel: adminProcedure
     .input(z.object({
       bookingId: z.number(),
       reason: z.string().optional(),
@@ -840,9 +837,6 @@ export const thirdLineBookingsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const booking = await assetDb.getThirdLineBookingById(input.bookingId);
       if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
-      if (booking.customerId !== ctx.user.id) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Not your booking" });
-      }
       if (booking.status === "cancelled" || booking.status === "rejected") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Booking is already cancelled" });
       }
@@ -876,7 +870,7 @@ export const thirdLineBookingsRouter = router({
         previousStatus: booking.status,
         newStatus: "cancelled",
         changedBy: ctx.user.id,
-        reason: input.reason || "Cancelled by customer",
+        reason: input.reason || "Cancelled by administrator",
       });
 
       // Create reversal transaction if a booking transaction exists

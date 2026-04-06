@@ -266,18 +266,28 @@ export default function VacantShops() {
   };
 
   const handleSubmit = () => {
-    if (!formData.shopNumber.trim()) {
-      toast.error("Shop number is required");
+    if (!selectedCentreId) {
+      toast.error("Please select a shopping centre first.");
+      return;
+    }
+
+    const missing: string[] = [];
+    if (!formData.shopNumber.trim()) missing.push("Shop Number");
+    if (!formData.totalSizeM2.trim()) missing.push("Total Size");
+    if (!formData.pricePerWeek.trim() && !formData.pricePerMonth.trim()) missing.push("Price per Week or Price per Month");
+
+    if (missing.length > 0) {
+      toast.error("Please complete all required fields.", {
+        description: `Missing: ${missing.join(", ")}`,
+      });
       return;
     }
 
     if (editingShop) {
-      // Exclude imageUrl fields from update - images are uploaded separately
-      // This prevents overwriting existing images with empty strings
       const { imageUrl1, imageUrl2, ...updateData } = formData;
       updateMutation.mutate({ id: editingShop.id, ...updateData });
     } else {
-      createMutation.mutate({ centreId: selectedCentreId!, ...formData });
+      createMutation.mutate({ centreId: selectedCentreId, ...formData });
     }
   };
 
@@ -428,12 +438,12 @@ export default function VacantShops() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="totalSizeM2">Total Size (m²)</Label>
+                <Label htmlFor="totalSizeM2">Total Size (m²) *</Label>
                 <Input
                   id="totalSizeM2"
                   value={formData.totalSizeM2}
                   onChange={(e) => setFormData({ ...formData, totalSizeM2: e.target.value })}
-                  placeholder="e.g., 50"
+                  placeholder="e.g., 50 or TBA"
                 />
               </div>
               <div className="space-y-2">

@@ -60,12 +60,14 @@ export default function AdminMaps() {
   );
   // When a floor level is selected, show floor-assigned sites + unassigned sites (no floorLevelId)
   // When no floor levels exist, show all centre sites
-  const sites = selectedFloorLevelId
+  // Sort naturally so markers are placed in order (e.g. Site 2 before Site 10)
+  const sites = (selectedFloorLevelId
     ? [
         ...floorSites,
         ...allCentreSites.filter((s: any) => !s.floorLevelId && !floorSites.some((fs: any) => fs.id === s.id)),
       ]
-    : allCentreSites;
+    : allCentreSites
+  ).sort((a: any, b: any) => (a.siteNumber || "").localeCompare(b.siteNumber || "", undefined, { numeric: true, sensitivity: "base" }));
 
   // Create floor level mutation
   const createFloorLevelMutation = trpc.admin.createFloorLevel.useMutation({

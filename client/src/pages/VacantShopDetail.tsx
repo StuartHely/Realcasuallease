@@ -188,7 +188,7 @@ export default function VacantShopDetail() {
               <div className="relative">
                 {/* Main Image */}
                 <div 
-                  className="relative h-96 bg-gray-100 rounded-lg overflow-hidden cursor-pointer"
+                  className="relative h-96 rounded-lg overflow-hidden cursor-pointer"
                   onClick={() => setIsLightboxOpen(true)}
                 >
                   <img

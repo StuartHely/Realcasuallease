@@ -549,12 +549,68 @@ export const searchRouter = router({
         // Prune centres that have zero sites remaining after category filtering.
         // When a product category was searched, only show centres that actually
         // have approved sites for that category — never show irrelevant centres.
+        let categoryFallbackUsed = false;
+        let categoryFallbackCentreNames: string[] = [];
+        const originalCentreNames = centres.map((c: any) => c.name);
+        
         if (allSites.length > 0) {
           const centreIdsWithSites = new Set(allSites.map((s: any) => s.centreId));
           centres = centres.filter((c: any) => centreIdsWithSites.has(c.id));
         } else if (enhancedQuery.productCategory) {
-          // No sites matched the category at all — don't show any centres
-          centres = [];
+          // No sites in the searched area match the category.
+          // Try to find other centres that DO have approved sites for this category,
+          // using the siteResults (which searched globally by category).
+          const fallbackCentreIds = new Set<number>();
+          const fallbackCentres: any[] = [];
+          for (const result of siteResults) {
+            const c = result.centre;
+            if (c && !fallbackCentreIds.has(c.id)) {
+              fallbackCentreIds.add(c.id);
+              fallbackCentres.push(c);
+            }
+          }
+
+          if (fallbackCentres.length > 0) {
+            // We found centres elsewhere — use them as fallback results
+            centres = fallbackCentres;
+            categoryFallbackUsed = true;
+            categoryFallbackCentreNames = originalCentreNames;
+
+            // Reload sites for the fallback centres
+            allSites.length = 0;
+            for (const centre of centres) {
+              const centreSites = await db.getSitesByCentreId(centre.id);
+              allSites.push(...centreSites.map((s: any) => ({
+                ...s,
+                centreName: centre.name,
+              })));
+            }
+
+            // Re-filter by category
+            const { fuzzyMatchCategory } = await import("../../shared/stringSimilarity");
+            const lowerCat = enhancedQuery.productCategory.toLowerCase();
+            const { getApprovedCategoriesForMultipleSites } = await import("../dbOptimized");
+            const fallbackCatMap = await getApprovedCategoriesForMultipleSites(allSites.map((s: any) => s.id));
+            const newSiteCategories: Record<number, any[]> = {};
+            fallbackCatMap.forEach((cats, siteId) => {
+              newSiteCategories[siteId] = cats;
+            });
+            const filteredFallback = allSites.filter((site: any) => {
+              const cats = newSiteCategories[site.id] || [];
+              return cats.some((cat: any) => fuzzyMatchCategory(lowerCat, cat.name, 0.6));
+            });
+            allSites.length = 0;
+            allSites.push(...filteredFallback);
+            // Merge categories into siteCategories
+            Object.assign(siteCategories, newSiteCategories);
+
+            // Prune fallback centres to only those with matching sites
+            const fallbackCentreIdsWithSites = new Set(allSites.map((s: any) => s.centreId));
+            centres = centres.filter((c: any) => fallbackCentreIdsWithSites.has(c.id));
+          } else {
+            // No centres anywhere have this category — clear everything
+            centres = [];
+          }
         }
 
         // Fetch floor levels for all matched centres (keyed by centreId for per-centre maps)
@@ -596,6 +652,8 @@ export const searchRouter = router({
           floorLevels,
           floorLevelsByCentre,
           seasonalRatesBySite,
+          categoryFallbackUsed,
+          categoryFallbackLocation: categoryFallbackUsed ? (categoryFallbackCentreNames.length > 0 ? categoryFallbackCentreNames.join(', ') : (enhancedQuery.centreName || enhancedQuery.matchedLocation || 'your selected area')) : null,
           searchInterpretation: {
             productCategory: enhancedQuery.productCategory || null,
             location: nearMeUsed ? 'near me' : (enhancedQuery.centreName || enhancedQuery.matchedLocation || null),

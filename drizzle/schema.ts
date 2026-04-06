@@ -621,7 +621,7 @@ export const vacantShops = pgTable("vacant_shops", {
   id: serial("id").primaryKey(),
   centreId: integer("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
   shopNumber: varchar("shopNumber", { length: 50 }).notNull(),
-  totalSizeM2: decimal("totalSizeM2", { precision: 10, scale: 2 }), // Total size in square metres
+  totalSizeM2: varchar("totalSizeM2", { length: 100 }), // Total size in square metres (accepts text like "TBA", "999 approx")
   dimensions: varchar("dimensions", { length: 100 }), // e.g., "5m x 8m"
   powered: boolean("powered").default(false).notNull(),
   description: text("description"),

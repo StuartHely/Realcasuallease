@@ -16,23 +16,47 @@ interface RateAlert {
 }
 
 /**
- * Validate that a rate is within acceptable range
- * Must be > 0 and <= 10,000
+ * Validate that a daily rate is within acceptable range
+ * Must be > 0 and <= 5,000
  */
-function isValidRate(rate: string | null | undefined): boolean {
+function isValidDailyRate(rate: string | null | undefined): boolean {
   if (!rate) return false;
   const numRate = parseFloat(rate);
   if (isNaN(numRate)) return false;
-  return numRate > 0 && numRate <= 10000;
+  return numRate > 0 && numRate <= 5000;
+}
+
+/**
+ * Validate that a weekly rate is within acceptable range
+ * Must be > 0 and <= 35,000 (7 × daily cap)
+ */
+function isValidWeeklyRate(rate: string | null | undefined): boolean {
+  if (!rate) return false;
+  const numRate = parseFloat(rate);
+  if (isNaN(numRate)) return false;
+  return numRate > 0 && numRate <= 35000;
 }
 
 /**
  * Validate an optional rate — null/undefined is acceptable (fallback applies),
- * but if a value is present it must be valid.
+ * but if a value is present it must be a valid daily rate.
  */
 function isValidOptionalRate(rate: string | null | undefined): boolean {
   if (rate === null || rate === undefined) return true;
-  return isValidRate(rate);
+  return isValidDailyRate(rate);
+}
+
+/**
+ * Check that weekly rate is sensible relative to daily rate.
+ * Weekly should be between 3× and 8× the daily rate.
+ */
+function isWeeklyConsistentWithDaily(daily: string | null | undefined, weekly: string | null | undefined): boolean {
+  if (!daily || !weekly) return true;
+  const d = parseFloat(daily);
+  const w = parseFloat(weekly);
+  if (isNaN(d) || isNaN(w) || d <= 0) return true;
+  const ratio = w / d;
+  return ratio >= 3 && ratio <= 8;
 }
 
 /**
@@ -64,9 +88,10 @@ export async function checkSiteRates(): Promise<RateAlert[]> {
     if (!centre) continue; // Skip sites without a centre
 
     const invalidFields: string[] = [];
-    if (!isValidRate(site.pricePerDay)) invalidFields.push("pricePerDay");
-    if (!isValidRate(site.pricePerWeek)) invalidFields.push("pricePerWeek");
+    if (!isValidDailyRate(site.pricePerDay)) invalidFields.push("pricePerDay");
+    if (!isValidWeeklyRate(site.pricePerWeek)) invalidFields.push("pricePerWeek");
     if (!isValidOptionalRate(site.weekendPricePerDay)) invalidFields.push("weekendPricePerDay");
+    if (!isWeeklyConsistentWithDaily(site.pricePerDay, site.pricePerWeek)) invalidFields.push("weeklyDailyMismatch");
 
     if (invalidFields.length > 0) {
       alerts.push({

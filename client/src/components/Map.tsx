@@ -124,7 +124,6 @@ export function loadMapScript() {
       const script = document.createElement("script");
       script.src = getScriptUrl();
       script.async = true;
-      script.crossOrigin = "anonymous";
       script.onload = () => {
         mapScriptLoaded = true;
         resolve();
