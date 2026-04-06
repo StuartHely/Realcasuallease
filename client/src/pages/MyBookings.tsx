@@ -255,8 +255,10 @@ export default function MyBookings() {
     };
   }, [bookings]);
 
+  const isAdmin = user?.role === "mega_admin" || user?.role === "mega_state_admin";
+
   const canCancel = (status: string) =>
-    status === "pending" || status === "confirmed";
+    isAdmin && (status === "pending" || status === "confirmed");
 
   const canPay = (booking: { paymentMethod: string; paidAt: Date | null; status: string }) =>
     booking.paymentMethod === "stripe" && !booking.paidAt &&

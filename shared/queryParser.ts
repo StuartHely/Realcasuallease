@@ -303,19 +303,25 @@ function isFuzzyMatch(input: string, target: string, maxDistance?: number): bool
  * Known location aliases that map to centre names
  * These help recognize partial location names in natural language queries
  */
+/**
+ * Centre-specific short names / nicknames only.
+ * Do NOT put suburb/town names here — those are handled by the location
+ * index (findCentresBySuburbOrCity) which correctly returns ALL centres
+ * in a given suburb. Putting a suburb here would lock it to one centre.
+ */
 const locationAliases: Record<string, string[]> = {
-  'eastgate bondi junction': ['bondi', 'bondi junction', 'eastgate'],
-  'campbelltown mall': ['campbelltown', 'campbelltown mall', 'camptown', 'camptown mall'],
-  'carnes hill marketplace': ['carnes hill', 'carnes'],
-  'highlands marketplace': ['highlands', 'highland', 'mittagong'],
+  'eastgate bondi junction': ['eastgate'],
+  'campbelltown mall': ['camptown', 'camptown mall'],
+  'carnes hill marketplace': ['carnes'],
+  'highlands marketplace': ['highlands', 'highland'],
   'waverley gardens': ['waverley', 'waverly'],
-  'pacific square': ['pacific', 'maroubra'],
+  'pacific square': ['pacific'],
   'macarthur square': ['macarthur'],
   'westfield': ['westfield'],
   'stockland': ['stockland'],
   'bass hill plaza': ['bass hill'],
-  'kallangur fair shopping centre': ['kallangur', 'kallangur fair'],
-  'chisholm village shopping centre': ['chisholm', 'chisholm village'],
+  'kallangur fair shopping centre': ['kallangur fair'],
+  'chisholm village shopping centre': ['chisholm village'],
   'deagon marketplace': ['deagon'],
   'kogarah town centre': ['kogarah'],
   'rockdale plaza': ['rockdale'],

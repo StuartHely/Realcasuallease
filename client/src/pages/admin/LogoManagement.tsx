@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, Upload, Image as ImageIcon } from "lucide-react";
+import { CheckCircle, Upload, Image as ImageIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function LogoManagement() {
@@ -34,6 +34,23 @@ export default function LogoManagement() {
       setUploadingSlot(null);
     },
   });
+
+  const deleteLogoMutation = trpc.systemConfig.deleteLogo.useMutation({
+    onSuccess: () => {
+      toast.success("Logo deleted successfully");
+      refetchAll();
+      refetchCurrent();
+    },
+    onError: (error) => {
+      toast.error("Failed to delete logo: " + error.message);
+    },
+  });
+
+  const handleDeleteLogo = (logoId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this logo?")) return;
+    deleteLogoMutation.mutate({ logoId: logoId as any });
+  };
 
   const handleLogoSelect = (logoId: string) => {
     setLogoMutation.mutate({ logoId: logoId as any });
@@ -161,7 +178,7 @@ export default function LogoManagement() {
                       )}
                     </div>
 
-                    {/* Upload Button */}
+                    {/* Upload & Delete */}
                     <div className="space-y-2">
                       <Label htmlFor={`upload-${logo.id}`} className="text-xs text-gray-600">
                         Upload new image for this slot
@@ -181,9 +198,23 @@ export default function LogoManagement() {
                           </Button>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500">
-                        Recommended: PNG or SVG, max 2MB
-                      </p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-gray-500">
+                          Recommended: PNG or SVG, max 2MB
+                        </p>
+                        {logoUrl && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 px-2"
+                            onClick={(e) => handleDeleteLogo(logo.id, e)}
+                            disabled={deleteLogoMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -230,7 +261,7 @@ export default function LogoManagement() {
             </h4>
             <ul className="space-y-1 text-sm text-gray-700">
               <li>• Use a transparent background (PNG) for best results</li>
-              <li>• Recommended dimensions: 400-600px wide, 100-200px tall</li>
+              <li>• Recommended dimensions: 720×240px (3:1 ratio, retina-ready)</li>
               <li>• Ensure logo is readable at small sizes</li>
               <li>• Use high contrast colors for visibility</li>
               <li>• SVG format is ideal for crisp display at any size</li>

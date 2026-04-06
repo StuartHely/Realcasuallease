@@ -93,6 +93,39 @@ export const systemConfigRouter = router({
       return { success: true, url };
     }),
 
+  // Delete a logo from a slot (MegaAdmin only)
+  deleteLogo: adminProcedure
+    .input(z.object({
+      logoId: z.enum(["logo_1", "logo_2", "logo_3", "logo_4", "logo_5"]),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      if (ctx.user.role !== "mega_admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only MegaAdmin can delete logos" });
+      }
+
+      const fs = await import('fs/promises');
+      const path = await import('path');
+
+      // Delete the file from disk
+      const filePath = path.join(process.cwd(), 'client', 'public', 'logos', `${input.logoId}.png`);
+      try {
+        await fs.unlink(filePath);
+      } catch {
+        // File may not exist, that's fine
+      }
+
+      // Clear the URL from system config
+      await setConfigValue(`${input.logoId}_url`, "");
+
+      // If this was the selected logo, reset to logo_1
+      const selectedLogo = await getConfigValue("selected_logo");
+      if (selectedLogo === input.logoId) {
+        await setConfigValue("selected_logo", "logo_1");
+      }
+
+      return { success: true };
+    }),
+
   // Get all logo URLs
   getAllLogos: publicProcedure.query(async () => {
     const logos = await Promise.all([

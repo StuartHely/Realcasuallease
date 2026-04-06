@@ -69,11 +69,23 @@ export function RateValidationAlerts() {
             </div>
           </div>
           <div className="text-sm text-red-800 space-y-1">
-            {alerts.map((alert: any, index: number) => (
-              <div key={index}>
-                Check the rate in {alert.centreName} – Site {alert.siteNumber}, {cleanHtmlDescription(alert.siteName)}
-              </div>
-            ))}
+            {alerts.map((alert: any, index: number) => {
+              const fieldLabels: Record<string, string> = {
+                pricePerDay: "Daily rate",
+                pricePerWeek: "Weekly rate",
+                weekendPricePerDay: "Weekend rate",
+                weeklyDailyMismatch: "Weekly/daily ratio unusual",
+              };
+              const issues = (alert.invalidFields || [])
+                .map((f: string) => fieldLabels[f] || f)
+                .join(", ");
+              return (
+                <div key={index}>
+                  {alert.centreName} – Site {alert.siteNumber}, {cleanHtmlDescription(alert.siteName)}
+                  {issues && <span className="text-red-600 font-medium"> ({issues})</span>}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

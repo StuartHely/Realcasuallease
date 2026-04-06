@@ -1,4 +1,4 @@
-import { publicProcedure, protectedProcedure, ownerProcedure, router } from "../_core/trpc";
+import { publicProcedure, protectedProcedure, ownerProcedure, adminProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 import * as db from "../db";
 import { TRPCError } from "@trpc/server";
@@ -396,7 +396,7 @@ export const bookingsRouter = router({
         return { url: session.url };
       }),
 
-    customerCancel: protectedProcedure
+    customerCancel: adminProcedure
       .input(z.object({
         bookingId: z.number(),
         reason: z.string().optional(),
@@ -404,9 +404,6 @@ export const bookingsRouter = router({
       .mutation(async ({ input, ctx }) => {
         const booking = await db.getBookingById(input.bookingId);
         if (!booking) throw new TRPCError({ code: "NOT_FOUND", message: "Booking not found" });
-        if (booking.customerId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Not your booking" });
-        }
         if (booking.status === "cancelled" || booking.status === "rejected") {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Booking is already cancelled" });
         }
@@ -418,8 +415,8 @@ export const bookingsRouter = router({
         const result = await cancelBooking({
           bookingId: input.bookingId,
           adminUserId: ctx.user.id,
-          reason: input.reason || "Cancelled by customer",
-          performRefund: false, // Customer cancellations never auto-refund; admin reviews
+          reason: input.reason || "Cancelled by administrator",
+          performRefund: false,
         });
 
         return result;

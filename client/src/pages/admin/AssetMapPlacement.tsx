@@ -69,20 +69,18 @@ export default function AssetMapPlacement() {
   const mapPreviewUrl = useMemo(() => {
     if (floorLevels.length > 0 && floorLevelIdNum) {
       const currentFloor = floorLevels.find((fl: any) => fl.id === floorLevelIdNum);
-      return currentFloor?.mapImageUrl || "";
-    } else if (floorLevels.length === 0 && centre?.mapImageUrl) {
-      return centre.mapImageUrl;
+      return currentFloor?.mapImageUrl || centre?.mapImageUrl || "";
     }
-    return "";
+    return centre?.mapImageUrl || "";
   }, [centre?.mapImageUrl, floorLevelIdNum, floorLevels]);
 
   // Get assets for current floor level and asset type
   const filteredAssets = useMemo(() => {
     let assets: any[] = selectedAssetType === "vacant_shops" ? vacantShops : thirdLineIncome;
     
-    // Filter by floor level if multi-level centre
+    // Filter by floor level if multi-level centre (include unassigned assets too)
     if (floorLevels.length > 0 && floorLevelIdNum) {
-      assets = assets.filter((a: any) => a.floorLevelId === floorLevelIdNum);
+      assets = assets.filter((a: any) => a.floorLevelId === floorLevelIdNum || !a.floorLevelId);
     }
 
     return assets;
@@ -263,7 +261,7 @@ export default function AssetMapPlacement() {
                     Vacant Shops
                     <Badge variant="secondary" className="ml-1">
                       {vacantShops.filter((s: any) => 
-                        floorLevels.length === 0 || !floorLevelIdNum || s.floorLevelId === floorLevelIdNum
+                        floorLevels.length === 0 || !floorLevelIdNum || s.floorLevelId === floorLevelIdNum || !s.floorLevelId
                       ).length}
                     </Badge>
                   </Button>
@@ -276,7 +274,7 @@ export default function AssetMapPlacement() {
                     Third Line Income
                     <Badge variant="secondary" className="ml-1">
                       {thirdLineIncome.filter((a: any) => 
-                        floorLevels.length === 0 || !floorLevelIdNum || a.floorLevelId === floorLevelIdNum
+                        floorLevels.length === 0 || !floorLevelIdNum || a.floorLevelId === floorLevelIdNum || !a.floorLevelId
                       ).length}
                     </Badge>
                   </Button>
@@ -350,10 +348,10 @@ export default function AssetMapPlacement() {
                           >
                             <div className="relative">
                               <div 
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg"
+                                className="min-w-6 h-6 px-2 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-lg whitespace-nowrap"
                                 style={{ backgroundColor: getMarkerColor(marker.assetType) }}
                               >
-                                {marker.displayNumber.length > 3 ? marker.displayNumber.slice(0, 3) : marker.displayNumber}
+                                {marker.displayNumber}
                               </div>
                               <button
                                 onClick={(e) => {
@@ -422,6 +420,20 @@ export default function AssetMapPlacement() {
                         : "Please upload a map in the Floor Plan Maps section first."}
                     </p>
                   </div>
+                  {filteredAssets.length > 0 && (
+                    <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <p className="text-sm font-semibold text-amber-800 mb-2">
+                        {filteredAssets.length} {selectedAssetType === "vacant_shops" ? "Vacant Shop" : "Asset"}{filteredAssets.length > 1 ? "s" : ""} waiting to be mapped:
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {filteredAssets.map((asset: any) => (
+                          <Badge key={asset.id} className="bg-amber-100 text-amber-800 border-amber-300">
+                            {selectedAssetType === "vacant_shops" ? asset.shopNumber : asset.assetNumber}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}

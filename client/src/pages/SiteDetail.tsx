@@ -371,7 +371,7 @@ export default function SiteDetail() {
               <div className="relative">
                 {/* Main Image */}
                 <div 
-                  className="relative h-96 bg-gray-100 rounded-lg overflow-hidden cursor-pointer"
+                  className="relative h-96 rounded-lg overflow-hidden cursor-pointer"
                   onClick={() => {
                     trackClickMutation.mutate({ siteId: site.id, imageSlot: currentImageIndex + 1 });
                     setIsLightboxOpen(true);
