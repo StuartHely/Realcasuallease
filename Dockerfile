@@ -43,6 +43,10 @@ COPY --from=deps /app/pnpm-lock.yaml ./pnpm-lock.yaml
 # Copy source code
 COPY . .
 
+# Build-time args for Vite client-side env vars
+ARG VITE_GOOGLE_MAPS_API_KEY=""
+ENV VITE_GOOGLE_MAPS_API_KEY=$VITE_GOOGLE_MAPS_API_KEY
+
 # Build the application (Vite frontend + esbuild server)
 # Type check is done in CI before Docker build
 RUN pnpm run build
