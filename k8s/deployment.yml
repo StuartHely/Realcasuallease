@@ -42,6 +42,13 @@ spec:
         runAsGroup: 1001
         fsGroup: 1001
       
+      # Tolerate Karpenter-managed nodes
+      tolerations:
+        - key: "karpenter.sh/controller"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
+      
       # Graceful shutdown period
       terminationGracePeriodSeconds: 30
       
