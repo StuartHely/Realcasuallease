@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Calendar, TrendingUp } from "lucide-react";
@@ -10,8 +11,11 @@ interface PriceCalculatorProps {
 }
 
 export function PriceCalculator({ siteId, startDate, endDate }: PriceCalculatorProps) {
+  // Stabilise Date objects so tRPC query key doesn't change every render
+  const stableStart = useMemo(() => startDate, [startDate.getTime()]);
+  const stableEnd = useMemo(() => endDate, [endDate.getTime()]);
   const { data: preview, isLoading } = trpc.bookings.calculatePreview.useQuery(
-    { siteId, startDate, endDate },
+    { siteId, startDate: stableStart, endDate: stableEnd },
     { enabled: siteId > 0 && !!startDate && !!endDate }
   );
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -619,8 +619,8 @@ export default function SiteDetail() {
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   {startDate && endDate ? (
                     <div className="space-y-1">
-                      <p className="text-sm"><span className="font-semibold">Start:</span> {format(new Date(startDate), "EEEE, d MMMM yyyy")}</p>
-                      <p className="text-sm"><span className="font-semibold">End:</span> {format(new Date(endDate), "EEEE, d MMMM yyyy")}</p>
+                      <p className="text-sm"><span className="font-semibold">Start:</span> {format(new Date(startDate + 'T00:00:00'), "EEEE, d MMMM yyyy")}</p>
+                      <p className="text-sm"><span className="font-semibold">End:</span> {format(new Date(endDate + 'T00:00:00'), "EEEE, d MMMM yyyy")}</p>
                       <p className="text-xs text-blue-600 mt-1">Click the calendar below to change dates</p>
                     </div>
                   ) : (
@@ -705,8 +705,8 @@ export default function SiteDetail() {
                     {startDate && endDate && (
                       <PriceCalculator
                         siteId={siteId}
-                        startDate={new Date(startDate)}
-                        endDate={new Date(endDate)}
+                        startDate={new Date(startDate + 'T00:00:00')}
+                        endDate={new Date(endDate + 'T00:00:00')}
                       />
                     )}
 
