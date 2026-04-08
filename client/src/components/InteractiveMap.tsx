@@ -415,25 +415,32 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
     // Get floors with their maps and sites.
     // Each floor must use its OWN map — never fall back to another floor's map
     // because markers are positioned as % coordinates relative to that specific image.
-    const floorsWithMaps = floorLevels.map((floor: any) => {
-      const floorSites = sites.filter((site: Site) => {
-        const hasMarkers = site.mapMarkerX !== null && site.mapMarkerY !== null;
-        const siteAssetType = site.assetType || "casual_leasing";
-        if (assetTypeFilter !== "all" && siteAssetType !== assetTypeFilter) return false;
-        return hasMarkers && (site.floorLevelId === floor.id || !site.floorLevelId);
+    const floorsWithMaps = floorLevels
+      .filter((floor: any) => floor.mapImageUrl)
+      .map((floor: any) => {
+        const floorSites = sites.filter((site: Site) => {
+          const hasMarkers = site.mapMarkerX !== null && site.mapMarkerY !== null;
+          const siteAssetType = site.assetType || "casual_leasing";
+          if (assetTypeFilter !== "all" && siteAssetType !== assetTypeFilter) return false;
+          return hasMarkers && (site.floorLevelId === floor.id || !site.floorLevelId);
+        });
+        return { ...floor, effectiveMapUrl: floor.mapImageUrl, sites: floorSites };
       });
-      return { ...floor, effectiveMapUrl: floor.mapImageUrl || mapUrl || "", sites: floorSites };
-    });
+
+    // If no floors have their own map image, fall back to single-map view
+    if (floorsWithMaps.length === 0) {
+      return <MapContent />;
+    }
 
     return (
-      <div className="space-y-4">
-        {/* Side-by-side floor maps grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-2">
+        {/* Side-by-side floor maps grid — center when only one floor */}
+        <div className={floorsWithMaps.length === 1 ? "flex justify-center" : "grid grid-cols-1 md:grid-cols-2 gap-2"}>
           {floorsWithMaps.map((floor: any) => (
-            <div key={floor.id} className="bg-white rounded-lg border-2 border-gray-200 overflow-visible relative">
+            <div key={floor.id} className={`bg-white rounded-lg border-2 border-gray-200 overflow-visible relative${floorsWithMaps.length === 1 ? ' max-w-2xl w-full' : ''}`}>
               {/* Floor header */}
-              <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
-                <h4 className="font-semibold text-gray-800">{floor.levelName}</h4>
+              <div className="bg-gray-100 px-3 py-1 border-b border-gray-200">
+                <h4 className="font-semibold text-gray-800 text-sm">{floor.levelName}</h4>
                 <span className="text-xs text-gray-500">{floor.sites.length} markers</span>
               </div>
               {!floor.effectiveMapUrl ? (
@@ -443,7 +450,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
               ) : (
               <>
               {/* Zoom Controls */}
-              <div className="absolute top-14 right-2 z-20 flex flex-col gap-1">
+              <div className="absolute top-10 right-2 z-20 flex flex-col gap-1">
                 <Button
                   size="icon"
                   variant="outline"
@@ -524,7 +531,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
         </div>
 
         {/* Shared Legend */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
           <div className="flex items-center justify-between text-sm flex-wrap gap-2">
             <div className="flex items-center gap-4 flex-wrap">
               {(assetTypeFilter === "casual_leasing" || assetTypeFilter === "all") && (

@@ -165,9 +165,20 @@ export const centresRouter = router({
       await db.updateShoppingCentre(input.id, input);
       
       // Refresh location index and search cache when location-relevant fields change
-      if (input.name || input.suburb || input.state || input.postcode) {
+      if (input.name || input.address || input.suburb || input.state || input.postcode) {
         import("../locationIndex").then(m => m.refreshLocationIndex()).catch(() => {});
         import("../searchCache").then(m => m.clearSearchCache()).catch(() => {});
+        // Re-geocode when address fields change (fire-and-forget)
+        const updated = await db.getShoppingCentreById(input.id);
+        if (updated) {
+          import("../geocode").then(m => m.geocodeCentre(input.id, {
+            name: updated.name,
+            address: updated.address,
+            suburb: updated.suburb,
+            state: updated.state,
+            postcode: updated.postcode,
+          })).catch(() => {});
+        }
       }
       
       import("../auditHelper").then(m => m.writeAudit({
@@ -248,6 +259,7 @@ export const centresRouter = router({
   
   geocodeAll: adminProcedure
     .mutation(async () => {
+      const { geocodeCentre } = await import("../geocode");
       const centres = await db.getShoppingCentres();
       const missing = centres.filter(
         (c) => !c.latitude || !c.longitude || c.latitude === "0" || c.longitude === "0",
@@ -255,50 +267,18 @@ export const centresRouter = router({
 
       const results: Array<{ id: number; name: string; success: boolean; error?: string }> = [];
 
-      async function nominatimSearch(query: string): Promise<{ lat: string; lon: string } | null> {
-        const url = new URL("https://nominatim.openstreetmap.org/search");
-        url.searchParams.set("q", query);
-        url.searchParams.set("format", "json");
-        url.searchParams.set("limit", "1");
-        url.searchParams.set("countrycodes", "au");
-
-        const res = await fetch(url.toString(), {
-          headers: { "User-Agent": "CasualLease/1.0" },
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const data = await res.json() as Array<{ lat: string; lon: string }>;
-        await new Promise((r) => setTimeout(r, 1100));
-        return data.length > 0 ? data[0] : null;
-      }
-
       for (const centre of missing) {
-        // Try multiple search strategies in order of specificity
-        const queries = [
-          [centre.name, centre.address, centre.suburb, centre.state, centre.postcode].filter(Boolean).join(", "),
-          [centre.name, centre.suburb, centre.state].filter(Boolean).join(", "),
-          [centre.address, centre.suburb, centre.state].filter(Boolean).join(", "),
-          [centre.suburb, centre.state, "Australia"].filter(Boolean).join(", "),
-        ];
-
         try {
-          let found = false;
-          for (const query of queries) {
-            if (!query.trim()) continue;
-            const result = await nominatimSearch(query);
-            if (result) {
-              await db.updateShoppingCentre(centre.id, {
-                latitude: result.lat,
-                longitude: result.lon,
-              });
-              results.push({ id: centre.id, name: centre.name, success: true });
-              found = true;
-              break;
-            }
-          }
-          if (!found) {
+          await geocodeCentre(centre.id, centre);
+          // Check if it was updated
+          const updated = await db.getShoppingCentreById(centre.id);
+          if (updated?.latitude && updated.latitude !== "0") {
+            results.push({ id: centre.id, name: centre.name, success: true });
+          } else {
             results.push({ id: centre.id, name: centre.name, success: false, error: "No results for any query variation" });
           }
+          // Rate limit for Nominatim (1 req/sec)
+          await new Promise((r) => setTimeout(r, 1100));
         } catch (err: any) {
           results.push({ id: centre.id, name: centre.name, success: false, error: err.message });
         }
