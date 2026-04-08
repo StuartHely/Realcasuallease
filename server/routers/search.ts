@@ -54,6 +54,8 @@ export const searchRouter = router({
               suburb: m.suburb,
               city: m.city,
               state: m.state,
+              latitude: m.latitude,
+              longitude: m.longitude,
             }));
             break;
           }
@@ -180,6 +182,8 @@ export const searchRouter = router({
                     suburb: m.suburb,
                     city: m.city,
                     state: m.state,
+                    latitude: m.latitude,
+                    longitude: m.longitude,
                     distance: m.distance,
                   }));
                   nearMeUsed = true;
@@ -560,6 +564,7 @@ export const searchRouter = router({
           // No sites in the searched area match the category.
           // Try to find other centres that DO have approved sites for this category,
           // using the siteResults (which searched globally by category).
+          // Limit to centres within 30km of the originally searched centre.
           const fallbackCentreIds = new Set<number>();
           const fallbackCentres: any[] = [];
           for (const result of siteResults) {
@@ -570,9 +575,54 @@ export const searchRouter = router({
             }
           }
 
-          if (fallbackCentres.length > 0) {
-            // We found centres elsewhere — use them as fallback results
-            centres = fallbackCentres;
+          // Filter fallback centres by distance from original searched centre(s)
+          // Use the location index which has geocoded coordinates for all centres
+          const FALLBACK_RADIUS_KM = 30;
+          let refLat: number | null = null;
+          let refLng: number | null = null;
+
+          // Try to get coords from original centres first
+          for (const c of centres) {
+            const lat = c.latitude ? parseFloat(c.latitude) : null;
+            const lng = c.longitude ? parseFloat(c.longitude) : null;
+            if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+              refLat = lat;
+              refLng = lng;
+              break;
+            }
+          }
+
+          // If original centres lack coords, geocode the searched location name
+          if (refLat === null && (enhancedQuery.centreName || enhancedQuery.matchedLocation)) {
+            try {
+              const { searchPlaces } = await import("../_core/amazonLocation");
+              const geoResults = await searchPlaces(
+                (enhancedQuery.centreName || enhancedQuery.matchedLocation) + ', Australia',
+                { maxResults: 1 }
+              );
+              const coords = geoResults[0]?.addressComponents;
+              if (coords?.latitude && coords?.longitude) {
+                refLat = coords.latitude;
+                refLng = coords.longitude;
+              }
+            } catch (e) {
+              console.error('[Search Fallback] Geocode failed:', e);
+            }
+          }
+
+          let filteredFallbackCentres = fallbackCentres;
+          if (refLat !== null && refLng !== null) {
+            // Use findCentresNearCoordinates to get all centres within radius,
+            // then intersect with fallback centres
+            const { findCentresNearCoordinates } = await import("../locationIndex");
+            const nearbyCentres = await findCentresNearCoordinates(refLat, refLng, FALLBACK_RADIUS_KM);
+            const nearbyIds = new Set(nearbyCentres.map(n => n.centreId));
+            filteredFallbackCentres = fallbackCentres.filter((c: any) => nearbyIds.has(c.id));
+          }
+
+          if (filteredFallbackCentres.length > 0) {
+            // We found nearby centres — use them as fallback results
+            centres = filteredFallbackCentres;
             categoryFallbackUsed = true;
             categoryFallbackCentreNames = originalCentreNames;
 

@@ -414,8 +414,8 @@ export default function CentreDetail() {
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-gray-50 rounded-lg px-3 pt-2 pb-3 mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 Interactive Centre Map
                 {assetType !== "all" && (
                   <span className="text-sm font-normal text-gray-500 ml-2">

@@ -99,6 +99,10 @@ export const adminRouter = router({
         // Refresh location index and search cache for new centre
         import("../locationIndex").then(m => m.refreshLocationIndex()).catch(() => {});
         import("../searchCache").then(m => m.clearSearchCache()).catch(() => {});
+        // Auto-geocode the new centre (fire-and-forget)
+        if (result?.id) {
+          import("../geocode").then(m => m.geocodeCentre(result.id, input)).catch(() => {});
+        }
         import("../auditHelper").then(m => m.writeAudit({
           userId: ctx.user.id,
           action: "centre_created",

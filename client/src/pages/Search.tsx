@@ -527,7 +527,7 @@ export default function Search() {
             </div>
           )}
           {/* Show message when category is not available — only if centres were found (otherwise the "no results" card handles it) */}
-          {data?.categoryNotAvailable && data.centres.length > 0 && (
+          {data?.categoryNotAvailable && data.centres.length > 0 && !data?.categoryFallbackUsed && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-800 font-medium text-lg">
                 This product category is not permitted at this centre. Please try a different centre or search without the category filter.
@@ -556,7 +556,7 @@ export default function Search() {
         {data && data.categoryFallbackUsed && data.centres.length > 0 && (
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-blue-800 font-medium text-base">
-              No centres near {data.categoryFallbackLocation || 'your selected area'} have approved sites for '{data.searchInterpretation?.productCategory}', so we're showing other centres where it's approved.
+              '{data.searchInterpretation?.productCategory ? data.searchInterpretation.productCategory.charAt(0).toUpperCase() + data.searchInterpretation.productCategory.slice(1) : ''}' is not an approved category at {data.categoryFallbackLocation || 'your selected area'}. Showing nearby centres (within 30km) where it's approved.
             </p>
           </div>
         )}
@@ -1618,7 +1618,7 @@ export default function Search() {
                       
                       return (
                         <div className="mb-4 space-y-2">
-                          <div className="text-2xl text-red-600 italic font-semibold">
+                          <div className="text-2xl text-red-600 font-semibold">
                             {noticeText}
                           </div>
                           <div className="flex justify-center">

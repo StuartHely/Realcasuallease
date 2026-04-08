@@ -516,7 +516,8 @@ export async function createShoppingCentre(centre: InsertShoppingCentre) {
     centre.slug = await ensureUniqueSlug(generateSlug(centre.name));
   }
 
-  return await db.insert(shoppingCentres).values(centre);
+  const [row] = await db.insert(shoppingCentres).values(centre).returning({ id: shoppingCentres.id });
+  return row;
 }
 
 export async function updateShoppingCentre(id: number, updates: Partial<InsertShoppingCentre>) {
