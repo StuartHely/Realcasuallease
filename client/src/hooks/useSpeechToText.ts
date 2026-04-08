@@ -30,6 +30,7 @@ export function useSpeechToText(onResult: (text: string) => void) {
       setIsListening(true);
     };
     r.onresult = (e: any) => {
+      finalTranscript = '';
       let interim = '';
       for (let i = 0; i < e.results.length; i++) {
         if (e.results[i].isFinal) {
@@ -38,7 +39,7 @@ export function useSpeechToText(onResult: (text: string) => void) {
           interim += e.results[i][0].transcript;
         }
       }
-      onResultRef.current(finalTranscript || interim);
+      onResultRef.current(finalTranscript + interim);
     };
     r.onend = () => { recognitionRef.current = null; setIsListening(false); };
     r.onerror = (e: any) => { recognitionRef.current = null; setIsListening(false); };
