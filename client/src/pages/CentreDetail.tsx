@@ -136,7 +136,8 @@ export default function CentreDetail() {
   // Handle VS booking request
   const handleVSBookingRequest = (startDate: Date, endDate: Date) => {
     if (!user) {
-      toast.error("Please log in to make a booking");
+      sessionStorage.setItem("returnUrl", window.location.pathname + window.location.search);
+      window.location.href = "/login";
       return;
     }
     if (!selectedVSId) return;
@@ -158,7 +159,8 @@ export default function CentreDetail() {
   // Handle 3rdL booking request
   const handle3rdLBookingRequest = (startDate: Date, endDate: Date) => {
     if (!user) {
-      toast.error("Please log in to make a booking");
+      sessionStorage.setItem("returnUrl", window.location.pathname + window.location.search);
+      window.location.href = "/login";
       return;
     }
     if (!selected3rdLId) return;

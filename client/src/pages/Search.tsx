@@ -18,9 +18,12 @@ import { parseSearchQuery } from "@/../../shared/queryParser";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { cleanHtmlDescription } from "@/lib/htmlUtils";
 import Logo from "@/components/Logo";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { toast } from "sonner";
 
 export default function Search() {
   const [, setLocation] = useLocation();
+  const { isAuthenticated } = useAuth();
   const [searchParams, setSearchParams] = useState<{ query: string; date: Date } | null>(null);
   const [focusedCell, setFocusedCell] = useState<{ siteIndex: number; dateIndex: number } | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
@@ -37,6 +40,7 @@ export default function Search() {
     isSelecting: boolean;
   } | null>(null);
   const [expandedSiteId, setExpandedSiteId] = useState<number | string | null>(null);
+  const [inlineCategory, setInlineCategory] = useState<string>("");
   const expandedSiteRef = useRef<HTMLDivElement>(null);
   const expandedVSRef = useRef<HTMLDivElement>(null);
   const expandedTLIRef = useRef<HTMLDivElement>(null);
@@ -2300,13 +2304,37 @@ export default function Search() {
                                           })()}
                                         </div>
                                       </div>
+                                      {/* Usage Category Selection */}
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Usage Category *</label>
+                                        <select
+                                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm"
+                                          value={inlineCategory}
+                                          onChange={(e) => setInlineCategory(e.target.value)}
+                                        >
+                                          <option value="">Select category...</option>
+                                          {(data?.siteCategories?.[site.id] || []).map((cat: any) => (
+                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                          ))}
+                                        </select>
+                                      </div>
                                       <div className="flex gap-3">
                                         <Button
                                           onClick={() => {
-                                            // Navigate to site detail page with pre-filled dates
+                                            if (!isAuthenticated) {
+                                              sessionStorage.setItem("returnUrl", window.location.pathname + window.location.search);
+                                              window.location.href = "/login";
+                                              return;
+                                            }
+                                            if (!inlineCategory) {
+                                              toast.error("Please select a usage category");
+                                              return;
+                                            }
+                                            // Navigate to site detail page with pre-filled dates and category
                                             const params = new URLSearchParams();
                                             if (dateSelection.startDate) params.set('startDate', format(dateSelection.startDate, 'yyyy-MM-dd'));
                                             if (dateSelection.endDate) params.set('endDate', format(dateSelection.endDate, 'yyyy-MM-dd'));
+                                            params.set('categoryId', inlineCategory);
                                             setLocation(`/site/${site.id}?${params.toString()}`);
                                           }}
                                           className="flex-1 bg-blue-600 hover:bg-blue-700"

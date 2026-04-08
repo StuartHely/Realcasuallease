@@ -104,6 +104,7 @@ export default function VacantShopDetail() {
 
   const handleEnquiry = () => {
     if (!isAuthenticated) {
+      sessionStorage.setItem("returnUrl", window.location.pathname + window.location.search);
       window.location.href = "/login";
       return;
     }
@@ -373,16 +374,24 @@ export default function VacantShopDetail() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {!isAuthenticated && (
-                  <Button
-                    onClick={() => (window.location.href = "/login")}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                  >
-                    Log In to Enquire
-                  </Button>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center space-y-2">
+                    <p className="text-green-800 font-medium">Log in or register to submit an enquiry</p>
+                    <div className="flex gap-2 justify-center">
+                      <Button
+                        onClick={() => { sessionStorage.setItem("returnUrl", window.location.pathname + window.location.search); window.location.href = "/login"; }}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        Log In
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => { sessionStorage.setItem("returnUrl", window.location.pathname + window.location.search); window.location.href = "/register"; }}
+                      >
+                        Register
+                      </Button>
+                    </div>
+                  </div>
                 )}
-
-                {isAuthenticated && (
-                  <>
                     <div className="bg-blue-50 p-3 rounded-lg mb-4">
                       <p className="text-sm font-semibold text-blue-900 mb-2">Availability Status</p>
                       <div className="flex gap-4 text-sm">
@@ -448,10 +457,9 @@ export default function VacantShopDetail() {
                       disabled={createEnquiryMutation.isPending}
                       className="w-full bg-green-600 hover:bg-green-700"
                     >
-                      {createEnquiryMutation.isPending ? "Submitting..." : "Submit Enquiry"}
+                      {!isAuthenticated ? "Log In to Enquire" :
+                        createEnquiryMutation.isPending ? "Submitting..." : "Submit Enquiry"}
                     </Button>
-                  </>
-                )}
               </CardContent>
             </Card>
           </div>

@@ -90,6 +90,8 @@ export default function SiteDetail() {
     const prefillEnd = urlParams.get('endDate');
     if (prefillStart) setStartDate(prefillStart);
     if (prefillEnd) setEndDate(prefillEnd);
+    const prefillCategory = urlParams.get('categoryId');
+    if (prefillCategory) setUsageCategoryId(prefillCategory);
   }, []);
   const [usageCategoryId, setUsageCategoryId] = useState<string>("");
   const [additionalCategoryText, setAdditionalCategoryText] = useState("");
@@ -176,6 +178,7 @@ export default function SiteDetail() {
 
   const handleBooking = () => {
     if (!isAuthenticated) {
+      sessionStorage.setItem("returnUrl", window.location.pathname + window.location.search);
       window.location.href = "/login";
       return;
     }
@@ -576,16 +579,25 @@ export default function SiteDetail() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {!isAuthenticated && (
-                  <Button
-                    onClick={() => (window.location.href = "/login")}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
-                    Log In to Book
-                  </Button>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center space-y-2">
+                    <p className="text-blue-800 font-medium">Log in or register to complete your booking</p>
+                    <div className="flex gap-2 justify-center">
+                      <Button
+                        onClick={() => { sessionStorage.setItem("returnUrl", window.location.pathname + window.location.search); window.location.href = "/login"; }}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        Log In
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => { sessionStorage.setItem("returnUrl", window.location.pathname + window.location.search); window.location.href = "/register"; }}
+                      >
+                        Register
+                      </Button>
+                    </div>
+                  </div>
                 )}
 
-                {isAuthenticated && (
-                  <>
                     <div>
                       <Label htmlFor="startDate">Start Date</Label>
                       <Input
@@ -697,11 +709,10 @@ export default function SiteDetail() {
                       disabled={createBookingMutation.isPending}
                       className="w-full bg-blue-600 hover:bg-blue-700"
                     >
-                      {createBookingMutation.isPending ? "Processing..." : 
+                      {!isAuthenticated ? "Log In to Book" :
+                        createBookingMutation.isPending ? "Processing..." : 
                         centre?.paymentMode === "invoice_only" ? "Submit Booking Request" : "Confirm Booking"}
                     </Button>
-                  </>
-                )}
               </CardContent>
             </Card>
           </div>
