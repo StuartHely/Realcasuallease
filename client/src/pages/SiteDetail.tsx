@@ -99,8 +99,8 @@ export default function SiteDetail() {
   const [usageCategoryId, setUsageCategoryId] = useState<string>("");
   const [additionalCategoryText, setAdditionalCategoryText] = useState("");
   const [customUsage, setCustomUsage] = useState("");
-  const [tablesRequested, setTablesRequested] = useState<string>("0");
-  const [chairsRequested, setChairsRequested] = useState<string>("0");
+  const [tablesRequested, setTablesRequested] = useState<string>("");
+  const [chairsRequested, setChairsRequested] = useState<string>("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [showTableLimitDialog, setShowTableLimitDialog] = useState(false);
@@ -368,10 +368,19 @@ export default function SiteDetail() {
             </div>
           </div>
           <nav className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => setLocation("/")}>Home</Button>
-            <Button variant="ghost" onClick={() => setLocation("/my-bookings")}>My Bookings</Button>
-            <Button variant="ghost" onClick={() => setLocation("/profile")}>Profile</Button>
-          </nav>
+              <Button variant="ghost" onClick={() => setLocation("/")}>Home</Button>
+              {isAuthenticated ? (
+                <>
+                  <Button variant="ghost" onClick={() => setLocation("/my-bookings")}>My Bookings</Button>
+                  <Button variant="ghost" onClick={() => setLocation("/profile")}>Profile</Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" onClick={() => setLocation("/login")}>Log In</Button>
+                  <Button variant="outline" onClick={() => setLocation("/register")}>Register</Button>
+                </>
+              )}
+            </nav>
         </div>
       </header>
 
@@ -607,25 +616,20 @@ export default function SiteDetail() {
                   </div>
                 )}
 
-                    <div>
-                      <Label htmlFor="startDate">Start Date</Label>
-                      <Input
-                        id="startDate"
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                      />
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  {startDate && endDate ? (
+                    <div className="space-y-1">
+                      <p className="text-sm"><span className="font-semibold">Start:</span> {format(new Date(startDate), "EEEE, d MMMM yyyy")}</p>
+                      <p className="text-sm"><span className="font-semibold">End:</span> {format(new Date(endDate), "EEEE, d MMMM yyyy")}</p>
+                      <p className="text-xs text-blue-600 mt-1">Click the calendar below to change dates</p>
                     </div>
-
-                    <div>
-                      <Label htmlFor="endDate">End Date</Label>
-                      <Input
-                        id="endDate"
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                      />
-                    </div>
+                  ) : (
+                    <p className="text-sm text-blue-700 flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Click on the availability calendar below to select your dates
+                    </p>
+                  )}
+                </div>
 
                     <div>
                       <Label htmlFor="usageCategory">Usage Category *</Label>
@@ -672,6 +676,7 @@ export default function SiteDetail() {
                               max={site?.maxTables || 0}
                               value={tablesRequested}
                               onChange={(e) => setTablesRequested(e.target.value)}
+                              placeholder="0"
                             />
                           </div>
                         )}
@@ -685,6 +690,7 @@ export default function SiteDetail() {
                               min="0"
                               value={chairsRequested}
                               onChange={(e) => setChairsRequested(e.target.value)}
+                              placeholder="0"
                             />
                           </div>
                         )}

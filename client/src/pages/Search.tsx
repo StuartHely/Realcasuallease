@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MapPin, ArrowLeft, Calendar, CheckCircle, XCircle, Info, ChevronLeft, ChevronRight, CalendarDays, Store, Zap, Layers, FileText, Search as SearchIcon, Star, HelpCircle, DollarSign, ChevronDown, Loader2, Building2, LayoutGrid } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -41,6 +42,24 @@ export default function Search() {
   } | null>(null);
   const [expandedSiteId, setExpandedSiteId] = useState<number | string | null>(null);
   const [inlineCategory, setInlineCategory] = useState<string>("");
+  const [isEditingSearch, setIsEditingSearch] = useState(false);
+  const [editQuery, setEditQuery] = useState("");
+
+  const handleNewSearch = () => {
+    if (!editQuery.trim()) return;
+    const parsed = parseSearchQuery(editQuery);
+    const params = new URLSearchParams({ query: editQuery });
+    if (parsed.parsedDate) {
+      params.set("date", parsed.parsedDate);
+    } else {
+      params.set("date", format(new Date(), "yyyy-MM-dd"));
+    }
+    if (parsed.dateRangeEnd) {
+      params.set("endDate", parsed.dateRangeEnd);
+    }
+    setLocation(`/search?${params.toString()}`);
+    setIsEditingSearch(false);
+  };
   const expandedSiteRef = useRef<HTMLDivElement>(null);
   const expandedVSRef = useRef<HTMLDivElement>(null);
   const expandedTLIRef = useRef<HTMLDivElement>(null);
@@ -415,14 +434,32 @@ export default function Search() {
                 )}
               </div>
             </div>
-            <Button
-              size="sm"
-              className="bg-white text-[#0369a1] hover:bg-gray-100 font-semibold shadow-md"
-              onClick={() => setLocation("/")}
-            >
-              <SearchIcon className="h-4 w-4 mr-1.5" />
-              Edit Search
-            </Button>
+            {isEditingSearch ? (
+              <form onSubmit={(e) => { e.preventDefault(); handleNewSearch(); }} className="flex gap-2">
+                <Input
+                  value={editQuery}
+                  onChange={(e) => setEditQuery(e.target.value)}
+                  className="bg-white/90 text-gray-900 w-64"
+                  placeholder="Refine your search..."
+                  autoFocus
+                />
+                <Button size="sm" type="submit" className="bg-white text-[#0369a1] hover:bg-gray-100 font-semibold">
+                  Search
+                </Button>
+                <Button size="sm" variant="ghost" className="text-white/70 hover:text-white" onClick={() => setIsEditingSearch(false)}>
+                  Cancel
+                </Button>
+              </form>
+            ) : (
+              <Button
+                size="sm"
+                className="bg-white text-[#0369a1] hover:bg-gray-100 font-semibold shadow-md"
+                onClick={() => { setEditQuery(searchParams?.query || ""); setIsEditingSearch(true); }}
+              >
+                <SearchIcon className="h-4 w-4 mr-1.5" />
+                Edit Search
+              </Button>
+            )}
           </div>
 
           {/* Asset type tab bar */}
@@ -2113,6 +2150,16 @@ export default function Search() {
                                       ) : null;
                                     })()}
                                   </div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-blue-700 font-bold text-base">
+                                        ${site.pricePerDay}/day
+                                      </span>
+                                      {site.pricePerWeek && (
+                                        <span className="text-sm font-normal text-gray-500">
+                                          | ${site.pricePerWeek}/wk
+                                        </span>
+                                      )}
+                                    </div>
                                   <CardDescription className="mt-2">
                                     {cleanHtmlDescription(site.description)}
                                   </CardDescription>
