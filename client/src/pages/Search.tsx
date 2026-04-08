@@ -2166,7 +2166,21 @@ export default function Search() {
 
                                 </div>
                                 <Button
-                                  onClick={(e) => { e.stopPropagation(); setLocation(`/site/${site.id}`); }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const p = new URLSearchParams();
+                                    if (dateSelection && dateSelection.siteId === site.id && dateSelection.startDate && dateSelection.endDate) {
+                                      p.set('startDate', format(dateSelection.startDate, 'yyyy-MM-dd'));
+                                      p.set('endDate', format(dateSelection.endDate, 'yyyy-MM-dd'));
+                                    } else if (searchParams?.date) {
+                                      p.set('startDate', format(searchParams.date, 'yyyy-MM-dd'));
+                                      const urlEndDate = new URLSearchParams(window.location.search).get('endDate');
+                                      if (urlEndDate) p.set('endDate', urlEndDate);
+                                    }
+                                    if (inlineCategory) p.set('categoryId', inlineCategory);
+                                    const qs = p.toString();
+                                    setLocation(`/site/${site.id}${qs ? '?' + qs : ''}`);
+                                  }}
                                   className="bg-blue-600 hover:bg-blue-700"
                                 >
                                   View Details
