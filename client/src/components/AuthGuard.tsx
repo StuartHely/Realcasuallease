@@ -7,13 +7,13 @@ interface AuthGuardProps {
   children: React.ReactNode;
 }
 
-const PUBLIC_PATHS = ["/login", "/forgot-password", "/reset-password", "/sign"];
+const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/reset-password", "/sign", "/site", "/search", "/centre", "/vacant-shop", "/third-line"];
 
 export default function AuthGuard({ children }: AuthGuardProps) {
   const [location, setLocation] = useLocation();
   const { isAuthenticated, loading } = useAuth();
 
-  const isPublicPath = PUBLIC_PATHS.some(p => location === p || location.startsWith(p + "?") || location.startsWith(p + "/"));
+  const isPublicPath = location === "/" || PUBLIC_PATHS.some(p => location === p || location.startsWith(p + "?") || location.startsWith(p + "/"));
 
   useEffect(() => {
     if (!loading && !isAuthenticated && !isPublicPath) {
