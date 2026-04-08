@@ -124,7 +124,18 @@ async function startServer() {
     for (const sql of fixes) {
       try { await dbInst.execute(sql); fixed++; } catch (e) { /* ignore */ }
     }
-    console.log(`[StartupMigration] ${fixed}/${fixes.length} column checks passed`);
+    // Fix sequences that may be out of sync after DB restore/import
+    const seqFixes = [
+      `SELECT setval(pg_get_serial_sequence('"bookings"', 'id'), COALESCE((SELECT MAX(id) FROM "bookings"), 0) + 1, false)`,
+      `SELECT setval(pg_get_serial_sequence('"vacant_shop_bookings"', 'id'), COALESCE((SELECT MAX(id) FROM "vacant_shop_bookings"), 0) + 1, false)`,
+      `SELECT setval(pg_get_serial_sequence('"third_line_bookings"', 'id'), COALESCE((SELECT MAX(id) FROM "third_line_bookings"), 0) + 1, false)`,
+      `SELECT setval(pg_get_serial_sequence('"booking_status_history"', 'id'), COALESCE((SELECT MAX(id) FROM "booking_status_history"), 0) + 1, false)`,
+      `SELECT setval(pg_get_serial_sequence('"users"', 'id'), COALESCE((SELECT MAX(id) FROM "users"), 0) + 1, false)`,
+    ];
+    for (const sql of seqFixes) {
+      try { await dbInst.execute(sql); } catch (e) { /* table may not exist yet */ }
+    }
+    console.log(`[StartupMigration] ${fixed}/${fixes.length} column checks passed, sequences synced`);
   }).catch(() => {});
 
   // Backfill slugs for any centres that don't have them yet
