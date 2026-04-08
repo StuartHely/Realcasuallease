@@ -1133,4 +1133,16 @@ export const adminRouter = router({
         canRemoveSdkFallback: oauthOnlyUsers.length === 0,
       };
     }),
+
+    dbDiagnostics: adminProcedure.query(async () => {
+      const dbInst = await db.getDb();
+      if (!dbInst) return { error: "No DB connection" };
+      const cols = await dbInst.execute(
+        `SELECT column_name FROM information_schema.columns WHERE table_name = 'bookings' ORDER BY ordinal_position`
+      );
+      const migrations = await dbInst.execute(
+        `SELECT * FROM __drizzle_migrations ORDER BY created_at DESC LIMIT 5`
+      );
+      return { bookingColumns: cols.rows, recentMigrations: migrations.rows };
+    }),
 });

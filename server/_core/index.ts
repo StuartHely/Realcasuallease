@@ -86,6 +86,24 @@ async function startServer() {
   const { startRateValidationScheduler } = await import('../rateValidationScheduler');
   startRateValidationScheduler();
 
+  // Ensure critical columns exist (catches cases where drizzle migrations were skipped)
+  const { getDb } = await import('../db');
+  getDb().then(async (dbInst) => {
+    if (!dbInst) return;
+    try {
+      await dbInst.execute(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "username" varchar(64) UNIQUE`);
+      await dbInst.execute(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "passwordHash" varchar(255)`);
+      await dbInst.execute(`ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignatureToken" varchar(64) UNIQUE`);
+      await dbInst.execute(`ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignedAt" timestamp`);
+      await dbInst.execute(`ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignedByName" varchar(255)`);
+      await dbInst.execute(`ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignedByIp" varchar(45)`);
+      await dbInst.execute(`ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "amountPaid" numeric(12, 2) DEFAULT '0' NOT NULL`);
+      console.log('[StartupMigration] Critical columns verified');
+    } catch (err) {
+      console.error('[StartupMigration] Error:', err);
+    }
+  }).catch(() => {});
+
   // Backfill slugs for any centres that don't have them yet
   const { backfillCentreSlugs } = await import('../slugMigration');
   backfillCentreSlugs().catch(err => console.error('[SlugMigration] Error:', err));
