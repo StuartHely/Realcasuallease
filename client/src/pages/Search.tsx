@@ -358,8 +358,17 @@ export default function Search() {
             </div>
           </div>
           <nav className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => setLocation("/my-bookings")}>My Bookings</Button>
-            <Button variant="ghost" onClick={() => setLocation("/profile")}>Profile</Button>
+            {isAuthenticated ? (
+              <>
+                <Button variant="ghost" onClick={() => setLocation("/my-bookings")}>My Bookings</Button>
+                <Button variant="ghost" onClick={() => setLocation("/profile")}>Profile</Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => setLocation("/login")}>Log In</Button>
+                <Button variant="outline" onClick={() => setLocation("/register")}>Register</Button>
+              </>
+            )}
           </nav>
         </div>
       </header>

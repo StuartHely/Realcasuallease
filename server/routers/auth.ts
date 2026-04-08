@@ -117,6 +117,7 @@ export const authRouter = router({
       name: z.string().min(1),
       password: z.string().min(8, "Password must be at least 8 characters"),
       confirmPassword: z.string(),
+      phone: z.string().optional(),
       companyName: z.string().optional(),
       tradingName: z.string().optional(),
       companyWebsite: z.string().optional(),
@@ -173,21 +174,20 @@ export const authRouter = router({
         loginMethod: 'password',
       }).returning({ id: users.id });
 
-      if (input.companyName || input.productService) {
-        await dbInstance.insert(customerProfiles).values({
-          userId: newUser.id,
-          companyName: input.companyName || null,
-          tradingName: input.tradingName || null,
-          website: input.companyWebsite || null,
-          abn: input.abn || null,
-          streetAddress: input.address || null,
-          city: input.city || null,
-          state: input.state || null,
-          postcode: input.postcode || null,
-          productCategory: input.productService || null,
-          productDetails: input.productDetails || null,
-        });
-      }
+      await dbInstance.insert(customerProfiles).values({
+        userId: newUser.id,
+        phone: input.phone || null,
+        companyName: input.companyName || null,
+        tradingName: input.tradingName || null,
+        website: input.companyWebsite || null,
+        abn: input.abn || null,
+        streetAddress: input.address || null,
+        city: input.city || null,
+        state: input.state || null,
+        postcode: input.postcode || null,
+        productCategory: input.productService || null,
+        productDetails: input.productDetails || null,
+      });
 
       return { success: true };
     }),

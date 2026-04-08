@@ -17,6 +17,7 @@ import { format, getDaysInMonth, getDay, addDays, subDays, isSameDay, isBefore, 
 import { toast } from "sonner";
 import { PriceCalculator } from "@/components/PriceCalculator";
 import { cleanHtmlDescription } from "@/lib/htmlUtils";
+import BusinessDetailsGate from "@/components/BusinessDetailsGate";
 
 export default function SiteDetail() {
   const [, params] = useRoute("/site/:id");
@@ -35,6 +36,8 @@ export default function SiteDetail() {
     { siteId },
     { enabled: siteId > 0 }
   );
+  const { data: profile, refetch: refetchProfile } = trpc.profile.get.useQuery(undefined, { enabled: isAuthenticated });
+  const [showBusinessGate, setShowBusinessGate] = useState(false);
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -190,6 +193,12 @@ export default function SiteDetail() {
 
     if (!usageCategoryId) {
       toast.error("Please select a usage category");
+      return;
+    }
+
+    // Check if business details are complete — gate first booking
+    if (isAuthenticated && profile && !profile.companyName) {
+      setShowBusinessGate(true);
       return;
     }
 
@@ -1087,6 +1096,18 @@ export default function SiteDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Business Details Gate — shown on first booking if profile incomplete */}
+      <BusinessDetailsGate
+        open={showBusinessGate}
+        onComplete={() => {
+          setShowBusinessGate(false);
+          refetchProfile();
+          // Re-trigger booking after profile is saved
+          handleBooking();
+        }}
+        onCancel={() => setShowBusinessGate(false)}
+      />
     </div>
   );
 }

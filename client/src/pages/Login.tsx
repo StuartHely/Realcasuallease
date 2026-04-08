@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import Logo from "@/components/Logo";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -62,14 +63,11 @@ export default function Login() {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="flex items-center gap-2 text-blue-700">
-              <MapPin className="h-8 w-8" />
-              <span className="text-2xl font-bold">Real Casual Leasing</span>
-            </div>
+            <Logo height={60} width={180} />
           </div>
           <CardTitle className="text-2xl">Welcome</CardTitle>
           <CardDescription className="text-base">
-            Sign in to access the AI-Driven Short-Term Retail Leasing Platform
+            Sign in to your account
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
