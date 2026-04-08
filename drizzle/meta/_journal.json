@@ -141,6 +141,13 @@
       "when": 1774413073325,
       "tag": "0019_luxuriant_photon",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1774500000000,
+      "tag": "0020_add_missing_columns",
+      "breakpoints": true
     }
   ]
 }
