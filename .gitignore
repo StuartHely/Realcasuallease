@@ -101,8 +101,7 @@ jspm_packages/
 tmp/
 temp/
 
-# Local dev uploads (storage fallback)
-client/public/uploads/
+# Local dev uploads — tracked so they deploy with Docker image
 
 # Database
 *.db
