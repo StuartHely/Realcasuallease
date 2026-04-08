@@ -789,7 +789,43 @@ export async function createBooking(booking: InsertBooking) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return await db.insert(bookings).values(booking).returning({ id: bookings.id });
+  try {
+    return await db.insert(bookings).values(booking).returning({ id: bookings.id });
+  } catch (err: any) {
+    // Extract the real PostgreSQL error from Drizzle's wrapper
+    const pgError = err?.cause?.message || err?.message || String(err);
+    console.error(`[createBooking] INSERT failed. PG error: ${pgError}`);
+
+    // If a column doesn't exist, auto-fix and retry
+    if (pgError.includes('does not exist') || pgError.includes('column')) {
+      console.error(`[createBooking] Attempting to add missing columns and retry...`);
+      try {
+        const fixes = [
+          `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignatureToken" varchar(64)`,
+          `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignedAt" timestamp`,
+          `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignedByName" varchar(255)`,
+          `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignedByIp" varchar(45)`,
+          `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "amountPaid" numeric(12, 2) DEFAULT '0' NOT NULL`,
+          `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "cancelledAt" timestamp`,
+          `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "refundPendingAt" timestamp`,
+          `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "invoiceDispatchedAt" timestamp`,
+          `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "recurrenceGroupId" varchar(50)`,
+          `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "refundStatus" varchar(50)`,
+        ];
+        for (const sql of fixes) {
+          await db.execute(sql).catch(() => {});
+        }
+        console.log(`[createBooking] Column fixes applied, retrying...`);
+        return await db.insert(bookings).values(booking).returning({ id: bookings.id });
+      } catch (retryErr: any) {
+        const retryPgError = retryErr?.cause?.message || retryErr?.message || String(retryErr);
+        console.error(`[createBooking] Retry failed: ${retryPgError}`);
+        throw new Error(`Booking insert failed: ${retryPgError}`);
+      }
+    }
+    // Provide a cleaner error message instead of raw SQL
+    throw new Error(`Booking insert failed: ${pgError}`);
+  }
 }
 
 export async function getBookingById(id: number) {

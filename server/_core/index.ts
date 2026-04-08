@@ -90,18 +90,41 @@ async function startServer() {
   const { getDb } = await import('../db');
   getDb().then(async (dbInst) => {
     if (!dbInst) return;
-    try {
-      await dbInst.execute(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "username" varchar(64) UNIQUE`);
-      await dbInst.execute(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "passwordHash" varchar(255)`);
-      await dbInst.execute(`ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignatureToken" varchar(64) UNIQUE`);
-      await dbInst.execute(`ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignedAt" timestamp`);
-      await dbInst.execute(`ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignedByName" varchar(255)`);
-      await dbInst.execute(`ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignedByIp" varchar(45)`);
-      await dbInst.execute(`ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "amountPaid" numeric(12, 2) DEFAULT '0' NOT NULL`);
-      console.log('[StartupMigration] Critical columns verified');
-    } catch (err) {
-      console.error('[StartupMigration] Error:', err);
+    const fixes = [
+      // users
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "username" varchar(64) UNIQUE`,
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "passwordHash" varchar(255)`,
+      // bookings - all columns that may have been missed
+      `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "cancelledAt" timestamp`,
+      `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "refundStatus" varchar(50)`,
+      `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "refundPendingAt" timestamp`,
+      `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "amountPaid" numeric(12, 2) DEFAULT '0' NOT NULL`,
+      `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "invoiceDispatchedAt" timestamp`,
+      `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "recurrenceGroupId" varchar(50)`,
+      `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignatureToken" varchar(64)`,
+      `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignedAt" timestamp`,
+      `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignedByName" varchar(255)`,
+      `ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "licenceSignedByIp" varchar(45)`,
+      // vacant_shop_bookings
+      `ALTER TABLE "vacant_shop_bookings" ADD COLUMN IF NOT EXISTS "amountPaid" numeric(12, 2) DEFAULT '0' NOT NULL`,
+      `ALTER TABLE "vacant_shop_bookings" ADD COLUMN IF NOT EXISTS "licenceSignatureToken" varchar(64)`,
+      `ALTER TABLE "vacant_shop_bookings" ADD COLUMN IF NOT EXISTS "licenceSignedAt" timestamp`,
+      `ALTER TABLE "vacant_shop_bookings" ADD COLUMN IF NOT EXISTS "licenceSignedByName" varchar(255)`,
+      `ALTER TABLE "vacant_shop_bookings" ADD COLUMN IF NOT EXISTS "licenceSignedByIp" varchar(45)`,
+      // third_line_bookings
+      `ALTER TABLE "third_line_bookings" ADD COLUMN IF NOT EXISTS "amountPaid" numeric(12, 2) DEFAULT '0' NOT NULL`,
+      `ALTER TABLE "third_line_bookings" ADD COLUMN IF NOT EXISTS "licenceSignatureToken" varchar(64)`,
+      `ALTER TABLE "third_line_bookings" ADD COLUMN IF NOT EXISTS "licenceSignedAt" timestamp`,
+      `ALTER TABLE "third_line_bookings" ADD COLUMN IF NOT EXISTS "licenceSignedByName" varchar(255)`,
+      `ALTER TABLE "third_line_bookings" ADD COLUMN IF NOT EXISTS "licenceSignedByIp" varchar(45)`,
+      // Drop old column if exists
+      `ALTER TABLE "bookings" DROP COLUMN IF EXISTS "invoiceOverride"`,
+    ];
+    let fixed = 0;
+    for (const sql of fixes) {
+      try { await dbInst.execute(sql); fixed++; } catch (e) { /* ignore */ }
     }
+    console.log(`[StartupMigration] ${fixed}/${fixes.length} column checks passed`);
   }).catch(() => {});
 
   // Backfill slugs for any centres that don't have them yet
