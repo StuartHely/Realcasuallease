@@ -74,12 +74,13 @@ export const systemConfigRouter = router({
       const base64Data = input.base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
       const buffer = Buffer.from(base64Data, 'base64');
 
-      // Save locally to client/public/logos/
+      // Save locally to public/logos/
       const fs = await import('fs/promises');
       const path = await import('path');
+      const { getPublicDir } = await import('../_core/publicDir');
       
       // Ensure logos directory exists
-      const logosDir = path.join(process.cwd(), 'client', 'public', 'logos');
+      const logosDir = path.join(getPublicDir(), 'logos');
       await fs.mkdir(logosDir, { recursive: true });
       
       // Save the file
@@ -105,9 +106,10 @@ export const systemConfigRouter = router({
 
       const fs = await import('fs/promises');
       const path = await import('path');
+      const { getPublicDir } = await import('../_core/publicDir');
 
       // Delete the file from disk
-      const filePath = path.join(process.cwd(), 'client', 'public', 'logos', `${input.logoId}.png`);
+      const filePath = path.join(getPublicDir(), 'logos', `${input.logoId}.png`);
       try {
         await fs.unlink(filePath);
       } catch {

@@ -494,7 +494,8 @@ export async function uploadCentreMap(centreId: number, imageData: string, fileN
   const timestamp = Date.now();
   const fs = await import('fs/promises');
   const path = await import('path');
-  const mapsDir = path.join(process.cwd(), 'client', 'public', 'maps', 'centres');
+  const { getPublicDir } = await import('./_core/publicDir');
+  const mapsDir = path.join(getPublicDir(), 'maps', 'centres');
   await fs.mkdir(mapsDir, { recursive: true });
   const localFileName = `${centreId}-${timestamp}.${ext}`;
   await fs.writeFile(path.join(mapsDir, localFileName), buffer);
@@ -1248,7 +1249,8 @@ export async function uploadFloorLevelMap(floorLevelId: number, imageData: strin
   const timestamp = Date.now();
   const fs = await import('fs/promises');
   const path = await import('path');
-  const mapsDir = path.join(process.cwd(), 'client', 'public', 'maps', 'floor-levels');
+  const { getPublicDir } = await import('./_core/publicDir');
+  const mapsDir = path.join(getPublicDir(), 'maps', 'floor-levels');
   await fs.mkdir(mapsDir, { recursive: true });
   const localFileName = `${floorLevelId}-${timestamp}.${ext}`;
   await fs.writeFile(path.join(mapsDir, localFileName), buffer);

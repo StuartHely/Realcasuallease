@@ -79,6 +79,10 @@ COPY --from=builder --chown=casuallease:nodejs /app/dist ./dist
 # Copy drizzle migrations if needed at runtime
 COPY --from=builder --chown=casuallease:nodejs /app/drizzle ./drizzle
 
+# Ensure writable directories for runtime uploads (logos, maps, site images)
+RUN mkdir -p /app/dist/public/logos /app/dist/public/maps/centres /app/dist/public/maps/floor-levels /app/dist/public/uploads \
+    && chown -R casuallease:nodejs /app/dist/public
+
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000

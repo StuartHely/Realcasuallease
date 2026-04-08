@@ -51,7 +51,8 @@ export async function getLogoAsBase64(ownerId?: number): Promise<string | null> 
       
       // Extract filename from URL
       const filename = logoUrl.split('/').pop();
-      const logoPath = path.join(process.cwd(), 'client', 'public', 'logos', filename!);
+      const { getPublicDir } = await import('./_core/publicDir');
+      const logoPath = path.join(getPublicDir(), 'logos', filename!);
       
       try {
         const imageBuffer = await fs.readFile(logoPath);

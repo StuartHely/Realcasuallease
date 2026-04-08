@@ -30,7 +30,8 @@ async function localStoragePut(
   data: Buffer | Uint8Array | string,
 ): Promise<{ key: string; url: string }> {
   const key = normalizeKey(relKey);
-  const uploadsDir = path.resolve(process.cwd(), 'client', 'public', 'uploads');
+  const { getPublicDir } = await import('./_core/publicDir');
+  const uploadsDir = path.resolve(getPublicDir(), 'uploads');
   const filePath = path.join(uploadsDir, ...key.split('/'));
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   const buffer = typeof data === 'string' ? Buffer.from(data) : Buffer.from(data);
