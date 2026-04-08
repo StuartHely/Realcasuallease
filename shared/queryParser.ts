@@ -53,10 +53,20 @@ function parseSizeRequirement(query: string): number | undefined {
  * - "5 tables", "3 trestle tables"
  * - "2 table", "1 trestle"
  */
+const WORD_NUMBERS: Record<string, number> = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  a: 1, an: 1,
+};
+
 function parseTableRequirement(query: string): number | undefined {
   const tableMatch = query.match(/(\d+)\s*(?:trestle\s*)?tables?/i);
   if (tableMatch) {
     return parseInt(tableMatch[1]);
+  }
+  // Support word numbers: "three tables", "a table"
+  const wordMatch = query.match(/\b(one|two|three|four|five|six|seven|eight|nine|ten|a|an)\s+(?:trestle\s*)?tables?\b/i);
+  if (wordMatch) {
+    return WORD_NUMBERS[wordMatch[1].toLowerCase()] ?? undefined;
   }
   return undefined;
 }
@@ -311,7 +321,7 @@ function isFuzzyMatch(input: string, target: string, maxDistance?: number): bool
  */
 const locationAliases: Record<string, string[]> = {
   'eastgate bondi junction': ['eastgate'],
-  'campbelltown mall': ['camptown', 'camptown mall'],
+  'campbelltown mall': ['campbelltown', 'camptown', 'camptown mall'],
   'carnes hill marketplace': ['carnes'],
   'highlands marketplace': ['highlands', 'highland'],
   'waverley gardens': ['waverley', 'waverly'],
