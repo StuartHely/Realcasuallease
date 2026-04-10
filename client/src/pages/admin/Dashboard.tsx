@@ -2,8 +2,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { trpc } from "@/lib/trpc";
 import { Building2, MapPin, Calendar, DollarSign, TrendingUp, Users } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
+import { useTenant } from "@/contexts/TenantContext";
 
 export default function AdminDashboard() {
+  const tenant = useTenant();
   const { data: stats } = trpc.admin.getStats.useQuery();
 
   const statCards = [
@@ -63,7 +65,7 @@ export default function AdminDashboard() {
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome to the Real Casual Leasing admin dashboard
+            Welcome to the {tenant.brandName} admin dashboard
           </p>
         </div>
 

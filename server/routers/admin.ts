@@ -1134,6 +1134,27 @@ export const adminRouter = router({
       };
     }),
 
+    getPendingCount: ownerProcedure.query(async ({ ctx }) => {
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      const dbInst = await db.getDb();
+      if (!dbInst) return { count: 0 };
+      const { bookings, sites, shoppingCentres } = await import('../../drizzle/schema');
+      const { eq, and, inArray } = await import('drizzle-orm');
+      if (scopedOwnerId) {
+        const centreRows = await dbInst.select({ id: shoppingCentres.id }).from(shoppingCentres).where(eq(shoppingCentres.ownerId, scopedOwnerId));
+        const centreIds = centreRows.map(c => c.id);
+        if (centreIds.length === 0) return { count: 0 };
+        const siteRows = await dbInst.select({ id: sites.id }).from(sites).where(inArray(sites.centreId, centreIds));
+        const siteIds = siteRows.map(s => s.id);
+        if (siteIds.length === 0) return { count: 0 };
+        const rows = await dbInst.select({ id: bookings.id }).from(bookings).where(and(eq(bookings.status, 'pending'), eq(bookings.requiresApproval, true), inArray(bookings.siteId, siteIds)));
+        return { count: rows.length };
+      }
+      const rows = await dbInst.select({ id: bookings.id }).from(bookings).where(and(eq(bookings.status, 'pending'), eq(bookings.requiresApproval, true)));
+      return { count: rows.length };
+    }),
+
     dbDiagnostics: adminProcedure.query(async () => {
       const dbInst = await db.getDb();
       if (!dbInst) return { error: "No DB connection" };

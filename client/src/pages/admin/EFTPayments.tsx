@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ export default function EFTPayments() {
   // Invoice search & allocation state
   const [invoiceSearch, setInvoiceSearch] = useState("");
   const [invoiceSearchTerm, setInvoiceSearchTerm] = useState("");
+  const [deleteDepositConfirm, setDeleteDepositConfirm] = useState<{ id: number } | null>(null);
   const [allocations, setAllocations] = useState<Record<string, number>>({});
 
   // Queries
@@ -353,9 +355,7 @@ export default function EFTPayments() {
                                   size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    if (confirm("Delete this deposit?")) {
-                                      deleteDepositMutation.mutate({ depositId: deposit.id });
-                                    }
+                                    setDeleteDepositConfirm({ id: deposit.id });
                                   }}
                                   disabled={deleteDepositMutation.isPending}
                                 >
@@ -599,6 +599,20 @@ export default function EFTPayments() {
             )}
           </div>
         </div>
+      <ConfirmDialog
+        open={!!deleteDepositConfirm}
+        onOpenChange={(open) => !open && setDeleteDepositConfirm(null)}
+        title="Delete Deposit"
+        description="Are you sure you want to delete this deposit?"
+        variant="destructive"
+        confirmLabel="Delete"
+        onConfirm={() => {
+          if (deleteDepositConfirm) {
+            deleteDepositMutation.mutate({ depositId: deleteDepositConfirm.id });
+            setDeleteDepositConfirm(null);
+          }
+        }}
+      />
       </div>
     </AdminLayout>
   );

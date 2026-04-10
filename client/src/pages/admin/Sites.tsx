@@ -33,6 +33,7 @@ import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { RateValidationAlerts } from "@/components/RateValidationAlerts";
 
 export default function AdminSites() {
@@ -53,6 +54,7 @@ export default function AdminSites() {
   const [selectedSite, setSelectedSite] = useState<any>(null);
   const [newlyCreatedSite, setNewlyCreatedSite] = useState<any>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [confirmState, setConfirmState] = useState<{ id: number; siteNumber: string } | null>(null);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [categoriesSite, setCategoriesSite] = useState<any>(null);
   
@@ -268,16 +270,19 @@ export default function AdminSites() {
   };
 
   const handleDelete = async (id: number, siteNumber: string) => {
-    if (!confirm(`Are you sure you want to delete site "${siteNumber}"?`)) {
-      return;
-    }
-    
+    setConfirmState({ id, siteNumber });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!confirmState) return;
     try {
-      await deleteMutation.mutateAsync({ id });
+      await deleteMutation.mutateAsync({ id: confirmState.id });
       toast.success("Site deleted successfully");
       refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete site");
+    } finally {
+      setConfirmState(null);
     }
   };
 
@@ -1352,6 +1357,16 @@ export default function AdminSites() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!confirmState}
+        onOpenChange={(open) => { if (!open) setConfirmState(null); }}
+        title="Delete Site"
+        description={`Are you sure you want to delete site "${confirmState?.siteNumber}"?`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDeleteConfirm}
+      />
     </AdminLayout>
   );
 }

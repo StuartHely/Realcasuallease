@@ -21,8 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+
 import { CheckCircle, XCircle, Clock, DollarSign, Search, X, FileText, Pencil, Download, ExternalLink, FileSignature, Mail, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -34,15 +33,11 @@ type BookingStatus = "all" | "pending" | "confirmed" | "cancelled" | "rejected" 
 export default function AdminBookings() {
   const [, setLocation] = useLocation();
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus>("pending");
-  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
-  const [rejectionReason, setRejectionReason] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [licenceDialogOpen, setLicenceDialogOpen] = useState(false);
   const [licenceBookingId, setLicenceBookingId] = useState<number | null>(null);
 
-  const { data: bookings, isLoading, refetch } = trpc.bookings.list.useQuery({
+  const { data: bookings, isLoading } = trpc.bookings.list.useQuery({
     status: selectedStatus === "all" ? undefined : selectedStatus,
   });
 
@@ -125,31 +120,6 @@ export default function AdminBookings() {
     });
   }, [bookings, searchQuery, allBookings]);
 
-  const approveMutation = trpc.bookings.approve.useMutation({
-    onSuccess: () => {
-      toast.success("Booking approved successfully");
-      setApproveDialogOpen(false);
-      setSelectedBookingId(null);
-      refetch();
-    },
-    onError: (error) => {
-      toast.error(`Failed to approve booking: ${error.message}`);
-    },
-  });
-
-  const rejectMutation = trpc.bookings.reject.useMutation({
-    onSuccess: () => {
-      toast.success("Booking rejected");
-      setRejectDialogOpen(false);
-      setSelectedBookingId(null);
-      setRejectionReason("");
-      refetch();
-    },
-    onError: (error) => {
-      toast.error(`Failed to reject booking: ${error.message}`);
-    },
-  });
-
   const licenceStatus = trpc.licence.getStatus.useQuery(
     { bookingId: licenceBookingId!, assetType: "cl" },
     { enabled: licenceDialogOpen && licenceBookingId !== null }
@@ -164,31 +134,6 @@ export default function AdminBookings() {
       toast.error(`Failed to resend: ${error.message}`);
     },
   });
-
-  const handleApprove = (bookingId: number) => {
-    setSelectedBookingId(bookingId);
-    setApproveDialogOpen(true);
-  };
-
-  const handleReject = (bookingId: number) => {
-    setSelectedBookingId(bookingId);
-    setRejectDialogOpen(true);
-  };
-
-  const confirmApprove = () => {
-    if (selectedBookingId) {
-      approveMutation.mutate({ bookingId: selectedBookingId });
-    }
-  };
-
-  const confirmReject = () => {
-    if (selectedBookingId) {
-      rejectMutation.mutate({ 
-        bookingId: selectedBookingId,
-        reason: rejectionReason || "No reason provided"
-      });
-    }
-  };
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", icon: any, label: string }> = {
@@ -660,25 +605,14 @@ export default function AdminBookings() {
                             </TableCell>
                             {selectedStatus === "pending" && (
                               <TableCell>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleApprove(booking.id)}
-                                    className="gap-1"
-                                  >
-                                    <CheckCircle className="h-3 w-3" />
-                                    Approve
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => handleReject(booking.id)}
-                                    className="gap-1"
-                                  >
-                                    <XCircle className="h-3 w-3" />
-                                    Reject
-                                  </Button>
-                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setLocation('/admin/pending-approvals')}
+                                  className="text-amber-600 border-amber-300"
+                                >
+                                  Review
+                                </Button>
                               </TableCell>
                             )}
                           </TableRow>
@@ -692,62 +626,6 @@ export default function AdminBookings() {
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Approve Dialog */}
-      <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Approve Booking</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to approve this booking? The customer will receive a confirmation email.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setApproveDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={confirmApprove} disabled={approveMutation.isPending}>
-              {approveMutation.isPending ? "Approving..." : "Approve Booking"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Reject Dialog */}
-      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reject Booking</DialogTitle>
-            <DialogDescription>
-              Please provide a reason for rejecting this booking. The customer will receive an email with your explanation.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="reason">Rejection Reason</Label>
-              <Textarea
-                id="reason"
-                placeholder="e.g., Site is unavailable due to maintenance..."
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                rows={4}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={confirmReject}
-              disabled={rejectMutation.isPending}
-            >
-              {rejectMutation.isPending ? "Rejecting..." : "Reject Booking"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Licence Detail Dialog */}
       <Dialog open={licenceDialogOpen} onOpenChange={setLicenceDialogOpen}>

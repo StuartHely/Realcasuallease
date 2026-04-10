@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ export default function FeedbackAdmin() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [readFilter, setReadFilter] = useState("all");
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: number } | null>(null);
 
   type FeedbackCategory = "general" | "suggestion" | "bug" | "complaint";
   const queryInput: { category?: FeedbackCategory; isRead?: boolean } = {};
@@ -87,9 +89,7 @@ export default function FeedbackAdmin() {
   };
 
   const handleDelete = (id: number) => {
-    if (window.confirm("Are you sure you want to delete this feedback?")) {
-      deleteMutation.mutate({ id });
-    }
+    setDeleteConfirm({ id });
   };
 
   return (
@@ -242,6 +242,20 @@ export default function FeedbackAdmin() {
             )}
           </CardContent>
         </Card>
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => !open && setDeleteConfirm(null)}
+        title="Delete Feedback"
+        description="Are you sure you want to delete this feedback?"
+        variant="destructive"
+        confirmLabel="Delete"
+        onConfirm={() => {
+          if (deleteConfirm) {
+            deleteMutation.mutate({ id: deleteConfirm.id });
+            setDeleteConfirm(null);
+          }
+        }}
+      />
       </div>
     </AdminLayout>
   );

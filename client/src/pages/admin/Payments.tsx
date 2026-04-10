@@ -1,5 +1,6 @@
 import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Search, CheckCircle, DollarSign, Calendar, Building2, User } from "luci
 export default function Payments() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [paymentConfirm, setPaymentConfirm] = useState<{ bookingId: number } | null>(null);
 
   // Only search when searchTerm is set
   const { data: searchResults = [], isLoading: isSearching } = trpc.admin.searchInvoiceBookings.useQuery(
@@ -38,12 +40,8 @@ export default function Payments() {
     setSearchTerm(searchQuery);
   };
 
-  const handleRecordPayment = async (bookingId: number) => {
-    if (!confirm("Are you sure you want to mark this booking as paid? This will trigger payment splits.")) {
-      return;
-    }
-
-    await recordPaymentMutation.mutateAsync({ bookingId });
+  const handleRecordPayment = (bookingId: number) => {
+    setPaymentConfirm({ bookingId });
   };
 
   const formatDate = (date: Date | string) => {
@@ -212,6 +210,19 @@ export default function Payments() {
             ))}
           </div>
         )}
+      <ConfirmDialog
+        open={!!paymentConfirm}
+        onOpenChange={(open) => !open && setPaymentConfirm(null)}
+        title="Record Payment"
+        description="Are you sure you want to mark this booking as paid? This will trigger payment splits."
+        confirmLabel="Record Payment"
+        onConfirm={() => {
+          if (paymentConfirm) {
+            recordPaymentMutation.mutate({ bookingId: paymentConfirm.bookingId });
+            setPaymentConfirm(null);
+          }
+        }}
+      />
       </div>
     </AdminLayout>
   );

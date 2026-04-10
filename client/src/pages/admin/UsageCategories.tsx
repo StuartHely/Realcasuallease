@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Loader2, Plus, Pencil, Trash2, GripVertical, BarChart3 } from "lucide-react";
 import { cleanHtmlDescription } from "@/lib/htmlUtils";
 
@@ -24,6 +25,7 @@ export default function UsageCategories() {
   // CRUD dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [confirmState, setConfirmState] = useState<{ id: number; name: string } | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     isFree: false,
@@ -134,9 +136,13 @@ export default function UsageCategories() {
   };
 
   const handleDelete = (id: number, name: string) => {
-    if (confirm(`Are you sure you want to delete "${name}"? This may affect existing site approvals and bookings.`)) {
-      deleteCategoryMutation.mutate({ id });
-    }
+    setConfirmState({ id, name });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!confirmState) return;
+    deleteCategoryMutation.mutate({ id: confirmState.id });
+    setConfirmState(null);
   };
 
   // Get sorted centres
@@ -371,6 +377,16 @@ export default function UsageCategories() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          open={!!confirmState}
+          onOpenChange={(open) => { if (!open) setConfirmState(null); }}
+          title="Delete Usage Category"
+          description={`Are you sure you want to delete "${confirmState?.name}"? This may affect existing site approvals and bookings.`}
+          confirmLabel="Delete"
+          variant="destructive"
+          onConfirm={handleDeleteConfirm}
+        />
 
         {/* Section 2: Site Category Approvals */}
         <Card>

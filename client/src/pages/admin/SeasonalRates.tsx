@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import AdminLayout from "@/components/AdminLayout";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,6 +21,7 @@ export default function SeasonalRates() {
   const [editingRate, setEditingRate] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: number } | null>(null);
 
   const { data: centres } = trpc.centres.list.useQuery();
   const { data: sites } = trpc.sites.getByCentreId.useQuery(
@@ -241,11 +243,7 @@ export default function SeasonalRates() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
-                                if (confirm("Delete this seasonal rate?")) {
-                                  deleteMutation.mutate({ id: rate.id });
-                                }
-                              }}
+                              onClick={() => setDeleteConfirm({ id: rate.id })}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -261,11 +259,7 @@ export default function SeasonalRates() {
                   month={calendarMonth}
                   onMonthChange={setCalendarMonth}
                   onEditRate={setEditingRate}
-                  onDeleteRate={(id: number) => {
-                    if (confirm("Delete this seasonal rate?")) {
-                      deleteMutation.mutate({ id });
-                    }
-                  }}
+                  onDeleteRate={(id: number) => setDeleteConfirm({ id })}
                 />
               )}
             </>
@@ -378,6 +372,20 @@ export default function SeasonalRates() {
           </form>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => !open && setDeleteConfirm(null)}
+        title="Delete Seasonal Rate"
+        description="Are you sure you want to delete this seasonal rate?"
+        variant="destructive"
+        confirmLabel="Delete"
+        onConfirm={() => {
+          if (deleteConfirm) {
+            deleteMutation.mutate({ id: deleteConfirm.id });
+            setDeleteConfirm(null);
+          }
+        }}
+      />
       </div>
     </AdminLayout>
   );

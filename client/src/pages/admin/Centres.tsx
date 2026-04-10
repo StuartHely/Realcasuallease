@@ -18,12 +18,14 @@ import { Switch } from "@/components/ui/switch";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export default function AdminCentres() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedCentre, setSelectedCentre] = useState<any>(null);
   const [uploadingPdf, setUploadingPdf] = useState<number | null>(null);
+  const [confirmState, setConfirmState] = useState<{ id: number; name: string } | null>(null);
   const pdfInputRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
   
   const { data: centres, refetch } = trpc.centres.list.useQuery();
@@ -157,16 +159,19 @@ export default function AdminCentres() {
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"? This will also delete all associated sites.`)) {
-      return;
-    }
-    
+    setConfirmState({ id, name });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!confirmState) return;
     try {
-      await deleteMutation.mutateAsync({ id });
+      await deleteMutation.mutateAsync({ id: confirmState.id });
       toast.success("Shopping centre deleted successfully");
       refetch();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete centre");
+    } finally {
+      setConfirmState(null);
     }
   };
 
@@ -775,6 +780,16 @@ export default function AdminCentres() {
             </Card>
           ))}
         </div>
+
+        <ConfirmDialog
+          open={!!confirmState}
+          onOpenChange={(open) => { if (!open) setConfirmState(null); }}
+          title="Delete Centre"
+          description={`Are you sure you want to delete "${confirmState?.name}"? This will also delete all associated sites.`}
+          confirmLabel="Delete"
+          variant="destructive"
+          onConfirm={handleDeleteConfirm}
+        />
       </div>
     </AdminLayout>
   );

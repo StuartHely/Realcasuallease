@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Layers, Building2, Upload, RotateCw } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
@@ -69,6 +70,7 @@ export default function ThirdLineIncome() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<any>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [confirmState, setConfirmState] = useState<{ id: number; assetNumber: string } | null>(null);
   
   // Image preview and crop states
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -292,9 +294,13 @@ export default function ThirdLineIncome() {
   };
 
   const handleDelete = (id: number, assetNumber: string) => {
-    if (confirm(`Are you sure you want to delete asset "${assetNumber}"?`)) {
-      deleteMutation.mutate({ id });
-    }
+    setConfirmState({ id, assetNumber });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!confirmState) return;
+    deleteMutation.mutate({ id: confirmState.id });
+    setConfirmState(null);
   };
 
   const selectedCentre = centres?.find((c: any) => c.id === selectedCentreId);
@@ -726,6 +732,16 @@ export default function ThirdLineIncome() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          open={!!confirmState}
+          onOpenChange={(open) => { if (!open) setConfirmState(null); }}
+          title="Delete Asset"
+          description={`Are you sure you want to delete asset "${confirmState?.assetNumber}"?`}
+          confirmLabel="Delete"
+          variant="destructive"
+          onConfirm={handleDeleteConfirm}
+        />
       </div>
     </AdminLayout>
   );

@@ -11,10 +11,12 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, GripVertical } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export default function ThirdLineCategories() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [confirmState, setConfirmState] = useState<{ id: number; name: string } | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     displayOrder: 0,
@@ -86,9 +88,13 @@ export default function ThirdLineCategories() {
   };
 
   const handleDelete = (id: number, name: string) => {
-    if (confirm(`Are you sure you want to delete "${name}"? This may affect existing Third Line Income assets.`)) {
-      deleteMutation.mutate({ id });
-    }
+    setConfirmState({ id, name });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!confirmState) return;
+    deleteMutation.mutate({ id: confirmState.id });
+    setConfirmState(null);
   };
 
   return (
@@ -228,6 +234,16 @@ export default function ThirdLineCategories() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          open={!!confirmState}
+          onOpenChange={(open) => { if (!open) setConfirmState(null); }}
+          title="Delete Category"
+          description={`Are you sure you want to delete "${confirmState?.name}"? This may affect existing Third Line Income assets.`}
+          confirmLabel="Delete"
+          variant="destructive"
+          onConfirm={handleDeleteConfirm}
+        />
       </div>
     </AdminLayout>
   );

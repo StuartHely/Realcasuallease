@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import AdminLayout from "@/components/AdminLayout";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function PendingApprovals() {
   const [, setLocation] = useLocation();
+  const [approveConfirm, setApproveConfirm] = useState<{ id: number } | null>(null);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -52,9 +54,7 @@ export default function PendingApprovals() {
   });
 
   const handleApprove = (bookingId: number) => {
-    if (confirm("Are you sure you want to approve this booking?")) {
-      approveBookingMutation.mutate({ bookingId });
-    }
+    setApproveConfirm({ id: bookingId });
   };
 
   const handleReject = (bookingId: number) => {
@@ -333,6 +333,20 @@ export default function PendingApprovals() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!approveConfirm}
+        onOpenChange={(open) => !open && setApproveConfirm(null)}
+        title="Approve Booking"
+        description="Are you sure you want to approve this booking?"
+        confirmLabel="Approve"
+        onConfirm={() => {
+          if (approveConfirm) {
+            approveBookingMutation.mutate({ bookingId: approveConfirm.id });
+            setApproveConfirm(null);
+          }
+        }}
+      />
 
       </div>
     </AdminLayout>

@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Store, Building2, Upload, RotateCw } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 
@@ -68,6 +69,7 @@ export default function VacantShops() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingShop, setEditingShop] = useState<any>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [confirmState, setConfirmState] = useState<{ id: number; shopNumber: string } | null>(null);
   
   // Image preview and crop states
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -292,9 +294,13 @@ export default function VacantShops() {
   };
 
   const handleDelete = (id: number, shopNumber: string) => {
-    if (confirm(`Are you sure you want to delete shop "${shopNumber}"?`)) {
-      deleteMutation.mutate({ id });
-    }
+    setConfirmState({ id, shopNumber });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!confirmState) return;
+    deleteMutation.mutate({ id: confirmState.id });
+    setConfirmState(null);
   };
 
   const selectedCentre = centres?.find((c: any) => c.id === selectedCentreId);
@@ -713,6 +719,16 @@ export default function VacantShops() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          open={!!confirmState}
+          onOpenChange={(open) => { if (!open) setConfirmState(null); }}
+          title="Delete Vacant Shop"
+          description={`Are you sure you want to delete shop "${confirmState?.shopNumber}"?`}
+          confirmLabel="Delete"
+          variant="destructive"
+          onConfirm={handleDeleteConfirm}
+        />
       </div>
     </AdminLayout>
   );

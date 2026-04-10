@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import AdminLayout from "@/components/AdminLayout";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ export default function LogoManagement() {
   const { data: currentLogo, refetch: refetchCurrent } = trpc.systemConfig.getCurrentLogo.useQuery();
   const { data: allLogos, refetch: refetchAll } = trpc.systemConfig.getAllLogos.useQuery();
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
+  const [deleteLogoConfirm, setDeleteLogoConfirm] = useState<{ logoId: string } | null>(null);
 
   const setLogoMutation = trpc.systemConfig.setLogo.useMutation({
     onSuccess: () => {
@@ -48,8 +50,7 @@ export default function LogoManagement() {
 
   const handleDeleteLogo = (logoId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("Are you sure you want to delete this logo?")) return;
-    deleteLogoMutation.mutate({ logoId: logoId as any });
+    setDeleteLogoConfirm({ logoId });
   };
 
   const handleLogoSelect = (logoId: string) => {
@@ -268,6 +269,20 @@ export default function LogoManagement() {
             </ul>
           </CardContent>
         </Card>
+      <ConfirmDialog
+        open={!!deleteLogoConfirm}
+        onOpenChange={(open) => !open && setDeleteLogoConfirm(null)}
+        title="Delete Logo"
+        description="Are you sure you want to delete this logo?"
+        variant="destructive"
+        confirmLabel="Delete"
+        onConfirm={() => {
+          if (deleteLogoConfirm) {
+            deleteLogoMutation.mutate({ logoId: deleteLogoConfirm.logoId as any });
+            setDeleteLogoConfirm(null);
+          }
+        }}
+      />
       </div>
     </AdminLayout>
   );
