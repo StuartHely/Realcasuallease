@@ -1862,3 +1862,56 @@ export async function resolveRemittanceBankAccount(centreId: number): Promise<{
   return null;
 }
 
+export async function getBookingStatusCounts(ownerId?: number) {
+  const db = await getDb();
+  if (!db) return { all: 0, pending: 0, confirmed: 0, cancelled: 0, rejected: 0, completed: 0, unpaid: 0, totalOutstanding: 0, totalOverdue: 0, outstandingCount: 0, overdueCount: 0 };
+
+  let baseQuery = db.select({
+    status: bookings.status,
+    paymentMethod: bookings.paymentMethod,
+    paidAt: bookings.paidAt,
+    totalAmount: bookings.totalAmount,
+    gstAmount: bookings.gstAmount,
+    approvedAt: bookings.approvedAt,
+  }).from(bookings);
+
+  if (ownerId) {
+    const centreRows = await db.select({ id: shoppingCentres.id }).from(shoppingCentres).where(eq(shoppingCentres.ownerId, ownerId));
+    const centreIds = centreRows.map(c => c.id);
+    if (centreIds.length === 0) return { all: 0, pending: 0, confirmed: 0, cancelled: 0, rejected: 0, completed: 0, unpaid: 0, totalOutstanding: 0, totalOverdue: 0, outstandingCount: 0, overdueCount: 0 };
+    const siteRows = await db.select({ id: sites.id }).from(sites).where(inArray(sites.centreId, centreIds));
+    const siteIds = siteRows.map(s => s.id);
+    if (siteIds.length === 0) return { all: 0, pending: 0, confirmed: 0, cancelled: 0, rejected: 0, completed: 0, unpaid: 0, totalOutstanding: 0, totalOverdue: 0, outstandingCount: 0, overdueCount: 0 };
+    baseQuery = baseQuery.where(inArray(bookings.siteId, siteIds)) as any;
+  }
+
+  const rows = await baseQuery;
+  const now = new Date();
+  let pending = 0, confirmed = 0, cancelled = 0, rejected = 0, completed = 0, unpaid = 0;
+  let totalOutstanding = 0, totalOverdue = 0, outstandingCount = 0, overdueCount = 0;
+
+  for (const b of rows) {
+    if (b.status === 'pending') pending++;
+    if (b.status === 'confirmed') confirmed++;
+    if (b.status === 'cancelled') cancelled++;
+    if (b.status === 'rejected') rejected++;
+    if (b.status === 'completed') completed++;
+    if (b.paymentMethod === 'invoice' && !b.paidAt && b.status !== 'rejected') unpaid++;
+
+    if (b.status === 'confirmed' && !b.paidAt && b.approvedAt) {
+      const total = Number(b.totalAmount || 0) + Number(b.gstAmount || 0);
+      const due = new Date(b.approvedAt);
+      due.setDate(due.getDate() + 14);
+      if (due < now) {
+        totalOverdue += total;
+        overdueCount++;
+      } else {
+        totalOutstanding += total;
+        outstandingCount++;
+      }
+    }
+  }
+
+  return { all: rows.length, pending, confirmed, cancelled, rejected, completed, unpaid, totalOutstanding, totalOverdue, outstandingCount, overdueCount };
+}
+

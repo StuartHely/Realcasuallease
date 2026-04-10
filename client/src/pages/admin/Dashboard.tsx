@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Building2, MapPin, Calendar, DollarSign, TrendingUp, Users } from "lucide-react";
+import { Building2, MapPin, Calendar, DollarSign, TrendingUp, Users, CheckCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import AdminLayout from "@/components/AdminLayout";
 import { useTenant } from "@/contexts/TenantContext";
 
@@ -130,52 +131,38 @@ export default function AdminDashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common administrative tasks</CardDescription>
+              <CardTitle>Needs Attention</CardTitle>
+              <CardDescription>Items requiring action</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <a
-                href="/admin/centres"
-                className="block rounded-lg border p-3 hover:bg-accent transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Building2 className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="font-medium">Manage Centres</p>
-                    <p className="text-xs text-muted-foreground">
-                      Add or edit shopping centres
-                    </p>
+              {(stats?.pendingCount ?? 0) > 0 && (
+                <a href="/admin/pending-approvals" className="block rounded-lg border border-amber-200 bg-amber-50 p-3 hover:bg-amber-100 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-amber-600" />
+                      <p className="font-medium text-amber-900">Bookings awaiting approval</p>
+                    </div>
+                    <Badge className="bg-amber-600">{stats?.pendingCount}</Badge>
                   </div>
-                </div>
-              </a>
-              <a
-                href="/admin/sites"
-                className="block rounded-lg border p-3 hover:bg-accent transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="font-medium">Manage Sites</p>
-                    <p className="text-xs text-muted-foreground">
-                      Update site details and images
-                    </p>
+                </a>
+              )}
+              {(stats?.unpaidOverdue ?? 0) > 0 && (
+                <a href="/admin/bookings?status=unpaid" className="block rounded-lg border border-red-200 bg-red-50 p-3 hover:bg-red-100 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="h-5 w-5 text-red-600" />
+                      <p className="font-medium text-red-900">Overdue invoices</p>
+                    </div>
+                    <Badge className="bg-red-600">{stats?.unpaidOverdue}</Badge>
                   </div>
+                </a>
+              )}
+              {!(stats?.pendingCount) && !(stats?.unpaidOverdue) && (
+                <div className="text-center py-4">
+                  <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">All clear — nothing needs attention</p>
                 </div>
-              </a>
-              <a
-                href="/admin/bookings"
-                className="block rounded-lg border p-3 hover:bg-accent transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-purple-600" />
-                  <div>
-                    <p className="font-medium">Review Bookings</p>
-                    <p className="text-xs text-muted-foreground">
-                      Approve or manage bookings
-                    </p>
-                  </div>
-                </div>
-              </a>
+              )}
             </CardContent>
           </Card>
         </div>

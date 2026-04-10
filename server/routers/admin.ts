@@ -50,6 +50,14 @@ export const adminRouter = router({
           status: b.status,
         }));
       
+      const pendingCount = bookings.filter((b: any) => b.status === 'pending').length;
+      const unpaidOverdue = bookings.filter((b: any) => {
+        if (b.status !== 'confirmed' || b.paidAt || !b.approvedAt) return false;
+        const due = new Date(b.approvedAt);
+        due.setDate(due.getDate() + 14);
+        return due < now;
+      }).length;
+
       return {
         totalCentres: centres.length,
         totalSites: sites.length,
@@ -58,6 +66,8 @@ export const adminRouter = router({
         monthlyRevenue,
         totalUsers: users.length,
         recentBookings,
+        pendingCount,
+        unpaidOverdue,
       };
     }),
 

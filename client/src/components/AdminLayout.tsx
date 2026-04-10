@@ -64,11 +64,17 @@ import {
   Receipt,
   FolderOpen,
   Palette,
+  Landmark,
+  Clock,
+  Mail,
+  HelpCircle,
+  ScrollText,
 } from "lucide-react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { trpc } from "@/lib/trpc";
+import { AdminBreadcrumb } from "./AdminBreadcrumb";
 
 // Define menu sections with grouped items
 type MenuItem = { icon: any; label: string; path: string; badge?: number };
@@ -142,11 +148,11 @@ const getMenuSections = (userRole: string, pendingCount: number): MenuSection[] 
         items: [
           { icon: Calculator, label: "Budget Management", path: "/admin/fy-budgets" },
           { icon: DollarSign, label: "Financial Reports", path: "/admin/financials" },
-          { icon: FileText, label: "Remittance Report", path: "/admin/remittance" },
-          { icon: CreditCard, label: "Record Payments", path: "/admin/payments" },
+          { icon: Landmark, label: "Remittance Report", path: "/admin/remittance" },
+          { icon: CreditCard, label: "Record Payments", path: "/admin/bookings?status=unpaid" },
           { icon: Banknote, label: "EFT Payment Matching", path: "/admin/eft-payments" },
           { icon: BarChart3, label: "Occupancy Report", path: "/admin/occupancy-report" },
-          { icon: FileText, label: "Aged Debtors", path: "/admin/aged-debtors" },
+          { icon: Clock, label: "Aged Debtors", path: "/admin/aged-debtors" },
           { icon: Receipt, label: "GST Report", path: "/admin/gst-report" },
         ],
       },
@@ -156,7 +162,7 @@ const getMenuSections = (userRole: string, pendingCount: number): MenuSection[] 
         collapsible: true,
         defaultOpen: false,
         items: [
-          { icon: FileText, label: "Weekly Report Preview", path: "/admin/weekly-report" },
+          { icon: Mail, label: "Weekly Report Preview", path: "/admin/weekly-report" },
           { icon: Search, label: "Search Analytics", path: "/admin/search-analytics" },
           { icon: Image, label: "Image Analytics", path: "/admin/image-analytics" },
           { icon: BarChart3, label: "Pricing Analytics", path: "/admin/pricing-analytics" },
@@ -172,11 +178,11 @@ const getMenuSections = (userRole: string, pendingCount: number): MenuSection[] 
           { icon: Users, label: "Owners & Managers", path: "/admin/owners" },
           { icon: Globe, label: "Operators", path: "/admin/operators" },
           { icon: FolderOpen, label: "Portfolios", path: "/admin/portfolios" },
-          { icon: FileText, label: "Manage FAQs", path: "/admin/manage-faq" },
+          { icon: HelpCircle, label: "Manage FAQs", path: "/admin/manage-faq" },
           { icon: Image, label: "Logo Management", path: "/admin/logo-management" },
           { icon: Palette, label: "Owner Logo Allocation", path: "/admin/owner-logo-allocation" },
           { icon: MessageSquare, label: "Feedback", path: "/admin/feedback" },
-          { icon: FileText, label: "Audit Log", path: "/admin/audit" },
+          { icon: ScrollText, label: "Audit Log", path: "/admin/audit" },
           { icon: Settings, label: "Settings", path: "/admin/settings" },
         ],
       },
@@ -400,6 +406,7 @@ export default function AdminLayout({
       <SidebarInset>
         <header className="flex h-16 items-center gap-4 border-b bg-background px-6">
           <SidebarTrigger />
+          <AdminBreadcrumb />
           <div className="flex-1" />
           {pendingCount > 0 && (
             <Button

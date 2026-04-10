@@ -751,6 +751,12 @@ export const bookingsRouter = router({
         };
       }),
 
+    statusCounts: ownerProcedure.query(async ({ ctx }) => {
+      const { getScopedOwnerId } = await import('../tenantScope');
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+      return await db.getBookingStatusCounts(scopedOwnerId ?? undefined);
+    }),
+
     // Create recurring bookings — generates multiple individual bookings linked by recurrenceGroupId
     createRecurring: protectedProcedure
       .input(z.object({

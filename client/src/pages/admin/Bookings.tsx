@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { cleanHtmlDescription } from "@/lib/htmlUtils";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 type BookingStatus = "all" | "pending" | "confirmed" | "cancelled" | "rejected" | "completed" | "unpaid";
 
@@ -37,68 +38,54 @@ export default function AdminBookings() {
   const [licenceDialogOpen, setLicenceDialogOpen] = useState(false);
   const [licenceBookingId, setLicenceBookingId] = useState<number | null>(null);
 
-  const { data: bookings, isLoading } = trpc.bookings.list.useQuery({
+  const { data: bookings, isLoading, refetch } = trpc.bookings.list.useQuery({
     status: selectedStatus === "all" ? undefined : selectedStatus,
   });
 
-  // Fetch all bookings to calculate counts for each status
-  const { data: allBookings } = trpc.bookings.list.useQuery({
-    status: undefined, // Get all bookings for count calculation
+  const { data: countData } = trpc.bookings.statusCounts.useQuery();
+
+  const statusCounts = countData ?? { all: 0, pending: 0, confirmed: 0, cancelled: 0, rejected: 0, completed: 0, unpaid: 0 };
+
+  const invoiceStats = {
+    totalOutstanding: countData?.totalOutstanding ?? 0,
+    totalOverdue: countData?.totalOverdue ?? 0,
+    outstandingCount: countData?.outstandingCount ?? 0,
+    overdueCount: countData?.overdueCount ?? 0,
+  };
+
+  const [paymentConfirm, setPaymentConfirm] = useState<{ bookingId: number; bookingNumber: string } | null>(null);
+
+  const recordPaymentMutation = trpc.admin.recordPayment.useMutation({
+    onSuccess: () => {
+      toast.success("Payment recorded successfully");
+      refetch();
+      setPaymentConfirm(null);
+    },
+    onError: (error: any) => toast.error(`Failed: ${error.message}`),
   });
 
-  // Calculate counts for each status
-  const statusCounts = useMemo(() => {
-    if (!allBookings) return { all: 0, pending: 0, confirmed: 0, cancelled: 0, rejected: 0, completed: 0, unpaid: 0 };
-    
-    return {
-      all: allBookings.length,
-      pending: allBookings.filter(b => b.status === 'pending').length,
-      confirmed: allBookings.filter(b => b.status === 'confirmed').length,
-      cancelled: allBookings.filter(b => b.status === 'cancelled').length,
-      rejected: allBookings.filter(b => b.status === 'rejected').length,
-      completed: allBookings.filter(b => b.status === 'completed').length,
-      // Unpaid should exclude rejected bookings - rejected bookings are not eligible for payment
-      unpaid: allBookings.filter(b => b.paymentMethod === 'invoice' && !b.paidAt && b.status !== 'rejected').length,
-    };
-  }, [allBookings]);
-
-  const invoiceStats = useMemo(() => {
-    if (!allBookings) return { totalOutstanding: 0, totalOverdue: 0, outstandingCount: 0, overdueCount: 0 };
-    const now = new Date();
-    let totalOutstanding = 0, totalOverdue = 0, outstandingCount = 0, overdueCount = 0;
-    for (const b of allBookings) {
-      if (b.status !== 'confirmed' || b.paidAt || !b.approvedAt) continue;
-      const total = Number(b.totalAmount || 0) + Number(b.gstAmount || 0);
-      const dueDate = new Date(b.approvedAt);
-      dueDate.setDate(dueDate.getDate() + 14);
-      if (dueDate < now) {
-        totalOverdue += total;
-        overdueCount++;
-      } else {
-        totalOutstanding += total;
-        outstandingCount++;
-      }
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('status');
+    if (status && ['all','pending','confirmed','cancelled','rejected','completed','unpaid'].includes(status)) {
+      setSelectedStatus(status as BookingStatus);
     }
-    return { totalOutstanding, totalOverdue, outstandingCount, overdueCount };
-  }, [allBookings]);
+  }, []);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(amount);
 
   // Filter and sort bookings based on search query
   const filteredBookings = useMemo(() => {
-    // For booking number search, search across ALL bookings regardless of current tab
     const query = searchQuery.trim();
-    const isBookingNumberSearch = /^[A-Z0-9]+-\d{8,}-[A-Z0-9]+$/i.test(query) || /^BK\d+[A-Z]+$/i.test(query);
+    const searchSource = bookings || [];
     
-    // Use allBookings for booking number search to find across all statuses
-    const searchSource = isBookingNumberSearch && allBookings ? allBookings : (bookings || []);
-    
-    if (!searchSource || searchSource.length === 0) return [];
+    if (searchSource.length === 0) return [];
     if (!query) return bookings || [];
 
+    const isBookingNumberSearch = /^[A-Z0-9]+-\d{8,}-[A-Z0-9]+$/i.test(query) || /^BK\d+[A-Z]+$/i.test(query);
+
     if (isBookingNumberSearch) {
-      // Search for booking number across ALL bookings (all statuses)
       return searchSource.filter((booking) => 
         booking.bookingNumber?.toUpperCase().includes(query.toUpperCase())
       );
@@ -106,7 +93,7 @@ export default function AdminBookings() {
     
     // Company name or trading name search (partial, case-insensitive)
     const lowerQuery = query.toLowerCase();
-    const matchedBookings = (bookings || []).filter((booking) => {
+    const matchedBookings = searchSource.filter((booking) => {
       const companyName = booking.companyName?.toLowerCase() || "";
       const tradingName = booking.tradingName?.toLowerCase() || "";
       return companyName.includes(lowerQuery) || tradingName.includes(lowerQuery);
@@ -118,7 +105,7 @@ export default function AdminBookings() {
       const centreB = b.centreName?.toLowerCase() || "";
       return centreA.localeCompare(centreB);
     });
-  }, [bookings, searchQuery, allBookings]);
+  }, [bookings, searchQuery]);
 
   const licenceStatus = trpc.licence.getStatus.useQuery(
     { bookingId: licenceBookingId!, assetType: "cl" },
@@ -480,6 +467,7 @@ export default function AdminBookings() {
                         <TableHead>Invoice PDF</TableHead>
                         <TableHead>Edit</TableHead>
                         {selectedStatus === "pending" && <TableHead>Actions</TableHead>}
+                        {selectedStatus === "unpaid" && <TableHead>Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -615,6 +603,19 @@ export default function AdminBookings() {
                                 </Button>
                               </TableCell>
                             )}
+                            {selectedStatus === "unpaid" && !booking.paidAt && (
+                              <TableCell>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-green-600 border-green-300"
+                                  onClick={() => setPaymentConfirm({ bookingId: booking.id, bookingNumber: booking.bookingNumber })}
+                                >
+                                  <DollarSign className="h-3 w-3 mr-1" />
+                                  Mark Paid
+                                </Button>
+                              </TableCell>
+                            )}
                           </TableRow>
                         );
                       })}
@@ -694,6 +695,18 @@ export default function AdminBookings() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!paymentConfirm}
+        onOpenChange={(open) => { if (!open) setPaymentConfirm(null); }}
+        title="Record Payment"
+        description={`Mark booking ${paymentConfirm?.bookingNumber} as paid? This will trigger payment splits and commission calculations.`}
+        confirmLabel="Record Payment"
+        variant="default"
+        onConfirm={() => {
+          if (paymentConfirm) recordPaymentMutation.mutate({ bookingId: paymentConfirm.bookingId });
+        }}
+      />
       </div>
     </AdminLayout>
   );
