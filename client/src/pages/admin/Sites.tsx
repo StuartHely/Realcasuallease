@@ -35,11 +35,12 @@ import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { RateValidationAlerts } from "@/components/RateValidationAlerts";
+import { useDefaultCentre } from "@/hooks/useDefaultCentre";
 
 export default function AdminSites() {
   const [location] = useLocation();
   const utils = trpc.useUtils();
-  const [selectedCentreId, setSelectedCentreId] = useState<number | null>(null);
+  const { selectedCentreId, setSelectedCentreId, centres } = useDefaultCentre();
   
   // Update selectedCentreId when URL changes
   useEffect(() => {
@@ -118,7 +119,6 @@ export default function AdminSites() {
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
-  const { data: centres } = trpc.centres.list.useQuery();
   const { data: sites, refetch } = trpc.sites.getByCentreId.useQuery(
     { centreId: selectedCentreId! },
     { enabled: !!selectedCentreId }
