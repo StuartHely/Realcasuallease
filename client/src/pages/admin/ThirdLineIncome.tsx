@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
+import { useDefaultCentre } from "@/hooks/useDefaultCentre";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,7 +67,7 @@ const createCroppedImage = async (imageSrc: string, pixelCrop: Area, rotation: n
 };
 
 export default function ThirdLineIncome() {
-  const [selectedCentreId, setSelectedCentreId] = useState<number | null>(null);
+  const { selectedCentreId, setSelectedCentreId, centres } = useDefaultCentre();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<any>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -95,7 +96,6 @@ export default function ThirdLineIncome() {
     isActive: true,
   });
 
-  const { data: centres } = trpc.centres.list.useQuery();
   const { data: categories } = trpc.thirdLineCategories.listActive.useQuery();
   const { data: assets, isLoading, refetch } = trpc.thirdLineIncome.getByCentre.useQuery(
     { centreId: selectedCentreId! },

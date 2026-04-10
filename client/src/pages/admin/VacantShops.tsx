@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
+import { useDefaultCentre } from "@/hooks/useDefaultCentre";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,7 +66,7 @@ const createCroppedImage = async (imageSrc: string, pixelCrop: Area, rotation: n
 };
 
 export default function VacantShops() {
-  const [selectedCentreId, setSelectedCentreId] = useState<number | null>(null);
+  const { selectedCentreId, setSelectedCentreId, centres } = useDefaultCentre();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingShop, setEditingShop] = useState<any>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -95,7 +96,6 @@ export default function VacantShops() {
   });
 
   const utils = trpc.useUtils();
-  const { data: centres } = trpc.centres.list.useQuery();
   const { data: shops, isLoading } = trpc.vacantShops.getByCentre.useQuery(
     { centreId: selectedCentreId! },
     { enabled: !!selectedCentreId, staleTime: 0, gcTime: 0 }

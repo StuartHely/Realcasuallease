@@ -26,9 +26,11 @@ export function useDefaultCentre() {
     }
   }, [centres, selectedId]);
 
-  const select = (id: number) => {
+  const select = (id: number | null) => {
     setSelectedId(id);
-    localStorage.setItem("lastSelectedCentreId", String(id));
+    if (id !== null) {
+      localStorage.setItem("lastSelectedCentreId", String(id));
+    }
   };
 
   return {

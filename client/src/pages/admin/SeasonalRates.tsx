@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
+import { useDefaultCentre } from "@/hooks/useDefaultCentre";
 import AdminLayout from "@/components/AdminLayout";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { BulkIncreaseForm } from "@/components/BulkIncreaseForm";
 import { SeasonalRateCalendar } from "@/components/SeasonalRateCalendar";
 
 export default function SeasonalRates() {
+  const { selectedCentreId: defaultCentreId, setSelectedCentreId: setDefaultCentreId, centres } = useDefaultCentre();
   const [selectedCentreId, setSelectedCentreId] = useState<string>("");
   const [selectedSiteId, setSelectedSiteId] = useState<string>("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -23,7 +25,12 @@ export default function SeasonalRates() {
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: number } | null>(null);
 
-  const { data: centres } = trpc.centres.list.useQuery();
+  // Sync from hook's auto-selection
+  useEffect(() => {
+    if (defaultCentreId && !selectedCentreId) {
+      setSelectedCentreId(String(defaultCentreId));
+    }
+  }, [defaultCentreId]);
   const { data: sites } = trpc.sites.getByCentreId.useQuery(
     { centreId: parseInt(selectedCentreId) },
     { enabled: !!selectedCentreId }
@@ -136,6 +143,7 @@ export default function SeasonalRates() {
               <Label>Shopping Centre</Label>
               <Select value={selectedCentreId} onValueChange={(value) => {
                 setSelectedCentreId(value);
+                setDefaultCentreId(Number(value));
                 setSelectedSiteId("");
               }}>
                 <SelectTrigger>

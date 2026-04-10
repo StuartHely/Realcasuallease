@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
+import { useDefaultCentre } from "@/hooks/useDefaultCentre";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 
 export default function WeeklyReportPreview() {
+  const { selectedCentreId: defaultCentreId, setSelectedCentreId: setDefaultCentreId, centres } = useDefaultCentre();
   const [selectedCentreId, setSelectedCentreId] = useState<string>("");
   const [weekDate, setWeekDate] = useState<Date>(() => {
     const today = new Date();
@@ -28,7 +30,12 @@ export default function WeeklyReportPreview() {
     centreName: string;
   } | null>(null);
 
-  const { data: centres } = trpc.centres.list.useQuery();
+  // Sync from hook's auto-selection
+  useEffect(() => {
+    if (defaultCentreId && !selectedCentreId) {
+      setSelectedCentreId(String(defaultCentreId));
+    }
+  }, [defaultCentreId]);
 
   const generateMutation = trpc.reports.weeklyReportDownload.useMutation({
     onSuccess: (data) => {
@@ -116,6 +123,7 @@ export default function WeeklyReportPreview() {
                 value={selectedCentreId}
                 onChange={(e) => {
                   setSelectedCentreId(e.target.value);
+                  if (e.target.value) setDefaultCentreId(Number(e.target.value));
                   setReportData(null);
                 }}
                 className="flex h-10 w-full max-w-md rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

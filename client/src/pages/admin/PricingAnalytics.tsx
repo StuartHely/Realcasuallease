@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useDefaultCentre } from "@/hooks/useDefaultCentre";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,9 +14,9 @@ import { toast } from "sonner";
 export default function PricingAnalytics() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [centreId, setCentreId] = useState<number | undefined>();
+  const { selectedCentreId, setSelectedCentreId, centres } = useDefaultCentre();
 
-  const { data: centres } = trpc.centres.list.useQuery();
+  const centreId = selectedCentreId ?? undefined;
 
   const { data: analytics, isLoading: analyticsLoading } = trpc.pricingAnalytics.getSiteAnalytics.useQuery({
     centreId,
@@ -80,7 +81,7 @@ export default function PricingAnalytics() {
             <label className="text-sm font-medium">Centre</label>
             <Select
               value={centreId?.toString() ?? "all"}
-              onValueChange={(val) => setCentreId(val === "all" ? undefined : Number(val))}
+              onValueChange={(val) => setSelectedCentreId(val === "all" ? null : Number(val))}
             >
               <SelectTrigger className="w-56">
                 <SelectValue placeholder="All Centres" />
@@ -101,7 +102,7 @@ export default function PricingAnalytics() {
               onClick={() => {
                 setStartDate("");
                 setEndDate("");
-                setCentreId(undefined);
+                setSelectedCentreId(null);
               }}
             >
               Clear Filters

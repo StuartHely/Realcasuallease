@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { trpc } from "@/lib/trpc";
+import { useDefaultCentre } from "@/hooks/useDefaultCentre";
 import { Loader2, Plus, Save, AlertCircle, Upload, FileSpreadsheet, CheckCircle, XCircle, AlertTriangle, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -64,10 +65,18 @@ type ImportResult = {
 };
 
 export default function FYBudgetManagement() {
+  const { selectedCentreId: defaultCentreId, setSelectedCentreId: setDefaultCentreId } = useDefaultCentre();
   const [selectedFY, setSelectedFY] = useState<number>(getCurrentFY());
   const [percentages, setPercentages] = useState<Record<MonthKey, string>>(DEFAULT_PERCENTAGES);
   const [showAddCentreDialog, setShowAddCentreDialog] = useState(false);
   const [selectedCentreId, setSelectedCentreId] = useState<string>("");
+
+  // Sync from hook's auto-selection
+  useEffect(() => {
+    if (defaultCentreId && !selectedCentreId) {
+      setSelectedCentreId(String(defaultCentreId));
+    }
+  }, [defaultCentreId]);
   const [newAnnualBudget, setNewAnnualBudget] = useState<string>("");
   
   // Bulk upload state

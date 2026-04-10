@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import { useDefaultCentre } from "@/hooks/useDefaultCentre";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import { Loader2, Plus, Pencil, Trash2, GripVertical, BarChart3 } from "lucide-r
 import { cleanHtmlDescription } from "@/lib/htmlUtils";
 
 export default function UsageCategories() {
-  const [selectedCentreId, setSelectedCentreId] = useState<number | null>(null);
+  const { selectedCentreId, setSelectedCentreId, centres } = useDefaultCentre();
   const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [allTickedOverride, setAllTickedOverride] = useState(false);
@@ -36,7 +37,6 @@ export default function UsageCategories() {
   const utils = trpc.useUtils();
 
   // Queries
-  const { data: centres } = trpc.centres.list.useQuery();
   const { data: categories } = trpc.usageCategories.list.useQuery();
   const { data: allCategories, isLoading: allCategoriesLoading } = trpc.usageCategories.listAll.useQuery();
   const { data: sitesWithCategories, refetch: refetchSites } = trpc.usageCategories.getSitesWithCategories.useQuery(

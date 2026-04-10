@@ -1,5 +1,6 @@
 import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
+import { useDefaultCentre } from "@/hooks/useDefaultCentre";
 import {
   Card,
   CardContent,
@@ -50,9 +51,9 @@ function formatAUD(value: string | number | null | undefined): string {
 export default function AdminFinancials() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [centreId, setCentreId] = useState<number | undefined>();
+  const { selectedCentreId, setSelectedCentreId, centres } = useDefaultCentre();
 
-  const { data: centres } = trpc.centres.list.useQuery();
+  const centreId = selectedCentreId ?? undefined;
   const { data, isLoading } = trpc.financials.summary.useQuery(
     {
       startDate: startDate || undefined,
@@ -186,7 +187,7 @@ export default function AdminFinancials() {
                 <Select
                   value={centreId ? String(centreId) : "all"}
                   onValueChange={(v) =>
-                    setCentreId(v === "all" ? undefined : Number(v))
+                    setSelectedCentreId(v === "all" ? null : Number(v))
                   }
                 >
                   <SelectTrigger className="w-56">
@@ -207,7 +208,7 @@ export default function AdminFinancials() {
                 onClick={() => {
                   setStartDate("");
                   setEndDate("");
-                  setCentreId(undefined);
+                  setSelectedCentreId(null);
                 }}
               >
                 Clear Filters

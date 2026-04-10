@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import AdminLayout from "@/components/AdminLayout";
+import { useDefaultCentre } from "@/hooks/useDefaultCentre";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,28 +13,25 @@ import { cleanHtmlDescription } from "@/lib/htmlUtils";
 
 export default function AdminSiteAssignment() {
   const [, setLocation] = useLocation();
-  const [selectedCentreId, setSelectedCentreId] = useState<number>(0);
+  const { selectedCentreId, setSelectedCentreId, centres } = useDefaultCentre();
   const [assignments, setAssignments] = useState<Record<number, number | null>>({});
-
-  // Fetch centres
-  const { data: centres = [] } = trpc.centres.list.useQuery();
 
   // Fetch selected centre details
   const { data: centre } = trpc.centres.getById.useQuery(
-    { id: selectedCentreId },
-    { enabled: selectedCentreId > 0 }
+    { id: selectedCentreId! },
+    { enabled: !!selectedCentreId && selectedCentreId > 0 }
   );
 
   // Fetch floor levels for selected centre
   const { data: floorLevels = [] } = trpc.admin.getFloorLevels.useQuery(
-    { centreId: selectedCentreId },
-    { enabled: selectedCentreId > 0 }
+    { centreId: selectedCentreId! },
+    { enabled: !!selectedCentreId && selectedCentreId > 0 }
   );
 
   // Fetch all sites for selected centre
   const { data: sites = [], refetch: refetchSites } = trpc.centres.getSites.useQuery(
-    { centreId: selectedCentreId },
-    { enabled: selectedCentreId > 0 }
+    { centreId: selectedCentreId! },
+    { enabled: !!selectedCentreId && selectedCentreId > 0 }
   );
 
   // Mutation for updating site floor assignments
@@ -104,7 +102,7 @@ export default function AdminSiteAssignment() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Select value={selectedCentreId.toString()} onValueChange={handleCentreChange}>
+          <Select value={selectedCentreId?.toString() ?? ""} onValueChange={handleCentreChange}>
             <SelectTrigger>
               <SelectValue placeholder="Select a shopping centre..." />
             </SelectTrigger>
@@ -119,7 +117,7 @@ export default function AdminSiteAssignment() {
         </CardContent>
       </Card>
 
-      {selectedCentreId > 0 && (
+      {selectedCentreId && selectedCentreId > 0 && (
         <>
           {floorLevels.length === 0 && (
             <Card className="mt-6">

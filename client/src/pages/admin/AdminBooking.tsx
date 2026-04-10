@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import { useDefaultCentre } from "@/hooks/useDefaultCentre";
 import { useLocation, useSearch } from "wouter";
 import AdminLayout from "@/components/AdminLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -47,7 +48,7 @@ export default function AdminBooking() {
   }, [urlParams.month]);
   
   // State for form
-  const [selectedCentreId, setSelectedCentreId] = useState<number | null>(null);
+  const { selectedCentreId, setSelectedCentreId, centres } = useDefaultCentre();
   const [selectedMonth, setSelectedMonth] = useState(initialMonth);
   const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
   const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
@@ -78,7 +79,6 @@ export default function AdminBooking() {
   });
 
   // Queries
-  const { data: centres } = trpc.centres.list.useQuery();
   const { data: users } = trpc.adminBooking.getUsers.useQuery();
   const { data: usageCategories } = trpc.usageCategories.list.useQuery();
   

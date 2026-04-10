@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import AdminLayout from "@/components/AdminLayout";
+import { useDefaultCentre } from "@/hooks/useDefaultCentre";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import { Upload, MapPin, Save, X, ArrowLeft, Plus } from "lucide-react";
 
 export default function AdminMaps() {
   const [, setLocation] = useLocation();
-  const [selectedCentreId, setSelectedCentreId] = useState<number>(0);
+  const { selectedCentreId, setSelectedCentreId, centres } = useDefaultCentre();
   const [selectedFloorLevelId, setSelectedFloorLevelId] = useState<number | null>(null);
   const [mapImage, setMapImage] = useState<File | null>(null);
   const [showHideConfirm, setShowHideConfirm] = useState(false);
@@ -33,19 +34,16 @@ export default function AdminMaps() {
   const imageRef = useRef<HTMLImageElement>(null);
   const utils = trpc.useUtils();
 
-  // Fetch centres
-  const { data: centres = [] } = trpc.centres.list.useQuery();
-
   // Fetch selected centre details
   const { data: centre } = trpc.centres.getById.useQuery(
-    { id: selectedCentreId },
-    { enabled: selectedCentreId > 0 }
+    { id: selectedCentreId! },
+    { enabled: !!selectedCentreId && selectedCentreId > 0 }
   );
 
   // Fetch floor levels for selected centre
   const { data: floorLevels = [], refetch: refetchFloorLevels } = trpc.admin.getFloorLevels.useQuery(
-    { centreId: selectedCentreId },
-    { enabled: selectedCentreId > 0 }
+    { centreId: selectedCentreId! },
+    { enabled: !!selectedCentreId && selectedCentreId > 0 }
   );
 
   // Fetch sites for selected floor level
@@ -55,8 +53,8 @@ export default function AdminMaps() {
   );
   // Also fetch all centre sites to include unassigned ones
   const { data: allCentreSites = [] } = trpc.centres.getSites.useQuery(
-    { centreId: selectedCentreId },
-    { enabled: selectedCentreId > 0 }
+    { centreId: selectedCentreId! },
+    { enabled: !!selectedCentreId && selectedCentreId > 0 }
   );
   // When a floor level is selected, show floor-assigned sites + unassigned sites (no floorLevelId)
   // When no floor levels exist, show all centre sites
@@ -185,7 +183,7 @@ export default function AdminMaps() {
         toast.success("Map migrated to 'Ground Floor' level");
         setSelectedFloorLevelId(data.floorLevelId);
         refetchFloorLevels();
-        utils.centres.getById.invalidate({ id: selectedCentreId });
+        utils.centres.getById.invalidate({ id: selectedCentreId! });
       }
     },
   });
@@ -193,12 +191,12 @@ export default function AdminMaps() {
   // Auto-migrate centre-level maps to floor levels (Rockdale, Highlands, etc.)
   useEffect(() => {
     if (
-      selectedCentreId > 0 &&
+      selectedCentreId && selectedCentreId > 0 &&
       centre?.mapImageUrl &&
       floorLevels.length === 0 &&
       !migrateCentreMapMutation.isPending
     ) {
-      migrateCentreMapMutation.mutate({ centreId: selectedCentreId });
+      migrateCentreMapMutation.mutate({ centreId: selectedCentreId! });
     }
   }, [selectedCentreId, centre?.mapImageUrl, floorLevels.length]);
 
@@ -275,7 +273,7 @@ export default function AdminMaps() {
   };
 
     const handleUploadMap = async () => {
-    if (!mapImage || selectedCentreId === 0) {
+    if (!mapImage || !selectedCentreId) {
       toast.error("Please select a centre and choose a map image");
       return;
     }
@@ -408,7 +406,7 @@ export default function AdminMaps() {
   };
 
   const handleCreateFloorLevel = async () => {
-    if (!newFloorName || selectedCentreId === 0) {
+    if (!newFloorName || !selectedCentreId) {
       toast.error("Please enter floor name");
       return;
     }
@@ -423,7 +421,7 @@ export default function AdminMaps() {
 
   /** Persist markers to DB without blocking the UI. */
   const autoSaveMarkers = (currentMarkers: typeof markers) => {
-    if (selectedCentreId === 0 || currentMarkers.length === 0) return;
+    if (!selectedCentreId || currentMarkers.length === 0) return;
     saveMarkersMutation.mutate({
       centreId: selectedCentreId,
       markers: currentMarkers.map((m) => ({
@@ -527,7 +525,7 @@ export default function AdminMaps() {
   };
 
   const handleSaveMarkers = async () => {
-    if (selectedCentreId === 0 || markers.length === 0) {
+    if (!selectedCentreId || markers.length === 0) {
       toast.error("Please select a centre and add at least one marker");
       return;
     }
@@ -561,7 +559,7 @@ export default function AdminMaps() {
               <div>
                 <Label htmlFor="centre">Shopping Centre</Label>
                 <Select
-                  value={selectedCentreId.toString()}
+                  value={selectedCentreId?.toString() ?? ""}
                   onValueChange={(value) => {
                     setSelectedCentreId(parseInt(value));
                     setSelectedFloorLevelId(null);
@@ -582,7 +580,7 @@ export default function AdminMaps() {
                 </Select>
               </div>
 
-              {selectedCentreId > 0 && (
+              {selectedCentreId && selectedCentreId > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-900">
                     <strong>{sites.length}</strong> sites available{selectedFloorLevelId ? " on this floor" : " for this centre"}
@@ -598,7 +596,7 @@ export default function AdminMaps() {
           </CardContent>
         </Card>
 
-        {selectedCentreId > 0 && (
+        {selectedCentreId && selectedCentreId > 0 && (
           <>
             {/* Floor Level Management */}
             <Card className="mb-8 shadow-lg">

@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { useDefaultCentre } from "@/hooks/useDefaultCentre";
 import { MapPin, Save, X, Store, Zap, AlertTriangle } from "lucide-react";
 
 type AssetType = "vacant_shops" | "third_line";
@@ -19,16 +20,21 @@ interface AssetMarker {
 }
 
 export default function AssetMapPlacement() {
+  const { selectedCentreId: defaultCentreId, setSelectedCentreId: setDefaultCentreId, centres } = useDefaultCentre();
   const [selectedCentreId, setSelectedCentreId] = useState<string>("");
   const [selectedFloorLevelId, setSelectedFloorLevelId] = useState<string>("");
   const [selectedAssetType, setSelectedAssetType] = useState<AssetType>("vacant_shops");
   const [markers, setMarkers] = useState<AssetMarker[]>([]);
 
+  // Sync from hook's auto-selection
+  useEffect(() => {
+    if (defaultCentreId && !selectedCentreId) {
+      setSelectedCentreId(String(defaultCentreId));
+    }
+  }, [defaultCentreId]);
+
   const centreIdNum = selectedCentreId ? parseInt(selectedCentreId) : 0;
   const floorLevelIdNum = selectedFloorLevelId ? parseInt(selectedFloorLevelId) : null;
-
-  // Fetch centres
-  const { data: centres = [] } = trpc.centres.list.useQuery();
 
   // Fetch selected centre details
   const { data: centre } = trpc.centres.getById.useQuery(
@@ -116,9 +122,10 @@ export default function AssetMapPlacement() {
 
   const handleCentreChange = useCallback((value: string) => {
     setSelectedCentreId(value);
+    setDefaultCentreId(Number(value));
     setSelectedFloorLevelId("");
     setMarkers([]);
-  }, []);
+  }, [setDefaultCentreId]);
 
   const handleFloorLevelChange = useCallback((value: string) => {
     setSelectedFloorLevelId(value);
