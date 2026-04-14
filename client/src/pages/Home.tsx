@@ -143,6 +143,9 @@ export default function Home() {
   // Fetch all centres for map
   const { data: allCentres = [] } = trpc.centres.list.useQuery();
 
+  const { data: heroData } = trpc.systemConfig.getHeroImageUrl.useQuery();
+  const heroImageUrl = heroData?.heroImageUrl || null;
+
   // Show suggestions when typing
   useEffect(() => {
     if (debouncedQuery.length >= 2 && suggestions.length > 0) {
@@ -328,148 +331,173 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section */}
       <main className="flex-1">
-        <section className="pt-16 md:pt-24 pb-8 px-4" style={{ background: 'linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%)' }}>
-          <div className="container mx-auto max-w-5xl text-center">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-blue-900 mb-6 md:mb-8 leading-tight font-playfair">
-              The Intelligent Way to Book Casual Leasing in Shopping Centres
+        {/* Hero Section with Background Image */}
+        <section
+          className={`relative flex flex-col items-center justify-center overflow-hidden ${heroImageUrl ? '' : 'bg-[#0C4A5E]'}`}
+          style={{ minHeight: 520, padding: '40px 24px 60px' }}
+        >
+          {heroImageUrl && (
+            <>
+              <img
+                src={heroImageUrl}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover z-0"
+              />
+              <div
+                className="absolute inset-0 z-[1]"
+                style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.75) 100%)' }}
+              />
+            </>
+          )}
+
+          {/* Hero Content */}
+          <div className="relative z-[2] text-center max-w-[780px] mb-6">
+            <span className="inline-block bg-[#D4A843]/20 border border-[#D4A843]/40 text-[#D4A843] text-xs font-semibold tracking-[1.5px] uppercase px-4 py-1.5 rounded-full mb-4">
+              Intelligent Casual Leasing
+            </span>
+            <h2 className="text-[28px] md:text-[42px] font-bold text-white leading-[1.15] mb-2.5 font-playfair">
+              Find and Book Your <span className="text-[#D4A843]">Perfect Space</span>
             </h2>
+            <p className="text-[15px] md:text-[17px] text-white/80 leading-relaxed">
+              Describe what you need in plain English. We'll match you to available sites instantly.
+            </p>
+          </div>
 
-            {/* Search Box */}
-            <Card className="shadow-[0_6px_28px_rgba(0,0,0,0.10),0_2px_8px_rgba(0,0,0,0.05)] border-0">
-              <CardContent className="pt-6 md:pt-8 space-y-4">
-                <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="flex flex-col gap-4">
-                  <p className="text-left font-bold text-slate-600" style={{ fontSize: '19px' }}>
-                    Describe the space you need and we'll handle the rest.
-                  </p>
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <div className="flex-1 relative">
-                      <Input
-                        ref={inputRef}
-                        type="text"
-                        placeholder="Eg. 15–20sqm fashion at Eastgate from next week."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        onFocus={() => {
-                          if (debouncedQuery.length >= 2 && suggestions.length > 0) {
-                            setShowSuggestions(true);
-                          }
-                        }}
-                        className="h-16 pl-12 placeholder:text-gray-500" style={{ fontSize: '21px' }}
-                        autoComplete="off"
-                      />
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                      {speech.isSupported && (
-                        <button
-                          type="button"
-                          onClick={() => { speech.toggle(); inputRef.current?.focus(); }}
-                          className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-colors ${
-                            speech.isListening
-                              ? "bg-red-100 text-red-600 animate-pulse"
-                              : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                          }`}
-                        >
-                          {speech.isListening ? <Mic className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-                        </button>
-                      )}
-                      {showSuggestions && suggestions.length > 0 && (
-                        <div
-                          ref={suggestionsRef}
-                          className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
-                        >
-                          {suggestions.map((centre, index) => (
-                            <div
-                              key={centre.id}
-                              onClick={() => selectSuggestion(centre.name)}
-                              className={`px-4 py-3 cursor-pointer transition-colors ${
-                                index === selectedIndex
-                                  ? "bg-blue-50 text-blue-900"
-                                  : "hover:bg-gray-50"
-                              }`}
-                            >
-                              <div className="font-medium">{centre.name}</div>
-                              {centre.suburb && (
-                                <div className="text-sm text-gray-500">
-                                  {centre.suburb}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <Button
-                      type="submit"
-                      size="lg"
-                      className="h-16 px-10 bg-blue-700 hover:bg-blue-800 text-base font-semibold shadow-md hover:shadow-lg transition-shadow"
-                      disabled={!searchQuery.trim()}
-                    >
-                      <Search className="mr-2 h-5 w-5" />
-                      Search
-                    </Button>
-
-                  </div>
-                  
-                  {/* Show detected date feedback — subdued styling */}
-                  {searchQuery.trim() && (
-                    <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-                      {hasDetectedDate ? (
-                        <span className="flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          Date detected: {format(new Date(parsedQuery.parsedDate!), "EEEE, d MMMM yyyy")}
-                          {parsedQuery.dateRangeEnd && (
-                            <span> to {format(new Date(parsedQuery.dateRangeEnd), "d MMMM yyyy")}</span>
-                          )}
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          No date detected — will use today's date
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </form>
-                
-                {/* State Filter Chips */}
-                <div className="mt-3 pt-4 rounded-lg bg-gray-50/80 -mx-6 px-6 pb-4">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Or filter by state</p>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {[
-                      { code: "NSW", name: "New South Wales" },
-                      { code: "VIC", name: "Victoria" },
-                      { code: "QLD", name: "Queensland" },
-                      { code: "SA", name: "South Australia" },
-                      { code: "WA", name: "Western Australia" },
-                      { code: "TAS", name: "Tasmania" },
-                      { code: "ACT", name: "Australian Capital Territory" },
-                      { code: "NT", name: "Northern Territory" },
-                    ].map((state) => (
-                      <Button
-                        key={state.code}
-                        onClick={() => setLocation(`/centres?state=${state.code}`)}
-                        variant="outline"
-                        className="bg-white hover:bg-white border border-blue-200 hover:border-blue-400 text-blue-900 font-semibold px-5 py-2 h-auto text-sm"
+          {/* Search Box */}
+          <div className="relative z-[3] w-full max-w-[820px]">
+            <div className="bg-white rounded-2xl shadow-[0_12px_48px_rgba(0,0,0,0.15),0_2px_8px_rgba(0,0,0,0.06)] px-7 pt-6 pb-5">
+              <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="space-y-4">
+                <p className="text-left font-bold text-slate-600" style={{ fontSize: '19px' }}>
+                  Describe the space you need and we'll handle the rest.
+                </p>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1 relative">
+                    <Input
+                      ref={inputRef}
+                      type="text"
+                      placeholder="Eg. 15–20sqm fashion at Eastgate from next week."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      onFocus={() => {
+                        if (debouncedQuery.length >= 2 && suggestions.length > 0) {
+                          setShowSuggestions(true);
+                        }
+                      }}
+                      className="h-16 pl-12 placeholder:text-gray-500" style={{ fontSize: '21px' }}
+                      autoComplete="off"
+                    />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    {speech.isSupported && (
+                      <button
+                        type="button"
+                        onClick={() => { speech.toggle(); inputRef.current?.focus(); }}
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-colors ${
+                          speech.isListening
+                            ? "bg-red-100 text-red-600 animate-pulse"
+                            : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                        }`}
                       >
-                        <MapPin className="mr-1.5 h-3.5 w-3.5" />
-                        {state.code}
-                      </Button>
-                    ))}
+                        {speech.isListening ? <Mic className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                      </button>
+                    )}
+                    {showSuggestions && suggestions.length > 0 && (
+                      <div
+                        ref={suggestionsRef}
+                        className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                      >
+                        {suggestions.map((centre, index) => (
+                          <div
+                            key={centre.id}
+                            onClick={() => selectSuggestion(centre.name)}
+                            className={`px-4 py-3 cursor-pointer transition-colors ${
+                              index === selectedIndex
+                                ? "bg-blue-50 text-blue-900"
+                                : "hover:bg-gray-50"
+                            }`}
+                          >
+                            <div className="font-medium">{centre.name}</div>
+                            {centre.suburb && (
+                              <div className="text-sm text-gray-500">
+                                {centre.suburb}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="h-16 px-10 bg-[#0C4A5E] hover:bg-[#0a3e50] text-base font-semibold shadow-md hover:shadow-lg transition-shadow"
+                    disabled={!searchQuery.trim()}
+                  >
+                    <Search className="mr-2 h-5 w-5" />
+                    Search
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Australia Map with Centre Markers */}
+                {/* Show detected date feedback — subdued styling */}
+                {searchQuery.trim() && (
+                  <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+                    {hasDetectedDate ? (
+                      <span className="flex items-center gap-1">
+                        <CheckCircle className="h-3 w-3" />
+                        Date detected: {format(new Date(parsedQuery.parsedDate!), "EEEE, d MMMM yyyy")}
+                        {parsedQuery.dateRangeEnd && (
+                          <span> to {format(new Date(parsedQuery.dateRangeEnd), "d MMMM yyyy")}</span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        No date detected — will use today's date
+                      </span>
+                    )}
+                  </div>
+                )}
+              </form>
+
+              {/* State Filter Chips */}
+              <div className="mt-3 pt-4 rounded-lg bg-gray-50/80 px-1 pb-4">
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Or filter by state</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {[
+                    { code: "NSW", name: "New South Wales" },
+                    { code: "VIC", name: "Victoria" },
+                    { code: "QLD", name: "Queensland" },
+                    { code: "SA", name: "South Australia" },
+                    { code: "WA", name: "Western Australia" },
+                    { code: "TAS", name: "Tasmania" },
+                    { code: "ACT", name: "Australian Capital Territory" },
+                    { code: "NT", name: "Northern Territory" },
+                  ].map((state) => (
+                    <Button
+                      key={state.code}
+                      onClick={() => setLocation(`/centres?state=${state.code}`)}
+                      variant="outline"
+                      className="bg-white hover:bg-white border border-[#0C4A5E]/20 hover:border-[#0C4A5E]/50 text-[#0C4A5E] font-semibold px-5 py-2 h-auto text-sm"
+                    >
+                      <MapPin className="mr-1.5 h-3.5 w-3.5" />
+                      {state.code}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Australia Map */}
+        <section className="pb-8 px-4 bg-gradient-to-b from-slate-50 to-white">
+          <div className="container mx-auto max-w-5xl">
             <div className="mt-4">
               <Card className="shadow-xl">
                 <CardHeader>
                   <CardTitle className="text-2xl">Explore Centres Across Australia</CardTitle>
-                  <CardDescription>
-                    Click on any marker to view centre details
-                  </CardDescription>
+                  <CardDescription>Click on any marker to view centre details</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <AustraliaMap centres={allCentres} />
@@ -482,14 +510,14 @@ export default function Home() {
         {/* How It Works */}
         <section className="pt-4 pb-10 px-4 bg-white">
           <div className="container mx-auto max-w-6xl">
-            <h3 className="text-3xl font-bold text-center text-blue-900 mb-12">
+            <h3 className="text-3xl font-bold text-center text-[#0C4A5E] mb-12 font-playfair">
               How It Works
             </h3>
             <div className="grid md:grid-cols-3 gap-8">
               <Card>
                 <CardHeader>
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                    <Search className="h-6 w-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-[#0C4A5E]/10 rounded-full flex items-center justify-center mb-4">
+                  <Search className="h-6 w-6 text-[#0C4A5E]" />
                   </div>
                   <CardTitle>1. Search</CardTitle>
                 </CardHeader>
@@ -501,8 +529,8 @@ export default function Home() {
               </Card>
               <Card>
                 <CardHeader>
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                    <Calendar className="h-6 w-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-[#0C4A5E]/10 rounded-full flex items-center justify-center mb-4">
+                  <Calendar className="h-6 w-6 text-[#0C4A5E]" />
                   </div>
                   <CardTitle>2. Compare</CardTitle>
                 </CardHeader>
@@ -514,8 +542,8 @@ export default function Home() {
               </Card>
               <Card>
                 <CardHeader>
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                    <CheckCircle className="h-6 w-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-[#D4A843]/15 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle className="h-6 w-6 text-[#D4A843]" />
                   </div>
                   <CardTitle>3. Book</CardTitle>
                 </CardHeader>
@@ -549,7 +577,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-blue-900 text-white py-8">
+      <footer className="bg-[#0C4A5E] text-white py-8">
         <div className="container mx-auto px-4 text-center">
           <p>&copy; {new Date().getFullYear()} {tenant.brandName}. All rights reserved.</p>
           {tenant.brandFooterText && (

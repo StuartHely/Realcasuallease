@@ -261,6 +261,12 @@ export const systemConfigRouter = router({
     return owners;
   }),
 
+  // Get hero image URL for the homepage
+  getHeroImageUrl: publicProcedure.query(async () => {
+    const url = await getConfigValue("hero_image_url");
+    return { heroImageUrl: url || "/heroes/hero_default.png" };
+  }),
+
   // Auto-approval rules
   getAutoApprovalRules: adminProcedure.query(async () => {
     const { getAutoApprovalRules } = await import("../autoApprovalRules");
@@ -334,5 +340,45 @@ export const systemConfigRouter = router({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to send test email. Check SMTP configuration." });
       }
       return { success: true };
+    }),
+
+  // Hero image management
+  setHeroImageUrl: adminProcedure
+    .input(z.object({ heroImageUrl: z.string().nullable() }))
+    .mutation(async ({ input, ctx }) => {
+      if (ctx.user.role !== "mega_admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only MegaAdmin can change the hero image" });
+      }
+      await setConfigValue("hero_image_url", input.heroImageUrl || "");
+      import("../auditHelper").then(m => m.writeAudit({
+        userId: ctx.user.id,
+        action: "hero_image_changed",
+        entityType: "system_config",
+        changes: { heroImageUrl: input.heroImageUrl },
+      })).catch(() => {});
+      return { success: true };
+    }),
+
+  uploadHeroImage: adminProcedure
+    .input(z.object({
+      base64Image: z.string(),
+      fileName: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      if (ctx.user.role !== "mega_admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only MegaAdmin can upload hero images" });
+      }
+      const base64Data = input.base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      const { getPublicDir } = await import('../_core/publicDir');
+      const heroesDir = path.join(getPublicDir(), 'heroes');
+      await fs.mkdir(heroesDir, { recursive: true });
+      const filePath = path.join(heroesDir, 'hero_custom.png');
+      await fs.writeFile(filePath, buffer);
+      const url = '/heroes/hero_custom.png';
+      await setConfigValue("hero_image_url", url);
+      return { success: true, url };
     }),
 });

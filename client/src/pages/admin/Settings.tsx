@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Settings as SettingsIcon, DollarSign, Save, Mail, Globe, ShieldCheck, FileSignature } from "lucide-react";
+import { Settings as SettingsIcon, DollarSign, Save, Mail, Globe, ShieldCheck, FileSignature, ImagePlus } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -68,6 +68,52 @@ export default function AdminSettings() {
   };
 
   const isSuperAdmin = user?.role === "mega_admin" || user?.role === "owner_super_admin";
+
+  // Hero image
+  const heroImageQuery = trpc.systemConfig.getHeroImageUrl.useQuery(undefined, { enabled: isSuperAdmin });
+  const [heroImagePreview, setHeroImagePreview] = useState<string | null>(null);
+
+  const uploadHeroMutation = trpc.systemConfig.uploadHeroImage.useMutation({
+    onSuccess: (data) => {
+      toast.success("Hero image updated");
+      setHeroImagePreview(null);
+      heroImageQuery.refetch();
+    },
+    onError: (error) => {
+      toast.error(`Failed to upload hero image: ${error.message}`);
+    },
+  });
+
+  const resetHeroMutation = trpc.systemConfig.setHeroImageUrl.useMutation({
+    onSuccess: () => {
+      toast.success("Hero image reset to default");
+      setHeroImagePreview(null);
+      heroImageQuery.refetch();
+    },
+    onError: (error) => {
+      toast.error(`Failed to reset hero image: ${error.message}`);
+    },
+  });
+
+  const handleHeroImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      setHeroImagePreview(base64);
+      uploadHeroMutation.mutate({ base64Image: base64, fileName: file.name });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleResetHero = () => {
+    resetHeroMutation.mutate({ heroImageUrl: null });
+  };
 
   // Auto-approval rules
   const autoApprovalQuery = trpc.systemConfig.getAutoApprovalRules.useQuery(undefined, {
@@ -365,6 +411,77 @@ export default function AdminSettings() {
                   <code className="text-xs bg-amber-100 px-1 py-0.5 rounded">SMTP_PASS</code>,{" "}
                   <code className="text-xs bg-amber-100 px-1 py-0.5 rounded">SMTP_FROM</code>
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Hero Image Card */}
+        {isSuperAdmin && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-indigo-100 p-3">
+                  <ImagePlus className="h-6 w-6 text-indigo-600" />
+                </div>
+                <div>
+                  <CardTitle>Landing Page Hero Image</CardTitle>
+                  <CardDescription>
+                    Upload a background image for the landing page hero section
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="rounded-lg border p-4 bg-muted/50">
+                <p className="text-sm font-medium mb-2">Current Hero Image</p>
+                {heroImageQuery.data?.heroImageUrl ? (
+                  <div className="relative rounded-lg overflow-hidden" style={{ maxHeight: 200 }}>
+                    <img
+                      src={heroImagePreview || heroImageQuery.data.heroImageUrl}
+                      alt="Current hero"
+                      className="w-full object-cover"
+                      style={{ maxHeight: 200 }}
+                    />
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.5) 100%)' }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-white text-sm font-medium bg-black/40 px-3 py-1 rounded">
+                        Preview
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-32 bg-[#0C4A5E] rounded-lg flex items-center justify-center">
+                    <span className="text-white/60 text-sm">No image set — using solid colour fallback</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="heroUpload">Upload New Hero Image</Label>
+                <Input
+                  id="heroUpload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleHeroImageUpload}
+                  disabled={uploadHeroMutation.isPending}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Recommended: Wide landscape image (1920×800 or similar). Max 5MB.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleResetHero}
+                  variant="outline"
+                  disabled={resetHeroMutation.isPending}
+                >
+                  {resetHeroMutation.isPending ? "Resetting..." : "Reset to Default"}
+                </Button>
               </div>
             </CardContent>
           </Card>
