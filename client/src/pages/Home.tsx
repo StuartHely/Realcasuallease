@@ -365,7 +365,7 @@ export default function Home() {
           </div>
 
           {/* Search Box */}
-          <div className="relative z-[3] w-full max-w-[820px]">
+          <div className="relative z-[3] w-full max-w-[960px]">
             <div className="bg-white rounded-2xl shadow-[0_12px_48px_rgba(0,0,0,0.15),0_2px_8px_rgba(0,0,0,0.06)] px-7 pt-6 pb-5">
               <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="space-y-4">
                 <p className="text-left font-bold text-slate-600" style={{ fontSize: '19px' }}>
@@ -376,7 +376,7 @@ export default function Home() {
                     <Input
                       ref={inputRef}
                       type="text"
-                      placeholder="Eg. 15–20sqm fashion at Eastgate from next week."
+                      placeholder="Eg. I want to sell candles from 4 tables in October in Western Sydney"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyDown={handleKeyDown}
@@ -385,7 +385,7 @@ export default function Home() {
                           setShowSuggestions(true);
                         }
                       }}
-                      className="h-16 pl-12 placeholder:text-gray-500" style={{ fontSize: '21px' }}
+                      className="h-16 pl-12 pr-12 placeholder:text-gray-500" style={{ fontSize: '21px' }}
                       autoComplete="off"
                     />
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
