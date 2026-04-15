@@ -148,7 +148,7 @@ function TenantTitle() {
   useEffect(() => {
     document.title = tenant.isTenantSite
       ? `${tenant.brandName} — Short-Term Retail Leasing`
-      : "Real Casual Leasing - AI-Driven Short-Term Retail Leasing Platform";
+      : "Intelligent Casual Leasing with Natural Language Search";
   }, [tenant.brandName, tenant.isTenantSite]);
   return null;
 }
