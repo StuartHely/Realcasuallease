@@ -138,6 +138,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY_VAL: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           set -x  # Enable debug output
           
@@ -152,6 +153,7 @@ jobs:
           # Debug: Check which secrets are set (show length, not value)
           echo "DATABASE_URL length: ${#DATABASE_URL}"
           echo "JWT_SECRET length: ${#JWT_SECRET}"
+          echo "GEMINI_API_KEY length: ${#GEMINI_API_KEY}"
           
           # Create secret from environment variables
           echo "Creating secrets..."
@@ -163,6 +165,7 @@ jobs:
             --from-literal=AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY_VAL:-notset}" \
             --from-literal=AWS_S3_BUCKET="${AWS_S3_BUCKET:-notset}" \
             --from-literal=GOOGLE_MAPS_API_KEY="${GOOGLE_MAPS_API_KEY:-notset}" \
+            --from-literal=GEMINI_API_KEY="${GEMINI_API_KEY:-notset}" \
             --dry-run=client -o yaml | kubectl apply -f -
           
           echo "Secrets created successfully"
