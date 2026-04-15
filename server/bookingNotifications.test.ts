@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { sendBookingConfirmationEmail, sendBookingRejectionEmail, sendNewBookingNotificationToOwner, sendPaymentReceiptEmail } from "./_core/bookingNotifications";
 import * as notification from "./_core/notification";
 
-// Mock the notifyOwner function (still used by sendNewBookingNotificationToOwner)
+// Mock the notifyOwner function (no-op in production, mocked here for test isolation)
 vi.mock("./_core/notification", () => ({
   notifyOwner: vi.fn().mockResolvedValue(true),
 }));

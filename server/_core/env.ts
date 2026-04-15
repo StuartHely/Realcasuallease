@@ -5,8 +5,7 @@ export const ENV = {
   oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
   isProduction: process.env.NODE_ENV === "production",
-  forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
-  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  geminiApiKey: process.env.GEMINI_API_KEY ?? "",
   // AWS configuration - using IRSA (no hardcoded credentials needed)
   awsRegion: process.env.AWS_REGION ?? "ap-southeast-2",
   awsS3Bucket: process.env.AWS_S3_BUCKET ?? "",

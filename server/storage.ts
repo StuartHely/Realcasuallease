@@ -1,28 +1,35 @@
-// Preconfigured storage helpers
-// Uses the storage proxy (Authorization: Bearer <token>)
-// Falls back to local filesystem storage when proxy credentials are not set (dev mode)
+// Direct AWS S3 storage
+// Falls back to local filesystem storage when S3 bucket is not configured (dev mode)
 
 import { ENV } from './_core/env';
 import path from 'path';
 import fs from 'fs/promises';
-
-type StorageConfig = { baseUrl: string; apiKey: string };
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 function isLocalMode(): boolean {
-  return !ENV.forgeApiUrl || !ENV.forgeApiKey;
+  return !ENV.awsS3Bucket;
 }
 
-function getStorageConfig(): StorageConfig {
-  const baseUrl = ENV.forgeApiUrl;
-  const apiKey = ENV.forgeApiKey;
+function getS3Client(): S3Client {
+  return new S3Client({
+    region: ENV.awsRegion,
+    ...(ENV.awsAccessKeyId
+      ? {
+          credentials: {
+            accessKeyId: ENV.awsAccessKeyId,
+            secretAccessKey: ENV.awsSecretAccessKey,
+          },
+        }
+      : {}),
+  });
+}
 
-  if (!baseUrl || !apiKey) {
-    throw new Error(
-      "Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
-    );
-  }
+function normalizeKey(relKey: string): string {
+  return relKey.replace(/^\/+/, "");
+}
 
-  return { baseUrl: baseUrl.replace(/\/+$/, ""), apiKey };
+function buildS3Url(key: string): string {
+  return `https://${ENV.awsS3Bucket}.s3.${ENV.awsRegion}.amazonaws.com/${key}`;
 }
 
 async function localStoragePut(
@@ -40,55 +47,6 @@ async function localStoragePut(
   return { key, url };
 }
 
-function buildUploadUrl(baseUrl: string, relKey: string): URL {
-  const url = new URL("v1/storage/upload", ensureTrailingSlash(baseUrl));
-  url.searchParams.set("path", normalizeKey(relKey));
-  return url;
-}
-
-async function buildDownloadUrl(
-  baseUrl: string,
-  relKey: string,
-  apiKey: string
-): Promise<string> {
-  const downloadApiUrl = new URL(
-    "v1/storage/downloadUrl",
-    ensureTrailingSlash(baseUrl)
-  );
-  downloadApiUrl.searchParams.set("path", normalizeKey(relKey));
-  const response = await fetch(downloadApiUrl, {
-    method: "GET",
-    headers: buildAuthHeaders(apiKey),
-  });
-  return (await response.json()).url;
-}
-
-function ensureTrailingSlash(value: string): string {
-  return value.endsWith("/") ? value : `${value}/`;
-}
-
-function normalizeKey(relKey: string): string {
-  return relKey.replace(/^\/+/, "");
-}
-
-function toFormData(
-  data: Buffer | Uint8Array | string,
-  contentType: string,
-  fileName: string
-): FormData {
-  const blob =
-    typeof data === "string"
-      ? new Blob([data], { type: contentType })
-      : new Blob([data as any], { type: contentType });
-  const form = new FormData();
-  form.append("file", blob, fileName || "file");
-  return form;
-}
-
-function buildAuthHeaders(apiKey: string): HeadersInit {
-  return { Authorization: `Bearer ${apiKey}` };
-}
-
 export async function storagePut(
   relKey: string,
   data: Buffer | Uint8Array | string,
@@ -97,34 +55,27 @@ export async function storagePut(
   if (isLocalMode()) {
     return localStoragePut(relKey, data);
   }
-  const { baseUrl, apiKey } = getStorageConfig();
-  const key = normalizeKey(relKey);
-  const uploadUrl = buildUploadUrl(baseUrl, key);
-  const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    headers: buildAuthHeaders(apiKey),
-    body: formData,
-  });
 
-  if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText);
-    throw new Error(
-      `Storage upload failed (${response.status} ${response.statusText}): ${message}`
-    );
-  }
-  const url = (await response.json()).url;
-  return { key, url };
+  const key = normalizeKey(relKey);
+  const s3 = getS3Client();
+  const body = typeof data === 'string' ? Buffer.from(data) : Buffer.from(data);
+
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: ENV.awsS3Bucket,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    })
+  );
+
+  return { key, url: buildS3Url(key) };
 }
 
-export async function storageGet(relKey: string): Promise<{ key: string; url: string; }> {
+export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
   const key = normalizeKey(relKey);
   if (isLocalMode()) {
     return { key, url: `/uploads/${key}` };
   }
-  const { baseUrl, apiKey } = getStorageConfig();
-  return {
-    key,
-    url: await buildDownloadUrl(baseUrl, key, apiKey),
-  };
+  return { key, url: buildS3Url(key) };
 }

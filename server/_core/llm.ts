@@ -210,15 +210,12 @@ const normalizeToolChoice = (
 };
 
 const resolveApiUrl = () => {
-  if (!ENV.forgeApiUrl || ENV.forgeApiUrl.trim().length === 0) {
-    throw new Error("BUILT_IN_FORGE_API_URL is not configured");
-  }
-  return `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`;
+  return "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 };
 
 const assertApiKey = () => {
-  if (!ENV.forgeApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
+  if (!ENV.geminiApiKey) {
+    throw new Error("GEMINI_API_KEY is not configured");
   }
 };
 
@@ -318,7 +315,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
+      authorization: `Bearer ${ENV.geminiApiKey}`,
     },
     body: JSON.stringify(payload),
   });
