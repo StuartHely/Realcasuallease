@@ -536,7 +536,7 @@ export default function Home() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-600">
-                    View availability calendars, compare sites, and find the perfect space for your pop-up.
+                    Instant matched results. No phone or email tag. No dropdown menus.
                   </p>
                 </CardContent>
               </Card>
