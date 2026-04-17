@@ -84,7 +84,7 @@ function extractAssetType(query: string): 'casual' | 'vacant_shop' | 'third_line
   }
   
   // Third Line Income patterns
-  if (/\b(third\s+line|3rd\s+line|3rdl|vending|atm|car\s+wash|digital\s+signage|installation)\b/i.test(lowerQuery)) {
+  if (/\b(third\s+line|3rd\s+line|3rdl|vending|atm|car\s+wash|digital\s+signage|installation|floor\s+decals?|door\s+decals?|decals?|wall\s+wraps?|banners?|hoardings?|lightbox(?:es)?|digital\s+screens?|sampling|experiential|activation)\b/i.test(lowerQuery)) {
     return 'third_line';
   }
   
@@ -106,7 +106,12 @@ function extractThirdLineCategory(query: string): string | undefined {
   const thirdLineCategories = [
     'atm', 'vending machine', 'vending', 'car wash', 'digital signage', 'signage',
     'installation', 'kiosk', 'phone booth', 'mailbox', 'bike rack', 'seating',
-    'water fountain', 'bin', 'trash', 'recycling', 'charging station', 'charger'
+    'water fountain', 'bin', 'trash', 'recycling', 'charging station', 'charger',
+    'floor decal', 'floor decals', 'door decal', 'door decals', 'decal', 'decals',
+    'floor sticker', 'wall wrap', 'wall wraps', 'banner', 'banners',
+    'hoarding', 'hoardings', 'digital screen', 'digital screens', 'screen',
+    'lightbox', 'lightboxes', 'promotional space', 'activation',
+    'sampling', 'experiential', 'pop-up media', 'advertising'
   ];
   
   for (const category of thirdLineCategories) {
@@ -458,7 +463,7 @@ function extractCentreName(query: string): string {
   centreName = centreName.replace(/\b(in|at|near|around|close\s+to|next\s+to|by|from|for|to|the|a|an|my|some|with|and|or|that|this|where|who|how|within)\b/gi, '');
 
   // Remove asset type patterns
-  centreName = centreName.replace(/\b(vacant\s+shop|vs|vending\s+machine|vending|atm|car\s+wash|digital\s+signage|third\s+line|3rd\s+line|3rdl|casual\s+leasing|casual|pop\s*-?\s*up|popup|pop-up|installation|kiosk|phone\s+booth|mailbox|bike\s+rack|seating|water\s+fountain|bin|trash|recycling|charging\s+station|charger)\b/gi, '');
+  centreName = centreName.replace(/\b(vacant\s+shops?|vs|vending\s+machines?|vending|atm|car\s+wash|digital\s+signage|digital\s+screens?|third\s+line|3rd\s+line|3rdl|casual\s+leasing|casual|pop\s*-?\s*up|popup|pop-up|installations?|kiosks?|phone\s+booths?|mailbox(?:es)?|bike\s+racks?|seating|water\s+fountains?|bins?|trash|recycling|charging\s+stations?|chargers?|floor\s+decals?|door\s+decals?|decals?|floor\s+stickers?|wall\s+wraps?|banners?|hoardings?|lightbox(?:es)?|promotional\s+spaces?|activations?|sampling|experiential|advertising)\b/gi, '');
   
   // Remove Australian state codes and names
   centreName = centreName.replace(/\b(nsw|new\s+south\s+wales|vic|victoria|qld|queensland|sa|south\s+australia|wa|western\s+australia|tas|tasmania|nt|northern\s+territory|act|australian\s+capital\s+territory|canberra)\b/gi, '');

@@ -209,9 +209,9 @@ export function AvailabilityCalendar({
                                 <div className="text-sm">
                                   <p className="font-semibold">{getBookingTooltip(booking).title}</p>
                                   {getBookingTooltip(booking).subtitle && (
-                                    <p className="text-xs text-gray-500">{getBookingTooltip(booking).subtitle}</p>
+                                    <p className="text-xs text-white/80">{getBookingTooltip(booking).subtitle}</p>
                                   )}
-                                  <p className="text-xs text-gray-500">
+                                  <p className="text-xs text-white/80">
                                     {format(new Date(booking.startDate), "dd/MM")} -{" "}
                                     {format(new Date(booking.endDate), "dd/MM")}
                                   </p>

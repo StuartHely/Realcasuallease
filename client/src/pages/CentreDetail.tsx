@@ -592,6 +592,9 @@ export default function CentreDetail() {
                     pricePerDay: site.pricePerDay,
                     pricePerWeek: site.pricePerWeek,
                     weekendRate: site.weekendPricePerDay,
+                    size: site.size,
+                    maxTables: site.maxTables,
+                    description: site.description,
                   }))}
                   bookings={availabilityGrid.bookings}
                   getAssetBookings={(siteId) => availabilityGrid.bookings.filter((b: any) => b.siteId === siteId)}

@@ -90,7 +90,9 @@ export const searchRouter = router({
         
         if (enhancedQuery.assetType === 'third_line') {
           const searchQuery = enhancedQuery.centreName;
-          let centres = await db.searchShoppingCentres(searchQuery, enhancedQuery.stateFilter, ctx.tenantOwnerId ?? undefined);
+          let centres = searchQuery
+            ? await db.searchShoppingCentres(searchQuery, enhancedQuery.stateFilter, ctx.tenantOwnerId ?? undefined)
+            : [];
           // Fallback: if centre name search failed but we have a state filter, show all centres in that state
           if (centres.length === 0 && enhancedQuery.stateFilter && searchQuery) {
             centres = await db.searchShoppingCentres('', enhancedQuery.stateFilter, ctx.tenantOwnerId ?? undefined);
@@ -101,20 +103,29 @@ export const searchRouter = router({
             const areaCentreIds = new Set(areaCentres.map(c => c.id));
             centres = centres.filter((c: any) => areaCentreIds.has(c.id));
           }
+          // Fallback: category-only search with no location — show all centres
+          if (centres.length === 0 && !searchQuery) {
+            centres = await db.searchShoppingCentres('', enhancedQuery.stateFilter, ctx.tenantOwnerId ?? undefined);
+          }
           if (centres.length === 0) {
             return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'third_line', floorLevels: [] };
           }
           const allAssets: any[] = [];
+          const centresWithAssets = new Set<number>();
           for (const centre of centres) {
             const assets = await assetDb.getThirdLineIncomeByCentre(centre.id);
             const filtered = enhancedQuery.thirdLineCategory 
               ? assets.filter((a: any) => a.categoryName?.toLowerCase().includes(enhancedQuery.thirdLineCategory!.toLowerCase()))
               : assets;
-            allAssets.push(...filtered.map((a: any) => ({ ...a, centreName: centre.name, assetType: 'third_line' })));
+            if (filtered.length > 0) {
+              centresWithAssets.add(centre.id);
+              allAssets.push(...filtered.map((a: any) => ({ ...a, centreName: centre.name, assetType: 'third_line' })));
+            }
           }
-          // Fetch floor levels for the first centre to display floor plan map
-          const floorLevels = centres.length > 0 ? await db.getFloorLevelsByCentre(centres[0].id) : [];
-          return { centres, sites: allAssets, availability: [], matchedSiteIds: [], assetType: 'third_line', floorLevels };
+          // Only return centres that have matching TLI assets
+          const matchedCentres = centres.filter((c: any) => centresWithAssets.has(c.id));
+          const floorLevels = matchedCentres.length > 0 ? await db.getFloorLevelsByCentre(matchedCentres[0].id) : [];
+          return { centres: matchedCentres, sites: allAssets, availability: [], matchedSiteIds: [], assetType: 'third_line', floorLevels };
         }
         
         // First, search for sites using the full query to find any matches

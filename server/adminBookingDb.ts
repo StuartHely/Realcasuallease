@@ -142,6 +142,8 @@ export async function getSiteAvailabilityGrid(
     pricePerWeek: string | null;
     outgoingsPerDay: string | null;
     maxTables: number | null;
+    size: string | null;
+    description: string | null;
   }>;
   bookings: Array<{
     siteId: number;
@@ -176,6 +178,8 @@ export async function getSiteAvailabilityGrid(
       pricePerWeek: sites.pricePerWeek,
       outgoingsPerDay: sites.outgoingsPerDay,
       maxTables: sites.maxTables,
+      size: sites.size,
+      description: sites.description,
     })
     .from(sites)
     .where(and(eq(sites.centreId, centreId), eq(sites.isActive, true)));

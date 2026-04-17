@@ -249,6 +249,13 @@ export default function AdminMaps() {
     }
   }, [centre?.mapImageUrl, centre?.id, sites, selectedCentreId, selectedFloorLevelId, floorLevels]);
 
+  // Reset floor level selection when centre changes so auto-select can re-fire
+  useEffect(() => {
+    setSelectedFloorLevelId(null);
+    setMapPreviewUrl("");
+    setMarkers([]);
+  }, [selectedCentreId]);
+
   // Auto-select first floor level when floor levels are loaded
   // Prefer a floor that has a map image so the map canvas appears immediately
   useEffect(() => {
@@ -746,6 +753,7 @@ export default function AdminMaps() {
                       onChange={handleFileChange}
                       className="cursor-pointer"
                     />
+                    <p className="text-sm text-gray-500 mt-1">Choose a file and then click Upload Map to save it.</p>
                   </div>
                   <Button
                     onClick={handleUploadMap}
@@ -804,6 +812,13 @@ export default function AdminMaps() {
                               alt="Floor plan"
                               className="max-w-full h-auto"
                               draggable={false}
+                              onError={() => {
+                                // Try proxying through the image proxy if direct URL fails
+                                const src = mapPreviewUrl;
+                                if (!src.startsWith("data:") && !src.startsWith("/api/image-proxy")) {
+                                  setMapPreviewUrl(`/api/image-proxy?url=${encodeURIComponent(src)}`);
+                                }
+                              }}
                             />
                             {markers.map((marker) => (
                               <div

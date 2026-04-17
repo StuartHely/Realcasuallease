@@ -23,6 +23,9 @@ interface Asset {
   pricePerWeek?: number | string | null;
   weekendRate?: number | string | null;
   weekendPricePerDay?: number | string | null;
+  size?: string | null;
+  maxTables?: number | null;
+  description?: string | null;
 }
 
 interface DateSelection {
@@ -368,17 +371,30 @@ export function AvailabilityCalendarSelectable({
                 return (
                   <tr key={asset.id} className="hover:bg-gray-50">
                     <td className="sticky left-0 bg-white z-10 px-3 py-2 font-medium border-r-2 border-b">
-                      {onAssetClick ? (
-                        <Button
-                          variant="link"
-                          className={`p-0 h-auto ${accentColor === 'green' ? 'text-green-600 hover:text-green-800' : accentColor === 'purple' ? 'text-purple-600 hover:text-purple-800' : 'text-blue-600 hover:text-blue-800'}`}
-                          onClick={() => onAssetClick(asset.id)}
-                        >
-                          {getAssetLabel(asset)}
-                        </Button>
-                      ) : (
-                        <span className={accentColor === 'green' ? 'text-green-600' : accentColor === 'purple' ? 'text-purple-600' : 'text-blue-600'}>{getAssetLabel(asset)}</span>
-                      )}
+                      <div className="flex flex-col gap-0.5">
+                        {onAssetClick ? (
+                          <Button
+                            variant="link"
+                            className={`p-0 h-auto justify-start ${accentColor === 'green' ? 'text-green-600 hover:text-green-800' : accentColor === 'purple' ? 'text-purple-600 hover:text-purple-800' : 'text-blue-600 hover:text-blue-800'}`}
+                            onClick={() => onAssetClick(asset.id)}
+                          >
+                            {getAssetLabel(asset)}
+                          </Button>
+                        ) : (
+                          <span className={accentColor === 'green' ? 'text-green-600' : accentColor === 'purple' ? 'text-purple-600' : 'text-blue-600'}>{getAssetLabel(asset)}</span>
+                        )}
+                        {(asset.size || asset.maxTables) && (
+                          <div className="flex gap-2 text-xs text-gray-600">
+                            {asset.size && <span>{asset.size}</span>}
+                            {asset.maxTables && <span>• {asset.maxTables} tables</span>}
+                          </div>
+                        )}
+                        {asset.description && (
+                          <span className="text-xs text-gray-500 truncate max-w-[160px]" title={asset.description}>
+                            {asset.description.replace(/<[^>]*>/g, '').slice(0, 25)}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     {Array.from({ length: daysInMonth }, (_, i) => {
                       const date = new Date(calendarMonth.year, calendarMonth.month - 1, i + 1);
@@ -441,9 +457,9 @@ export function AvailabilityCalendarSelectable({
                                 <div className="text-sm">
                                   <p className="font-semibold">{getBookingTooltip(booking).title}</p>
                                   {getBookingTooltip(booking).subtitle && (
-                                    <p className="text-xs text-gray-500">{getBookingTooltip(booking).subtitle}</p>
+                                    <p className="text-xs text-white/80">{getBookingTooltip(booking).subtitle}</p>
                                   )}
-                                  <p className="text-xs text-gray-500">
+                                  <p className="text-xs text-white/80">
                                     {format(new Date(booking.startDate), "dd/MM")} -{" "}
                                     {format(new Date(booking.endDate), "dd/MM")}
                                   </p>
@@ -461,19 +477,19 @@ export function AvailabilityCalendarSelectable({
                                     return (
                                       <>
                                         {dayRate > 0 && (
-                                          <p className="text-xs text-gray-500">
+                                          <p className="text-xs text-white">
                                             {isWeekend ? "Weekend" : "Weekday"} rate: ${dayRate.toFixed(2)}/day
                                           </p>
                                         )}
                                         {weeklyRateVal > 0 && (
-                                          <p className="text-xs text-gray-500">
+                                          <p className="text-xs text-white">
                                             Weekly rate: ${weeklyRateVal.toFixed(2)}/week
                                           </p>
                                         )}
                                       </>
                                     );
                                   })()}
-                                  <p className="text-xs text-green-600 mt-1">Click to select</p>
+                                  <p className="text-xs text-green-300 mt-1">Click to select</p>
                                 </div>
                               )}
                             </TooltipContent>
