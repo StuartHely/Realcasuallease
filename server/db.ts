@@ -492,10 +492,14 @@ export async function uploadCentreMap(centreId: number, imageData: string, fileN
   const buffer = Buffer.from(base64Data, 'base64');
   const ext = fileName.toLowerCase().split('.').pop() || 'png';
   const timestamp = Date.now();
-  const contentType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
-
-  const { storagePut } = await import('./storage');
-  const { url } = await storagePut(`maps/centres/${centreId}-${timestamp}.${ext}`, buffer, contentType);
+  const fs = await import('fs/promises');
+  const path = await import('path');
+  const { getPublicDir } = await import('./_core/publicDir');
+  const mapsDir = path.join(getPublicDir(), 'maps', 'centres');
+  await fs.mkdir(mapsDir, { recursive: true });
+  const localFileName = `${centreId}-${timestamp}.${ext}`;
+  await fs.writeFile(path.join(mapsDir, localFileName), buffer);
+  const url = `/maps/centres/${localFileName}`;
   
   // Update centre with map URL
   await db.update(shoppingCentres)
@@ -1279,10 +1283,14 @@ export async function uploadFloorLevelMap(floorLevelId: number, imageData: strin
   const buffer = Buffer.from(base64Data, 'base64');
   const ext = fileName.toLowerCase().split('.').pop() || 'png';
   const timestamp = Date.now();
-  const contentType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
-
-  const { storagePut } = await import('./storage');
-  const { url } = await storagePut(`maps/floor-levels/${floorLevelId}-${timestamp}.${ext}`, buffer, contentType);
+  const fs = await import('fs/promises');
+  const path = await import('path');
+  const { getPublicDir } = await import('./_core/publicDir');
+  const mapsDir = path.join(getPublicDir(), 'maps', 'floor-levels');
+  await fs.mkdir(mapsDir, { recursive: true });
+  const localFileName = `${floorLevelId}-${timestamp}.${ext}`;
+  await fs.writeFile(path.join(mapsDir, localFileName), buffer);
+  const url = `/maps/floor-levels/${localFileName}`;
   
   // Update floor level with new map URL
   await db.update(floorLevels)
