@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Settings as SettingsIcon, DollarSign, Save, Mail, Globe, ShieldCheck, FileSignature, ImagePlus } from "lucide-react";
+import { Settings as SettingsIcon, DollarSign, Save, Mail, Globe, ShieldCheck, FileSignature, ImagePlus, DatabaseBackup, Upload, Download } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -198,6 +198,65 @@ export default function AdminSettings() {
 
   const handleSaveTerms = () => {
     updateTermsMutation.mutate({ terms: licenceTerms });
+  };
+
+  // Data Sync
+  const utils = trpc.useUtils();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importResult, setImportResult] = useState<Record<string, number> | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const importMutation = trpc.admin.importAllData.useMutation({
+    onSuccess: (data) => {
+      toast.success("Data import completed successfully");
+      setImportResult(data.imported);
+    },
+    onError: (error) => {
+      toast.error(`Import failed: ${error.message}`);
+    },
+  });
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const data = await utils.admin.exportAllData.fetch();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `casuallease-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Export downloaded successfully");
+    } catch (error: any) {
+      toast.error(`Export failed: ${error.message}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result as string);
+        if (!data.exportedAt || !data.tables) {
+          toast.error("Invalid export file format");
+          return;
+        }
+        if (!confirm(`Import data exported at ${data.exportedAt}? This will upsert records into the database.`)) {
+          return;
+        }
+        importMutation.mutate(data);
+      } catch {
+        toast.error("Failed to parse JSON file");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   };
 
   return (
@@ -603,6 +662,74 @@ export default function AdminSettings() {
                 <Save className="h-4 w-4" />
                 {updateTermsMutation.isPending ? "Saving..." : "Save Terms"}
               </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Data Synchronization Card */}
+        {isSuperAdmin && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-cyan-100 p-3">
+                  <DatabaseBackup className="h-6 w-6 text-cyan-600" />
+                </div>
+                <div>
+                  <CardTitle>Data Synchronization</CardTitle>
+                  <CardDescription>
+                    Export all data as JSON or import data from another environment
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="rounded-lg border p-4 bg-muted/50 space-y-3">
+                <p className="text-sm font-medium">Export Data</p>
+                <p className="text-xs text-muted-foreground">
+                  Downloads all owners, users (excluding passwords), centres, sites, categories, and configuration as a JSON file.
+                </p>
+                <Button onClick={handleExport} disabled={isExporting} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  {isExporting ? "Exporting..." : "Export Data"}
+                </Button>
+              </div>
+
+              <div className="rounded-lg border p-4 space-y-3">
+                <p className="text-sm font-medium">Import Data</p>
+                <p className="text-xs text-muted-foreground">
+                  Upload a previously exported JSON file. Records are upserted — existing rows are updated, new rows are inserted. Passwords are never overwritten.
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={handleImportFile}
+                />
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={importMutation.isPending}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  {importMutation.isPending ? "Importing..." : "Import Data"}
+                </Button>
+              </div>
+
+              {importResult && (
+                <div className="rounded-lg border border-green-200 bg-green-50 p-4 space-y-2">
+                  <p className="text-sm font-medium text-green-800">Import Results</p>
+                  <div className="grid grid-cols-2 gap-1 text-xs text-green-700">
+                    {Object.entries(importResult).map(([table, count]) => (
+                      <div key={table} className="flex justify-between">
+                        <span>{table}</span>
+                        <span className="font-mono">{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

@@ -1176,4 +1176,198 @@ export const adminRouter = router({
       );
       return { bookingColumns: cols.rows, recentMigrations: migrations.rows };
     }),
+
+    exportAllData: adminProcedure.query(async () => {
+      const dbInst = await db.getDb();
+      if (!dbInst) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+      const {
+        owners: ownersTable,
+        users: usersTable,
+        shoppingCentres: centresTable,
+        floorLevels: floorLevelsTable,
+        sites: sitesTable,
+        usageCategories: usageCategoriesTable,
+        siteUsageCategories: siteUsageCategoriesTable,
+        thirdLineCategories: thirdLineCategoriesTable,
+        thirdLineIncome: thirdLineIncomeTable,
+        vacantShops: vacantShopsTable,
+        seasonalRates: seasonalRatesTable,
+        systemConfig: systemConfigTable,
+        faqs: faqsTable,
+      } = await import("../../drizzle/schema");
+
+      const [
+        ownersData,
+        usersData,
+        centresData,
+        floorLevelsData,
+        sitesData,
+        usageCategoriesData,
+        siteUsageCategoriesData,
+        thirdLineCategoriesData,
+        thirdLineIncomeData,
+        vacantShopsData,
+        seasonalRatesData,
+        systemConfigData,
+        faqsData,
+      ] = await Promise.all([
+        dbInst.select().from(ownersTable),
+        dbInst.select({
+          id: usersTable.id,
+          openId: usersTable.openId,
+          username: usersTable.username,
+          name: usersTable.name,
+          email: usersTable.email,
+          loginMethod: usersTable.loginMethod,
+          role: usersTable.role,
+          assignedState: usersTable.assignedState,
+          allocatedLogoId: usersTable.allocatedLogoId,
+          canPayByInvoice: usersTable.canPayByInvoice,
+          assignedOwnerId: usersTable.assignedOwnerId,
+          createdAt: usersTable.createdAt,
+          updatedAt: usersTable.updatedAt,
+          lastSignedIn: usersTable.lastSignedIn,
+        }).from(usersTable),
+        dbInst.select().from(centresTable),
+        dbInst.select().from(floorLevelsTable),
+        dbInst.select().from(sitesTable),
+        dbInst.select().from(usageCategoriesTable),
+        dbInst.select().from(siteUsageCategoriesTable),
+        dbInst.select().from(thirdLineCategoriesTable),
+        dbInst.select().from(thirdLineIncomeTable),
+        dbInst.select().from(vacantShopsTable),
+        dbInst.select().from(seasonalRatesTable),
+        dbInst.select().from(systemConfigTable),
+        dbInst.select().from(faqsTable),
+      ]);
+
+      return {
+        exportedAt: new Date().toISOString(),
+        tables: {
+          owners: ownersData,
+          users: usersData,
+          shoppingCentres: centresData,
+          floorLevels: floorLevelsData,
+          sites: sitesData,
+          usageCategories: usageCategoriesData,
+          siteUsageCategories: siteUsageCategoriesData,
+          thirdLineCategories: thirdLineCategoriesData,
+          thirdLineIncome: thirdLineIncomeData,
+          vacantShops: vacantShopsData,
+          seasonalRates: seasonalRatesData,
+          systemConfig: systemConfigData,
+          faqs: faqsData,
+        },
+      };
+    }),
+
+    importAllData: adminProcedure
+      .input(z.object({
+        exportedAt: z.string(),
+        tables: z.object({
+          owners: z.array(z.record(z.string(), z.any())).optional(),
+          users: z.array(z.record(z.string(), z.any())).optional(),
+          shoppingCentres: z.array(z.record(z.string(), z.any())).optional(),
+          floorLevels: z.array(z.record(z.string(), z.any())).optional(),
+          sites: z.array(z.record(z.string(), z.any())).optional(),
+          usageCategories: z.array(z.record(z.string(), z.any())).optional(),
+          siteUsageCategories: z.array(z.record(z.string(), z.any())).optional(),
+          thirdLineCategories: z.array(z.record(z.string(), z.any())).optional(),
+          thirdLineIncome: z.array(z.record(z.string(), z.any())).optional(),
+          vacantShops: z.array(z.record(z.string(), z.any())).optional(),
+          seasonalRates: z.array(z.record(z.string(), z.any())).optional(),
+          systemConfig: z.array(z.record(z.string(), z.any())).optional(),
+          faqs: z.array(z.record(z.string(), z.any())).optional(),
+        }),
+      }))
+      .mutation(async ({ input }) => {
+        const dbInst = await db.getDb();
+        if (!dbInst) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+        const schema = await import("../../drizzle/schema");
+        const { sql } = await import("drizzle-orm");
+
+        const imported: Record<string, number> = {};
+
+        const tableMap: Array<{
+          key: keyof typeof input.tables;
+          table: any;
+          pgName: string;
+          skipFields?: string[];
+        }> = [
+          { key: "owners", table: schema.owners, pgName: "owners" },
+          { key: "users", table: schema.users, pgName: "users", skipFields: ["passwordHash"] },
+          { key: "shoppingCentres", table: schema.shoppingCentres, pgName: "shopping_centres" },
+          { key: "floorLevels", table: schema.floorLevels, pgName: "floor_levels" },
+          { key: "sites", table: schema.sites, pgName: "sites" },
+          { key: "usageCategories", table: schema.usageCategories, pgName: "usage_categories" },
+          { key: "siteUsageCategories", table: schema.siteUsageCategories, pgName: "site_usage_categories" },
+          { key: "thirdLineCategories", table: schema.thirdLineCategories, pgName: "third_line_categories" },
+          { key: "thirdLineIncome", table: schema.thirdLineIncome, pgName: "third_line_income" },
+          { key: "vacantShops", table: schema.vacantShops, pgName: "vacant_shops" },
+          { key: "seasonalRates", table: schema.seasonalRates, pgName: "seasonalRates" },
+          { key: "systemConfig", table: schema.systemConfig, pgName: "system_config" },
+          { key: "faqs", table: schema.faqs, pgName: "faqs" },
+        ];
+
+        for (const { key, table, pgName, skipFields } of tableMap) {
+          const rows = input.tables[key];
+          if (!rows || rows.length === 0) {
+            imported[key] = 0;
+            continue;
+          }
+
+          let count = 0;
+          for (const row of rows) {
+            const values = { ...row };
+
+            // Remove fields we shouldn't overwrite
+            if (skipFields) {
+              for (const f of skipFields) {
+                delete values[f];
+              }
+            }
+
+            // Convert date strings back to Date objects for timestamp columns
+            for (const [k, v] of Object.entries(values)) {
+              if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v)) {
+                values[k] = new Date(v);
+              }
+            }
+
+            const updateSet = { ...values };
+            delete updateSet.id;
+
+            // Remove passwordHash from update set for users
+            if (skipFields) {
+              for (const f of skipFields) {
+                delete updateSet[f];
+              }
+            }
+
+            try {
+              await dbInst.insert(table).values(values).onConflictDoUpdate({
+                target: table.id,
+                set: updateSet,
+              });
+              count++;
+            } catch (err: any) {
+              console.error(`[importAllData] Error importing ${key} row id=${row.id}:`, err.message);
+            }
+          }
+          imported[key] = count;
+
+          // Sync serial sequence to max(id)+1
+          try {
+            await dbInst.execute(
+              sql.raw(`SELECT setval(pg_get_serial_sequence('${pgName}', 'id'), COALESCE((SELECT MAX(id) FROM "${pgName}"), 1))`)
+            );
+          } catch (err: any) {
+            console.error(`[importAllData] Error syncing sequence for ${pgName}:`, err.message);
+          }
+        }
+
+        return { imported };
+      }),
 });
