@@ -1242,6 +1242,47 @@ export const adminRouter = router({
         dbInst.select().from(faqsTable),
       ]);
 
+      // Collect map image files as base64
+      const fs = await import("fs/promises");
+      const path = await import("path");
+      const { getPublicDir } = await import("../_core/publicDir");
+      const publicDir = getPublicDir();
+      const imageFiles: Array<{ path: string; data: string }> = [];
+
+      async function collectImage(urlPath: string | null | undefined) {
+        if (!urlPath || urlPath.startsWith("http") || urlPath.startsWith("data:")) return;
+        try {
+          const filePath = path.join(publicDir, urlPath);
+          const buffer = await fs.readFile(filePath);
+          imageFiles.push({ path: urlPath, data: buffer.toString("base64") });
+        } catch { /* file doesn't exist locally, skip */ }
+      }
+
+      // Collect centre maps
+      for (const centre of centresData) {
+        await collectImage((centre as any).mapImageUrl);
+      }
+      // Collect floor level maps
+      for (const fl of floorLevelsData) {
+        await collectImage((fl as any).mapImageUrl);
+      }
+      // Collect site images (slots 1-4)
+      for (const site of sitesData) {
+        for (const slot of ["imageUrl1", "imageUrl2", "imageUrl3", "imageUrl4"]) {
+          await collectImage((site as any)[slot]);
+        }
+      }
+      // Collect vacant shop images
+      for (const vs of vacantShopsData) {
+        for (const slot of ["imageUrl1", "imageUrl2", "imageUrl3", "imageUrl4"]) {
+          await collectImage((vs as any)[slot]);
+        }
+      }
+      // Collect third line income images
+      for (const tli of thirdLineIncomeData) {
+        await collectImage((tli as any).imageUrl);
+      }
+
       return {
         exportedAt: new Date().toISOString(),
         tables: {
@@ -1259,6 +1300,7 @@ export const adminRouter = router({
           systemConfig: systemConfigData,
           faqs: faqsData,
         },
+        imageFiles,
       };
     }),
 
@@ -1280,6 +1322,7 @@ export const adminRouter = router({
           systemConfig: z.array(z.record(z.string(), z.any())).optional(),
           faqs: z.array(z.record(z.string(), z.any())).optional(),
         }),
+        imageFiles: z.array(z.object({ path: z.string(), data: z.string() })).optional(),
       }))
       .mutation(async ({ input }) => {
         const dbInst = await db.getDb();
@@ -1368,6 +1411,26 @@ export const adminRouter = router({
           }
         }
 
-        return { imported };
+        // Write image files to disk
+        let imagesWritten = 0;
+        if (input.imageFiles && input.imageFiles.length > 0) {
+          const fs = await import("fs/promises");
+          const pathMod = await import("path");
+          const { getPublicDir } = await import("../_core/publicDir");
+          const publicDir = getPublicDir();
+
+          for (const file of input.imageFiles) {
+            try {
+              const filePath = pathMod.join(publicDir, file.path);
+              await fs.mkdir(pathMod.dirname(filePath), { recursive: true });
+              await fs.writeFile(filePath, Buffer.from(file.data, "base64"));
+              imagesWritten++;
+            } catch (err: any) {
+              console.error(`[importAllData] Error writing image ${file.path}:`, err.message);
+            }
+          }
+        }
+
+        return { imported, imagesWritten };
       }),
 });

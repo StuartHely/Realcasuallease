@@ -208,8 +208,9 @@ export default function AdminSettings() {
 
   const importMutation = trpc.admin.importAllData.useMutation({
     onSuccess: (data) => {
-      toast.success("Data import completed successfully");
-      setImportResult(data.imported);
+      const imgCount = (data as any).imagesWritten || 0;
+      toast.success(`Data import completed — ${imgCount} image files transferred`);
+      setImportResult({ ...data.imported, "Image Files": imgCount });
     },
     onError: (error) => {
       toast.error(`Import failed: ${error.message}`);
