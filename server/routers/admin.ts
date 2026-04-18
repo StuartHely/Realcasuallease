@@ -1433,4 +1433,148 @@ export const adminRouter = router({
 
         return { imported, imagesWritten };
       }),
+
+    // Receipt Management
+    previewReceipt: adminProcedure
+      .input(z.object({ bookingId: z.number() }))
+      .mutation(async ({ input }) => {
+        const booking = await db.getBookingById(input.bookingId);
+        if (!booking) throw new TRPCError({ code: 'NOT_FOUND', message: 'Booking not found' });
+        if (!booking.paidAt) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Booking has not been paid' });
+
+        // Generate a preview receipt number
+        const { getDb } = await import('../db');
+        const dbInst = await getDb();
+        const { receiptSends } = await import('../../drizzle/schema');
+        const { eq, count } = await import('drizzle-orm');
+        const [result] = await dbInst!.select({ count: count() }).from(receiptSends).where(eq(receiptSends.bookingId, input.bookingId));
+        const nextSeq = (result?.count ?? 0) + 1;
+        const receiptNumber = `RCT-${booking.bookingNumber}-${String(nextSeq).padStart(3, '0')}`;
+
+        const { generateReceiptPDF } = await import('../receiptGenerator');
+        const pdfBase64 = await generateReceiptPDF(input.bookingId, receiptNumber);
+        return { pdfBase64, receiptNumber };
+      }),
+
+    sendReceipt: adminProcedure
+      .input(z.object({
+        bookingId: z.number(),
+        recipientEmails: z.string().min(1),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const booking = await db.getBookingById(input.bookingId);
+        if (!booking) throw new TRPCError({ code: 'NOT_FOUND', message: 'Booking not found' });
+        if (!booking.paidAt) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Booking has not been paid' });
+
+        // Validate email addresses (up to 5, comma-separated)
+        const emails = input.recipientEmails.split(',').map(e => e.trim()).filter(Boolean);
+        if (emails.length === 0) throw new TRPCError({ code: 'BAD_REQUEST', message: 'At least one email is required' });
+        if (emails.length > 5) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Maximum 5 email addresses allowed' });
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        for (const email of emails) {
+          if (!emailRegex.test(email)) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid email address: ${email}` });
+          }
+        }
+
+        // Generate receipt number
+        const { getDb } = await import('../db');
+        const dbInst = await getDb();
+        const { receiptSends } = await import('../../drizzle/schema');
+        const { eq, count } = await import('drizzle-orm');
+        const [result] = await dbInst!.select({ count: count() }).from(receiptSends).where(eq(receiptSends.bookingId, input.bookingId));
+        const nextSeq = (result?.count ?? 0) + 1;
+        const receiptNumber = `RCT-${booking.bookingNumber}-${String(nextSeq).padStart(3, '0')}`;
+
+        // Generate PDF
+        const { generateReceiptPDF } = await import('../receiptGenerator');
+        const pdfBase64 = await generateReceiptPDF(input.bookingId, receiptNumber);
+
+        // Get centre name for subject line
+        const site = await db.getSiteById(booking.siteId);
+        const centre = site ? await db.getShoppingCentreById(site.centreId) : null;
+        const centreName = centre?.name || 'Booking';
+
+        // Get branding
+        const { getOperatorBranding } = await import('../_core/emailTemplate');
+        const branding = await getOperatorBranding(centre?.ownerId);
+
+        // Build email
+        const { sendEmail } = await import('../_core/email');
+        const subject = `Payment Receipt ${receiptNumber} — ${centreName}`;
+        const html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #123047;">Payment Receipt</h2>
+            <p>Dear Customer,</p>
+            <p>Please find attached your payment receipt for booking <strong>${booking.bookingNumber}</strong> at <strong>${centreName}</strong>.</p>
+            <p>This receipt confirms that payment has been received.</p>
+            <p style="margin-top: 30px;">
+              Best regards,<br>
+              <strong>${branding.teamName}</strong>
+            </p>
+            <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
+            <p style="font-size: 12px; color: #666;">
+              This is an automated email. Please do not reply directly to this message.
+            </p>
+          </div>
+        `;
+
+        const sent = await sendEmail({
+          to: emails.join(','),
+          subject,
+          html,
+          attachments: [{
+            filename: `Receipt-${receiptNumber}.pdf`,
+            content: pdfBase64,
+            encoding: 'base64' as const,
+          }],
+        });
+
+        if (!sent) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to send receipt email' });
+        }
+
+        // Log to receipt_sends table
+        await dbInst!.insert(receiptSends).values({
+          bookingId: input.bookingId,
+          receiptNumber,
+          sentBy: ctx.user.id,
+          recipientEmails: emails.join(', '),
+        });
+
+        // Audit trail
+        import('../auditHelper').then(m => m.writeAudit({
+          action: 'receipt_sent',
+          entityType: 'booking',
+          entityId: input.bookingId,
+          userId: ctx.user.id,
+          changes: { receiptNumber, recipients: emails.join(', ') },
+        })).catch(() => {});
+
+        return { receiptNumber, sentTo: emails };
+      }),
+
+    getReceiptHistory: adminProcedure
+      .input(z.object({ bookingId: z.number() }))
+      .query(async ({ input }) => {
+        const { getDb } = await import('../db');
+        const dbInst = await getDb();
+        const { receiptSends, users } = await import('../../drizzle/schema');
+        const { eq, desc } = await import('drizzle-orm');
+
+        const receipts = await dbInst!
+          .select({
+            id: receiptSends.id,
+            receiptNumber: receiptSends.receiptNumber,
+            recipientEmails: receiptSends.recipientEmails,
+            createdAt: receiptSends.createdAt,
+            sentByName: users.name,
+          })
+          .from(receiptSends)
+          .leftJoin(users, eq(receiptSends.sentBy, users.id))
+          .where(eq(receiptSends.bookingId, input.bookingId))
+          .orderBy(desc(receiptSends.createdAt));
+
+        return receipts;
+      }),
 });

@@ -53,6 +53,10 @@ export default function AdminBookings() {
     overdueCount: countData?.overdueCount ?? 0,
   };
 
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
+  const [receiptBookingId, setReceiptBookingId] = useState<number | null>(null);
+  const [receiptEmails, setReceiptEmails] = useState("");
+
   const [paymentConfirm, setPaymentConfirm] = useState<{ bookingId: number; bookingNumber: string } | null>(null);
 
   const recordPaymentMutation = trpc.admin.recordPayment.useMutation({
@@ -62,6 +66,34 @@ export default function AdminBookings() {
       setPaymentConfirm(null);
     },
     onError: (error: any) => toast.error(`Failed: ${error.message}`),
+  });
+
+  const receiptHistory = trpc.admin.getReceiptHistory.useQuery(
+    { bookingId: receiptBookingId! },
+    { enabled: receiptDialogOpen && receiptBookingId !== null }
+  );
+
+  const previewReceiptMutation = trpc.admin.previewReceipt.useMutation({
+    onSuccess: (data) => {
+      const byteCharacters = atob(data.pdfBase64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      window.open(URL.createObjectURL(blob), '_blank');
+    },
+    onError: (error: any) => toast.error(`Preview failed: ${error.message}`),
+  });
+
+  const sendReceiptMutation = trpc.admin.sendReceipt.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Receipt ${data.receiptNumber} sent to ${data.sentTo.join(', ')}`);
+      receiptHistory.refetch();
+      setReceiptEmails("");
+    },
+    onError: (error: any) => toast.error(`Failed to send receipt: ${error.message}`),
   });
 
   useEffect(() => {
@@ -465,6 +497,7 @@ export default function AdminBookings() {
                         {selectedStatus === "unpaid" && <TableHead>Due Date</TableHead>}
                         <TableHead>Licence</TableHead>
                         <TableHead>Invoice PDF</TableHead>
+                        <TableHead>Receipt</TableHead>
                         <TableHead>Edit</TableHead>
                         {selectedStatus === "pending" && <TableHead>Actions</TableHead>}
                         {selectedStatus === "unpaid" && <TableHead>Actions</TableHead>}
@@ -581,6 +614,23 @@ export default function AdminBookings() {
                               </Button>
                             </TableCell>
                             <TableCell>
+                              {booking.paidAt && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setReceiptBookingId(booking.id);
+                                    setReceiptEmails(booking.customerEmail || "");
+                                    setReceiptDialogOpen(true);
+                                  }}
+                                  className="gap-1 text-emerald-600 border-emerald-300"
+                                >
+                                  <Mail className="h-3 w-3" />
+                                  Receipt
+                                </Button>
+                              )}
+                            </TableCell>
+                            <TableCell>
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -690,6 +740,99 @@ export default function AdminBookings() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setLicenceDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Receipt Dialog */}
+      <Dialog open={receiptDialogOpen} onOpenChange={(open) => {
+        setReceiptDialogOpen(open);
+        if (!open) {
+          setReceiptBookingId(null);
+          setReceiptEmails("");
+        }
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Send Payment Receipt</DialogTitle>
+            <DialogDescription>
+              Generate and email a payment receipt for this booking
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium">Recipient Email(s)</label>
+              <input
+                type="text"
+                value={receiptEmails}
+                onChange={(e) => setReceiptEmails(e.target.value)}
+                placeholder="email@example.com, another@example.com"
+                className="w-full mt-1 px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Up to 5 email addresses, comma-separated
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => receiptBookingId && previewReceiptMutation.mutate({ bookingId: receiptBookingId })}
+                disabled={previewReceiptMutation.isPending}
+                className="gap-1"
+              >
+                <FileText className="h-4 w-4" />
+                {previewReceiptMutation.isPending ? "Generating..." : "Preview PDF"}
+              </Button>
+              <Button
+                onClick={() => {
+                  if (receiptBookingId && receiptEmails.trim()) {
+                    sendReceiptMutation.mutate({
+                      bookingId: receiptBookingId,
+                      recipientEmails: receiptEmails.trim(),
+                    });
+                  }
+                }}
+                disabled={sendReceiptMutation.isPending || !receiptEmails.trim()}
+                className="gap-1"
+              >
+                <Mail className="h-4 w-4" />
+                {sendReceiptMutation.isPending ? "Sending..." : "Send Receipt"}
+              </Button>
+            </div>
+
+            {/* Receipt History */}
+            {receiptHistory.data && receiptHistory.data.length > 0 && (
+              <div className="border-t pt-4 mt-4">
+                <h4 className="text-sm font-semibold mb-3">Receipt History</h4>
+                <div className="space-y-2">
+                  {receiptHistory.data.map((receipt) => (
+                    <div key={receipt.id} className="flex items-start justify-between text-sm p-2 bg-muted/50 rounded">
+                      <div>
+                        <div className="font-medium">{receipt.receiptNumber}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Sent by {receipt.sentByName || 'Admin'} • {new Date(receipt.createdAt).toLocaleString('en-AU')}
+                        </div>
+                        <div className="text-xs text-muted-foreground">To: {receipt.recipientEmails}</div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => previewReceiptMutation.mutate({ bookingId: receiptBookingId! })}
+                        className="text-xs"
+                      >
+                        Regenerate
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReceiptDialogOpen(false)}>
               Close
             </Button>
           </DialogFooter>

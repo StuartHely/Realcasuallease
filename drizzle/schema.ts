@@ -827,6 +827,20 @@ export const eftAllocations = pgTable("eft_allocations", {
   bookingIdx: index("ea_booking_idx").on(table.bookingId, table.bookingType),
 }));
 
+/**
+ * Receipt sends — append-only log of payment receipts emailed for bookings
+ */
+export const receiptSends = pgTable("receipt_sends", {
+  id: serial("id").primaryKey(),
+  bookingId: integer("bookingId").notNull().references(() => bookings.id, { onDelete: "cascade" }),
+  receiptNumber: varchar("receiptNumber", { length: 50 }).notNull().unique(),
+  sentBy: integer("sentBy").notNull().references(() => users.id, { onDelete: "cascade" }),
+  recipientEmails: text("recipientEmails").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  bookingIdIdx: index("rs_bookingId_idx").on(table.bookingId),
+}));
+
 // =============================================================================
 // Type Exports
 // =============================================================================
@@ -884,3 +898,5 @@ export type EftDeposit = typeof eftDeposits.$inferSelect;
 export type InsertEftDeposit = typeof eftDeposits.$inferInsert;
 export type EftAllocation = typeof eftAllocations.$inferSelect;
 export type InsertEftAllocation = typeof eftAllocations.$inferInsert;
+export type ReceiptSend = typeof receiptSends.$inferSelect;
+export type InsertReceiptSend = typeof receiptSends.$inferInsert;
