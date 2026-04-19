@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Store, Building2, Upload, RotateCw, Download, FileSpreadsheet } from "lucide-react";
+import { Plus, Pencil, Trash2, Store, Building2, Upload, RotateCw, Download, FileSpreadsheet, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import Cropper from "react-easy-crop";
@@ -75,6 +75,11 @@ export default function VacantShops() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importResult, setImportResult] = useState<{ created: number; updated: number; errors: string[] } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importCentreId, setImportCentreId] = useState<number | null>(null);
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
+  const [importRowCount, setImportRowCount] = useState(0);
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   
   // Image preview and crop states
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -136,6 +141,27 @@ export default function VacantShops() {
   });
   const uploadImageMutation = trpc.vacantShops.uploadImage.useMutation();
   const importMutation = trpc.vsImportExport.importVacantShops.useMutation();
+
+  const importPreview = trpc.importSafety.getImportPreview.useQuery(
+    { centreId: importCentreId!, assetType: "vacant_shops" },
+    { enabled: showImportConfirm && !!importCentreId }
+  );
+
+  const createSnapshotMutation = trpc.importSafety.createSnapshot.useMutation();
+
+  const snapshotList = trpc.importSafety.listSnapshots.useQuery(
+    { centreId: selectedCentreId!, assetType: "vacant_shops" },
+    { enabled: showRestoreDialog && !!selectedCentreId }
+  );
+
+  const restoreSnapshotMutation = trpc.importSafety.restoreSnapshot.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Restored ${data.restoredCount} records`);
+      utils.vacantShops.getByCentre.invalidate({ centreId: selectedCentreId! });
+      snapshotList.refetch();
+    },
+    onError: (error: any) => toast.error(error.message),
+  });
 
   const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -249,23 +275,43 @@ export default function VacantShops() {
     setEditingShop(null);
   };
 
-  const handleImportFile = async (file: File) => {
-    if (!selectedCentreId) {
-      toast.error("Please select a shopping centre first");
-      return;
-    }
+  const handleImportFileSelect = (file: File) => {
+    file.text().then(text => {
+      const lines = text.split('\n').filter(l => l.trim());
+      setImportRowCount(Math.max(0, lines.length - 1));
+    });
+    setImportFile(file);
+    setImportCentreId(null);
+    setShowImportConfirm(true);
+  };
+
+  const handleConfirmedImport = async () => {
+    if (!importCentreId || !importFile) return;
+
     try {
-      const text = await file.text();
+      await createSnapshotMutation.mutateAsync({
+        centreId: importCentreId,
+        assetType: "vacant_shops",
+        importFileName: importFile.name,
+      });
+    } catch (error) {
+      console.error("Snapshot creation failed, continuing with import:", error);
+    }
+
+    try {
+      const text = await importFile.text();
       const result = await importMutation.mutateAsync({
-        centreId: selectedCentreId,
+        centreId: importCentreId,
         csvContent: text,
       });
       setImportResult(result);
-      utils.vacantShops.getByCentre.invalidate({ centreId: selectedCentreId });
+      setShowImportConfirm(false);
+      utils.vacantShops.getByCentre.invalidate({ centreId: importCentreId });
       toast.success(`Import complete: ${result.created} created, ${result.updated} updated${result.errors.length ? `, ${result.errors.length} errors` : ""}`);
     } catch (error: any) {
       toast.error(error.message || "Failed to import");
     }
+    setImportFile(null);
   };
 
   const handleExport = async () => {
@@ -405,6 +451,9 @@ export default function VacantShops() {
                 <Button variant="outline" onClick={() => { setImportResult(null); setIsImportOpen(true); }}>
                   <FileSpreadsheet className="mr-2 h-4 w-4" />
                   Import from Spreadsheet
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowRestoreDialog(true)} className="text-xs text-muted-foreground">
+                  Restore Previous
                 </Button>
                 <BulkImageImportVS centreId={selectedCentreId!} onComplete={() => utils.vacantShops.getByCentre.invalidate({ centreId: selectedCentreId! })} />
                 <Button onClick={() => handleOpenDialog()}>
@@ -809,7 +858,7 @@ export default function VacantShops() {
                   className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) handleImportFile(file);
+                    if (file) handleImportFileSelect(file);
                   }}
                 />
               </div>
@@ -833,6 +882,102 @@ export default function VacantShops() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsImportOpen(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Import Confirmation Dialog */}
+        <Dialog open={showImportConfirm} onOpenChange={(open) => { if (!open) { setShowImportConfirm(false); setImportFile(null); } }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                Confirm Import
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm">
+                You are about to import <strong>Vacant Shops</strong> data.
+              </p>
+              <div>
+                <Label>Select Centre</Label>
+                <Select value={importCentreId?.toString() || ""} onValueChange={(v) => setImportCentreId(parseInt(v))}>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select centre..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {centres?.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {importCentreId && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-1 text-sm">
+                  <p>Centre: <strong>{centres?.find((c: any) => c.id === importCentreId)?.name}</strong></p>
+                  <p>• {importPreview.data?.existingCount ?? "..."} existing shops will be affected</p>
+                  <p>• {importRowCount} shops in your import file</p>
+                  <p className="text-amber-700 mt-2 font-medium">This action cannot be undone without restoring from the automatic backup.</p>
+                </div>
+              )}
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => { setShowImportConfirm(false); setImportFile(null); }}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmedImport}
+                disabled={!importCentreId || importMutation.isPending || createSnapshotMutation.isPending}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                {createSnapshotMutation.isPending ? "Creating backup..." : importMutation.isPending ? "Importing..." : "Yes, Import"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Restore Snapshot Dialog */}
+        <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Restore Previous Import</DialogTitle>
+              <DialogDescription>Select a backup to restore vacant shop data to a previous state.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {snapshotList.isLoading ? (
+                <p className="text-sm text-muted-foreground">Loading...</p>
+              ) : snapshotList.data && snapshotList.data.length > 0 ? (
+                snapshotList.data.map((snap) => (
+                  <div key={snap.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="text-sm">
+                      <div className="font-medium">{snap.importFileName || "Manual import"}</div>
+                      <div className="text-muted-foreground">
+                        {snap.recordCount} records • {new Date(snap.createdAt).toLocaleString("en-AU")} • by {snap.createdByName || "Admin"}
+                      </div>
+                      {snap.restoredAt && (
+                        <div className="text-xs text-green-600">Restored on {new Date(snap.restoredAt).toLocaleString("en-AU")}</div>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        if (confirm(`Restore ${snap.recordCount} shops to the state from ${new Date(snap.createdAt).toLocaleString("en-AU")}?`)) {
+                          restoreSnapshotMutation.mutate({ snapshotId: snap.id });
+                        }
+                      }}
+                      disabled={restoreSnapshotMutation.isPending}
+                    >
+                      Restore
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground py-4 text-center">No backups available</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRestoreDialog(false)}>Close</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

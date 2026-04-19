@@ -2,8 +2,8 @@ import { ownerProcedure, adminProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 import * as db from "../db";
 import { TRPCError } from "@trpc/server";
-import { sites, shoppingCentres } from "../../drizzle/schema";
-import { eq, inArray } from "drizzle-orm";
+import { sites, shoppingCentres, importSnapshots, users, vacantShops, thirdLineIncome } from "../../drizzle/schema";
+import { eq, and, desc, inArray } from "drizzle-orm";
 
 const HEADERS = [
   "Site Number",
@@ -662,5 +662,167 @@ export const siteImportExportRouter = router({
       }
 
       return { csv: csvRows.join("\n"), count: allSites.length };
+    }),
+});
+
+// ============ Import Safety (Snapshot/Restore) ============
+
+const assetTypeEnum = z.enum(["casual_leasing", "vacant_shops", "third_line_income"]);
+
+export const importSafetyRouter = router({
+  getImportPreview: ownerProcedure
+    .input(z.object({
+      centreId: z.number(),
+      assetType: assetTypeEnum,
+    }))
+    .query(async ({ input }) => {
+      let count = 0;
+      if (input.assetType === "casual_leasing") {
+        const siteList = await db.getSitesByCentreId(input.centreId);
+        count = siteList.length;
+      } else if (input.assetType === "vacant_shops") {
+        const { getVacantShopsByCentre } = await import("../assetDb");
+        const shops = await getVacantShopsByCentre(input.centreId);
+        count = shops.length;
+      } else {
+        const { getThirdLineIncomeByCentre } = await import("../assetDb");
+        const assets = await getThirdLineIncomeByCentre(input.centreId);
+        count = assets.length;
+      }
+      return { existingCount: count };
+    }),
+
+  createSnapshot: ownerProcedure
+    .input(z.object({
+      centreId: z.number(),
+      assetType: assetTypeEnum,
+      importFileName: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { getDb } = await import("../db");
+      const dbInst = await getDb();
+
+      let snapshotData: any[];
+      if (input.assetType === "casual_leasing") {
+        snapshotData = await db.getSitesByCentreId(input.centreId);
+      } else if (input.assetType === "vacant_shops") {
+        const { getVacantShopsByCentre } = await import("../assetDb");
+        snapshotData = await getVacantShopsByCentre(input.centreId);
+      } else {
+        const { getThirdLineIncomeByCentre } = await import("../assetDb");
+        snapshotData = await getThirdLineIncomeByCentre(input.centreId);
+      }
+
+      const [snapshot] = await dbInst!.insert(importSnapshots).values({
+        centreId: input.centreId,
+        assetType: input.assetType,
+        snapshotData: JSON.stringify(snapshotData),
+        recordCount: snapshotData.length,
+        importFileName: input.importFileName || null,
+        createdBy: ctx.user.id,
+      }).returning();
+
+      // Prune old snapshots — keep only the latest 10 per centre+assetType
+      const allSnapshots = await dbInst!
+        .select({ id: importSnapshots.id })
+        .from(importSnapshots)
+        .where(and(
+          eq(importSnapshots.centreId, input.centreId),
+          eq(importSnapshots.assetType, input.assetType),
+        ))
+        .orderBy(desc(importSnapshots.createdAt));
+
+      if (allSnapshots.length > 10) {
+        const idsToDelete = allSnapshots.slice(10).map(s => s.id);
+        await dbInst!.delete(importSnapshots).where(inArray(importSnapshots.id, idsToDelete));
+      }
+
+      return { snapshotId: snapshot.id, recordCount: snapshotData.length };
+    }),
+
+  listSnapshots: ownerProcedure
+    .input(z.object({
+      centreId: z.number(),
+      assetType: assetTypeEnum,
+    }))
+    .query(async ({ input }) => {
+      const { getDb } = await import("../db");
+      const dbInst = await getDb();
+
+      const snapshots = await dbInst!
+        .select({
+          id: importSnapshots.id,
+          recordCount: importSnapshots.recordCount,
+          importFileName: importSnapshots.importFileName,
+          createdAt: importSnapshots.createdAt,
+          restoredAt: importSnapshots.restoredAt,
+          createdByName: users.name,
+        })
+        .from(importSnapshots)
+        .leftJoin(users, eq(importSnapshots.createdBy, users.id))
+        .where(and(
+          eq(importSnapshots.centreId, input.centreId),
+          eq(importSnapshots.assetType, input.assetType),
+        ))
+        .orderBy(desc(importSnapshots.createdAt))
+        .limit(10);
+
+      return snapshots;
+    }),
+
+  restoreSnapshot: adminProcedure
+    .input(z.object({ snapshotId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const { getDb } = await import("../db");
+      const dbInst = await getDb();
+
+      const [snapshot] = await dbInst!
+        .select()
+        .from(importSnapshots)
+        .where(eq(importSnapshots.id, input.snapshotId));
+
+      if (!snapshot) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Snapshot not found" });
+      }
+
+      const data = typeof snapshot.snapshotData === "string"
+        ? JSON.parse(snapshot.snapshotData)
+        : snapshot.snapshotData;
+
+      if (snapshot.assetType === "casual_leasing") {
+        await dbInst!.delete(sites).where(eq(sites.centreId, snapshot.centreId));
+        for (const site of data) {
+          const { id, createdAt, updatedAt, ...siteData } = site;
+          await dbInst!.insert(sites).values({ ...siteData, centreId: snapshot.centreId });
+        }
+      } else if (snapshot.assetType === "vacant_shops") {
+        await dbInst!.delete(vacantShops).where(eq(vacantShops.centreId, snapshot.centreId));
+        for (const shop of data) {
+          const { id, createdAt, updatedAt, ...shopData } = shop;
+          await dbInst!.insert(vacantShops).values({ ...shopData, centreId: snapshot.centreId });
+        }
+      } else {
+        await dbInst!.delete(thirdLineIncome).where(eq(thirdLineIncome.centreId, snapshot.centreId));
+        for (const asset of data) {
+          const { id, createdAt, updatedAt, ...assetData } = asset;
+          await dbInst!.insert(thirdLineIncome).values({ ...assetData, centreId: snapshot.centreId });
+        }
+      }
+
+      // Mark snapshot as restored
+      await dbInst!.update(importSnapshots)
+        .set({ restoredAt: new Date(), restoredBy: ctx.user.id })
+        .where(eq(importSnapshots.id, input.snapshotId));
+
+      // Audit
+      import("../auditHelper").then(m => m.writeAudit({
+        userId: ctx.user.id,
+        action: "import_snapshot_restored",
+        entityType: "centre",
+        entityId: snapshot.centreId,
+        changes: { snapshotId: input.snapshotId, assetType: snapshot.assetType, recordCount: data.length },
+      })).catch(() => {});
+
+      return { restoredCount: data.length };
     }),
 });

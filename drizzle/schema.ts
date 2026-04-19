@@ -841,6 +841,24 @@ export const receiptSends = pgTable("receipt_sends", {
   bookingIdIdx: index("rs_bookingId_idx").on(table.bookingId),
 }));
 
+/**
+ * Import snapshots — automatic backup before spreadsheet imports
+ */
+export const importSnapshots = pgTable("import_snapshots", {
+  id: serial("id").primaryKey(),
+  centreId: integer("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
+  assetType: varchar("assetType", { length: 30 }).notNull(), // "casual_leasing" | "vacant_shops" | "third_line_income"
+  snapshotData: jsonb("snapshotData").notNull(),
+  recordCount: integer("recordCount").notNull(),
+  importFileName: varchar("importFileName", { length: 255 }),
+  createdBy: integer("createdBy").notNull().references(() => users.id, { onDelete: "cascade" }),
+  restoredAt: timestamp("restoredAt"),
+  restoredBy: integer("restoredBy").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  centreAssetIdx: index("is_centre_asset_idx").on(table.centreId, table.assetType),
+}));
+
 // =============================================================================
 // Type Exports
 // =============================================================================
@@ -900,3 +918,5 @@ export type EftAllocation = typeof eftAllocations.$inferSelect;
 export type InsertEftAllocation = typeof eftAllocations.$inferInsert;
 export type ReceiptSend = typeof receiptSends.$inferSelect;
 export type InsertReceiptSend = typeof receiptSends.$inferInsert;
+export type ImportSnapshot = typeof importSnapshots.$inferSelect;
+export type InsertImportSnapshot = typeof importSnapshots.$inferInsert;
