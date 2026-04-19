@@ -170,6 +170,8 @@ export default function AdminMaps() {
   const resetSiteMarkerMutation = trpc.admin.resetSiteMarker.useMutation({
     onSuccess: () => {
       toast.success("Marker removed successfully");
+      utils.centres.getSites.invalidate();
+      utils.admin.getSitesByFloorLevel.invalidate();
     },
     onError: (error: any) => {
       toast.error(`Failed to remove marker: ${error.message}`);
@@ -520,7 +522,7 @@ export default function AdminMaps() {
 
   const handleRemoveMarker = async (siteId: number) => {
     // Remove from local state immediately for instant feedback
-    setMarkers(markers.filter((m) => m.siteId !== siteId));
+    setMarkers((prev) => prev.filter((m) => m.siteId !== siteId));
     
     // Also remove from database
     try {

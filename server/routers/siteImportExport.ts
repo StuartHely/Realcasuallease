@@ -21,7 +21,7 @@ const HEADERS = [
 ] as const;
 
 function normalizeHeader(h: string): string {
-  return h.trim().toLowerCase().replace(/\s+/g, " ");
+  return h.replace(/^\uFEFF/, "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 const HEADER_MAP: Record<string, keyof typeof FIELD_MAP> = {};
@@ -68,7 +68,8 @@ function escapeCSV(val: string): string {
   return val;
 }
 
-function parseCSV(text: string): string[][] {
+function parseCSV(rawText: string): string[][] {
+  const text = rawText.replace(/^\uFEFF/, "");
   const rows: string[][] = [];
   let current = "";
   let inQuotes = false;
@@ -120,6 +121,327 @@ async function getCentreIdsForScope(
   const centres = await db.getShoppingCentres(scopeId);
   return centres.map((c) => c.id);
 }
+
+// ============ Vacant Shops Import/Export ============
+
+const VS_HEADERS = [
+  "Shop Number",
+  "Total Size (m²)",
+  "Dimensions",
+  "Powered Y/N",
+  "Description",
+  "Weekly Rate ($)",
+  "Monthly Rate ($)",
+  "Outgoings/Day ($)",
+  "Active Y/N",
+] as const;
+
+export const vsImportExportRouter = router({
+  exportVacantShops: ownerProcedure
+    .input(z.object({ centreId: z.number() }))
+    .query(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import("../tenantScope");
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+
+      const centre = await db.getShoppingCentreById(input.centreId);
+      if (!centre) throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+      if (scopedOwnerId && centre.ownerId !== scopedOwnerId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+      }
+
+      const { getVacantShopsByCentre } = await import("../assetDb");
+      const shops = await getVacantShopsByCentre(input.centreId);
+
+      const csvRows: string[] = [];
+      csvRows.push(VS_HEADERS.map(escapeCSV).join(","));
+
+      for (const shop of shops) {
+        const row = [
+          shop.shopNumber || "",
+          shop.totalSizeM2 || "",
+          shop.dimensions || "",
+          shop.powered ? "Y" : "N",
+          stripHtml(shop.description || ""),
+          shop.pricePerWeek || "",
+          shop.pricePerMonth || "",
+          (shop as any).outgoingsPerDay || "",
+          shop.isActive ? "Y" : "N",
+        ];
+        csvRows.push(row.map(escapeCSV).join(","));
+      }
+
+      return { csv: csvRows.join("\n"), count: shops.length };
+    }),
+
+  importVacantShops: ownerProcedure
+    .input(z.object({ centreId: z.number(), csvContent: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import("../tenantScope");
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+
+      const centre = await db.getShoppingCentreById(input.centreId);
+      if (!centre) throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+      if (scopedOwnerId && centre.ownerId !== scopedOwnerId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+      }
+
+      const { createVacantShop, updateVacantShop, getVacantShopsByCentre } = await import("../assetDb");
+
+      const rows = parseCSV(input.csvContent);
+      if (rows.length < 2) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "CSV must have a header row and at least one data row" });
+      }
+
+      const headerRow = rows[0].map(normalizeHeader);
+      const colMap: Record<string, number> = {};
+      const vsHeaderMap: Record<string, string> = {};
+      VS_HEADERS.forEach((h) => { vsHeaderMap[normalizeHeader(h)] = h; });
+      headerRow.forEach((h, i) => {
+        if (vsHeaderMap[h]) colMap[vsHeaderMap[h]] = i;
+      });
+
+      if (colMap["Shop Number"] === undefined) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: 'CSV must include a "Shop Number" column' });
+      }
+
+      const existingShops = await getVacantShopsByCentre(input.centreId);
+      const existingMap = new Map(existingShops.map((s) => [s.shopNumber.trim().toLowerCase(), s]));
+
+      const results = { created: 0, updated: 0, errors: [] as string[] };
+
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const rowNum = i + 1;
+
+        try {
+          const getValue = (header: string): string => {
+            const idx = colMap[header];
+            if (idx === undefined) return "";
+            return (row[idx] || "").trim();
+          };
+
+          const shopNumber = getValue("Shop Number");
+          if (!shopNumber) {
+            results.errors.push(`Row ${rowNum}: Missing Shop Number — skipped`);
+            continue;
+          }
+
+          const poweredRaw = getValue("Powered Y/N");
+          const powered = poweredRaw ? parseBoolean(poweredRaw) : false;
+
+          const activeRaw = getValue("Active Y/N");
+          const isActive = activeRaw ? parseBoolean(activeRaw) : true;
+
+          const shopData = {
+            shopNumber,
+            totalSizeM2: getValue("Total Size (m²)") || null,
+            dimensions: getValue("Dimensions") || null,
+            powered,
+            description: getValue("Description") || null,
+            pricePerWeek: parseOptionalDecimal(getValue("Weekly Rate ($)")),
+            pricePerMonth: parseOptionalDecimal(getValue("Monthly Rate ($)")),
+            outgoingsPerDay: parseOptionalDecimal(getValue("Outgoings/Day ($)")),
+            isActive,
+          };
+
+          const existing = existingMap.get(shopNumber.toLowerCase());
+          if (existing) {
+            await updateVacantShop(existing.id, shopData);
+            results.updated++;
+          } else {
+            await createVacantShop({ centreId: input.centreId, ...shopData });
+            results.created++;
+          }
+        } catch (err: any) {
+          results.errors.push(`Row ${rowNum}: ${err.message || "Unknown error"}`);
+        }
+      }
+
+      import("../auditHelper")
+        .then((m) =>
+          m.writeAudit({
+            userId: ctx.user.id,
+            action: "vacant_shops_bulk_imported",
+            entityType: "centre",
+            entityId: input.centreId,
+            changes: { created: results.created, updated: results.updated, errors: results.errors.length },
+          })
+        )
+        .catch(() => {});
+
+      return results;
+    }),
+});
+
+// ============ Third Line Income Import/Export ============
+
+const TLI_HEADERS = [
+  "Asset Number",
+  "Category",
+  "Dimensions",
+  "Powered Y/N",
+  "Description",
+  "Weekly Rate ($)",
+  "Monthly Rate ($)",
+  "Outgoings/Day ($)",
+  "Active Y/N",
+] as const;
+
+export const tliImportExportRouter = router({
+  exportThirdLineIncome: ownerProcedure
+    .input(z.object({ centreId: z.number() }))
+    .query(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import("../tenantScope");
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+
+      const centre = await db.getShoppingCentreById(input.centreId);
+      if (!centre) throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+      if (scopedOwnerId && centre.ownerId !== scopedOwnerId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+      }
+
+      const { getThirdLineIncomeByCentre } = await import("../assetDb");
+      const assets = await getThirdLineIncomeByCentre(input.centreId);
+
+      const csvRows: string[] = [];
+      csvRows.push(TLI_HEADERS.map(escapeCSV).join(","));
+
+      for (const asset of assets) {
+        const row = [
+          asset.assetNumber || "",
+          asset.categoryName || "",
+          asset.dimensions || "",
+          asset.powered ? "Y" : "N",
+          stripHtml(asset.description || ""),
+          asset.pricePerWeek || "",
+          asset.pricePerMonth || "",
+          asset.outgoingsPerDay || "",
+          asset.isActive ? "Y" : "N",
+        ];
+        csvRows.push(row.map(escapeCSV).join(","));
+      }
+
+      return { csv: csvRows.join("\n"), count: assets.length };
+    }),
+
+  importThirdLineIncome: ownerProcedure
+    .input(z.object({ centreId: z.number(), csvContent: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const { getScopedOwnerId } = await import("../tenantScope");
+      const scopedOwnerId = getScopedOwnerId(ctx.user);
+
+      const centre = await db.getShoppingCentreById(input.centreId);
+      if (!centre) throw new TRPCError({ code: "NOT_FOUND", message: "Centre not found" });
+      if (scopedOwnerId && centre.ownerId !== scopedOwnerId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+      }
+
+      const { createThirdLineIncome, updateThirdLineIncome, getThirdLineIncomeByCentre, getAllThirdLineCategories } =
+        await import("../assetDb");
+
+      const categories = await getAllThirdLineCategories();
+      const categoryMap = new Map(categories.map((c) => [c.name.toLowerCase(), c.id]));
+
+      const rows = parseCSV(input.csvContent);
+      if (rows.length < 2) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "CSV must have a header row and at least one data row" });
+      }
+
+      const headerRow = rows[0].map(normalizeHeader);
+      const colMap: Record<string, number> = {};
+      const tliHeaderMap: Record<string, string> = {};
+      TLI_HEADERS.forEach((h) => { tliHeaderMap[normalizeHeader(h)] = h; });
+      headerRow.forEach((h, i) => {
+        if (tliHeaderMap[h]) colMap[tliHeaderMap[h]] = i;
+      });
+
+      if (colMap["Asset Number"] === undefined) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: 'CSV must include an "Asset Number" column' });
+      }
+
+      const existingAssets = await getThirdLineIncomeByCentre(input.centreId);
+      const existingMap = new Map(existingAssets.map((a) => [a.assetNumber.trim().toLowerCase(), a]));
+
+      const results = { created: 0, updated: 0, errors: [] as string[] };
+
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const rowNum = i + 1;
+
+        try {
+          const getValue = (header: string): string => {
+            const idx = colMap[header];
+            if (idx === undefined) return "";
+            return (row[idx] || "").trim();
+          };
+
+          const assetNumber = getValue("Asset Number");
+          if (!assetNumber) {
+            results.errors.push(`Row ${rowNum}: Missing Asset Number — skipped`);
+            continue;
+          }
+
+          const categoryName = getValue("Category");
+          let categoryId: number | undefined;
+          if (categoryName) {
+            categoryId = categoryMap.get(categoryName.toLowerCase());
+            if (!categoryId) {
+              results.errors.push(`Row ${rowNum}: Unknown category "${categoryName}" — skipped`);
+              continue;
+            }
+          }
+
+          const poweredRaw = getValue("Powered Y/N");
+          const powered = poweredRaw ? parseBoolean(poweredRaw) : false;
+
+          const activeRaw = getValue("Active Y/N");
+          const isActive = activeRaw ? parseBoolean(activeRaw) : true;
+
+          const assetData = {
+            assetNumber,
+            dimensions: getValue("Dimensions") || null,
+            powered,
+            description: getValue("Description") || null,
+            pricePerWeek: parseOptionalDecimal(getValue("Weekly Rate ($)")),
+            pricePerMonth: parseOptionalDecimal(getValue("Monthly Rate ($)")),
+            outgoingsPerDay: parseOptionalDecimal(getValue("Outgoings/Day ($)")),
+            isActive,
+          };
+
+          const existing = existingMap.get(assetNumber.toLowerCase());
+          if (existing) {
+            await updateThirdLineIncome(existing.id, { ...assetData, ...(categoryId ? { categoryId } : {}) });
+            results.updated++;
+          } else {
+            if (!categoryId) {
+              results.errors.push(`Row ${rowNum}: Category is required for new assets — skipped`);
+              continue;
+            }
+            await createThirdLineIncome({ centreId: input.centreId, categoryId, ...assetData });
+            results.created++;
+          }
+        } catch (err: any) {
+          results.errors.push(`Row ${rowNum}: ${err.message || "Unknown error"}`);
+        }
+      }
+
+      import("../auditHelper")
+        .then((m) =>
+          m.writeAudit({
+            userId: ctx.user.id,
+            action: "third_line_income_bulk_imported",
+            entityType: "centre",
+            entityId: input.centreId,
+            changes: { created: results.created, updated: results.updated, errors: results.errors.length },
+          })
+        )
+        .catch(() => {});
+
+      return results;
+    }),
+});
+
+// ============ CL Site Import/Export ============
 
 export const siteImportExportRouter = router({
   importSites: ownerProcedure

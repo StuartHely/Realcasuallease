@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useDefaultCentre } from "@/hooks/useDefaultCentre";
 import AdminLayout from "@/components/AdminLayout";
@@ -12,12 +12,13 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Layers, Building2, Upload, RotateCw } from "lucide-react";
+import { Plus, Pencil, Trash2, Layers, Building2, Upload, RotateCw, Download, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
+import BulkImageImportTLI from "@/components/BulkImageImportTLI";
 
 // Helper function to create cropped image
 const createCroppedImage = async (imageSrc: string, pixelCrop: Area, rotation: number): Promise<Blob> => {
@@ -72,6 +73,9 @@ export default function ThirdLineIncome() {
   const [editingAsset, setEditingAsset] = useState<any>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [confirmState, setConfirmState] = useState<{ id: number; assetNumber: string } | null>(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importResult, setImportResult] = useState<{ created: number; updated: number; errors: string[] } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Image preview and crop states
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -132,6 +136,8 @@ export default function ThirdLineIncome() {
     onError: (error) => toast.error(error.message),
   });
   const uploadImageMutation = trpc.thirdLineIncome.uploadImage.useMutation();
+  const importMutation = trpc.tliImportExport.importThirdLineIncome.useMutation();
+  const utils = trpc.useUtils();
 
   const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -303,6 +309,48 @@ export default function ThirdLineIncome() {
     setConfirmState(null);
   };
 
+  const handleImportFile = async (file: File) => {
+    if (!selectedCentreId) {
+      toast.error("Please select a shopping centre first");
+      return;
+    }
+    try {
+      const text = await file.text();
+      const result = await importMutation.mutateAsync({
+        centreId: selectedCentreId,
+        csvContent: text,
+      });
+      setImportResult(result);
+      refetch();
+      toast.success(`Import complete: ${result.created} created, ${result.updated} updated${result.errors.length ? `, ${result.errors.length} errors` : ""}`);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to import");
+    }
+  };
+
+  const handleExport = async () => {
+    if (!selectedCentreId) {
+      toast.error("Please select a shopping centre first");
+      return;
+    }
+    try {
+      const result = await utils.tliImportExport.exportThirdLineIncome.fetch({
+        centreId: selectedCentreId,
+      });
+      const blob = new Blob([result.csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const centreName = selectedCentre?.name?.replace(/[^a-z0-9]/gi, "_") || "third_line";
+      a.download = `${centreName}_third_line_income.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${result.count} assets`);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to export");
+    }
+  };
+
   const selectedCentre = centres?.find((c: any) => c.id === selectedCentreId);
   const getCategoryName = (categoryId: number) => {
     const category = categories?.find((c: any) => c.id === categoryId);
@@ -354,10 +402,21 @@ export default function ThirdLineIncome() {
                 <Layers className="h-5 w-5" />
                 Third Line Income at {selectedCentre?.name} ({assets?.length || 0})
               </CardTitle>
-              <Button onClick={() => handleOpenDialog()}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Asset
-              </Button>
+              <div className="flex gap-2 flex-wrap">
+                <Button variant="outline" onClick={handleExport}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Spreadsheet
+                </Button>
+                <Button variant="outline" onClick={() => { setImportResult(null); setIsImportOpen(true); }}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Import from Spreadsheet
+                </Button>
+                <BulkImageImportTLI centreId={selectedCentreId!} onComplete={refetch} />
+                <Button onClick={() => handleOpenDialog()}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Asset
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -742,6 +801,54 @@ export default function ThirdLineIncome() {
           variant="destructive"
           onConfirm={handleDeleteConfirm}
         />
+
+        <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Import Third Line Income from Spreadsheet</DialogTitle>
+              <DialogDescription>
+                Upload a CSV file to create or update assets. Existing assets (matched by Asset Number) will be updated.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">
+                  CSV columns: Asset Number, Category, Dimensions, Powered Y/N, Description, Weekly Rate ($), Monthly Rate ($), Outgoings/Day ($), Active Y/N
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImportFile(file);
+                  }}
+                />
+              </div>
+              {importMutation.isPending && (
+                <p className="text-sm text-muted-foreground">Importing...</p>
+              )}
+              {importResult && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">
+                    ✅ Created: {importResult.created} | Updated: {importResult.updated}
+                  </p>
+                  {importResult.errors.length > 0 && (
+                    <div className="max-h-40 overflow-y-auto text-sm text-red-600 space-y-1">
+                      {importResult.errors.map((err, i) => (
+                        <p key={i}>❌ {err}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsImportOpen(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );

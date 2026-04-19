@@ -25,7 +25,7 @@ import { licenceRouter } from "./routers/licence";
 import { tenantRouter } from "./routers/tenant";
 import { reportsRouter } from "./routers/reports";
 import { feedbackRouter } from "./routers/feedback";
-import { siteImportExportRouter } from "./routers/siteImportExport";
+import { siteImportExportRouter, vsImportExportRouter, tliImportExportRouter } from "./routers/siteImportExport";
 import { eftPaymentsRouter } from "./routers/eftPayments";
 import {
   thirdLineCategoriesRouter,
@@ -71,6 +71,8 @@ export const appRouter = router({
   reports: reportsRouter,
   feedback: feedbackRouter,
   siteImportExport: siteImportExportRouter,
+  vsImportExport: vsImportExportRouter,
+  tliImportExport: tliImportExportRouter,
   eftPayments: eftPaymentsRouter,
 });
 
