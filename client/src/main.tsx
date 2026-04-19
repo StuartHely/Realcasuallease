@@ -36,6 +36,7 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
+  sessionStorage.setItem("returnUrl", window.location.pathname + window.location.search);
   window.location.href = "/login";
 };
 

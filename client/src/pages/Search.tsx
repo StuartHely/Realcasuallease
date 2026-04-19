@@ -72,9 +72,14 @@ export default function Search() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const query = params.get("query") || params.get("centre"); // Support both for backwards compatibility
-    const dateStr = params.get("date");
+    let dateStr = params.get("date");
     const categoryParam = params.get("category");
     const autoApprovedParam = params.get("autoApproved");
+
+    // Default missing date to today so partial URLs don't hang
+    if (query && !dateStr) {
+      dateStr = format(new Date(), "yyyy-MM-dd");
+    }
 
     if (query && dateStr) {
       try {

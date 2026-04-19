@@ -110,7 +110,10 @@ export default function Register() {
           </div>
           <CardTitle className="text-2xl">Create Account</CardTitle>
           <CardDescription className="text-base">
-            Create your account to get started
+            Create your account to get started.
+            <span className="block text-sm text-muted-foreground mt-1">
+              Business details will be required before your first booking.
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

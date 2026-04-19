@@ -544,17 +544,17 @@ export default function SiteDetail() {
                   <div className="space-y-2">
                     <div>
                       <p className="text-sm text-gray-600">Mon-Fri</p>
-                      <p className="text-lg font-semibold text-gray-700">${site.pricePerDay}/day</p>
+                      <p className="text-lg font-semibold text-gray-700">{site.pricePerDay ? `$${site.pricePerDay}/day` : "Price on application"}</p>
                     </div>
                     {site.weekendPricePerDay && site.weekendPricePerDay !== site.pricePerDay && (
                       <div>
                         <p className="text-sm text-gray-600">Weekend (Sat-Sun)</p>
-                        <p className="text-lg font-semibold text-gray-700">${site.weekendPricePerDay}/day</p>
+                        <p className="text-lg font-semibold text-gray-700">{site.weekendPricePerDay ? `$${site.weekendPricePerDay}/day` : "Price on application"}</p>
                       </div>
                     )}
                     <div className="pt-2 border-t">
                       <p className="text-sm text-gray-600">Weekly Rate</p>
-                      <p className="text-lg font-semibold text-gray-700">${site.pricePerWeek}/week</p>
+                      <p className="text-lg font-semibold text-gray-700">{site.pricePerWeek ? `$${site.pricePerWeek}/week` : "Price on application"}</p>
                     </div>
                     {parseFloat(site.outgoingsPerDay || "0") > 0 && (
                       <div className="pt-2 border-t">
