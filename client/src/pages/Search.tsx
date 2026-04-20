@@ -1533,29 +1533,6 @@ export default function Search() {
               </Card>
             )}
 
-            {/* Per-Centre Floor Plan Map — always visible regardless of asset type */}
-            {data.centres.map((centre: any) => {
-              const centreFloorLevels = data.floorLevelsByCentre?.[centre.id] || [];
-              const centreMapSites = combinedSites.filter((s: any) => s.centreId === centre.id);
-              const hasFloorPlan = (centreFloorLevels.length > 0 && centreFloorLevels.some((fl: any) => fl.mapImageUrl)) || centre.mapImageUrl || centreMapSites.some((s: any) => s.mapMarkerX != null && s.mapMarkerY != null);
-              if (!hasFloorPlan) return null;
-              return (
-                <Card key={`map-${centre.id}`}>
-                  <CardContent className="pt-6">
-                    <h3 className="text-lg font-semibold mb-2">Centre Floor Plan — {centre.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">Click on any marker to view details and book</p>
-                    <InteractiveMap
-                      centreId={centre.id}
-                      mapUrl={centreFloorLevels.find((fl: any) => fl.mapImageUrl)?.mapImageUrl || centre.mapImageUrl || ''}
-                      sites={centreMapSites}
-                      centreName={centre.name}
-                      assetTypeFilter={selectedAssetType}
-                    />
-                  </CardContent>
-                </Card>
-              );
-            })}
-
             {/* Calendar Heatmap - Casual Leasing Sites */}
             {(selectedAssetType === "casual_leasing" || selectedAssetType === "all") && data.centres.map((centre: any) => {
               // Use casualLeasingSites if fetched (when search was for VS/3rdL), otherwise filter from data.sites
@@ -1600,7 +1577,28 @@ export default function Search() {
               // Skip this centre if no sites match the filter
               if (centreSites.length === 0) return null;
               
+              // Floor plan map for this centre
+              const centreFloorLevels = data.floorLevelsByCentre?.[centre.id] || [];
+              const centreMapSites = combinedSites.filter((s: any) => s.centreId === centre.id);
+              const hasFloorPlan = (centreFloorLevels.length > 0 && centreFloorLevels.some((fl: any) => fl.mapImageUrl)) || centre.mapImageUrl || centreMapSites.some((s: any) => s.mapMarkerX != null && s.mapMarkerY != null);
+
               return (
+                <>
+                {hasFloorPlan && (
+                  <Card key={`map-${centre.id}`}>
+                    <CardContent className="pt-6">
+                      <h3 className="text-2xl font-semibold mb-2">{centre.name}</h3>
+                      <p className="text-sm text-muted-foreground mb-4">Click on any marker to view details and book</p>
+                      <InteractiveMap
+                        centreId={centre.id}
+                        mapUrl={centreFloorLevels.find((fl: any) => fl.mapImageUrl)?.mapImageUrl || centre.mapImageUrl || ''}
+                        sites={centreMapSites}
+                        centreName={centre.name}
+                        assetTypeFilter={selectedAssetType}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
                 <Card key={`centre-casual-${centre.id}`}>
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
@@ -2567,6 +2565,7 @@ export default function Search() {
                     </CardContent>
                   )}
                 </Card>
+                </>
               );
             })}
             
