@@ -330,50 +330,29 @@ export default function CentreDetail() {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Centre Information */}
         <Card className="mb-8 shadow-lg">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-3xl text-blue-900 mb-2">{centre.name}</CardTitle>
-                <CardDescription className="flex items-start gap-2 text-base">
-                  <MapPin className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                  <span>
-                    {centre.address && <div key="address">{centre.address}</div>}
-                    <div key="location">
-                      {[centre.suburb, centre.state, centre.postcode]
-                        .filter(Boolean)
-                        .join(", ")}
-                    </div>
+          {/* Row 1: Compact header — name, address, asset filter, state badge */}
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <CardTitle className="text-3xl text-blue-900 whitespace-nowrap">{centre.name}</CardTitle>
+                <CardDescription className="flex items-center gap-1.5 text-sm text-gray-500">
+                  <MapPin className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">
+                    {[centre.address, centre.suburb, centre.state, centre.postcode].filter(Boolean).join(", ")}
                   </span>
                 </CardDescription>
               </div>
-              <div className="bg-blue-100 text-blue-900 px-4 py-2 rounded-lg font-semibold">
-                {centre.state}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {centre.paymentMode === "invoice_only" && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2 mb-6">
-                <FileText className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-blue-800">
-                  This centre processes payments by invoice. You will receive an invoice once your booking is confirmed.
-                </p>
-              </div>
-            )}
-            {/* Asset Type Selector - Buttons */}
-            <div className="mb-6">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-medium text-gray-700 mr-2">Asset Type:</span>
                 {assetCounts.casual_leasing > 0 && (
                   <Button
                     variant={assetType === "casual_leasing" ? "default" : "outline"}
                     size="sm"
                     onClick={() => setAssetType("casual_leasing")}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1.5"
                   >
-                    <MapPin className="h-4 w-4" />
+                    <MapPin className="h-3.5 w-3.5" />
                     Casual Leasing
-                    <Badge variant="secondary" className="ml-1">{assetCounts.casual_leasing}</Badge>
+                    <Badge variant="secondary" className="ml-0.5">{assetCounts.casual_leasing}</Badge>
                   </Button>
                 )}
                 {assetCounts.vacant_shops > 0 && (
@@ -381,11 +360,11 @@ export default function CentreDetail() {
                     variant={assetType === "vacant_shops" ? "default" : "outline"}
                     size="sm"
                     onClick={() => setAssetType("vacant_shops")}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1.5"
                   >
-                    <Store className="h-4 w-4" />
+                    <Store className="h-3.5 w-3.5" />
                     Vacant Shops
-                    <Badge variant="secondary" className="ml-1">{assetCounts.vacant_shops}</Badge>
+                    <Badge variant="secondary" className="ml-0.5">{assetCounts.vacant_shops}</Badge>
                   </Button>
                 )}
                 {assetCounts.third_line > 0 && (
@@ -393,38 +372,44 @@ export default function CentreDetail() {
                     variant={assetType === "third_line" ? "default" : "outline"}
                     size="sm"
                     onClick={() => setAssetType("third_line")}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1.5"
                   >
-                    <Layers className="h-4 w-4" />
+                    <Layers className="h-3.5 w-3.5" />
                     Third Line Income
-                    <Badge variant="secondary" className="ml-1">{assetCounts.third_line}</Badge>
+                    <Badge variant="secondary" className="ml-0.5">{assetCounts.third_line}</Badge>
                   </Button>
                 )}
-                {/* Show All Assets only if there are multiple asset types available */}
                 {((assetCounts.casual_leasing > 0 ? 1 : 0) + (assetCounts.vacant_shops > 0 ? 1 : 0) + (assetCounts.third_line > 0 ? 1 : 0)) > 1 && (
                   <Button
                     variant={assetType === "all" ? "default" : "outline"}
                     size="sm"
                     onClick={() => setAssetType("all")}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1.5"
                   >
-                    <Building2 className="h-4 w-4" />
+                    <Building2 className="h-3.5 w-3.5" />
                     All Assets
-                    <Badge variant="secondary" className="ml-1">{assetCounts.all}</Badge>
+                    <Badge variant="secondary" className="ml-0.5">{assetCounts.all}</Badge>
                   </Button>
                 )}
+                <div className="bg-blue-100 text-blue-900 px-3 py-1.5 rounded-lg font-semibold text-sm">
+                  {centre.state}
+                </div>
               </div>
             </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {/* Row 2: Payment info banner */}
+            {centre.paymentMode === "invoice_only" && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5 flex items-center gap-2 mb-3">
+                <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                <p className="text-sm text-blue-800">
+                  This centre processes payments by invoice. You will receive an invoice once your booking is confirmed.
+                </p>
+              </div>
+            )}
 
-            <div className="bg-gray-50 rounded-lg px-3 pt-2 pb-3 mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Interactive Centre Map
-                {assetType !== "all" && (
-                  <span className="text-sm font-normal text-gray-500 ml-2">
-                    - Showing {getAssetTypeLabel(assetType)}
-                  </span>
-                )}
-              </h3>
+            {/* Row 3: Interactive Centre Map — full width */}
+            <div className="mb-3">
               {centre.mapImageUrl ? (
                 <InteractiveMap
                   centreId={centre.id}
@@ -444,13 +429,19 @@ export default function CentreDetail() {
               )}
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600">
-                  <span className="font-semibold text-gray-900">{mapAssets.length}</span>{" "}
-                  {assetType === "all" ? "total assets" : getAssetTypeLabel(assetType).toLowerCase()}{" "}
-                  locations available
-                </p>
+            {/* Row 4: Combined footer — legend + count + CTA */}
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-3 text-sm text-gray-600">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-full bg-blue-600 inline-block"></span>
+                  {assetType === "all" ? "All Assets" : getAssetTypeLabel(assetType)}
+                </span>
+                <span className="text-gray-300">·</span>
+                <span>
+                  <span className="font-semibold text-gray-900">{mapAssets.length}</span> locations available
+                </span>
+                <span className="text-gray-300">·</span>
+                <span>Hover over markers for details</span>
               </div>
               {assetType === "casual_leasing" && (
                 <Button

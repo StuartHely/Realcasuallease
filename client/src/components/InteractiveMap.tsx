@@ -194,10 +194,10 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
       </div>
       <div 
         ref={mapContainerRef} 
-        className="overflow-auto max-h-[600px]"
+        className="overflow-auto"
         onMouseLeave={handleMarkerLeave}
       >
-        <div className="relative inline-block">
+        <div className="relative">
         {mapLoading ? (
           <div className="w-full h-64 flex items-center justify-center bg-gray-100">
             <p className="text-gray-500">Loading map...</p>
@@ -206,7 +206,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
           <img
             src={displayMapUrl || ""}
             alt={`${centreName} floor plan`}
-            className="max-w-full h-auto"
+            className="w-full h-auto"
             style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}
             draggable={false}
           />
@@ -435,9 +435,9 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
     return (
       <div className="space-y-2">
         {/* Side-by-side floor maps grid — center when only one floor */}
-        <div className={floorsWithMaps.length === 1 ? "flex justify-center" : "grid grid-cols-1 md:grid-cols-2 gap-2"}>
+        <div className={floorsWithMaps.length === 1 ? "w-full" : "grid grid-cols-1 md:grid-cols-2 gap-2"}>
           {floorsWithMaps.map((floor: any) => (
-            <div key={floor.id} className={`bg-white rounded-lg border-2 border-gray-200 overflow-visible relative${floorsWithMaps.length === 1 ? ' max-w-2xl w-full' : ''}`}>
+            <div key={floor.id} className="bg-white rounded-lg border-2 border-gray-200 overflow-visible relative w-full">
               {/* Floor header */}
               <div className="bg-gray-100 px-3 py-1 border-b border-gray-200">
                 <h4 className="font-semibold text-gray-800 text-sm">{floor.levelName}</h4>
@@ -482,14 +482,14 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
               {/* Map container — scroll wrapper is separate from the
                    positioning context so % markers align to the full image */}
               <div 
-                className="overflow-auto max-h-[400px]"
+                className="overflow-auto"
                 onMouseLeave={handleMarkerLeave}
               >
-                <div className="relative inline-block">
+                <div className="relative">
                 <img
                   src={floor.effectiveMapUrl}
                   alt={`${centreName} - ${floor.levelName}`}
-                  className="max-w-full h-auto"
+                  className="w-full h-auto"
                   style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}
                   draggable={false}
                 />
