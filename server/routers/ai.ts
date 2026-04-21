@@ -118,7 +118,7 @@ export const aiRouter = router({
           ...(useTools ? { tools: [centreContactTool] } : {}),
         });
       } catch (llmError: any) {
-        console.error("[AI] LLM invocation failed:", llmError.message);
+        console.error("[AI] LLM invocation failed:", llmError.message, llmError.stack);
         return "I'm sorry, I'm temporarily unable to respond. Please try again shortly.";
       }
 
