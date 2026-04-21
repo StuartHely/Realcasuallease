@@ -48,7 +48,7 @@ export function InsuranceStatusDisplay({
           <p className="mt-1 text-sm">
             {isApiUnavailable
               ? "The insurance scanning API is not configured. Please review the document manually."
-              : insuranceScan?.error || "Could not extract information from the insurance document"}
+              : "Could not extract information from the insurance document. Please review manually."}
           </p>
           <p className="mt-2 text-sm font-semibold">⚠️ Manual review required</p>
           <Button
