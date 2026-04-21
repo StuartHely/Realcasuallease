@@ -111,10 +111,16 @@ export const aiRouter = router({
       const contactKeywords = /\b(contact|phone|email|call|speak|talk|reach|enquir|who do i|get in touch|centre manager|center manager)\b/i;
       const useTools = contactKeywords.test(lastUserMsg);
 
-      const result = await invokeLLM({
-        messages,
-        ...(useTools ? { tools: [centreContactTool] } : {}),
-      });
+      let result;
+      try {
+        result = await invokeLLM({
+          messages,
+          ...(useTools ? { tools: [centreContactTool] } : {}),
+        });
+      } catch (llmError: any) {
+        console.error("[AI] LLM invocation failed:", llmError.message);
+        return "I'm sorry, I'm temporarily unable to respond. Please try again shortly.";
+      }
 
       const choice = result.choices[0];
       if (!choice) {
