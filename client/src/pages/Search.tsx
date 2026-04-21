@@ -622,8 +622,8 @@ export default function Search() {
               <div className="text-center mb-6">
                 <p className="text-gray-600 mb-4">
                   {data.categoryNotAvailable && data.searchInterpretation?.productCategory
-                    ? `No centres${data.searchInterpretation.state ? ` in ${data.searchInterpretation.state}` : ''} have approved sites for '${data.searchInterpretation.productCategory}'. Try a different location or search without the category filter.`
-                    : 'No shopping centres found matching your search.'}
+                    ? `Sorry but no centres${data.searchInterpretation.state ? ` in ${data.searchInterpretation.state}` : ''} have approved sites for '${data.searchInterpretation.productCategory}'. Please try a different location or category.`
+                    : 'Sorry but no shopping centres were found matching your search. Please try a different location or category.'}
                 </p>
               </div>
               
