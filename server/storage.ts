@@ -10,6 +10,9 @@ function isLocalMode(): boolean {
   return !ENV.awsS3Bucket;
 }
 
+// Log storage mode on first import
+console.log(`[Storage] mode=${isLocalMode() ? 'LOCAL' : 'S3'} bucket="${ENV.awsS3Bucket || '(empty)'}" region="${ENV.awsRegion}"`);
+
 function getS3Client(): S3Client {
   return new S3Client({
     region: ENV.awsRegion,
