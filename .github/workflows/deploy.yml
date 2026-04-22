@@ -139,6 +139,13 @@ jobs:
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+          APP_URL: ${{ secrets.APP_URL }}
         run: |
           set -x  # Enable debug output
           
@@ -166,6 +173,13 @@ jobs:
             --from-literal=AWS_S3_BUCKET="${AWS_S3_BUCKET:-notset}" \
             --from-literal=GOOGLE_MAPS_API_KEY="${GOOGLE_MAPS_API_KEY:-notset}" \
             --from-literal=GEMINI_API_KEY="${GEMINI_API_KEY:-notset}" \
+            --from-literal=SMTP_HOST="${SMTP_HOST:-notset}" \
+            --from-literal=SMTP_PORT="${SMTP_PORT:-587}" \
+            --from-literal=SMTP_USER="${SMTP_USER:-notset}" \
+            --from-literal=SMTP_PASS="${SMTP_PASS:-notset}" \
+            --from-literal=SMTP_FROM="${SMTP_FROM:-notset}" \
+            --from-literal=SMTP_SECURE="${SMTP_SECURE:-true}" \
+            --from-literal=APP_URL="${APP_URL:-https://mallincome.com}" \
             --dry-run=client -o yaml | kubectl apply -f -
           
           echo "Secrets created successfully"

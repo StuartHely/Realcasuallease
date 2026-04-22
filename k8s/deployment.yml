@@ -113,6 +113,48 @@ spec:
                   name: casuallease-secrets
                   key: GEMINI_API_KEY
                   optional: true
+            - name: SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: casuallease-secrets
+                  key: SMTP_HOST
+                  optional: true
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: casuallease-secrets
+                  key: SMTP_PORT
+                  optional: true
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: casuallease-secrets
+                  key: SMTP_USER
+                  optional: true
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: casuallease-secrets
+                  key: SMTP_PASS
+                  optional: true
+            - name: SMTP_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: casuallease-secrets
+                  key: SMTP_FROM
+                  optional: true
+            - name: SMTP_SECURE
+              valueFrom:
+                secretKeyRef:
+                  name: casuallease-secrets
+                  key: SMTP_SECURE
+                  optional: true
+            - name: APP_URL
+              valueFrom:
+                secretKeyRef:
+                  name: casuallease-secrets
+                  key: APP_URL
+                  optional: true
           
           # Liveness probe - is the container alive?
           livenessProbe:
