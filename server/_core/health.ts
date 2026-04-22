@@ -12,6 +12,18 @@ router.get('/health', async (req, res) => {
   }
 });
 
+router.get('/debug/storage', async (req, res) => {
+  const { ENV } = await import('./env');
+  res.json({
+    mode: ENV.awsS3Bucket ? 'S3' : 'LOCAL',
+    bucket: ENV.awsS3Bucket || '(empty)',
+    bucketLength: ENV.awsS3Bucket.length,
+    region: ENV.awsRegion,
+    hasAccessKey: !!ENV.awsAccessKeyId,
+    accessKeyLength: ENV.awsAccessKeyId.length,
+  });
+});
+
 router.get('/ready', async (req, res) => {
   try {
     const db = await getDb();
