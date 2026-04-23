@@ -1411,22 +1411,75 @@ export const adminRouter = router({
           }
         }
 
-        // Write image files to disk
+        // Write image files — to S3 in production, local disk in dev
         let imagesWritten = 0;
-        if (input.imageFiles && input.imageFiles.length > 0) {
-          const fs = await import("fs/promises");
-          const pathMod = await import("path");
-          const { getPublicDir } = await import("../_core/publicDir");
-          const publicDir = getPublicDir();
+        const pathRemap = new Map<string, string>(); // old local path → new S3 URL
 
-          for (const file of input.imageFiles) {
-            try {
-              const filePath = pathMod.join(publicDir, file.path);
-              await fs.mkdir(pathMod.dirname(filePath), { recursive: true });
-              await fs.writeFile(filePath, Buffer.from(file.data, "base64"));
-              imagesWritten++;
-            } catch (err: any) {
-              console.error(`[importAllData] Error writing image ${file.path}:`, err.message);
+        if (input.imageFiles && input.imageFiles.length > 0) {
+          const { ENV } = await import("../_core/env");
+          const useS3 = !!ENV.awsS3Bucket;
+
+          if (useS3) {
+            const { storagePut } = await import("../storage");
+            const pathMod = await import("path");
+
+            for (const file of input.imageFiles) {
+              try {
+                const buffer = Buffer.from(file.data, "base64");
+                const s3Key = file.path.replace(/^\//, "");
+                const ext = pathMod.extname(file.path).toLowerCase();
+                const contentTypes: Record<string, string> = {
+                  ".webp": "image/webp", ".png": "image/png",
+                  ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+                  ".gif": "image/gif", ".svg": "image/svg+xml",
+                  ".pdf": "application/pdf",
+                };
+                const { url } = await storagePut(s3Key, buffer, contentTypes[ext] || "application/octet-stream");
+                pathRemap.set(file.path, url);
+                imagesWritten++;
+              } catch (err: any) {
+                console.error(`[importAllData] Error uploading image to S3 ${file.path}:`, err.message);
+              }
+            }
+          } else {
+            const fs = await import("fs/promises");
+            const pathMod = await import("path");
+            const { getPublicDir } = await import("../_core/publicDir");
+            const publicDir = getPublicDir();
+
+            for (const file of input.imageFiles) {
+              try {
+                const filePath = pathMod.join(publicDir, file.path);
+                await fs.mkdir(pathMod.dirname(filePath), { recursive: true });
+                await fs.writeFile(filePath, Buffer.from(file.data, "base64"));
+                imagesWritten++;
+              } catch (err: any) {
+                console.error(`[importAllData] Error writing image ${file.path}:`, err.message);
+              }
+            }
+          }
+
+          // Update DB records to use S3 URLs instead of local paths
+          if (pathRemap.size > 0) {
+            const { sql: rawSql } = await import("drizzle-orm");
+            const imageColumns = [
+              { table: "shopping_centres", cols: ["mapImageUrl", "pdfUrl1", "pdfUrl2", "pdfUrl3"] },
+              { table: "floor_levels", cols: ["mapImageUrl"] },
+              { table: "sites", cols: ["imageUrl1", "imageUrl2", "imageUrl3", "imageUrl4", "panoramaImageUrl"] },
+              { table: "vacant_shops", cols: ["imageUrl1", "imageUrl2"] },
+              { table: "third_line_income", cols: ["imageUrl1", "imageUrl2"] },
+            ];
+
+            for (const { table, cols } of imageColumns) {
+              for (const col of cols) {
+                for (const [oldPath, newUrl] of Array.from(pathRemap.entries())) {
+                  try {
+                    await dbInst.execute(
+                      rawSql.raw(`UPDATE "${table}" SET "${col}" = '${newUrl.replace(/'/g, "''")}' WHERE "${col}" = '${oldPath.replace(/'/g, "''")}'`)
+                    );
+                  } catch { /* column may not exist for some rows */ }
+                }
+              }
             }
           }
         }
