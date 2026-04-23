@@ -186,17 +186,26 @@ export const searchRouter = router({
                 const radiusKm = enhancedQuery.radiusKm || 25;
                 const nearby = await findCentresNearCoordinates(coords.latitude, coords.longitude, radiusKm);
                 if (nearby.length > 0) {
-                  centres = nearby.map(m => ({
-                    id: m.centreId,
-                    name: m.centreName,
-                    slug: m.slug,
-                    suburb: m.suburb,
-                    city: m.city,
-                    state: m.state,
-                    latitude: m.latitude,
-                    longitude: m.longitude,
-                    distance: m.distance,
+                  const nearbyEnriched = await Promise.all(
+                    nearby.map(m => db.getShoppingCentreById(m.centreId))
+                  );
+                  centres = nearbyEnriched.filter(Boolean).map((c, i) => ({
+                    ...c!,
+                    distance: nearby[i].distance,
                   }));
+                  if (centres.length === 0) {
+                    centres = nearby.map(m => ({
+                      id: m.centreId,
+                      name: m.centreName,
+                      slug: m.slug,
+                      suburb: m.suburb,
+                      city: m.city,
+                      state: m.state,
+                      latitude: m.latitude,
+                      longitude: m.longitude,
+                      distance: m.distance,
+                    }));
+                  }
                   nearMeUsed = true;
                 }
               }
@@ -207,8 +216,16 @@ export const searchRouter = router({
         }
 
         // 1. Area index matched a known region (e.g. "western sydney", "maroubra")
+        //    Enrich with full DB records so description and other fields are available.
         if (centres.length === 0 && areaCentres && areaCentres.length > 0) {
-          centres = areaCentres;
+          const enriched = await Promise.all(
+            areaCentres.map((ac: any) => db.getShoppingCentreById(ac.id ?? ac.centreId))
+          );
+          centres = enriched.filter(Boolean).map((c, i) => ({
+            ...c!,
+            distance: areaCentres[i].distance,
+          }));
+          if (centres.length === 0) centres = areaCentres;
         }
 
         // 2. Centre-name fuzzy search

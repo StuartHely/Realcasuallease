@@ -2538,7 +2538,7 @@ export default function Search() {
                     <CardContent className="pt-0">
                       <div className="border-t border-gray-200 pt-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-3">About {centre.name}</h3>
-                        <div className="text-gray-600 whitespace-pre-line leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: centre.description }} />
+                        <div className="text-gray-600 whitespace-pre-line leading-relaxed max-w-none [&>p]:mb-4 [&>p:last-child]:mb-0" dangerouslySetInnerHTML={{ __html: centre.description }} />
                         {(centre.pdfUrl1 || centre.pdfUrl2 || centre.pdfUrl3) && (
                           <div className="mt-4 flex flex-wrap gap-3">
                             {centre.pdfUrl1 && (
