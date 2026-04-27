@@ -439,7 +439,9 @@ export const adminRouter = router({
         })),
       }))
       .mutation(async ({ input }) => {
-        return await db.saveSiteMarkers(input.markers);
+        const result = await db.saveSiteMarkers(input.markers);
+        import("../searchCache").then(m => m.clearSearchCache()).catch(() => {});
+        return result;
       }),
 
     resetSiteMarker: ownerProcedure
@@ -447,7 +449,9 @@ export const adminRouter = router({
         siteId: z.number(),
       }))
       .mutation(async ({ input }) => {
-        return await db.resetSiteMarker(input.siteId);
+        const result = await db.resetSiteMarker(input.siteId);
+        import("../searchCache").then(m => m.clearSearchCache()).catch(() => {});
+        return result;
       }),
 
     // Floor Level Management
@@ -1475,7 +1479,7 @@ export const adminRouter = router({
                 for (const [oldPath, newUrl] of Array.from(pathRemap.entries())) {
                   try {
                     await dbInst.execute(
-                      rawSql.raw(`UPDATE "${table}" SET "${col}" = '${newUrl.replace(/'/g, "''")}' WHERE "${col}" = '${oldPath.replace(/'/g, "''")}'`)
+                      rawSql`UPDATE "${rawSql.raw(table)}" SET "${rawSql.raw(col)}" = ${newUrl} WHERE "${rawSql.raw(col)}" = ${oldPath}`
                     );
                   } catch { /* column may not exist for some rows */ }
                 }

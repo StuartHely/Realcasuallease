@@ -75,10 +75,4 @@ export async function storagePut(
   return { key, url: buildS3Url(key) };
 }
 
-export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
-  const key = normalizeKey(relKey);
-  if (isLocalMode()) {
-    return { key, url: `/uploads/${key}` };
-  }
-  return { key, url: buildS3Url(key) };
-}
+

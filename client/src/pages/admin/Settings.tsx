@@ -721,13 +721,31 @@ export default function AdminSettings() {
               {importResult && (
                 <div className="rounded-lg border border-green-200 bg-green-50 p-4 space-y-2">
                   <p className="text-sm font-medium text-green-800">Import Results</p>
-                  <div className="grid grid-cols-2 gap-1 text-xs text-green-700">
-                    {Object.entries(importResult).map(([table, count]) => (
-                      <div key={table} className="flex justify-between">
-                        <span>{table}</span>
-                        <span className="font-mono">{count}</span>
-                      </div>
-                    ))}
+                  <div className="space-y-0.5 text-xs text-green-700">
+                    {Object.entries(importResult).map(([table, count]) => {
+                      const labels: Record<string, string> = {
+                        owners: "Owners",
+                        users: "Users",
+                        shoppingCentres: "Shopping Centres",
+                        floorLevels: "Floor Levels",
+                        sites: "Sites",
+                        usageCategories: "Usage Categories",
+                        siteUsageCategories: "Site ↔ Category Links",
+                        thirdLineCategories: "Third Line Categories",
+                        thirdLineIncome: "Third Line Income Assets",
+                        vacantShops: "Vacant Shops",
+                        seasonalRates: "Seasonal Rates",
+                        systemConfig: "System Config",
+                        faqs: "FAQs",
+                        "Image Files": "Image Files",
+                      };
+                      return (
+                        <div key={table} className="flex justify-between max-w-xs">
+                          <span>{labels[table] || table}</span>
+                          <span className="font-mono ml-4">{count}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

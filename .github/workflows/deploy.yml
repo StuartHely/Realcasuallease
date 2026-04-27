@@ -168,16 +168,16 @@ jobs:
             --namespace casuallease \
             --from-literal=DATABASE_URL="$DATABASE_URL" \
             --from-literal=JWT_SECRET="$JWT_SECRET" \
-            --from-literal=AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID_VAL:-notset}" \
-            --from-literal=AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY_VAL:-notset}" \
-            --from-literal=AWS_S3_BUCKET="${AWS_S3_BUCKET:-notset}" \
-            --from-literal=GOOGLE_MAPS_API_KEY="${GOOGLE_MAPS_API_KEY:-notset}" \
-            --from-literal=GEMINI_API_KEY="${GEMINI_API_KEY:-notset}" \
-            --from-literal=SMTP_HOST="${SMTP_HOST:-notset}" \
+            --from-literal=AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID_VAL:-}" \
+            --from-literal=AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY_VAL:-}" \
+            --from-literal=AWS_S3_BUCKET="${AWS_S3_BUCKET:-}" \
+            --from-literal=GOOGLE_MAPS_API_KEY="${GOOGLE_MAPS_API_KEY:-}" \
+            --from-literal=GEMINI_API_KEY="${GEMINI_API_KEY:-}" \
+            --from-literal=SMTP_HOST="${SMTP_HOST:-}" \
             --from-literal=SMTP_PORT="${SMTP_PORT:-587}" \
-            --from-literal=SMTP_USER="${SMTP_USER:-notset}" \
-            --from-literal=SMTP_PASS="${SMTP_PASS:-notset}" \
-            --from-literal=SMTP_FROM="${SMTP_FROM:-notset}" \
+            --from-literal=SMTP_USER="${SMTP_USER:-}" \
+            --from-literal=SMTP_PASS="${SMTP_PASS:-}" \
+            --from-literal=SMTP_FROM="${SMTP_FROM:-}" \
             --from-literal=SMTP_SECURE="${SMTP_SECURE:-true}" \
             --from-literal=APP_URL="${APP_URL:-https://mallincome.com}" \
             --dry-run=client -o yaml | kubectl apply -f -
