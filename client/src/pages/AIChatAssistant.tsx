@@ -18,7 +18,7 @@ export default function AIChatAssistant() {
       }]);
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to get response from Aria");
+      toast.error(error.message || "Failed to get response from Lisa");
       setMessages(prev => prev.slice(0, -1));
     },
   });
@@ -39,7 +39,7 @@ export default function AIChatAssistant() {
           </Button>
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-blue-600" />
-            <h1 className="text-lg font-semibold">Aria — AI Assistant</h1>
+            <h1 className="text-lg font-semibold">Lisa — AI Assistant</h1>
           </div>
         </div>
       </header>
@@ -48,9 +48,9 @@ export default function AIChatAssistant() {
           messages={messages}
           onSendMessage={handleSendMessage}
           isLoading={chatMutation.isPending}
-          placeholder="Ask Aria about casual leasing, finding spaces, booking help..."
+          placeholder="Ask Lisa about casual leasing, finding spaces, booking help..."
           height="calc(100vh - 140px)"
-          emptyStateMessage="Hi! I'm Aria, your casual leasing assistant. How can I help you today?"
+          emptyStateMessage="Hi! I'm Lisa, your casual leasing assistant. How can I help you today?"
           suggestedPrompts={[
             "What spaces are available in Sydney?",
             "How does the booking process work?",

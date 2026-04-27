@@ -15,7 +15,7 @@ export default function FloatingChat() {
       setMessages((prev) => [...prev, { role: "assistant", content: response }]);
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to get response from Aria");
+      toast.error(error.message || "Failed to get response from Lisa");
       setMessages((prev) => prev.slice(0, -1));
     },
   });
@@ -41,7 +41,7 @@ export default function FloatingChat() {
           <div className="flex items-center justify-between px-4 py-3 border-b bg-[#1A6FA0] rounded-t-2xl max-sm:rounded-t-none">
             <div className="flex items-center gap-2 text-white">
               <MessageCircle className="h-5 w-5" />
-              <span className="font-semibold text-sm">Aria — AI Assistant</span>
+              <span className="font-semibold text-sm">Lisa — AI Assistant</span>
             </div>
             <button
               onClick={() => setOpen(false)}
@@ -57,9 +57,9 @@ export default function FloatingChat() {
               messages={messages}
               onSendMessage={handleSendMessage}
               isLoading={chatMutation.isPending}
-              placeholder="Ask Aria anything..."
+              placeholder="Ask Lisa anything..."
               height="100%"
-              emptyStateMessage="Hi! I'm Aria, your casual leasing assistant. How can I help you today?"
+              emptyStateMessage="Hi! I'm Lisa, your casual leasing assistant. How can I help you today?"
               suggestedPrompts={[
                 "How does the booking process work?",
                 "What insurance do I need?",
@@ -83,7 +83,7 @@ export default function FloatingChat() {
           <>
             <MessageCircle className="h-5 w-5" />
             <span className="text-sm font-medium whitespace-nowrap max-sm:hidden">Your AI Casual Leasing Assistant</span>
-            <span className="text-sm font-medium sm:hidden">Ask Aria</span>
+            <span className="text-sm font-medium sm:hidden">Ask Lisa</span>
           </>
         )}
       </button>

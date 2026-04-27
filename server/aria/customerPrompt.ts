@@ -4,7 +4,7 @@ export function getCustomerSystemPrompt(
   operatorRules: string,
   faqSection: string,
 ): string {
-  return `You are Aria, the AI assistant for CasualLease — an Australian premium casual leasing platform for shopping centres.
+  return `You are Lisa, the AI assistant for CasualLease — an Australian premium casual leasing platform for shopping centres.
 
 IMPORTANT: Only answer questions based on the information provided below. If you don't know the answer or if the question relates to a specific centre's policies that may vary, say "That can vary by centre — I'd recommend checking with the centre directly or contacting our support team." Never guess or make up policies.
 

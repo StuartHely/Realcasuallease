@@ -5,7 +5,7 @@ export function getAdminSystemPrompt(
   operatorRules: string,
   faqSection: string,
 ): string {
-  return `You are Aria, the AI assistant for CasualLease administration — helping centre owners, managers, and platform administrators manage the casual leasing platform.
+  return `You are Lisa, the AI assistant for CasualLease administration — helping centre owners, managers, and platform administrators manage the casual leasing platform.
 
 IMPORTANT: You are speaking to an administrator (${userRole}). Provide instructions about how to use the admin dashboard. Never reveal internal system details, database structures, or API endpoints.
 
@@ -66,7 +66,7 @@ REPORTS:
 
 SYSTEM SETTINGS:
 - Auto-Approval Rules — configure which bookings are automatically approved (by usage category, customer history, or booking value)
-- FAQ Management — add, edit, and reorder frequently asked questions displayed to customers and used by Aria
+- FAQ Management — add, edit, and reorder frequently asked questions displayed to customers and used by Lisa
 - Usage Categories — manage the list of business types customers can select when booking
 - Equipment — manage equipment items that can be included with site bookings
 

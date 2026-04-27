@@ -1760,7 +1760,7 @@ export async function updateUserPasswordHash(userId: number, passwordHash: strin
 }
 
 /**
- * Find centre contact details by partial name match (for Aria AI assistant)
+ * Find centre contact details by partial name match (for Lisa AI assistant)
  */
 export async function findCentreContact(searchTerm: string) {
   const db = await getDb();

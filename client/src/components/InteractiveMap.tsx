@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
-import { MapPin, DollarSign, Ruler, Store, Layers, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { MapPin, DollarSign, Ruler, Store, Layers, ZoomIn, ZoomOut, RotateCcw, X, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
@@ -27,6 +27,7 @@ interface Site {
   pricePerWeek?: string;
   pricePerMonth?: string;
   weekendPricePerDay?: string | null;
+  maxTables?: number | null;
   imageUrl1: string | null;
   mapMarkerX: number | null;
   mapMarkerY: number | null;
@@ -49,9 +50,23 @@ const ASSET_COLORS = {
   third_line: { bg: "#7c3aed", text: "#F5F7FA", border: "#a855f7" }, // Purple
 };
 
+// Proximity threshold in percentage points — markers within this distance are clustered
+const CLUSTER_THRESHOLD = 3;
+
+function findOverlappingSites(target: Site, allSites: Site[]): Site[] {
+  if (target.mapMarkerX == null || target.mapMarkerY == null) return [target];
+  return allSites.filter((s) => {
+    if (s.mapMarkerX == null || s.mapMarkerY == null) return false;
+    const dx = Math.abs(s.mapMarkerX - target.mapMarkerX!);
+    const dy = Math.abs(s.mapMarkerY - target.mapMarkerY!);
+    return dx < CLUSTER_THRESHOLD && dy < CLUSTER_THRESHOLD;
+  });
+}
+
 export default function InteractiveMap({ centreId, mapUrl, sites, centreName, assetTypeFilter = "casual_leasing" }: InteractiveMapProps) {
   const [, setLocation] = useLocation();
   const [hoveredSite, setHoveredSite] = useState<Site | null>(null);
+  const [clusterSites, setClusterSites] = useState<Site[]>([]);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [selectedFloorId, setSelectedFloorId] = useState<number | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -93,23 +108,41 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
     return hasMarkers && (site.floorLevelId === selectedFloorId || !site.floorLevelId);
   });
 
-  const handleMarkerHover = (site: Site, event: React.MouseEvent) => {
+  const handleMarkerHover = (site: Site, event: React.MouseEvent, floorSites?: Site[]) => {
+    const pool = floorSites || sitesWithMarkers;
+    const overlapping = findOverlappingSites(site, pool);
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    setTooltipPosition({ x: rect.right + 4, y: rect.top - 10 });
+
+    if (overlapping.length > 1) {
+      // Show cluster picker instead of single tooltip
+      setClusterSites(overlapping);
+      setHoveredSite(null);
+    } else {
+      setClusterSites([]);
+      setHoveredSite(site);
+    }
+  };
+
+  const handleClusterSelect = (site: Site) => {
+    setClusterSites([]);
     setHoveredSite(site);
-    // Use clientX/clientY directly for fixed positioning
-    setTooltipPosition({ x: event.clientX, y: event.clientY });
   };
 
   const handleMarkerLeave = () => {
+    // Don't close — popup stays until user hovers another marker or clicks the map
+  };
+
+  const handleDismissPopup = () => {
     setHoveredSite(null);
+    setClusterSites([]);
   };
 
   const handleMarkerClick = (site: Site) => {
     const assetType = site.assetType || "casual_leasing";
-    
     if (assetType === "casual_leasing") {
       setLocation(`/site/${site.id}`);
     } else {
-      // For vacant shops and third line income, show alert for now
       const identifier = site.displayLabel || site.displayNumber || site.id;
       alert(`${identifier} - Contact centre for enquiries`);
     }
@@ -195,7 +228,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
       <div 
         ref={mapContainerRef} 
         className="overflow-auto"
-        onMouseLeave={handleMarkerLeave}
+        onClick={handleDismissPopup}
       >
         <div className="relative">
         {mapLoading ? (
@@ -226,8 +259,8 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
                 top: `${site.mapMarkerY}%`,
               }}
               onMouseEnter={(e) => handleMarkerHover(site, e)}
-              onMouseLeave={() => setHoveredSite(null)}
-              onClick={() => handleMarkerClick(site)}
+              onMouseLeave={handleMarkerLeave}
+              onClick={(e) => { e.stopPropagation(); handleMarkerClick(site); }}
             >
               <div 
                 className="min-w-8 h-8 px-2 rounded-full flex items-center justify-center text-xs font-bold shadow-lg border-2"
@@ -244,14 +277,15 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
         })}
         </div>
 
-        {/* Hover Tooltip - Fixed positioning to work across re-renders */}
+        {/* Site Details Popup — stays open until user clicks map or hovers another marker */}
         {hoveredSite && (
           <div
-            className="fixed z-[9999] pointer-events-none"
+            className="fixed z-[9999]"
             style={{
-              left: `${tooltipPosition.x + 15}px`,
-              top: `${tooltipPosition.y - 10}px`,
+              left: `${tooltipPosition.x}px`,
+              top: `${tooltipPosition.y}px`,
             }}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="bg-white rounded-lg shadow-2xl border-2 border-blue-200 p-4 min-w-[280px] max-w-[320px]">
               {/* Site Image */}
@@ -298,6 +332,13 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
                        (hoveredSite.totalSizeM2 ? `${hoveredSite.totalSizeM2} m²` : null) ||
                        hoveredSite.dimensions}
                     </span>
+                  </div>
+                )}
+
+                {hoveredSite.maxTables != null && hoveredSite.maxTables > 0 && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span>🪑</span>
+                    <span>Max {hoveredSite.maxTables} table{hoveredSite.maxTables > 1 ? 's' : ''}</span>
                   </div>
                 )}
 
@@ -366,12 +407,77 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
                 </div>
 
                 <div className="pt-2">
-                  <p className="text-xs font-medium" style={{ color: getMarkerColor(hoveredSite).bg }}>
+                  <Button
+                    size="sm"
+                    className="w-full text-white"
+                    style={{ backgroundColor: getMarkerColor(hoveredSite).bg }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const assetType = hoveredSite.assetType || "casual_leasing";
+                      if (assetType === "casual_leasing") {
+                        window.location.href = `/site/${hoveredSite.id}`;
+                      } else {
+                        const identifier = hoveredSite.displayLabel || hoveredSite.displayNumber || hoveredSite.id;
+                        alert(`${identifier} - Contact centre for enquiries`);
+                      }
+                    }}
+                  >
                     {hoveredSite.assetType === "casual_leasing" || !hoveredSite.assetType
-                      ? "Click marker to view details & book →"
-                      : "Click marker to enquire →"}
-                  </p>
+                      ? "View Details & Book →"
+                      : "Enquire →"}
+                  </Button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cluster Picker — shown when multiple markers overlap */}
+        {clusterSites.length > 1 && (
+          <div
+            className="fixed z-[9999]"
+            style={{
+              left: `${tooltipPosition.x}px`,
+              top: `${tooltipPosition.y}px`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-white rounded-lg shadow-2xl border-2 border-amber-300 p-3 min-w-[220px] max-w-[280px]">
+              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200">
+                <Layers className="h-4 w-4 text-amber-600" />
+                <span className="text-sm font-semibold text-gray-800">
+                  {clusterSites.length} sites at this location
+                </span>
+              </div>
+              <div className="space-y-1 max-h-[300px] overflow-y-auto">
+                {clusterSites.map((site) => {
+                  const colors = getMarkerColor(site);
+                  return (
+                    <button
+                      key={site.id}
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-100 transition-colors text-left"
+                      onClick={(e) => { e.stopPropagation(); handleClusterSelect(site); }}
+                    >
+                      <div
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 border"
+                        style={{ backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }}
+                      >
+                        {getMarkerLabel(site).substring(0, 3)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {site.displayLabel || site.siteNumber || site.shopNumber || site.assetNumber}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {site.assetType === "vacant_shops" ? "Vacant Shop" :
+                           site.assetType === "third_line" ? (site.categoryName || "Third Line") :
+                           "Casual Leasing"}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -505,9 +611,9 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
                         left: `${site.mapMarkerX}%`,
                         top: `${site.mapMarkerY}%`,
                       }}
-                      onMouseEnter={(e) => handleMarkerHover(site, e)}
-                      onMouseLeave={() => setHoveredSite(null)}
-                      onClick={() => handleMarkerClick(site)}
+                      onMouseEnter={(e) => handleMarkerHover(site, e, floor.sites)}
+                      onMouseLeave={handleMarkerLeave}
+                      onClick={(e) => { e.stopPropagation(); handleMarkerClick(site); }}
                     >
                       <div 
                         className="min-w-8 h-8 px-2 rounded-full flex items-center justify-center text-xs font-bold shadow-lg border-2"
@@ -553,18 +659,19 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
                 </div>
               )}
             </div>
-            <p className="text-gray-600 italic">Hover over markers for details</p>
+            <p className="text-gray-600 italic">Click on markers for details</p>
           </div>
         </div>
 
         {/* Fixed Tooltip - rendered at component root level */}
         {hoveredSite && (
           <div
-            className="fixed z-[9999] pointer-events-none"
+            className="fixed z-[9999]"
             style={{
-              left: `${tooltipPosition.x + 15}px`,
-              top: `${tooltipPosition.y - 10}px`,
+              left: `${tooltipPosition.x}px`,
+              top: `${tooltipPosition.y}px`,
             }}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="bg-white rounded-lg shadow-2xl border-2 border-blue-200 p-4 min-w-[280px] max-w-[320px]">
               {hoveredSite.imageUrl1 && (
@@ -606,6 +713,13 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
                     </span>
                   </div>
                 )}
+                {hoveredSite.maxTables != null && hoveredSite.maxTables > 0 && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span>🪑</span>
+                    <span>Max {hoveredSite.maxTables} table{hoveredSite.maxTables > 1 ? 's' : ''}</span>
+                  </div>
+                )}
+
                 {hoveredSite.powered && (
                   <div className="flex items-center gap-2 text-sm text-green-600">
                     <span className="text-green-500">⚡</span>
@@ -663,12 +777,77 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
                   )}
                 </div>
                 <div className="pt-2">
-                  <p className="text-xs font-medium" style={{ color: getMarkerColor(hoveredSite).bg }}>
+                  <Button
+                    size="sm"
+                    className="w-full text-white"
+                    style={{ backgroundColor: getMarkerColor(hoveredSite).bg }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const assetType = hoveredSite.assetType || "casual_leasing";
+                      if (assetType === "casual_leasing") {
+                        window.location.href = `/site/${hoveredSite.id}`;
+                      } else {
+                        const identifier = hoveredSite.displayLabel || hoveredSite.displayNumber || hoveredSite.id;
+                        alert(`${identifier} - Contact centre for enquiries`);
+                      }
+                    }}
+                  >
                     {hoveredSite.assetType === "casual_leasing" || !hoveredSite.assetType
-                      ? "Click marker to view details & book →"
-                      : "Click marker to enquire →"}
-                  </p>
+                      ? "View Details & Book →"
+                      : "Enquire →"}
+                  </Button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cluster Picker — shown when multiple markers overlap */}
+        {clusterSites.length > 1 && (
+          <div
+            className="fixed z-[9999]"
+            style={{
+              left: `${tooltipPosition.x}px`,
+              top: `${tooltipPosition.y}px`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-white rounded-lg shadow-2xl border-2 border-amber-300 p-3 min-w-[220px] max-w-[280px]">
+              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200">
+                <Layers className="h-4 w-4 text-amber-600" />
+                <span className="text-sm font-semibold text-gray-800">
+                  {clusterSites.length} sites at this location
+                </span>
+              </div>
+              <div className="space-y-1 max-h-[300px] overflow-y-auto">
+                {clusterSites.map((site) => {
+                  const colors = getMarkerColor(site);
+                  return (
+                    <button
+                      key={site.id}
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-100 transition-colors text-left"
+                      onClick={(e) => { e.stopPropagation(); handleClusterSelect(site); }}
+                    >
+                      <div
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 border"
+                        style={{ backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }}
+                      >
+                        {getMarkerLabel(site).substring(0, 3)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {site.displayLabel || site.siteNumber || site.shopNumber || site.assetNumber}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {site.assetType === "vacant_shops" ? "Vacant Shop" :
+                           site.assetType === "third_line" ? (site.categoryName || "Third Line") :
+                           "Casual Leasing"}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
