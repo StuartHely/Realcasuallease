@@ -1,6 +1,6 @@
 import { eq, and, desc, gte, lte, inArray, sql } from "drizzle-orm";
 import { getDb } from "./db";
-import { fyPercentages, centreBudgets, shoppingCentres, sites, bookings } from "../drizzle/schema";
+import { fyPercentages, centreBudgets, shoppingCentres, sites, bookings, vacantShopBookings, vacantShops, thirdLineBookings, thirdLineIncome } from "../drizzle/schema";
 
 // FY Percentages CRUD
 
@@ -70,7 +70,7 @@ export async function upsertFyPercentages(data: {
 
 // Centre Budgets CRUD
 
-export async function getCentreBudget(centreId: number, financialYear: number) {
+export async function getCentreBudget(centreId: number, financialYear: number, budgetType: string = "casual_leasing") {
   const db = await getDb();
   if (!db) throw new Error("Database not initialized");
   const result = await db
@@ -79,28 +79,36 @@ export async function getCentreBudget(centreId: number, financialYear: number) {
     .where(
       and(
         eq(centreBudgets.centreId, centreId),
-        eq(centreBudgets.financialYear, financialYear)
+        eq(centreBudgets.financialYear, financialYear),
+        eq(centreBudgets.budgetType, budgetType)
       )
     )
     .limit(1);
   return result[0] || null;
 }
 
-export async function getCentreBudgetsForYear(financialYear: number) {
+export async function getCentreBudgetsForYear(financialYear: number, budgetType?: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not initialized");
+
+  const conditions = [eq(centreBudgets.financialYear, financialYear)];
+  if (budgetType) {
+    conditions.push(eq(centreBudgets.budgetType, budgetType));
+  }
+
   return db
     .select({
       id: centreBudgets.id,
       centreId: centreBudgets.centreId,
       financialYear: centreBudgets.financialYear,
+      budgetType: centreBudgets.budgetType,
       annualBudget: centreBudgets.annualBudget,
       centreName: shoppingCentres.name,
       centreState: shoppingCentres.state,
     })
     .from(centreBudgets)
     .innerJoin(shoppingCentres, eq(centreBudgets.centreId, shoppingCentres.id))
-    .where(eq(centreBudgets.financialYear, financialYear))
+    .where(and(...conditions))
     .orderBy(shoppingCentres.name);
 }
 
@@ -108,10 +116,12 @@ export async function upsertCentreBudget(data: {
   centreId: number;
   financialYear: number;
   annualBudget: string;
+  budgetType?: string;
 }) {
   const db = await getDb();
   if (!db) throw new Error("Database not initialized");
-  const existing = await getCentreBudget(data.centreId, data.financialYear);
+  const budgetType = data.budgetType ?? "casual_leasing";
+  const existing = await getCentreBudget(data.centreId, data.financialYear, budgetType);
   
   if (existing) {
     await db
@@ -120,8 +130,13 @@ export async function upsertCentreBudget(data: {
       .where(eq(centreBudgets.id, existing.id));
     return { ...existing, annualBudget: data.annualBudget };
   } else {
-    await db.insert(centreBudgets).values(data);
-    return data;
+    await db.insert(centreBudgets).values({
+      centreId: data.centreId,
+      financialYear: data.financialYear,
+      annualBudget: data.annualBudget,
+      budgetType,
+    });
+    return { ...data, budgetType };
   }
 }
 
@@ -192,13 +207,20 @@ export async function getFYBudgetMetrics(
   annualBudget: number;
   ytdBudget: number;
   monthlyBudgets: Record<string, number>;
+  cl: { annualBudget: number; ytdBudget: number };
+  vs: { annualBudget: number; ytdBudget: number };
+  tli: { annualBudget: number; ytdBudget: number };
 }> {
+  const emptyStream = { annualBudget: 0, ytdBudget: 0 };
   const db = await getDb();
   if (!db || centreIds.length === 0) {
     return {
       annualBudget: 0,
       ytdBudget: 0,
       monthlyBudgets: {},
+      cl: { ...emptyStream },
+      vs: { ...emptyStream },
+      tli: { ...emptyStream },
     };
   }
 
@@ -209,20 +231,31 @@ export async function getFYBudgetMetrics(
       annualBudget: 0,
       ytdBudget: 0,
       monthlyBudgets: {},
+      cl: { ...emptyStream },
+      vs: { ...emptyStream },
+      tli: { ...emptyStream },
     };
   }
 
-  // Get centre budgets for the year
+  // Get all centre budgets for the year (all types)
   const budgets = await getCentreBudgetsForYear(financialYear);
   const filteredBudgets = budgets.filter((b: any) => centreIds.includes(b.centreId));
 
-  // Calculate total annual budget
-  const annualBudget = filteredBudgets.reduce(
-    (sum: number, b: any) => sum + parseFloat(b.annualBudget),
-    0
-  );
+  // Group annual totals by budget type
+  let clAnnual = 0;
+  let vsAnnual = 0;
+  let tliAnnual = 0;
+  for (const b of filteredBudgets) {
+    const amount = parseFloat(b.annualBudget);
+    if (b.budgetType === 'vacant_shops') vsAnnual += amount;
+    else if (b.budgetType === 'third_line_income') tliAnnual += amount;
+    else clAnnual += amount;
+  }
 
-  // Calculate monthly budgets using percentages
+  // Combined total annual budget
+  const annualBudget = clAnnual + vsAnnual + tliAnnual;
+
+  // Calculate monthly budgets using combined total (backwards compat)
   const monthlyBudgets = calculateMonthlyBudgets(annualBudget, percentages);
 
   // Determine which months are in YTD based on current date
@@ -261,10 +294,16 @@ export async function getFYBudgetMetrics(
     }
   }
 
+  // Calculate per-stream YTD using the same ratio
+  const ytdRatio = annualBudget > 0 ? ytdBudget / annualBudget : 0;
+
   return {
     annualBudget,
     ytdBudget,
     monthlyBudgets,
+    cl: { annualBudget: clAnnual, ytdBudget: clAnnual * ytdRatio },
+    vs: { annualBudget: vsAnnual, ytdBudget: vsAnnual * ytdRatio },
+    tli: { annualBudget: tliAnnual, ytdBudget: tliAnnual * ytdRatio },
   };
 }
 
@@ -338,6 +377,15 @@ export async function getCentreBreakdown(
   actual: number;
   variance: number;
   percentAchieved: number;
+  clBudget: number;
+  clActual: number;
+  vsBudget: number;
+  vsActual: number;
+  tliBudget: number;
+  tliActual: number;
+  clRevenue: number;
+  vsRevenue: number;
+  tliRevenue: number;
 }>> {
   const db = await getDb();
   if (!db) return [];
@@ -357,13 +405,26 @@ export async function getCentreBreakdown(
     stateFilter = assignedState;
   }
 
-  // Get centre budgets for the year with state filter
+  // Get ALL centre budgets for the year (all types)
   const allBudgets = await getCentreBudgetsForYear(financialYear);
   const filteredBudgets = allBudgets.filter((b: any) => {
     const isPermitted = permittedCentreIds.includes(b.centreId);
     const matchesState = !stateFilter || b.centreState === stateFilter;
     return isPermitted && matchesState;
   });
+
+  // Group budgets by centreId
+  const centreMap = new Map<number, { centreName: string; centreState: string; clBudget: number; vsBudget: number; tliBudget: number }>();
+  for (const b of filteredBudgets) {
+    if (!centreMap.has(b.centreId)) {
+      centreMap.set(b.centreId, { centreName: b.centreName, centreState: b.centreState || '', clBudget: 0, vsBudget: 0, tliBudget: 0 });
+    }
+    const entry = centreMap.get(b.centreId)!;
+    const amount = parseFloat(b.annualBudget);
+    if (b.budgetType === 'vacant_shops') entry.vsBudget += amount;
+    else if (b.budgetType === 'third_line_income') entry.tliBudget += amount;
+    else entry.clBudget += amount;
+  }
 
   // Calculate YTD percentage based on current date and FY
   const now = new Date();
@@ -405,38 +466,30 @@ export async function getCentreBreakdown(
   const fyEndDate = new Date(`${financialYear}-06-30`);
   const ytdEndDate = now < fyEndDate ? now : fyEndDate;
 
-  // For each centre, calculate budget and actual
+  // For each centre, calculate budget and actual across all three streams
   const breakdown = await Promise.all(
-    filteredBudgets.map(async (centreBudget: any) => {
-      const annualBudget = parseFloat(centreBudget.annualBudget);
-      
-      // Calculate budget based on breakdown type
-      const budget = breakdownType === 'annual' 
-        ? annualBudget 
-        : (annualBudget * ytdPercentage) / 100;
+    Array.from(centreMap.entries()).map(async ([centreId, centre]) => {
+      // Apply budget type (annual vs ytd)
+      const applyBudget = (annual: number) =>
+        breakdownType === 'annual' ? annual : (annual * ytdPercentage) / 100;
 
-      // Get actual revenue for the centre (sum of all sites in this centre)
-      // First get all site IDs for this centre
+      const clBudget = applyBudget(centre.clBudget);
+      const vsBudget = applyBudget(centre.vsBudget);
+      const tliBudget = applyBudget(centre.tliBudget);
+      const budget = clBudget + vsBudget + tliBudget;
+
+      const dateFilterStart = fyStartDate;
+      const dateFilterEnd = breakdownType === 'annual' ? fyEndDate : ytdEndDate;
+
+      // CL actual: bookings via sites
+      let clActual = 0;
       const centresSites = await db
         .select({ siteId: sites.id })
         .from(sites)
-        .where(eq(sites.centreId, centreBudget.centreId));
-      
+        .where(eq(sites.centreId, centreId));
       const siteIds = centresSites.map((s: any) => s.siteId);
-      
-      let actual = 0;
       if (siteIds.length > 0) {
-        const dateFilter = breakdownType === 'annual'
-          ? and(
-              gte(bookings.startDate, fyStartDate),
-              lte(bookings.startDate, fyEndDate)
-            )
-          : and(
-              gte(bookings.startDate, fyStartDate),
-              lte(bookings.startDate, ytdEndDate)
-            );
-
-        const actualResult = await db
+        const clResult = await db
           .select({
             total: sql<string>`COALESCE(SUM(${bookings.ownerAmount}), 0)`,
           })
@@ -445,24 +498,68 @@ export async function getCentreBreakdown(
             and(
               inArray(bookings.siteId, siteIds),
               eq(bookings.status, 'confirmed'),
-              dateFilter
+              gte(bookings.startDate, dateFilterStart),
+              lte(bookings.startDate, dateFilterEnd)
             )
           );
-        
-        actual = parseFloat(actualResult[0]?.total || '0');
+        clActual = parseFloat(clResult[0]?.total || '0');
       }
 
+      // VS actual: vacantShopBookings via vacantShops
+      const vsResult = await db
+        .select({
+          total: sql<string>`COALESCE(SUM(${vacantShopBookings.ownerAmount}), 0)`,
+        })
+        .from(vacantShopBookings)
+        .innerJoin(vacantShops, eq(vacantShopBookings.vacantShopId, vacantShops.id))
+        .where(
+          and(
+            eq(vacantShops.centreId, centreId),
+            eq(vacantShopBookings.status, 'confirmed'),
+            gte(vacantShopBookings.startDate, dateFilterStart),
+            lte(vacantShopBookings.startDate, dateFilterEnd)
+          )
+        );
+      const vsActual = parseFloat(vsResult[0]?.total || '0');
+
+      // TLI actual: thirdLineBookings via thirdLineIncome
+      const tliResult = await db
+        .select({
+          total: sql<string>`COALESCE(SUM(${thirdLineBookings.ownerAmount}), 0)`,
+        })
+        .from(thirdLineBookings)
+        .innerJoin(thirdLineIncome, eq(thirdLineBookings.thirdLineIncomeId, thirdLineIncome.id))
+        .where(
+          and(
+            eq(thirdLineIncome.centreId, centreId),
+            eq(thirdLineBookings.status, 'confirmed'),
+            gte(thirdLineBookings.startDate, dateFilterStart),
+            lte(thirdLineBookings.startDate, dateFilterEnd)
+          )
+        );
+      const tliActual = parseFloat(tliResult[0]?.total || '0');
+
+      const actual = clActual + vsActual + tliActual;
       const variance = actual - budget;
       const percentAchieved = budget > 0 ? (actual / budget) * 100 : 0;
 
       return {
-        centreId: centreBudget.centreId,
-        centreName: centreBudget.centreName,
-        centreState: centreBudget.centreState || '',
+        centreId,
+        centreName: centre.centreName,
+        centreState: centre.centreState,
         budget,
         actual,
         variance,
         percentAchieved,
+        clBudget,
+        clActual,
+        vsBudget,
+        vsActual,
+        tliBudget,
+        tliActual,
+        clRevenue: clActual,
+        vsRevenue: vsActual,
+        tliRevenue: tliActual,
       };
     })
   );
@@ -475,7 +572,7 @@ export async function getCentreBreakdown(
 /**
  * Get centres that don't have a budget for the specified financial year
  */
-export async function getCentresWithoutBudget(financialYear: number) {
+export async function getCentresWithoutBudget(financialYear: number, budgetType: string = "casual_leasing") {
   const db = await getDb();
   if (!db) throw new Error("Database not initialized");
   
@@ -489,11 +586,16 @@ export async function getCentresWithoutBudget(financialYear: number) {
     .from(shoppingCentres)
     .orderBy(shoppingCentres.name);
   
-  // Get centres that have budgets for this FY
+  // Get centres that have budgets for this FY and budget type
   const centresWithBudget = await db
     .select({ centreId: centreBudgets.centreId })
     .from(centreBudgets)
-    .where(eq(centreBudgets.financialYear, financialYear));
+    .where(
+      and(
+        eq(centreBudgets.financialYear, financialYear),
+        eq(centreBudgets.budgetType, budgetType)
+      )
+    );
   
   const budgetedCentreIds = new Set(centresWithBudget.map((c: any) => c.centreId));
   
@@ -507,7 +609,8 @@ export async function getCentresWithoutBudget(financialYear: number) {
  */
 export async function bulkImportCentreBudgets(
   financialYear: number,
-  data: Array<{ centreName: string; annualBudget: string }>
+  data: Array<{ centreName: string; annualBudget: string }>,
+  budgetType: string = "casual_leasing"
 ): Promise<{
   imported: Array<{ centreId: number; centreName: string; annualBudget: string }>;
   unmatched: Array<{ centreName: string; annualBudget: string }>;
@@ -541,8 +644,8 @@ export async function bulkImportCentreBudgets(
     const matchedCentre = centreMap.get(normalizedName);
     
     if (matchedCentre) {
-      // Check if budget already exists for this centre/FY
-      const existing = await getCentreBudget(matchedCentre.id, financialYear);
+      // Check if budget already exists for this centre/FY/type
+      const existing = await getCentreBudget(matchedCentre.id, financialYear, budgetType);
       
       if (existing) {
         // Update existing budget
@@ -557,6 +660,7 @@ export async function bulkImportCentreBudgets(
           centreId: matchedCentre.id,
           financialYear,
           annualBudget: row.annualBudget,
+          budgetType,
         });
         created++;
       }

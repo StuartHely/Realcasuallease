@@ -1,6 +1,16 @@
 import { getDb } from "./db";
-import { bookings, sites, shoppingCentres, budgets, owners } from "../drizzle/schema";
+import { bookings, sites, shoppingCentres, budgets, owners, vacantShopBookings, vacantShops, thirdLineBookings, thirdLineIncome } from "../drizzle/schema";
 import { eq, and, gte, lte, sql, desc, inArray } from "drizzle-orm";
+
+/** Calculate total booked days from an array of bookings with startDate/endDate */
+function calcBookedDays(rows: any[]): number {
+  return rows.reduce((sum: number, b: any) => {
+    const start = new Date(b.startDate);
+    const end = new Date(b.endDate);
+    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return sum + days;
+  }, 0);
+}
 
 /**
  * Get permitted site IDs based on user role, assigned state, and optional owner
@@ -61,11 +71,16 @@ export async function getPermittedSiteIds(userRole: string, assignedState: strin
  */
 export async function getYTDMetrics(siteIds: number[], year: number, financialYear?: number) {
   const db = await getDb();
+  const emptyStream = { revenue: 0, bookedDays: 0, bookingCount: 0 };
   if (!db || siteIds.length === 0) {
     return {
       totalRevenue: 0,
       totalBookedDays: 0,
       topSite: null,
+      cl: { ...emptyStream },
+      vs: { ...emptyStream },
+      tli: { ...emptyStream },
+      combined: { ...emptyStream },
     };
   }
   
@@ -200,10 +215,79 @@ WHERE status = 'confirmed' AND "startDate" >= '2025-07-01' AND "startDate" < '20
     }
   });
   
+  // --- VS & TLI revenue streams ---
+  // Get centre IDs from site IDs for VS/TLI queries
+  const centreIdsResult = await db.execute(sql`
+    SELECT DISTINCT "centreId" FROM sites WHERE id IN (${sql.raw(siteIds.join(','))})
+  `);
+  const centreIds = (centreIdsResult.rows || []).map((r: any) => r.centreId);
+
+  let vsRevenue = 0, vsBookedDays = 0, vsBookingCount = 0;
+  let tliRevenue = 0, tliBookedDays = 0, tliBookingCount = 0;
+
+  if (centreIds.length > 0) {
+    const centreIdList = sql.raw(centreIds.join(','));
+    // VS bookings
+    const vsResult = await db.execute(sql`
+      SELECT
+        vsb."vacantShopId",
+        vsb."totalAmount",
+        vsb."startDate",
+        vsb."endDate",
+        vs."shopNumber" as "assetName",
+        sc.name as "centreName"
+      FROM vacant_shop_bookings vsb
+      LEFT JOIN vacant_shops vs ON vsb."vacantShopId" = vs.id
+      LEFT JOIN shopping_centres sc ON vs."centreId" = sc.id
+      WHERE vsb.status = 'confirmed'
+        AND vsb."startDate" >= ${startDate}
+        AND vsb."startDate" <= ${endDate}
+        AND vs."centreId" IN (${centreIdList})
+    `);
+    const vsBookings = vsResult.rows || [];
+    vsRevenue = vsBookings.reduce((sum: number, b: any) => sum + parseFloat(b.totalAmount), 0);
+    vsBookedDays = calcBookedDays(vsBookings);
+    vsBookingCount = vsBookings.length;
+
+    // TLI bookings
+    const tliResult = await db.execute(sql`
+      SELECT
+        tlb."thirdLineIncomeId",
+        tlb."totalAmount",
+        tlb."startDate",
+        tlb."endDate",
+        tli."assetNumber" as "assetName",
+        sc.name as "centreName"
+      FROM third_line_bookings tlb
+      LEFT JOIN third_line_income tli ON tlb."thirdLineIncomeId" = tli.id
+      LEFT JOIN shopping_centres sc ON tli."centreId" = sc.id
+      WHERE tlb.status = 'confirmed'
+        AND tlb."startDate" >= ${startDate}
+        AND tlb."startDate" <= ${endDate}
+        AND tli."centreId" IN (${centreIdList})
+    `);
+    const tliBookings = tliResult.rows || [];
+    tliRevenue = tliBookings.reduce((sum: number, b: any) => sum + parseFloat(b.totalAmount), 0);
+    tliBookedDays = calcBookedDays(tliBookings);
+    tliBookingCount = tliBookings.length;
+  }
+
+  const clStream = { revenue: totalRevenue, bookedDays: totalBookedDays, bookingCount: ytdBookings.length };
+  const vsStream = { revenue: vsRevenue, bookedDays: vsBookedDays, bookingCount: vsBookingCount };
+  const tliStream = { revenue: tliRevenue, bookedDays: tliBookedDays, bookingCount: tliBookingCount };
+
   return {
     totalRevenue,
     totalBookedDays,
     topSite,
+    cl: clStream,
+    vs: vsStream,
+    tli: tliStream,
+    combined: {
+      revenue: clStream.revenue + vsStream.revenue + tliStream.revenue,
+      bookedDays: clStream.bookedDays + vsStream.bookedDays + tliStream.bookedDays,
+      bookingCount: clStream.bookingCount + vsStream.bookingCount + tliStream.bookingCount,
+    },
   };
 }
 
@@ -212,11 +296,16 @@ WHERE status = 'confirmed' AND "startDate" >= '2025-07-01' AND "startDate" < '20
  */
 export async function getMonthlyMetrics(siteIds: number[], month: number, year: number) {
   const db = await getDb();
+  const emptyStream = { revenue: 0, bookedDays: 0, bookingCount: 0 };
   if (!db || siteIds.length === 0) {
     return {
       totalRevenue: 0,
       totalBookedDays: 0,
       topSite: null,
+      cl: { ...emptyStream },
+      vs: { ...emptyStream },
+      tli: { ...emptyStream },
+      combined: { ...emptyStream },
     };
   }
   
@@ -288,10 +377,62 @@ export async function getMonthlyMetrics(siteIds: number[], month: number, year: 
     }
   });
   
+  // --- VS & TLI revenue streams ---
+  const centreIdsResult = await db.execute(sql`
+    SELECT DISTINCT "centreId" FROM sites WHERE id IN (${sql.raw(siteIds.join(','))})
+  `);
+  const centreIds = (centreIdsResult.rows || []).map((r: any) => r.centreId);
+
+  let vsRevenue = 0, vsBookedDays = 0, vsBookingCount = 0;
+  let tliRevenue = 0, tliBookedDays = 0, tliBookingCount = 0;
+
+  if (centreIds.length > 0) {
+    const centreIdList = sql.raw(centreIds.join(','));
+    const vsResult = await db.execute(sql`
+      SELECT vsb."totalAmount", vsb."startDate", vsb."endDate"
+      FROM vacant_shop_bookings vsb
+      LEFT JOIN vacant_shops vs ON vsb."vacantShopId" = vs.id
+      WHERE vsb.status = 'confirmed'
+        AND vsb."startDate" >= ${startDate}
+        AND vsb."startDate" <= ${endDate}
+        AND vs."centreId" IN (${centreIdList})
+    `);
+    const vsBookings = vsResult.rows || [];
+    vsRevenue = vsBookings.reduce((sum: number, b: any) => sum + parseFloat(b.totalAmount), 0);
+    vsBookedDays = calcBookedDays(vsBookings);
+    vsBookingCount = vsBookings.length;
+
+    const tliResult = await db.execute(sql`
+      SELECT tlb."totalAmount", tlb."startDate", tlb."endDate"
+      FROM third_line_bookings tlb
+      LEFT JOIN third_line_income tli ON tlb."thirdLineIncomeId" = tli.id
+      WHERE tlb.status = 'confirmed'
+        AND tlb."startDate" >= ${startDate}
+        AND tlb."startDate" <= ${endDate}
+        AND tli."centreId" IN (${centreIdList})
+    `);
+    const tliBookings = tliResult.rows || [];
+    tliRevenue = tliBookings.reduce((sum: number, b: any) => sum + parseFloat(b.totalAmount), 0);
+    tliBookedDays = calcBookedDays(tliBookings);
+    tliBookingCount = tliBookings.length;
+  }
+
+  const clStream = { revenue: totalRevenue, bookedDays: totalBookedDays, bookingCount: monthBookings.length };
+  const vsStream = { revenue: vsRevenue, bookedDays: vsBookedDays, bookingCount: vsBookingCount };
+  const tliStream = { revenue: tliRevenue, bookedDays: tliBookedDays, bookingCount: tliBookingCount };
+
   return {
     totalRevenue,
     totalBookedDays,
     topSite,
+    cl: clStream,
+    vs: vsStream,
+    tli: tliStream,
+    combined: {
+      revenue: clStream.revenue + vsStream.revenue + tliStream.revenue,
+      bookedDays: clStream.bookedDays + vsStream.bookedDays + tliStream.bookedDays,
+      bookingCount: clStream.bookingCount + vsStream.bookingCount + tliStream.bookingCount,
+    },
   };
 }
 

@@ -220,11 +220,11 @@ export default function PortfolioDashboard() {
     );
   }
   
-  const annualActual = metrics.thisYear.ytd.totalRevenue;
+  const annualActual = metrics.thisYear.ytd.combined?.revenue ?? metrics.thisYear.ytd.totalRevenue;
   const annualBudget = fyBudgetMetrics?.annualBudget || 0;
   const annualPercentage = annualBudget > 0 ? (annualActual / annualBudget) * 100 : 0;
   
-  const ytdActual = metrics.thisYear.ytd.totalRevenue;
+  const ytdActual = metrics.thisYear.ytd.combined?.revenue ?? metrics.thisYear.ytd.totalRevenue;
   const ytdBudget = fyBudgetMetrics?.ytdBudget || 0;
   const ytdPercentage = ytdBudget > 0 ? (ytdActual / ytdBudget) * 100 : 0;
   
@@ -370,22 +370,25 @@ export default function PortfolioDashboard() {
             {/* Row 1 - YTD Priority (Larger Cards) */}
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-3">Year to Date</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KPICard 
-                  title="YTD All Centres $" 
-                  value={formatCurrency(metrics.thisYear.ytd.totalRevenue)} 
+                  title="YTD Total Revenue" 
+                  value={formatCurrency(metrics.thisYear.ytd.combined?.revenue ?? metrics.thisYear.ytd.totalRevenue)} 
                 />
                 <KPICard 
-                  title="YTD Booked Days" 
-                  value={formatNumber(metrics.thisYear.ytd.totalBookedDays)} 
+                  title="CL Revenue (YTD)" 
+                  value={formatCurrency(metrics.thisYear.ytd.cl?.revenue ?? metrics.thisYear.ytd.totalRevenue)} 
+                  variant="secondary"
                 />
                 <KPICard 
-                  title="YTD Top Site $" 
-                  value={formatCurrency((metrics.thisYear.ytd.topSite as any)?.revenue || 0)}
-                  subtitle={(metrics.thisYear.ytd.topSite as any)?.siteName ? 
-                    `${(metrics.thisYear.ytd.topSite as any)?.siteName} - ${(metrics.thisYear.ytd.topSite as any)?.centreName}` : 
-                    undefined
-                  }
+                  title="VS Revenue (YTD)" 
+                  value={formatCurrency(metrics.thisYear.ytd.vs?.revenue ?? 0)} 
+                  variant="secondary"
+                />
+                <KPICard 
+                  title="TLI Revenue (YTD)" 
+                  value={formatCurrency(metrics.thisYear.ytd.tli?.revenue ?? 0)} 
+                  variant="secondary"
                 />
               </div>
             </div>
@@ -395,28 +398,23 @@ export default function PortfolioDashboard() {
               <h2 className="text-lg font-semibold text-gray-800 mb-3">This Month - {monthNames[selectedMonth - 1]}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KPICard 
-                  title="Month All Centres $" 
-                  value={formatCurrency(metrics.thisYear.month.totalRevenue)} 
+                  title="Month Total Revenue" 
+                  value={formatCurrency(metrics.thisYear.month.combined?.revenue ?? metrics.thisYear.month.totalRevenue)} 
                 />
                 <KPICard 
-                  title="Month Booked Days" 
-                  value={formatNumber(metrics.thisYear.month.totalBookedDays)} 
+                  title="CL Revenue (Month)" 
+                  value={formatCurrency(metrics.thisYear.month.cl?.revenue ?? metrics.thisYear.month.totalRevenue)} 
+                  variant="secondary"
                 />
                 <KPICard 
-                  title="Month Top Site $" 
-                  value={formatCurrency((metrics.thisYear.month.topSite as any)?.revenue || 0)}
-                  subtitle={(metrics.thisYear.month.topSite as any)?.siteName ? 
-                    `${(metrics.thisYear.month.topSite as any)?.siteName} - ${(metrics.thisYear.month.topSite as any)?.centreName}` : 
-                    undefined
-                  }
+                  title="VS Revenue (Month)" 
+                  value={formatCurrency(metrics.thisYear.month.vs?.revenue ?? 0)} 
+                  variant="secondary"
                 />
                 <KPICard 
-                  title="Month Top Site Days" 
-                  value={formatNumber((metrics.thisYear.month.topSite as any)?.bookedDays || 0)}
-                  subtitle={(metrics.thisYear.month.topSite as any)?.siteName ? 
-                    `${(metrics.thisYear.month.topSite as any)?.siteName}` : 
-                    undefined
-                  }
+                  title="TLI Revenue (Month)" 
+                  value={formatCurrency(metrics.thisYear.month.tli?.revenue ?? 0)} 
+                  variant="secondary"
                 />
               </div>
             </div>
@@ -572,10 +570,13 @@ export default function PortfolioDashboard() {
                       <TableRow className="bg-gray-50">
                         <TableHead className="font-semibold">Centre</TableHead>
                         <TableHead className="font-semibold">State</TableHead>
-                        <TableHead className="text-right font-semibold">Annual Budget</TableHead>
+                        <TableHead className="text-right font-semibold">CL Rev</TableHead>
+                        <TableHead className="text-right font-semibold">VS Rev</TableHead>
+                        <TableHead className="text-right font-semibold">TLI Rev</TableHead>
+                        <TableHead className="text-right font-semibold">Budget</TableHead>
                         <TableHead className="text-right font-semibold">Actual</TableHead>
                         <TableHead className="text-right font-semibold">Variance</TableHead>
-                        <TableHead className="text-right font-semibold">% Achieved</TableHead>
+                        <TableHead className="text-right font-semibold">%</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -587,6 +588,9 @@ export default function PortfolioDashboard() {
                           <TableRow key={centre.centreId}>
                             <TableCell className="font-medium">{centre.centreName}</TableCell>
                             <TableCell>{centre.centreState}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(centre.clRevenue ?? centre.actual)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(centre.vsRevenue ?? 0)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(centre.tliRevenue ?? 0)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(centre.budget)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(centre.actual)}</TableCell>
                             <TableCell className={`text-right font-semibold ${varianceColor}`}>
@@ -601,6 +605,15 @@ export default function PortfolioDashboard() {
                       <TableRow className="bg-gray-50 font-semibold">
                         <TableCell>Total</TableCell>
                         <TableCell></TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(annualBreakdown.reduce((sum: number, c: any) => sum + (c.clRevenue ?? c.actual), 0))}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(annualBreakdown.reduce((sum: number, c: any) => sum + (c.vsRevenue ?? 0), 0))}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(annualBreakdown.reduce((sum: number, c: any) => sum + (c.tliRevenue ?? 0), 0))}
+                        </TableCell>
                         <TableCell className="text-right">
                           {formatCurrency(annualBreakdown.reduce((sum: number, c: any) => sum + c.budget, 0))}
                         </TableCell>
@@ -637,10 +650,13 @@ export default function PortfolioDashboard() {
                       <TableRow className="bg-gray-50">
                         <TableHead className="font-semibold">Centre</TableHead>
                         <TableHead className="font-semibold">State</TableHead>
-                        <TableHead className="text-right font-semibold">YTD Budget</TableHead>
-                        <TableHead className="text-right font-semibold">YTD Actual</TableHead>
+                        <TableHead className="text-right font-semibold">CL Rev</TableHead>
+                        <TableHead className="text-right font-semibold">VS Rev</TableHead>
+                        <TableHead className="text-right font-semibold">TLI Rev</TableHead>
+                        <TableHead className="text-right font-semibold">Budget</TableHead>
+                        <TableHead className="text-right font-semibold">Actual</TableHead>
                         <TableHead className="text-right font-semibold">Variance</TableHead>
-                        <TableHead className="text-right font-semibold">% Achieved</TableHead>
+                        <TableHead className="text-right font-semibold">%</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -652,6 +668,9 @@ export default function PortfolioDashboard() {
                           <TableRow key={centre.centreId}>
                             <TableCell className="font-medium">{centre.centreName}</TableCell>
                             <TableCell>{centre.centreState}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(centre.clRevenue ?? centre.actual)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(centre.vsRevenue ?? 0)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(centre.tliRevenue ?? 0)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(centre.budget)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(centre.actual)}</TableCell>
                             <TableCell className={`text-right font-semibold ${varianceColor}`}>
@@ -666,6 +685,15 @@ export default function PortfolioDashboard() {
                       <TableRow className="bg-gray-50 font-semibold">
                         <TableCell>Total</TableCell>
                         <TableCell></TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(ytdBreakdown.reduce((sum: number, c: any) => sum + (c.clRevenue ?? c.actual), 0))}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(ytdBreakdown.reduce((sum: number, c: any) => sum + (c.vsRevenue ?? 0), 0))}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(ytdBreakdown.reduce((sum: number, c: any) => sum + (c.tliRevenue ?? 0), 0))}
+                        </TableCell>
                         <TableCell className="text-right">
                           {formatCurrency(ytdBreakdown.reduce((sum: number, c: any) => sum + c.budget, 0))}
                         </TableCell>
@@ -706,22 +734,25 @@ export default function PortfolioDashboard() {
                     <TableRow>
                       <TableHead>Centre</TableHead>
                       <TableHead>State</TableHead>
+                      <TableHead className="text-right">CL Rev</TableHead>
+                      <TableHead className="text-right">VS Rev</TableHead>
+                      <TableHead className="text-right">TLI Rev</TableHead>
                       <TableHead className="text-right">Budget</TableHead>
                       <TableHead className="text-right">Actual</TableHead>
                       <TableHead className="text-right">Variance</TableHead>
-                      <TableHead className="text-right">% Achieved</TableHead>
+                      <TableHead className="text-right">%</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoadingBreakdown ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                        <TableCell colSpan={9} className="text-center text-gray-500 py-8">
                           <RefreshCw className="h-6 w-6 animate-spin mx-auto" />
                         </TableCell>
                       </TableRow>
                     ) : !centreBreakdown || centreBreakdown.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                        <TableCell colSpan={9} className="text-center text-gray-500 py-8">
                           No budget data available for this period. Add centre budgets in Budget Management.
                         </TableCell>
                       </TableRow>
@@ -734,6 +765,9 @@ export default function PortfolioDashboard() {
                           <TableRow key={centre.centreId}>
                             <TableCell className="font-medium">{centre.centreName}</TableCell>
                             <TableCell>{centre.centreState}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(centre.clRevenue ?? centre.actual)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(centre.vsRevenue ?? 0)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(centre.tliRevenue ?? 0)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(centre.budget)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(centre.actual)}</TableCell>
                             <TableCell className={`text-right font-semibold ${varianceColor}`}>

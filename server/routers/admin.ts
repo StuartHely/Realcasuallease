@@ -37,7 +37,47 @@ export const adminRouter = router({
             new Date(b.createdAt) >= monthStart
         )
         .reduce((sum: number, b: any) => sum + parseFloat(b.totalAmount), 0);
-      
+
+      // Get VS and TLI bookings for revenue
+      const { getDb } = await import('../db');
+      const dbInstance = await getDb();
+      const { sql: sqlTag } = await import('drizzle-orm');
+
+      let vsRevenue = 0, vsMonthlyRevenue = 0, tliRevenue = 0, tliMonthlyRevenue = 0;
+
+      if (dbInstance) {
+        const centreIdArr = centres.map(c => c.id);
+
+        if (centreIdArr.length > 0) {
+          const centreIdList = sqlTag.raw(centreIdArr.join(','));
+          // VS revenue
+          const vsResult = await dbInstance.execute(sqlTag`
+            SELECT
+              COALESCE(SUM(CASE WHEN vsb.status IN ('confirmed','completed') THEN vsb."totalAmount"::numeric ELSE 0 END), 0) as total,
+              COALESCE(SUM(CASE WHEN vsb.status IN ('confirmed','completed') AND vsb."createdAt" >= ${monthStart} THEN vsb."totalAmount"::numeric ELSE 0 END), 0) as monthly
+            FROM vacant_shop_bookings vsb
+            INNER JOIN vacant_shops vs ON vsb."vacantShopId" = vs.id
+            WHERE vs."centreId" IN (${centreIdList})
+          `);
+          const vsRow = (vsResult.rows || [])[0] as any;
+          vsRevenue = parseFloat(vsRow?.total || '0');
+          vsMonthlyRevenue = parseFloat(vsRow?.monthly || '0');
+
+          // TLI revenue
+          const tliResult = await dbInstance.execute(sqlTag`
+            SELECT
+              COALESCE(SUM(CASE WHEN tlb.status IN ('confirmed','completed') THEN tlb."totalAmount"::numeric ELSE 0 END), 0) as total,
+              COALESCE(SUM(CASE WHEN tlb.status IN ('confirmed','completed') AND tlb."createdAt" >= ${monthStart} THEN tlb."totalAmount"::numeric ELSE 0 END), 0) as monthly
+            FROM third_line_bookings tlb
+            INNER JOIN third_line_income tli ON tlb."thirdLineIncomeId" = tli.id
+            WHERE tli."centreId" IN (${centreIdList})
+          `);
+          const tliRow = (tliResult.rows || [])[0] as any;
+          tliRevenue = parseFloat(tliRow?.total || '0');
+          tliMonthlyRevenue = parseFloat(tliRow?.monthly || '0');
+        }
+      }
+
       const recentBookings = bookings
         .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, 5)
@@ -62,8 +102,14 @@ export const adminRouter = router({
         totalCentres: centres.length,
         totalSites: sites.length,
         activeBookings: activeBookings.length,
-        totalRevenue,
-        monthlyRevenue,
+        totalRevenue: totalRevenue + vsRevenue + tliRevenue,
+        monthlyRevenue: monthlyRevenue + vsMonthlyRevenue + tliMonthlyRevenue,
+        clRevenue: totalRevenue,
+        clMonthlyRevenue: monthlyRevenue,
+        vsRevenue,
+        vsMonthlyRevenue,
+        tliRevenue,
+        tliMonthlyRevenue,
         totalUsers: users.length,
         recentBookings,
         pendingCount,
