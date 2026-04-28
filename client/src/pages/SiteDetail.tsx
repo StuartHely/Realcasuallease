@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { ArrowLeft, MapPin, Calendar, CalendarDays, ChevronLeft, ChevronRight, X, AlertTriangle, FileText, TrendingUp } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, CalendarDays, ChevronLeft, ChevronRight, X, AlertTriangle, CheckCircle2, FileText, TrendingUp } from "lucide-react";
 import Logo from "@/components/Logo";
 import { format, getDaysInMonth, getDay, addDays, subDays, isSameDay, isBefore, startOfDay } from "date-fns";
 import { toast } from "sonner";
@@ -107,6 +107,14 @@ export default function SiteDetail() {
   const [showCentreEquipmentDialog, setShowCentreEquipmentDialog] = useState(false);
   const [showUsageNotPermittedDialog, setShowUsageNotPermittedDialog] = useState(false);
   const [centreEquipmentMessage, setCentreEquipmentMessage] = useState("");
+  const [bookingConfirmation, setBookingConfirmation] = useState<{
+    title: string;
+    bookingNumber?: string;
+    message: string;
+    costBreakdown: { weekdayCount: number; weekdayRate: number; weekendCount: number; weekendRate: number; subtotal: number; outgoingsPerDay: number; totalOutgoings: number; gstAmount: number; total: number };
+    equipmentWarning?: string;
+    requiresApproval: boolean;
+  } | null>(null);
   const [pendingBookingData, setPendingBookingData] = useState<{
     siteId: number;
     startDate: Date;
@@ -154,23 +162,37 @@ export default function SiteDetail() {
       const equipmentMessage = equipmentWarning ? `\n\n⚠️ ${equipmentWarning}` : '';
       
       if (paymentMethod === 'invoice') {
-        // Invoice booking messages
-        let successMessage: string;
         if (data.requiresApproval) {
-          successMessage = "Booking request submitted! You should be advised if your request has been approved within 3 days." + breakdownMessage + equipmentMessage;
+          setBookingConfirmation({
+            title: "Booking Request Submitted",
+            message: "You should be advised if your request has been approved within 3 days.",
+            costBreakdown,
+            equipmentWarning,
+            requiresApproval: true,
+          });
         } else {
-          successMessage = "Booking confirmed! Booking number: " + data.bookingNumber + "\n\nAn invoice will be sent to your email shortly." + breakdownMessage + equipmentMessage;
+          setBookingConfirmation({
+            title: "Booking Confirmed!",
+            bookingNumber: data.bookingNumber,
+            message: "An invoice will be sent to your email shortly.",
+            costBreakdown,
+            equipmentWarning,
+            requiresApproval: false,
+          });
         }
-        toast.success(successMessage);
-        setLocation("/my-bookings");
       } else {
         // Stripe booking — redirect to checkout if auto-confirmed (no approval needed)
         if (!data.requiresApproval) {
           toast.info("Redirecting to payment...");
           checkoutMutation.mutate({ bookingId: data.bookingId });
         } else {
-          toast.success("Booking request submitted! You'll be able to pay once approved." + breakdownMessage + equipmentMessage);
-          setLocation("/my-bookings");
+          setBookingConfirmation({
+            title: "Booking Request Submitted",
+            message: "You'll be able to pay once approved.",
+            costBreakdown,
+            equipmentWarning,
+            requiresApproval: true,
+          });
         }
       }
     },
@@ -364,7 +386,7 @@ export default function SiteDetail() {
               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setLocation("/")}
             >
-              <Logo height={48} width={144} className="h-12" />
+              <Logo height={96} width={288} className="h-24" />
             </div>
           </div>
           <nav className="flex items-center gap-4">
@@ -1098,6 +1120,62 @@ export default function SiteDetail() {
               disabled={createBookingMutation.isPending}
             >
               {createBookingMutation.isPending ? "Processing..." : "Proceed with request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Booking Confirmation Dialog */}
+      <Dialog open={!!bookingConfirmation} onOpenChange={(open) => { if (!open) { setBookingConfirmation(null); setLocation("/my-bookings"); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className={`p-2 rounded-full ${bookingConfirmation?.requiresApproval ? 'bg-amber-100' : 'bg-green-100'}`}>
+                {bookingConfirmation?.requiresApproval
+                  ? <Calendar className="h-6 w-6 text-amber-600" />
+                  : <CheckCircle2 className="h-6 w-6 text-green-600" />}
+              </div>
+              <DialogTitle className="text-xl">{bookingConfirmation?.title}</DialogTitle>
+            </div>
+            <DialogDescription>{bookingConfirmation?.message}</DialogDescription>
+          </DialogHeader>
+
+          {bookingConfirmation?.bookingNumber && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+              <p className="text-sm text-blue-700">Booking Number</p>
+              <p className="text-lg font-bold text-blue-900">{bookingConfirmation.bookingNumber}</p>
+            </div>
+          )}
+
+          {bookingConfirmation?.costBreakdown && (
+            <div className="bg-gray-50 rounded-lg p-4 space-y-1 text-sm">
+              <h4 className="font-semibold text-gray-900 mb-2">Cost Breakdown</h4>
+              <p>{bookingConfirmation.costBreakdown.weekdayCount} weekdays @ ${bookingConfirmation.costBreakdown.weekdayRate.toFixed(2)}/day</p>
+              {bookingConfirmation.costBreakdown.weekendCount > 0 && (
+                <p>{bookingConfirmation.costBreakdown.weekendCount} weekend days @ ${bookingConfirmation.costBreakdown.weekendRate.toFixed(2)}/day</p>
+              )}
+              <p>Subtotal: ${bookingConfirmation.costBreakdown.subtotal.toFixed(2)}</p>
+              {bookingConfirmation.costBreakdown.outgoingsPerDay > 0 && (
+                <p>Outgoings: {bookingConfirmation.costBreakdown.weekdayCount + bookingConfirmation.costBreakdown.weekendCount} days @ ${bookingConfirmation.costBreakdown.outgoingsPerDay.toFixed(2)}/day = ${bookingConfirmation.costBreakdown.totalOutgoings.toFixed(2)}</p>
+              )}
+              <p>GST: ${bookingConfirmation.costBreakdown.gstAmount.toFixed(2)}</p>
+              <p className="font-bold text-base pt-1 border-t">Total: ${bookingConfirmation.costBreakdown.total.toFixed(2)}</p>
+            </div>
+          )}
+
+          {bookingConfirmation?.equipmentWarning && (
+            <div className="bg-amber-50 border-2 border-amber-400 rounded-lg p-4 flex items-start gap-3">
+              <AlertTriangle className="h-6 w-6 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-amber-900 text-base">Equipment Notice</p>
+                <p className="text-amber-800 font-semibold mt-1">{bookingConfirmation.equipmentWarning}</p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button onClick={() => { setBookingConfirmation(null); setLocation("/my-bookings"); }} className="w-full bg-blue-600 hover:bg-blue-700">
+              Go to My Bookings
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -69,6 +69,7 @@ import {
   Mail,
   HelpCircle,
   ScrollText,
+  History,
 } from "lucide-react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -147,6 +148,7 @@ const getMenuSections = (userRole: string, pendingCount: number): MenuSection[] 
         defaultOpen: false,
         items: [
           { icon: Calculator, label: "Budget Management", path: "/admin/fy-budgets" },
+          { icon: History, label: "Historical Income", path: "/admin/historical-income" },
           { icon: DollarSign, label: "Financial Reports", path: "/admin/financials" },
           { icon: Landmark, label: "Remittance Report", path: "/admin/remittance" },
           { icon: CreditCard, label: "Record Payments", path: "/admin/bookings?status=unpaid" },

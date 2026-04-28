@@ -69,6 +69,7 @@ import GSTReport from "./pages/admin/GSTReport";
 import FeedbackAdmin from "./pages/admin/FeedbackAdmin";
 import EFTPayments from "./pages/admin/EFTPayments";
 import WeeklyReportPreview from "./pages/admin/WeeklyReportPreview";
+import HistoricalIncome from "./pages/admin/HistoricalIncome";
 
 function Router() {
   return (
@@ -88,6 +89,7 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/portfolio" component={PortfolioDashboard} />
       <Route path="/admin/fy-budgets" component={FYBudgetManagement} />
+      <Route path="/admin/historical-income" component={HistoricalIncome} />
       <Route path="/admin/centres" component={AdminCentres} />
       <Route path="/admin/sites" component={AdminSites} />
       <Route path="/admin/maps" component={Maps} />

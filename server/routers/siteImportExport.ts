@@ -526,7 +526,10 @@ export const siteImportExportRouter = router({
             return (row[idx] || "").trim();
           };
 
-          const siteNumber = getValue("Site Number");
+          // Strip leading "Site " prefix if present — the display layer adds it,
+          // so users copying from the UI may include it in their spreadsheet
+          const rawSiteNumber = getValue("Site Number");
+          const siteNumber = rawSiteNumber.replace(/^site\s+/i, "");
           if (!siteNumber) {
             results.errors.push(`Row ${rowNum}: Missing Site Number — skipped`);
             continue;

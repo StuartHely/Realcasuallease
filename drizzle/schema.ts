@@ -859,6 +859,28 @@ export const importSnapshots = pgTable("import_snapshots", {
   centreAssetIdx: index("is_centre_asset_idx").on(table.centreId, table.assetType),
 }));
 
+/**
+ * Historical income records — manually entered past income for comparables
+ * Can be centre-level (assetId null) or asset-level (with assetId)
+ */
+export const historicalIncome = pgTable("historical_income", {
+  id: serial("id").primaryKey(),
+  centreId: integer("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
+  assetType: varchar("assetType", { length: 30 }).notNull(), // casual_leasing, vacant_shops, third_line
+  assetId: integer("assetId"), // Optional: sites.id, vacant_shops.id, or third_line_income.id
+  month: integer("month").notNull(), // 1-12
+  year: integer("year").notNull(), // e.g., 2025
+  amount: decimal("amount", { precision: 14, scale: 2 }).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+}, (table) => ({
+  centreIdx: index("hi_centreId_idx").on(table.centreId),
+  assetTypeIdx: index("hi_assetType_idx").on(table.assetType),
+  monthYearIdx: index("hi_month_year_idx").on(table.month, table.year),
+  uniqueEntry: index("hi_unique_entry").on(table.centreId, table.assetType, table.assetId, table.month, table.year),
+}));
+
 // =============================================================================
 // Type Exports
 // =============================================================================
@@ -920,3 +942,5 @@ export type ReceiptSend = typeof receiptSends.$inferSelect;
 export type InsertReceiptSend = typeof receiptSends.$inferInsert;
 export type ImportSnapshot = typeof importSnapshots.$inferSelect;
 export type InsertImportSnapshot = typeof importSnapshots.$inferInsert;
+export type HistoricalIncome = typeof historicalIncome.$inferSelect;
+export type InsertHistoricalIncome = typeof historicalIncome.$inferInsert;

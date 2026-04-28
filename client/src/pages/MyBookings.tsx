@@ -330,7 +330,7 @@ export default function MyBookings() {
               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setLocation("/")}
             >
-              <Logo height={48} width={144} className="h-12" />
+              <Logo height={96} width={288} className="h-24" />
             </div>
           </div>
           <nav className="flex items-center gap-4">

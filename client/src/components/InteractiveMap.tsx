@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "wouter";
 import { MapPin, DollarSign, Ruler, Store, Layers, ZoomIn, ZoomOut, RotateCcw, X, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,8 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
   const [selectedFloorId, setSelectedFloorId] = useState<number | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isOverPopup = useRef(false);
 
   // Fetch floor levels for this centre
   const { data: floorLevels = [] } = trpc.centres.getFloorLevels.useQuery({ centreId });
@@ -108,14 +110,31 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
     return hasMarkers && (site.floorLevelId === selectedFloorId || !site.floorLevelId);
   });
 
+  const cancelDismiss = useCallback(() => {
+    if (dismissTimer.current) {
+      clearTimeout(dismissTimer.current);
+      dismissTimer.current = null;
+    }
+  }, []);
+
+  const scheduleDismiss = useCallback(() => {
+    cancelDismiss();
+    dismissTimer.current = setTimeout(() => {
+      if (!isOverPopup.current) {
+        setHoveredSite(null);
+        setClusterSites([]);
+      }
+    }, 300);
+  }, [cancelDismiss]);
+
   const handleMarkerHover = (site: Site, event: React.MouseEvent, floorSites?: Site[]) => {
+    cancelDismiss();
     const pool = floorSites || sitesWithMarkers;
     const overlapping = findOverlappingSites(site, pool);
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     setTooltipPosition({ x: rect.right + 4, y: rect.top - 10 });
 
     if (overlapping.length > 1) {
-      // Show cluster picker instead of single tooltip
       setClusterSites(overlapping);
       setHoveredSite(null);
     } else {
@@ -129,14 +148,33 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
     setHoveredSite(site);
   };
 
+  const handlePopupEnter = () => {
+    isOverPopup.current = true;
+    cancelDismiss();
+  };
+
+  const handlePopupLeave = () => {
+    isOverPopup.current = false;
+    scheduleDismiss();
+  };
+
   const handleMarkerLeave = () => {
-    // Don't close — popup stays until user hovers another marker or clicks the map
+    scheduleDismiss();
   };
 
   const handleDismissPopup = () => {
+    cancelDismiss();
+    isOverPopup.current = false;
     setHoveredSite(null);
     setClusterSites([]);
   };
+
+  // Dismiss popup on scroll
+  useEffect(() => {
+    const onScroll = () => handleDismissPopup();
+    window.addEventListener("scroll", onScroll, true);
+    return () => window.removeEventListener("scroll", onScroll, true);
+  }, []);
 
   const handleMarkerClick = (site: Site) => {
     const assetType = site.assetType || "casual_leasing";
@@ -277,7 +315,7 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
         })}
         </div>
 
-        {/* Site Details Popup — stays open until user clicks map or hovers another marker */}
+        {/* Site Details Popup */}
         {hoveredSite && (
           <div
             className="fixed z-[9999]"
@@ -286,6 +324,8 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
               top: `${tooltipPosition.y}px`,
             }}
             onClick={(e) => e.stopPropagation()}
+            onMouseEnter={handlePopupEnter}
+            onMouseLeave={handlePopupLeave}
           >
             <div className="bg-white rounded-lg shadow-2xl border-2 border-blue-200 p-4 min-w-[280px] max-w-[320px]">
               {/* Site Image */}
@@ -441,6 +481,8 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
               top: `${tooltipPosition.y}px`,
             }}
             onClick={(e) => e.stopPropagation()}
+            onMouseEnter={handlePopupEnter}
+            onMouseLeave={handlePopupLeave}
           >
             <div className="bg-white rounded-lg shadow-2xl border-2 border-amber-300 p-3 min-w-[220px] max-w-[280px]">
               <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200">
@@ -672,6 +714,8 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
               top: `${tooltipPosition.y}px`,
             }}
             onClick={(e) => e.stopPropagation()}
+            onMouseEnter={handlePopupEnter}
+            onMouseLeave={handlePopupLeave}
           >
             <div className="bg-white rounded-lg shadow-2xl border-2 border-blue-200 p-4 min-w-[280px] max-w-[320px]">
               {hoveredSite.imageUrl1 && (
@@ -811,6 +855,8 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
               top: `${tooltipPosition.y}px`,
             }}
             onClick={(e) => e.stopPropagation()}
+            onMouseEnter={handlePopupEnter}
+            onMouseLeave={handlePopupLeave}
           >
             <div className="bg-white rounded-lg shadow-2xl border-2 border-amber-300 p-3 min-w-[220px] max-w-[280px]">
               <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200">

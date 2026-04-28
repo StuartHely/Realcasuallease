@@ -78,7 +78,7 @@ export default function Centres() {
               className="cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setLocation("/")}
             >
-              <Logo height={48} width={144} className="h-12" />
+              <Logo height={96} width={288} className="h-24" />
             </div>
             <Button
               onClick={() => setLocation("/")}
