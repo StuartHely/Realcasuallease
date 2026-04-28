@@ -664,9 +664,21 @@ export const adminRouter = router({
 
     // Booking Approval Management
     getPendingApprovals: ownerProcedure
-      .query(async () => {
+      .query(async ({ ctx }) => {
         const { scanInsuranceDocument, validateInsurance } = await import('../insuranceScanner');
-        const pendingBookings = await db.getBookingsByStatus('pending');
+        const { getScopedOwnerId } = await import('../tenantScope');
+        const scopedOwnerId = getScopedOwnerId(ctx.user);
+        let pendingBookings = await db.getBookingsByStatus('pending');
+
+        // Tenant scoping — owner roles only see their own centres' bookings
+        if (scopedOwnerId) {
+          const ownerCentres = await db.getShoppingCentres(scopedOwnerId);
+          const ownerCentreIds = new Set(ownerCentres.map(c => c.id));
+          pendingBookings = pendingBookings.filter(b => b.centreId != null && ownerCentreIds.has(b.centreId as number));
+        }
+
+        // Only show bookings requiring a manual approval decision
+        pendingBookings = pendingBookings.filter(b => b.requiresApproval);
         
         const bookingsWithDetails = (await Promise.all(
           pendingBookings

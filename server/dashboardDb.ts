@@ -477,7 +477,10 @@ export async function getBudgetMetrics(siteIds: number[], month: number, year: n
 }
 
 /**
- * Get count of pending approval bookings for permitted sites
+ * Get count of pending approval bookings for permitted sites.
+ * Only counts bookings that require a manual approval decision
+ * (status='pending' AND requiresApproval=true) so the number
+ * matches the header badge from admin.getPendingCount.
  */
 export async function getPendingApprovalsCount(siteIds: number[]): Promise<number> {
   const db = await getDb();
@@ -489,7 +492,8 @@ export async function getPendingApprovalsCount(siteIds: number[]): Promise<numbe
     .where(
       and(
         inArray(bookings.siteId, siteIds),
-        eq(bookings.status, 'pending')
+        eq(bookings.status, 'pending'),
+        eq(bookings.requiresApproval, true)
       )
     );
   

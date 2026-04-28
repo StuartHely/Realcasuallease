@@ -43,7 +43,7 @@ export const dashboardRouter = router({
       // Get budget data
       const budgetMetrics = await getBudgetMetrics(siteIds, input.month, input.year);
       
-      // Get pending approvals count
+      // Get pending approvals count (requiresApproval=true only, matching header badge)
       const pendingApprovalsCount = await getPendingApprovalsCount(siteIds);
       
       return {
