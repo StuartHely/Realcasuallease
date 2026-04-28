@@ -513,13 +513,14 @@ export const centreBudgets = pgTable("centre_budgets", {
   id: serial("id").primaryKey(),
   centreId: integer("centreId").notNull().references(() => shoppingCentres.id, { onDelete: "cascade" }),
   financialYear: integer("financialYear").notNull(), // e.g., 2026 means FY 2025-26
+  budgetType: varchar("budgetType", { length: 20 }).notNull().default("casual_leasing"), // casual_leasing, vacant_shops, third_line
   annualBudget: decimal("annualBudget", { precision: 14, scale: 2 }).notNull(), // Total annual budget for the centre
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
   centreIdIdx: index("cb_centreId_idx").on(table.centreId),
   fyIdx: index("cb_fy_idx").on(table.financialYear),
-  uniqueCentreFy: index("cb_unique_centre_fy").on(table.centreId, table.financialYear),
+  uniqueCentreFyType: index("cb_unique_centre_fy_type").on(table.centreId, table.financialYear, table.budgetType),
 }));
 
 export const imageAnalytics = pgTable("imageAnalytics", {

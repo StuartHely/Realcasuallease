@@ -1,4 +1,4 @@
-import { eq, desc, and, or, isNull, lte, gte, inArray } from "drizzle-orm";
+import { eq, desc, and, or, isNull, lte, gte, inArray, sql } from "drizzle-orm";
 import { expandCategoryKeyword } from "../shared/categorySynonyms.js";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { 
@@ -1913,5 +1913,29 @@ export async function getBookingStatusCounts(ownerId?: number) {
   }
 
   return { all: rows.length, pending, confirmed, cancelled, rejected, completed, unpaid, totalOutstanding, totalOverdue, outstandingCount, overdueCount };
+}
+
+export async function getAssetCountsByCentres(): Promise<Record<number, { cl: number; vs: number; tli: number }>> {
+  const db = await getDb();
+  if (!db) return {};
+  
+  const result = await db.execute(sql`
+    SELECT c.id,
+      (SELECT COUNT(*)::int FROM sites WHERE "centreId" = c.id AND "isActive" = true) as cl_count,
+      (SELECT COUNT(*)::int FROM vacant_shops WHERE "centreId" = c.id AND "isActive" = true) as vs_count,
+      (SELECT COUNT(*)::int FROM third_line_income WHERE "centreId" = c.id AND "isActive" = true) as tli_count
+    FROM shopping_centres c
+  `);
+  
+  const counts: Record<number, { cl: number; vs: number; tli: number }> = {};
+  const rows = result.rows || [];
+  for (const row of rows) {
+    counts[(row as any).id] = {
+      cl: parseInt((row as any).cl_count) || 0,
+      vs: parseInt((row as any).vs_count) || 0,
+      tli: parseInt((row as any).tli_count) || 0,
+    };
+  }
+  return counts;
 }
 

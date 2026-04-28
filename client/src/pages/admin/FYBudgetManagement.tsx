@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { trpc } from "@/lib/trpc";
 import { useDefaultCentre } from "@/hooks/useDefaultCentre";
@@ -67,6 +68,7 @@ type ImportResult = {
 export default function FYBudgetManagement() {
   const { selectedCentreId: defaultCentreId, setSelectedCentreId: setDefaultCentreId } = useDefaultCentre();
   const [selectedFY, setSelectedFY] = useState<number>(getCurrentFY());
+  const [selectedBudgetType, setSelectedBudgetType] = useState<string>("casual_leasing");
   const [percentages, setPercentages] = useState<Record<MonthKey, string>>(DEFAULT_PERCENTAGES);
   const [showAddCentreDialog, setShowAddCentreDialog] = useState(false);
   const [selectedCentreId, setSelectedCentreId] = useState<string>("");
@@ -92,14 +94,14 @@ export default function FYBudgetManagement() {
 
   // Fetch centre budgets for selected FY
   const { data: centreBudgets, isLoading: loadingBudgets, refetch: refetchBudgets } = 
-    trpc.budgets.getCentreBudgetsForYear.useQuery({ financialYear: selectedFY });
+    trpc.budgets.getCentreBudgetsForYear.useQuery({ financialYear: selectedFY, budgetType: selectedBudgetType });
 
   // Fetch all centres for dropdown
   const { data: allCentres } = trpc.budgets.getAllCentresForBudget.useQuery();
   
   // Fetch centres without budget
   const { data: centresWithoutBudget, refetch: refetchCentresWithoutBudget } = 
-    trpc.budgets.getCentresWithoutBudget.useQuery({ financialYear: selectedFY });
+    trpc.budgets.getCentresWithoutBudget.useQuery({ financialYear: selectedFY, budgetType: selectedBudgetType });
 
   // Mutations
   const savePercentagesMutation = trpc.budgets.saveFyPercentages.useMutation({
@@ -205,6 +207,7 @@ export default function FYBudgetManagement() {
       centreId: parseInt(selectedCentreId),
       financialYear: selectedFY,
       annualBudget: newAnnualBudget,
+      budgetType: selectedBudgetType,
     });
   };
 
@@ -214,6 +217,7 @@ export default function FYBudgetManagement() {
       centreId,
       financialYear: selectedFY,
       annualBudget,
+      budgetType: selectedBudgetType,
     });
   };
 
@@ -297,6 +301,7 @@ export default function FYBudgetManagement() {
     bulkImportMutation.mutate({
       financialYear: selectedFY,
       data: uploadedData,
+      budgetType: selectedBudgetType,
     });
   };
 
@@ -317,7 +322,7 @@ export default function FYBudgetManagement() {
     const ws = XLSX.utils.json_to_sheet(templateData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Budget Template");
-    XLSX.writeFile(wb, `budget-template-FY${selectedFY}.xlsx`);
+    XLSX.writeFile(wb, `budget-template-${selectedBudgetType}-FY${selectedFY}.xlsx`);
   };
 
   const isLoading = loadingPercentages || loadingBudgets;
@@ -330,10 +335,17 @@ export default function FYBudgetManagement() {
           <div>
             <h1 className="text-2xl font-bold">Financial Year Budget Management</h1>
             <p className="text-muted-foreground">
-              Set monthly percentage distribution and annual budgets per centre
+              Set {selectedBudgetType === "casual_leasing" ? "Casual Leasing" : selectedBudgetType === "vacant_shops" ? "Vacant Shops" : "Third Line Income"} monthly percentage distribution and annual budgets per centre
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            <Tabs value={selectedBudgetType} onValueChange={setSelectedBudgetType}>
+              <TabsList>
+                <TabsTrigger value="casual_leasing">Casual Leasing</TabsTrigger>
+                <TabsTrigger value="vacant_shops">Vacant Shops</TabsTrigger>
+                <TabsTrigger value="third_line">Third Line Income</TabsTrigger>
+              </TabsList>
+            </Tabs>
             <Label>Financial Year:</Label>
             <Select
               value={selectedFY.toString()}
@@ -407,7 +419,7 @@ export default function FYBudgetManagement() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Centre Annual Budgets</CardTitle>
+                  <CardTitle>Centre Annual Budgets — {selectedBudgetType === "casual_leasing" ? "Casual Leasing" : selectedBudgetType === "vacant_shops" ? "Vacant Shops" : "Third Line Income"}</CardTitle>
                   {centresWithoutBudget && centresWithoutBudget.length > 0 && (
                     <CardDescription className="text-orange-600 mt-1">
                       <AlertTriangle className="inline h-4 w-4 mr-1" />

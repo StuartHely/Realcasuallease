@@ -19,6 +19,7 @@ import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { Badge } from "@/components/ui/badge";
 
 export default function AdminCentres() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -29,6 +30,7 @@ export default function AdminCentres() {
   const pdfInputRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
   
   const { data: centres, refetch } = trpc.centres.list.useQuery();
+  const { data: assetCounts } = trpc.centres.getAssetCounts.useQuery();
   const { data: ownersList } = trpc.owners.list.useQuery();
   const createMutation = trpc.admin.createCentre.useMutation();
   const updateMutation = trpc.admin.updateCentre.useMutation();
@@ -765,6 +767,26 @@ export default function AdminCentres() {
                   <div className="flex items-start gap-2 text-sm text-muted-foreground mb-2">
                     <MapPin className="h-4 w-4 mt-0.5" />
                     <span>{centre.address}</span>
+                  </div>
+                )}
+
+                {assetCounts && assetCounts[centre.id] && (
+                  <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    {assetCounts[centre.id].cl > 0 && (
+                      <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                        CL: {assetCounts[centre.id].cl}
+                      </Badge>
+                    )}
+                    {assetCounts[centre.id].vs > 0 && (
+                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                        VS: {assetCounts[centre.id].vs}
+                      </Badge>
+                    )}
+                    {assetCounts[centre.id].tli > 0 && (
+                      <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700">
+                        TLI: {assetCounts[centre.id].tli}
+                      </Badge>
+                    )}
                   </div>
                 )}
 

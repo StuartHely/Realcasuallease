@@ -24,6 +24,10 @@ export const centresRouter = router({
       }
       return centre;
     }),
+  getAssetCounts: publicProcedure.query(async () => {
+    return await db.getAssetCountsByCentres();
+  }),
+
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input, ctx }) => {

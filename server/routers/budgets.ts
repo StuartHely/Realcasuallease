@@ -177,12 +177,12 @@ export const budgetsRouter = router({
     }),
 
   getCentreBudgetsForYear: ownerProcedure
-    .input(z.object({ financialYear: z.number() }))
+    .input(z.object({ financialYear: z.number(), budgetType: z.string().optional() }))
     .query(async ({ input, ctx }) => {
       const { getScopedOwnerId } = await import('../tenantScope');
       const scopedOwnerId = getScopedOwnerId(ctx.user);
       const fyDb = await import("../fyBudgetDb");
-      const allBudgets = await fyDb.getCentreBudgetsForYear(input.financialYear);
+      const allBudgets = await fyDb.getCentreBudgetsForYear(input.financialYear, input.budgetType);
       if (!scopedOwnerId) return allBudgets;
       const centres = await db.getShoppingCentres(scopedOwnerId);
       const centreIds = new Set(centres.map(c => c.id));
@@ -194,6 +194,7 @@ export const budgetsRouter = router({
       centreId: z.number(),
       financialYear: z.number(),
       annualBudget: z.string(),
+      budgetType: z.string().optional().default("casual_leasing"),
     }))
     .mutation(async ({ input, ctx }) => {
       const { getScopedOwnerId } = await import('../tenantScope');
@@ -246,12 +247,12 @@ export const budgetsRouter = router({
     }),
 
   getCentresWithoutBudget: ownerProcedure
-    .input(z.object({ financialYear: z.number() }))
+    .input(z.object({ financialYear: z.number(), budgetType: z.string().optional().default("casual_leasing") }))
     .query(async ({ input, ctx }) => {
       const { getScopedOwnerId } = await import('../tenantScope');
       const scopedOwnerId = getScopedOwnerId(ctx.user);
       const fyDb = await import("../fyBudgetDb");
-      const centresWithout = await fyDb.getCentresWithoutBudget(input.financialYear);
+      const centresWithout = await fyDb.getCentresWithoutBudget(input.financialYear, input.budgetType);
       if (!scopedOwnerId) return centresWithout;
       const centres = await db.getShoppingCentres(scopedOwnerId);
       const centreIds = new Set(centres.map(c => c.id));
@@ -265,6 +266,7 @@ export const budgetsRouter = router({
         centreName: z.string(),
         annualBudget: z.string(),
       })),
+      budgetType: z.string().optional().default("casual_leasing"),
     }))
     .mutation(async ({ input, ctx }) => {
       const { getScopedOwnerId } = await import('../tenantScope');
@@ -280,6 +282,6 @@ export const budgetsRouter = router({
         }
       }
       const fyDb = await import("../fyBudgetDb");
-      return await fyDb.bulkImportCentreBudgets(input.financialYear, input.data);
+      return await fyDb.bulkImportCentreBudgets(input.financialYear, input.data, input.budgetType);
     }),
 });

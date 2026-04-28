@@ -148,6 +148,20 @@
       "when": 1774500000000,
       "tag": "0020_add_missing_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1776497682685,
+      "tag": "0021_odd_speedball",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1777341965204,
+      "tag": "0022_exotic_scourge",
+      "breakpoints": true
     }
   ]
 }
