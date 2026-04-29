@@ -10,6 +10,10 @@ export type TrpcContext = {
   res: CreateExpressContextOptions["res"];
   user: User | null;
   tenantOwnerId: number | null;
+  /** Populated by ownerProcedure — null means "all" (no filter needed, e.g. mega_admin) */
+  permittedCentreIds: number[] | null;
+  /** Populated by ownerProcedure — null means "all" (no filter needed, e.g. mega_admin) */
+  permittedSiteIds: number[] | null;
 };
 
 export async function createContext(
@@ -53,5 +57,7 @@ export async function createContext(
     res: opts.res,
     user,
     tenantOwnerId,
+    permittedCentreIds: null,
+    permittedSiteIds: null,
   };
 }
