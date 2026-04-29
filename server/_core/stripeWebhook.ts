@@ -37,9 +37,14 @@ export function registerStripeWebhook(app: Express) {
         return;
       }
 
-      if (event.type === "checkout.session.completed") {
-        const { handleCheckoutCompleted } = await import("../stripeService");
-        await handleCheckoutCompleted(event.data.object);
+      try {
+        if (event.type === "checkout.session.completed") {
+          const { handleCheckoutCompleted } = await import("../stripeService");
+          await handleCheckoutCompleted(event.data.object);
+        }
+      } catch (err: any) {
+        console.error("[Stripe Webhook] Error processing event:", err.message);
+        // Return 200 to prevent Stripe from retrying on application errors
       }
 
       res.json({ received: true });

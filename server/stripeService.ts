@@ -110,6 +110,10 @@ export async function handleCheckoutCompleted(session: {
   if (bookingType === "vacant_shop") {
     const [booking] = await db.select().from(vacantShopBookings).where(eq(vacantShopBookings.id, bookingId));
     if (!booking) return;
+    if (booking.paidAt) {
+      console.log(`[Stripe Webhook] VS booking ${bookingId} already paid — skipping duplicate event`);
+      return;
+    }
 
     // Update payment fields + status
     await db.update(vacantShopBookings)
@@ -137,6 +141,10 @@ export async function handleCheckoutCompleted(session: {
   } else if (bookingType === "third_line") {
     const [booking] = await db.select().from(thirdLineBookings).where(eq(thirdLineBookings.id, bookingId));
     if (!booking) return;
+    if (booking.paidAt) {
+      console.log(`[Stripe Webhook] TLI booking ${bookingId} already paid — skipping duplicate event`);
+      return;
+    }
 
     await db.update(thirdLineBookings)
       .set({ ...updateData, status: booking.status === "pending" ? "confirmed" : booking.status })
@@ -163,6 +171,10 @@ export async function handleCheckoutCompleted(session: {
     // Standard CL booking
     const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId));
     if (!booking) return;
+    if (booking.paidAt) {
+      console.log(`[Stripe Webhook] CL booking ${bookingId} already paid — skipping duplicate event`);
+      return;
+    }
 
     const previousStatus = booking.status;
     const newStatus = previousStatus === "pending" ? "confirmed" : previousStatus;

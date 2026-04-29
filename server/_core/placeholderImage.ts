@@ -2,6 +2,16 @@ import { Router, Request, Response } from "express";
 
 const router = Router();
 
+/** Escape user input for safe embedding in SVG/XML text content */
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 /**
  * Generate a professional placeholder SVG image for sites/assets.
  * 
@@ -23,12 +33,12 @@ router.get("/placeholder", (req: Request, res: Response) => {
   
   const scheme = colors[type as string] || colors.site;
   
-  // Build display text
+  // Build display text — escape all user input for XML safety
   const typeLabel = type === "site" ? "Site" : type === "shop" ? "Shop" : type === "asset" ? "Asset" : "Map";
-  const displayNumber = number || "—";
-  const displaySize = size ? String(size).replace(/\s*x\s*/g, " × ") : "";
+  const displayNumber = escapeXml(String(number || "—"));
+  const displaySize = size ? escapeXml(String(size).replace(/\s*x\s*/g, " × ")) : "";
   const displayPower = powered === "true" ? "⚡ Powered" : powered === "false" ? "No Power" : "";
-  const displayLabel = label || "";
+  const displayLabel = escapeXml(String(label || ""));
   
   // Generate SVG
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
@@ -99,7 +109,9 @@ router.get("/placeholder", (req: Request, res: Response) => {
  * Usage: /api/placeholder-map?level=Lower Level&centre=Campbelltown Mall
  */
 router.get("/placeholder-map", (req: Request, res: Response) => {
-  const { level = "Floor Plan", centre = "" } = req.query;
+  const { level: rawLevel = "Floor Plan", centre: rawCentre = "" } = req.query;
+  const level = escapeXml(String(rawLevel));
+  const centre = escapeXml(String(rawCentre));
   
   const width = 800;
   const height = 600;

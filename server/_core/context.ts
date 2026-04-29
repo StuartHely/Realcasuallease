@@ -1,5 +1,7 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User } from "../../drizzle/schema";
+import { COOKIE_NAME, SESSION_MAX_AGE_MS } from "@shared/const";
+import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
 import { authService } from "./authService";
 
@@ -28,6 +30,18 @@ export async function createContext(
       user = await sdk.authenticateRequest(opts.req);
     } catch (error) {
       user = null;
+    }
+  }
+
+  // Sliding window: re-issue the session cookie on every authenticated
+  // request so the 24-hour expiry resets from "now", not from login time.
+  if (user) {
+    try {
+      const freshToken = await authService.createSessionToken(user);
+      const cookieOptions = getSessionCookieOptions(opts.req);
+      opts.res.cookie(COOKIE_NAME, freshToken, { ...cookieOptions, maxAge: SESSION_MAX_AGE_MS });
+    } catch {
+      // Non-fatal — user stays authenticated with the current token
     }
   }
 
