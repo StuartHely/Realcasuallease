@@ -126,7 +126,7 @@ async function getCentreIdsForScope(
 
 const VS_HEADERS = [
   "Shop Number",
-  "Total Size (m²)",
+  "Total Size (m2)",
   "Dimensions",
   "Powered Y/N",
   "Description",
@@ -234,7 +234,7 @@ export const vsImportExportRouter = router({
 
           const shopData = {
             shopNumber,
-            totalSizeM2: getValue("Total Size (m²)") || null,
+            totalSizeM2: getValue("Total Size (m2)") || null,
             dimensions: getValue("Dimensions") || null,
             powered,
             description: getValue("Description") || null,

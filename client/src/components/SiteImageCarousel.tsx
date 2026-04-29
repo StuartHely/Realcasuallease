@@ -53,19 +53,19 @@ export function SiteImageCarousel({ images, siteNumber, size, powered, className
           {/* Navigation Arrows */}
           <button
             onClick={prevImage}
-            className="absolute left-1 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute left-0.5 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-0.5 transition-opacity"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3 h-3" />
           </button>
           <button
             onClick={nextImage}
-            className="absolute right-1 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute right-0.5 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-0.5 transition-opacity"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3 h-3" />
           </button>
           
           {/* Dots */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
             {validImages.map((_, idx) => (
               <button
                 key={idx}

@@ -12,12 +12,13 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Store, Building2, Upload, RotateCw, Download, FileSpreadsheet, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Store, Building2, Upload, RotateCw, Download, FileSpreadsheet, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import BulkImageImportVS from "@/components/BulkImageImportVS";
+import { SiteImageCarousel } from "@/components/SiteImageCarousel";
 
 // Helper function to create cropped image
 const createCroppedImage = async (imageSrc: string, pixelCrop: Area, rotation: number): Promise<Blob> => {
@@ -484,22 +485,11 @@ export default function VacantShops() {
                     {shops.map((shop: any) => (
                       <TableRow key={shop.id}>
                         <TableCell>
-                          {shop.imageUrl1 ? (
-                            <img 
-                              key={shop.imageUrl1} 
-                              src={shop.imageUrl1} 
-                              alt={`Shop ${shop.shopNumber}`} 
-                              className="w-12 h-12 object-cover rounded" 
-                              onError={(e) => {
-                                console.error('Image load error for shop', shop.shopNumber, shop.imageUrl1);
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
-                              <Store className="h-5 w-5 text-muted-foreground" />
-                            </div>
-                          )}
+                          <SiteImageCarousel
+                            images={[shop.imageUrl1, shop.imageUrl2]}
+                            siteNumber={shop.shopNumber}
+                            className="w-24 h-24"
+                          />
                         </TableCell>
                         <TableCell className="font-medium">{shop.shopNumber}</TableCell>
                         <TableCell>{shop.totalSizeM2 || "-"}</TableCell>

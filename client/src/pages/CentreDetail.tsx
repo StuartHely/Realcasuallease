@@ -35,7 +35,17 @@ export default function CentreDetail() {
     return "casual_leasing" as AssetType;
   }, []);
 
-  const [assetType, setAssetType] = useState<AssetType>(initialTab);
+  const [assetType, setAssetTypeRaw] = useState<AssetType>(initialTab);
+  const setAssetType = (type: AssetType) => {
+    setAssetTypeRaw(type);
+    const url = new URL(window.location.href);
+    if (type === "casual_leasing") {
+      url.searchParams.delete("tab");
+    } else {
+      url.searchParams.set("tab", type);
+    }
+    window.history.replaceState({}, "", url.toString());
+  };
   const [selectedVSId, setSelectedVSId] = useState<number | null>(null);
   const [selected3rdLId, setSelected3rdLId] = useState<number | null>(null);
   const { user } = useAuth();

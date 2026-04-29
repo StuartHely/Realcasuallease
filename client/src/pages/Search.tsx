@@ -17,6 +17,7 @@ import { NearbyCentresMap } from "@/components/NearbyCentresMap";
 import { SearchSkeleton } from "@/components/SearchSkeleton";
 import { parseSearchQuery } from "@/../../shared/queryParser";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
+import { SiteImageCarousel } from "@/components/SiteImageCarousel";
 import { cleanHtmlDescription } from "@/lib/htmlUtils";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -193,6 +194,14 @@ export default function Search() {
     
     return sites;
   }, [data?.sites, casualLeasingSites, vacantShops, thirdLineIncome]);
+
+  // Effective VS shop list: use vsAvailability when available (single-centre with booking data),
+  // otherwise fall back to data.sites for multi-centre VS searches
+  const effectiveVsShops = useMemo(() => {
+    if (vsAvailability && vsAvailability.length > 0) return vsAvailability;
+    if (data?.assetType === 'vacant_shop' && data?.sites?.length > 0) return data.sites;
+    return [];
+  }, [vsAvailability, data?.assetType, data?.sites]);
 
   // Determine if a site is matched by the search query
   const isMatchedSite = (siteId: number) => {
@@ -664,12 +673,12 @@ export default function Search() {
         {data && data.centres.length > 0 && (
           <div className="space-y-8">
             {/* Vacant Shops Section with Calendar */}
-            {(selectedAssetType === "vacant_shops" || selectedAssetType === "all") && vsAvailability && vsAvailability.length > 0 && (
+            {(selectedAssetType === "vacant_shops" || selectedAssetType === "all") && effectiveVsShops.length > 0 && (
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-2xl mb-1 flex items-center gap-2">
                     <Store className="h-6 w-6 text-green-600" />
-                    Vacant Shops at {data.centres[0]?.name}
+                    Vacant Shops{data.centres.length === 1 ? ` at ${data.centres[0]?.name}` : ` — ${data.centres.length} Centres`}
                   </CardTitle>
                   <CardDescription>
                     Short-term vacant shop tenancies available for weekly or monthly booking. Click on calendar dates to select your booking period.
@@ -731,7 +740,7 @@ export default function Search() {
                           </tr>
                         </thead>
                         <tbody>
-                          {vsAvailability.map((shop: any, shopIdx: number) => {
+                          {effectiveVsShops.map((shop: any, shopIdx: number) => {
                             const shopId = `vs-${shop.id}`;
                             return (
                             <tr key={shopId} className="hover:bg-gray-50">
@@ -770,7 +779,7 @@ export default function Search() {
                                 const isSunday = dayOfWeek === 0;
                                 const isWeekBoundaryLeft = isMonday || dateIdx === 0;
                                 const isWeekBoundaryRight = isSunday || dateIdx === dateRange.length - 1;
-                                const isLastRow = shopIdx === vsAvailability.length - 1;
+                                const isLastRow = shopIdx === effectiveVsShops.length - 1;
                                 
                                 // Check if this cell is part of the current selection
                                 const isStartDate = dateSelection?.siteId === shopId && dateSelection?.startDate && isSameDay(date, dateSelection.startDate);
@@ -867,6 +876,29 @@ export default function Search() {
                     </p>
                   </div>
 
+                  {/* Centre Map for Vacant Shops */}
+                  {data.centres.map((centre: any) => {
+                    const centreFloorLevels = data.floorLevelsByCentre?.[centre.id] || [];
+                    const centreMapSites = combinedSites.filter((s: any) => s.centreId === centre.id);
+                    const hasFloorPlan = (centreFloorLevels.length > 0 && centreFloorLevels.some((fl: any) => fl.mapImageUrl)) || centre.mapImageUrl || centreMapSites.some((s: any) => s.mapMarkerX != null && s.mapMarkerY != null);
+                    if (!hasFloorPlan) return null;
+                    return (
+                      <Card key={`vs-map-${centre.id}`} className="mb-4">
+                        <CardContent className="pt-6">
+                          <h3 className="text-2xl font-semibold mb-2">{centre.name}</h3>
+                          <p className="text-sm text-muted-foreground mb-4">Click on any marker to view details</p>
+                          <InteractiveMap
+                            centreId={centre.id}
+                            mapUrl={centreFloorLevels.find((fl: any) => fl.mapImageUrl)?.mapImageUrl || centre.mapImageUrl || ''}
+                            sites={centreMapSites}
+                            centreName={centre.name}
+                            assetTypeFilter="all"
+                          />
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+
                   {/* Site Details Below Heatmap */}
                   <div className="mt-8">
                     <h3 className="text-lg font-semibold mb-4">Shop Details</h3>
@@ -880,7 +912,7 @@ export default function Search() {
                         </p>
                       </div>
                     )}
-                    {vsAvailability.map((shop: any) => {
+                    {effectiveVsShops.map((shop: any) => {
                       const shopId = `vs-${shop.id}`;
                       const isExpanded = expandedSiteId === shopId;
                       const hasSelectedDates = dateSelection?.siteId === shopId && dateSelection?.startDate && dateSelection?.endDate;
@@ -899,15 +931,11 @@ export default function Search() {
                           <CardHeader>
                             <div className="flex items-start justify-between gap-4">
                               {/* Shop Image */}
-                              <div className="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                                <ImageWithFallback
-                                  src={shop.imageUrl1}
-                                  alt={`Shop ${shop.shopNumber}`}
-                                  className="w-full h-full object-cover"
-                                  containerClassName="w-full h-full"
-                                  placeholder={{ type: "shop", number: shop.shopNumber || "", size: shop.totalSizeM2 || "" }}
-                                />
-                              </div>
+                              <SiteImageCarousel
+                                images={[shop.imageUrl1, shop.imageUrl2]}
+                                siteNumber={shop.shopNumber || ""}
+                                className="w-32 h-32"
+                              />
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <CardTitle className="text-lg flex items-center gap-2">
@@ -959,7 +987,7 @@ export default function Search() {
                             </div>
                             
                             {/* Mini Availability Calendar */}
-                            {dateRange.length > 0 && vsAvailability && (
+                            {dateRange.length > 0 && effectiveVsShops.length > 0 && (
                               <div className="mt-4 pt-4 border-t">
                                 <p className="text-xs font-semibold text-gray-600 mb-2">Availability ({format(dateRange[0], "dd MMM")} – {format(dateRange[dateRange.length - 1], "dd MMM")})</p>
                                 <div className="flex gap-0.5">
@@ -998,7 +1026,7 @@ export default function Search() {
 
                             {/* Expanded Booking Section */}
                             {hasSelectedDates && isExpanded && (
-                              <div className="mt-6 pt-6 border-t border-green-200 bg-green-50 -mx-6 -mb-6 px-6 pb-6 rounded-b-lg">
+                              <div className="mt-6 pt-6 border-t border-green-200 bg-green-50 -mx-6 -mb-6 px-6 pb-6 rounded-b-lg" onClick={e => e.stopPropagation()}>
                                 <h4 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2">
                                   <Calendar className="h-5 w-5" />
                                   Complete Your Booking
@@ -1334,15 +1362,11 @@ export default function Search() {
                           <CardHeader>
                             <div className="flex items-start justify-between gap-4">
                               {/* Asset Image */}
-                              <div className="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                                <ImageWithFallback
-                                  src={asset.imageUrl1}
-                                  alt={asset.assetNumber}
-                                  className="w-full h-full object-cover"
-                                  containerClassName="w-full h-full"
-                                  placeholder={{ type: "asset", number: asset.assetNumber || "", label: asset.categoryName || "" }}
-                                />
-                              </div>
+                              <SiteImageCarousel
+                                images={[asset.imageUrl1, asset.imageUrl2]}
+                                siteNumber={asset.assetNumber || ""}
+                                className="w-32 h-32"
+                              />
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <CardTitle className="text-lg flex items-center gap-2">
@@ -1433,7 +1457,7 @@ export default function Search() {
 
                             {/* Expanded Booking Section */}
                             {hasSelectedDates && isExpanded && (
-                              <div className="mt-6 pt-6 border-t border-purple-200 bg-purple-50 -mx-6 -mb-6 px-6 pb-6 rounded-b-lg">
+                              <div className="mt-6 pt-6 border-t border-purple-200 bg-purple-50 -mx-6 -mb-6 px-6 pb-6 rounded-b-lg" onClick={e => e.stopPropagation()}>
                                 <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2">
                                   <Calendar className="h-5 w-5" />
                                   Complete Your Booking
@@ -2074,15 +2098,13 @@ export default function Search() {
                             <CardHeader>
                               <div className="flex items-start justify-between gap-4">
                                 {/* Site Image */}
-                                <div className="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                                  <ImageWithFallback
-                                    src={site.imageUrl1}
-                                    alt={`Site ${site.siteNumber}`}
-                                    className="w-full h-full object-cover"
-                                    containerClassName="w-full h-full"
-                                    placeholder={{ type: "site", number: site.siteNumber || "", size: site.size || "", powered: site.powered }}
-                                  />
-                                </div>
+                                <SiteImageCarousel
+                                  images={[site.imageUrl1, site.imageUrl2, site.imageUrl3, site.imageUrl4]}
+                                  siteNumber={site.siteNumber || ""}
+                                  size={site.size || ""}
+                                  powered={site.powered}
+                                  className="w-32 h-32"
+                                />
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <CardTitle className="text-lg">Site {site.siteNumber}</CardTitle>
@@ -2270,7 +2292,7 @@ export default function Search() {
 
                               {/* Expanded Booking Section - shows when dates are selected from calendar */}
                               {hasSelectedDates && isExpanded && (
-                                <div className="mt-6 pt-6 border-t border-blue-200 bg-blue-50 -mx-6 -mb-6 px-6 pb-6 rounded-b-lg">
+                                <div className="mt-6 pt-6 border-t border-blue-200 bg-blue-50 -mx-6 -mb-6 px-6 pb-6 rounded-b-lg" onClick={e => e.stopPropagation()}>
                                   <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
                                     <Calendar className="h-5 w-5" />
                                     Complete Your Booking

@@ -180,9 +180,10 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
     const assetType = site.assetType || "casual_leasing";
     if (assetType === "casual_leasing") {
       setLocation(`/site/${site.id}`);
-    } else {
-      const identifier = site.displayLabel || site.displayNumber || site.id;
-      alert(`${identifier} - Contact centre for enquiries`);
+    } else if (assetType === "vacant_shops") {
+      setLocation(`/vacant-shop/${site.originalId || site.id}`);
+    } else if (assetType === "third_line") {
+      setLocation(`/third-line/${site.originalId || site.id}`);
     }
   };
 
@@ -456,15 +457,14 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
                       const assetType = hoveredSite.assetType || "casual_leasing";
                       if (assetType === "casual_leasing") {
                         window.location.href = `/site/${hoveredSite.id}`;
-                      } else {
-                        const identifier = hoveredSite.displayLabel || hoveredSite.displayNumber || hoveredSite.id;
-                        alert(`${identifier} - Contact centre for enquiries`);
+                      } else if (assetType === "vacant_shops") {
+                        window.location.href = `/vacant-shop/${hoveredSite.originalId || hoveredSite.id}`;
+                      } else if (assetType === "third_line") {
+                        window.location.href = `/third-line/${hoveredSite.originalId || hoveredSite.id}`;
                       }
                     }}
                   >
-                    {hoveredSite.assetType === "casual_leasing" || !hoveredSite.assetType
-                      ? "View Details & Book →"
-                      : "Enquire →"}
+                    View Details & Book →
                   </Button>
                 </div>
               </div>
@@ -830,15 +830,14 @@ export default function InteractiveMap({ centreId, mapUrl, sites, centreName, as
                       const assetType = hoveredSite.assetType || "casual_leasing";
                       if (assetType === "casual_leasing") {
                         window.location.href = `/site/${hoveredSite.id}`;
-                      } else {
-                        const identifier = hoveredSite.displayLabel || hoveredSite.displayNumber || hoveredSite.id;
-                        alert(`${identifier} - Contact centre for enquiries`);
+                      } else if (assetType === "vacant_shops") {
+                        window.location.href = `/vacant-shop/${hoveredSite.originalId || hoveredSite.id}`;
+                      } else if (assetType === "third_line") {
+                        window.location.href = `/third-line/${hoveredSite.originalId || hoveredSite.id}`;
                       }
                     }}
                   >
-                    {hoveredSite.assetType === "casual_leasing" || !hoveredSite.assetType
-                      ? "View Details & Book →"
-                      : "Enquire →"}
+                    View Details & Book →
                   </Button>
                 </div>
               </div>
