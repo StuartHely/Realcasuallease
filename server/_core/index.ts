@@ -44,6 +44,9 @@ async function startServer() {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
+          // unsafe-inline and unsafe-eval are required by the Google Maps JS API
+          // which internally uses eval()/new Function() and injects inline scripts.
+          // See: https://developers.google.com/maps/documentation/javascript/content-security-policy
           scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://maps.googleapis.com", "https://maps.gstatic.com"],
           styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
           imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],

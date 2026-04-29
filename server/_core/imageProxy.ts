@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { checkRateLimit } from "./rateLimit";
 
 const router = Router();
 
@@ -50,6 +51,14 @@ function isAllowedUrl(raw: string): boolean {
  */
 router.get("/image-proxy", async (req: Request, res: Response) => {
   try {
+    // Rate limit: 60 requests per IP per 5 minutes
+    const ip = req.ip || req.socket.remoteAddress || "unknown";
+    const { allowed, retryAfterMs } = checkRateLimit(`img-proxy:${ip}`, 60, 5 * 60 * 1000);
+    if (!allowed) {
+      res.setHeader("Retry-After", Math.ceil(retryAfterMs / 1000).toString());
+      return res.status(429).json({ error: "Too many requests" });
+    }
+
     const { url } = req.query;
 
     if (!url || typeof url !== "string") {
