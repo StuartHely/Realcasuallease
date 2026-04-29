@@ -35,30 +35,34 @@ async function startServer() {
   // Stripe webhook must be registered BEFORE global JSON parser (needs raw body)
   const { registerStripeWebhook } = await import("./stripeWebhook");
   registerStripeWebhook(app);
-  // Security headers
-  const helmet = (await import("helmet")).default;
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://maps.googleapis.com", "https://maps.gstatic.com"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],
-        connectSrc: ["'self'", "https://maps.googleapis.com", "https://*.amazonaws.com", "https://*.cloudfront.net", "ws:", "wss:"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        frameSrc: ["'self'", "https://js.stripe.com"],
-        objectSrc: ["'none'"],
+  // Security headers — fully disabled in dev (Vite HMR is incompatible with
+  // CSP, CORP, and COOP policies); all headers active in production.
+  const isDev = process.env.NODE_ENV === "development";
+  if (!isDev) {
+    const helmet = (await import("helmet")).default;
+    app.use(helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://maps.googleapis.com", "https://maps.gstatic.com"],
+          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+          imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],
+          connectSrc: ["'self'", "https://maps.googleapis.com", "https://*.amazonaws.com", "https://*.cloudfront.net", "ws:", "wss:"],
+          fontSrc: ["'self'", "https://fonts.gstatic.com"],
+          frameSrc: ["'self'", "https://js.stripe.com"],
+          objectSrc: ["'none'"],
+        },
       },
-    },
-    hsts: {
-      maxAge: 31536000,
-      includeSubDomains: true,
-      preload: true,
-    },
-    frameguard: { action: "deny" as const },
-    noSniff: true,
-    referrerPolicy: { policy: "strict-origin-when-cross-origin" as const },
-  }));
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+      },
+      frameguard: { action: "deny" as const },
+      noSniff: true,
+      referrerPolicy: { policy: "strict-origin-when-cross-origin" as const },
+    }));
+  }
 
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));

@@ -76,16 +76,28 @@ export const searchRouter = router({
             centres = centres.filter((c: any) => areaCentreIds.has(c.id));
           }
           if (centres.length === 0) {
-            return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'vacant_shop', floorLevels: [] };
+            return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'vacant_shop', floorLevels: [], floorLevelsByCentre: {} };
           }
           const allShops: any[] = [];
+          const centresWithShops = new Set<number>();
           for (const centre of centres) {
             const shops = await assetDb.getVacantShopsByCentre(centre.id);
-            allShops.push(...shops.map((s: any) => ({ ...s, centreName: centre.name, assetType: 'vacant_shop' })));
+            if (shops.length > 0) {
+              centresWithShops.add(centre.id);
+              allShops.push(...shops.map((s: any) => ({ ...s, centreName: centre.name, assetType: 'vacant_shop' })));
+            }
           }
-          // Fetch floor levels for the first centre to display floor plan map
-          const floorLevels = centres.length > 0 ? await db.getFloorLevelsByCentre(centres[0].id) : [];
-          return { centres, sites: allShops, availability: [], matchedSiteIds: [], assetType: 'vacant_shop', floorLevels };
+          // Only return centres that actually have vacant shops
+          const matchedCentres = centres.filter((c: any) => centresWithShops.has(c.id));
+          // Fetch floor levels for matched centres
+          const floorLevelsByCentre: Record<number, any[]> = {};
+          let floorLevels: any[] = [];
+          for (const centre of matchedCentres) {
+            const levels = await db.getFloorLevelsByCentre(centre.id);
+            floorLevelsByCentre[centre.id] = levels;
+            if (floorLevels.length === 0) floorLevels = levels;
+          }
+          return { centres: matchedCentres, sites: allShops, availability: [], matchedSiteIds: [], assetType: 'vacant_shop', floorLevels, floorLevelsByCentre };
         }
         
         if (enhancedQuery.assetType === 'third_line') {
@@ -108,7 +120,7 @@ export const searchRouter = router({
             centres = await db.searchShoppingCentres('', enhancedQuery.stateFilter, ctx.tenantOwnerId ?? undefined);
           }
           if (centres.length === 0) {
-            return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'third_line', floorLevels: [] };
+            return { centres: [], sites: [], availability: [], matchedSiteIds: [], assetType: 'third_line', floorLevels: [], floorLevelsByCentre: {} };
           }
           const allAssets: any[] = [];
           const centresWithAssets = new Set<number>();
@@ -124,8 +136,14 @@ export const searchRouter = router({
           }
           // Only return centres that have matching TLI assets
           const matchedCentres = centres.filter((c: any) => centresWithAssets.has(c.id));
-          const floorLevels = matchedCentres.length > 0 ? await db.getFloorLevelsByCentre(matchedCentres[0].id) : [];
-          return { centres: matchedCentres, sites: allAssets, availability: [], matchedSiteIds: [], assetType: 'third_line', floorLevels };
+          const floorLevelsByCentre: Record<number, any[]> = {};
+          let floorLevels: any[] = [];
+          for (const centre of matchedCentres) {
+            const levels = await db.getFloorLevelsByCentre(centre.id);
+            floorLevelsByCentre[centre.id] = levels;
+            if (floorLevels.length === 0) floorLevels = levels;
+          }
+          return { centres: matchedCentres, sites: allAssets, availability: [], matchedSiteIds: [], assetType: 'third_line', floorLevels, floorLevelsByCentre };
         }
         
         // First, search for sites using the full query to find any matches
