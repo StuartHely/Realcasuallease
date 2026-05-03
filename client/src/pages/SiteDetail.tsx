@@ -174,7 +174,7 @@ export default function SiteDetail() {
           setBookingConfirmation({
             title: "Booking Confirmed!",
             bookingNumber: data.bookingNumber,
-            message: "An invoice will be sent to your email shortly.",
+            message: "An invoice and Licence Agreement for your e-signing and return will shortly be sent to your email.",
             costBreakdown,
             equipmentWarning,
             requiresApproval: false,
@@ -654,7 +654,7 @@ export default function SiteDetail() {
                 </div>
 
                     <div>
-                      <Label htmlFor="usageCategory">Usage Category *</Label>
+                      <Label htmlFor="usageCategory" className="text-red-600">Usage Category *</Label>
                       <Select value={usageCategoryId} onValueChange={setUsageCategoryId}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select usage category" />
@@ -684,7 +684,7 @@ export default function SiteDetail() {
                     {/* Equipment Request — always show when site has maxTables or centre has equipment */}
                     {((site?.maxTables && site.maxTables > 0) || (centre && ((centre.totalTablesAvailable || 0) > 0 || (centre.totalChairsAvailable || 0) > 0))) && (
                       <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                        <h3 className="font-semibold text-sm">Equipment Request (Optional)</h3>
+                        <h3 className="font-semibold text-sm text-red-600">Equipment Request (Optional)</h3>
                         
                         {((site?.maxTables && site.maxTables > 0) || (centre?.totalTablesAvailable || 0) > 0) && (
                           <div>
