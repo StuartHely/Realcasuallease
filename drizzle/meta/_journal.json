@@ -162,6 +162,13 @@
       "when": 1777341965204,
       "tag": "0022_exotic_scourge",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1777858970501,
+      "tag": "0023_add_product_image_url",
+      "breakpoints": true
     }
   ]
 }

@@ -53,6 +53,10 @@ export default function BusinessDetailsGate({
   const [postcode, setPostcode] = useState("");
   const [productCategory, setProductCategory] = useState("");
   const [productDetails, setProductDetails] = useState("");
+  const [productImageUrl, setProductImageUrl] = useState("");
+  const [uploadingProductImage, setUploadingProductImage] = useState(false);
+
+  const uploadProductImage = trpc.profile.uploadProductImage.useMutation();
 
   const updateProfile = trpc.profile.update.useMutation({
     onSuccess: () => {
@@ -92,6 +96,7 @@ export default function BusinessDetailsGate({
       postcode: postcode.trim() || undefined,
       productCategory,
       productDetails: productDetails.trim() || undefined,
+      productImageUrl: productImageUrl || undefined,
     });
   };
 
@@ -213,6 +218,64 @@ export default function BusinessDetailsGate({
               placeholder="Describe your products or services"
               rows={3}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="gate-productImage">Product / Setup Image (Optional)</Label>
+            <p className="text-xs text-muted-foreground">
+              Help centre managers picture your stall. You can skip this and add it later.
+            </p>
+            <Input
+              id="gate-productImage"
+              type="file"
+              accept="image/*"
+              disabled={uploadingProductImage}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setUploadingProductImage(true);
+                try {
+                  const reader = new FileReader();
+                  const fileData = await new Promise<string>((resolve, reject) => {
+                    reader.onload = () => resolve((reader.result as string).split(',')[1]);
+                    reader.onerror = () => reject(reader.error);
+                    reader.readAsDataURL(file);
+                  });
+                  const { url } = await uploadProductImage.mutateAsync({
+                    fileData,
+                    fileName: file.name,
+                    mimeType: file.type,
+                  });
+                  setProductImageUrl(url);
+                  toast.success("Image uploaded");
+                } catch (err) {
+                  console.error(err);
+                  toast.error("Image upload failed — you can continue without it");
+                } finally {
+                  setUploadingProductImage(false);
+                  e.target.value = "";
+                }
+              }}
+            />
+            {uploadingProductImage && (
+              <p className="text-xs text-blue-600">⏳ Uploading...</p>
+            )}
+            {productImageUrl && (
+              <div className="space-y-1">
+                <img
+                  src={productImageUrl}
+                  alt="Product / setup"
+                  className="max-h-32 rounded border"
+                />
+                <button
+                  type="button"
+                  onClick={() => setProductImageUrl("")}
+                  className="text-xs text-muted-foreground hover:underline"
+                >
+                  Remove image
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between pt-2">

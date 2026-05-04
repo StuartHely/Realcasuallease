@@ -45,6 +45,7 @@ export default function Profile() {
     state: "",
     postcode: "",
     productCategory: "",
+    productImageUrl: "",
     insuranceCompany: "",
     insurancePolicyNo: "",
     insuranceAmount: "",
@@ -55,6 +56,9 @@ export default function Profile() {
   const [insuranceFile, setInsuranceFile] = useState<File | null>(null);
   const [uploadingInsurance, setUploadingInsurance] = useState(false);
   const [scanningInsurance, setScanningInsurance] = useState(false);
+  const [uploadingProductImage, setUploadingProductImage] = useState(false);
+
+  const uploadProductImageMutation = trpc.profile.uploadProductImage.useMutation();
 
   useEffect(() => {
     if (profile) {
@@ -71,6 +75,7 @@ export default function Profile() {
         state: profile.state || "",
         postcode: profile.postcode || "",
         productCategory: profile.productCategory || "",
+        productImageUrl: profile.productImageUrl || "",
         insuranceCompany: profile.insuranceCompany || "",
         insurancePolicyNo: profile.insurancePolicyNo || "",
         insuranceAmount: profile.insuranceAmount || "",
@@ -447,6 +452,81 @@ export default function Profile() {
                       onChange={handleChange}
                     />
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Product / Setup Image (optional) */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Product / Setup Image (Optional)</CardTitle>
+                  <CardDescription>
+                    Upload a single image of your product or your typical pop-up setup.
+                    This is optional and helps centre managers know what to expect, but is
+                    not required to register or make a booking.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="productImage">Image</Label>
+                    <Input
+                      id="productImage"
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingProductImage}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+
+                        setUploadingProductImage(true);
+                        try {
+                          const reader = new FileReader();
+                          const fileData = await new Promise<string>((resolve, reject) => {
+                            reader.onload = () => resolve((reader.result as string).split(',')[1]);
+                            reader.onerror = () => reject(reader.error);
+                            reader.readAsDataURL(file);
+                          });
+
+                          const { url } = await uploadProductImageMutation.mutateAsync({
+                            fileData,
+                            fileName: file.name,
+                            mimeType: file.type,
+                          });
+
+                          setFormData(prev => ({ ...prev, productImageUrl: url }));
+                          toast.success('Product image uploaded. Remember to click Save Profile to keep it.');
+                        } catch (err) {
+                          console.error(err);
+                          toast.error('Failed to upload product image. You can continue without it.');
+                        } finally {
+                          setUploadingProductImage(false);
+                          // Reset the file input so the same file can be re-selected if needed
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    {uploadingProductImage && (
+                      <p className="text-sm text-blue-600 mt-2 font-medium">⏳ Uploading...</p>
+                    )}
+                  </div>
+
+                  {formData.productImageUrl && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-green-600 font-medium">✓ Image saved</p>
+                      <img
+                        src={formData.productImageUrl}
+                        alt="Product / setup"
+                        className="max-h-48 rounded border"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFormData(prev => ({ ...prev, productImageUrl: '' }))}
+                      >
+                        Remove image
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

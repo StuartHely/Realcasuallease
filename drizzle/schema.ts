@@ -76,6 +76,7 @@ export const customerProfiles = pgTable("customer_profiles", {
   postcode: varchar("postcode", { length: 10 }),
   productCategory: varchar("productCategory", { length: 255 }),
   productDetails: text("productDetails"),
+  productImageUrl: text("productImageUrl"),
   insuranceCompany: varchar("insuranceCompany", { length: 255 }),
   insurancePolicyNo: varchar("insurancePolicyNo", { length: 100 }),
   insuranceAmount: decimal("insuranceAmount", { precision: 12, scale: 2 }),

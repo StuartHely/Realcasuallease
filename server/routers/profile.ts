@@ -22,6 +22,7 @@ export const profileRouter = router({
       postcode: z.string().optional(),
       productCategory: z.string().optional(),
       productDetails: z.string().optional(),
+      productImageUrl: z.string().optional(),
       insuranceCompany: z.string().optional(),
       insurancePolicyNo: z.string().optional(),
       insuranceAmount: z.string().optional(),
@@ -61,6 +62,7 @@ export const profileRouter = router({
           postcode: input.postcode,
           productCategory: input.productCategory,
           productDetails: input.productDetails,
+          productImageUrl: input.productImageUrl,
           insuranceCompany: input.insuranceCompany,
           insurancePolicyNo: input.insurancePolicyNo,
           insuranceAmount: input.insuranceAmount,
@@ -70,6 +72,30 @@ export const profileRouter = router({
       }
       
       return { success: true };
+    }),
+
+  uploadProductImage: protectedProcedure
+    .input(z.object({
+      fileData: z.string(), // base64 encoded file (with or without data: prefix)
+      fileName: z.string(),
+      mimeType: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { storagePut } = await import('../storage');
+
+      // Strip data URL prefix if present
+      const base64Data = input.fileData.includes(',')
+        ? input.fileData.split(',')[1]
+        : input.fileData;
+
+      // Sanitize filename to avoid problem characters in S3 keys
+      const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const buffer = Buffer.from(base64Data, 'base64');
+      const fileKey = `product-images/${ctx.user.id}/${Date.now()}-${safeName}`;
+
+      const { url } = await storagePut(fileKey, buffer, input.mimeType);
+
+      return { url };
     }),
 
   uploadInsurance: protectedProcedure
