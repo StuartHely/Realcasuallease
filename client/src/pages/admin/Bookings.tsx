@@ -124,23 +124,28 @@ export default function AdminBookings() {
     const searchSource = (selectedStatus === "all" ? bookings : allBookings) || bookings || [];
     if (searchSource.length === 0) return [];
 
-    const isBookingNumberSearch = /^[A-Z0-9]+-\d{8,}-[A-Z0-9]+$/i.test(query) || /^BK\d+[A-Z]+$/i.test(query);
-
-    if (isBookingNumberSearch) {
-      return searchSource.filter((booking) => 
-        booking.bookingNumber?.toUpperCase().includes(query.toUpperCase())
-      );
-    }
-    
-    // Company name or trading name search (partial, case-insensitive)
+    // Free-text search across the fields a user is likely to recall:
+    // booking number, company / trading name, customer name + email,
+    // centre, site number, product category.
     const lowerQuery = query.toLowerCase();
     const matchedBookings = searchSource.filter((booking) => {
-      const companyName = booking.companyName?.toLowerCase() || "";
-      const tradingName = booking.tradingName?.toLowerCase() || "";
-      return companyName.includes(lowerQuery) || tradingName.includes(lowerQuery);
+      const haystack = [
+        booking.bookingNumber,
+        booking.companyName,
+        booking.tradingName,
+        (booking as any).customerName,
+        (booking as any).customerEmail,
+        booking.centreName,
+        booking.siteNumber,
+        (booking as any).productCategory,
+      ]
+        .filter((v): v is string => typeof v === "string" && v.length > 0)
+        .join(" \u2002 ")
+        .toLowerCase();
+      return haystack.includes(lowerQuery);
     });
-    
-    // Sort by centre name alphabetically for company name searches
+
+    // Sort matches by centre name alphabetically for easier scanning
     return matchedBookings.sort((a, b) => {
       const centreA = a.centreName?.toLowerCase() || "";
       const centreB = b.centreName?.toLowerCase() || "";
