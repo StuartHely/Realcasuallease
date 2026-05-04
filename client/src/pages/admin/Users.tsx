@@ -178,6 +178,8 @@ export default function AdminUsers() {
 
   const uploadInsuranceMutation = trpc.profile.uploadInsurance.useMutation();
   const scanInsuranceMutation = trpc.profile.scanInsurance.useMutation();
+  const uploadProductImageMutation = trpc.profile.uploadProductImage.useMutation();
+  const [uploadingProductImage, setUploadingProductImage] = useState(false);
 
   const updateUserMutation = trpc.admin.updateUser.useMutation({
     onSuccess: () => {
@@ -212,6 +214,7 @@ export default function AdminUsers() {
       postcode: editingFullUser.profile?.postcode || '',
       productCategory: editingFullUser.profile?.productCategory || '',
       productDetails: editingFullUser.profile?.productDetails || '',
+      productImageUrl: editingFullUser.profile?.productImageUrl || '',
       insuranceCompany: editingFullUser.profile?.insuranceCompany || '',
       insurancePolicyNo: editingFullUser.profile?.insurancePolicyNo || '',
       insuranceAmount: editingFullUser.profile?.insuranceAmount || '',
@@ -965,6 +968,54 @@ export default function AdminUsers() {
                   value={editingFullUser.profile?.productDetails || ""} 
                   onChange={(e) => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, productDetails: e.target.value } })} 
                 />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Product / Setup Image (Optional)</label>
+                <p className="text-xs text-gray-500">Upload on behalf of the customer. Optional — does not block save.</p>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  disabled={uploadingProductImage}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploadingProductImage(true);
+                    try {
+                      const reader = new FileReader();
+                      const fileData = await new Promise<string>((resolve, reject) => {
+                        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+                        reader.onerror = () => reject(reader.error);
+                        reader.readAsDataURL(file);
+                      });
+                      const { url } = await uploadProductImageMutation.mutateAsync({
+                        fileData,
+                        fileName: file.name,
+                        mimeType: file.type,
+                      });
+                      setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, productImageUrl: url } });
+                      toast.success("Image uploaded — click Save to apply");
+                    } catch (err) {
+                      console.error(err);
+                      toast.error("Image upload failed");
+                    } finally {
+                      setUploadingProductImage(false);
+                      e.target.value = "";
+                    }
+                  }}
+                />
+                {uploadingProductImage && <p className="text-xs text-blue-600">⏳ Uploading...</p>}
+                {editingFullUser.profile?.productImageUrl && (
+                  <div className="space-y-1">
+                    <img src={editingFullUser.profile.productImageUrl} alt="Product / setup" className="max-h-40 rounded border" />
+                    <button
+                      type="button"
+                      onClick={() => setEditingFullUser({ ...editingFullUser, profile: { ...editingFullUser.profile, productImageUrl: "" } })}
+                      className="text-xs text-gray-600 hover:underline"
+                    >
+                      Remove image
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Address</label>

@@ -5,6 +5,8 @@ import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerImageProxyRoutes } from "./imageProxy";
 import { registerPlaceholderRoutes } from "./placeholderImage";
+import { registerInvoiceRoutes } from "./invoiceRoute";
+import { registerLicenceRoutes } from "./licenceRoute";
 import { healthRouter } from "./health";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -79,6 +81,10 @@ async function startServer() {
   registerImageProxyRoutes(app);
   // Placeholder image generator
   registerPlaceholderRoutes(app);
+  // Invoice PDF download (used by admin Bookings page)
+  registerInvoiceRoutes(app);
+  // Licence Agreement PDF download (used by admin Bookings page)
+  registerLicenceRoutes(app);
   // tRPC API
   app.use(
     "/api/trpc",

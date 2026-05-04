@@ -1106,6 +1106,7 @@ export const adminRouter = router({
         postcode: z.string().optional(),
         productCategory: z.string().optional(),
         productDetails: z.string().optional(),
+        productImageUrl: z.string().optional(),
         insuranceCompany: z.string().optional(),
         insurancePolicyNo: z.string().optional(),
         insuranceAmount: z.string().optional(),
@@ -1145,6 +1146,7 @@ export const adminRouter = router({
         if (input.postcode !== undefined) profileUpdates.postcode = input.postcode || null;
         if (input.productCategory !== undefined) profileUpdates.productCategory = input.productCategory || null;
         if (input.productDetails !== undefined) profileUpdates.productDetails = input.productDetails || null;
+        if (input.productImageUrl !== undefined) profileUpdates.productImageUrl = input.productImageUrl || null;
         if (input.insuranceCompany !== undefined) profileUpdates.insuranceCompany = input.insuranceCompany || null;
         if (input.insurancePolicyNo !== undefined) profileUpdates.insurancePolicyNo = input.insurancePolicyNo || null;
         if (input.insuranceAmount !== undefined) profileUpdates.insuranceAmount = input.insuranceAmount || null;

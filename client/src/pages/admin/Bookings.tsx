@@ -189,6 +189,11 @@ export default function AdminBookings() {
     window.open(`/api/invoice/${bookingId}`, '_blank');
   };
 
+  // Handle Licence PDF button click — opens latest licence (signed copy if signed)
+  const handleLicencePDF = (bookingId: number) => {
+    window.open(`/api/licence/${bookingId}`, '_blank');
+  };
+
   // Handle Edit button click
   const handleEdit = (bookingId: number, centreId: number | undefined) => {
     // Navigate to admin booking page with the booking selected
@@ -485,7 +490,7 @@ export default function AdminBookings() {
                         <TableHead>Trading Name</TableHead>
                         <TableHead>Centre Name</TableHead>
                         <TableHead>Category</TableHead>
-                        <TableHead>Site Number</TableHead>
+                        <TableHead>Site #</TableHead>
                         <TableHead>Start Date</TableHead>
                         <TableHead>End Date</TableHead>
                         <TableHead>Date Entered</TableHead>
@@ -497,6 +502,7 @@ export default function AdminBookings() {
                         {selectedStatus === "unpaid" && <TableHead>Due Date</TableHead>}
                         <TableHead>Licence</TableHead>
                         <TableHead>Invoice PDF</TableHead>
+                        <TableHead>Licence PDF</TableHead>
                         <TableHead>Receipt</TableHead>
                         <TableHead>Edit</TableHead>
                         {selectedStatus === "pending" && <TableHead>Actions</TableHead>}
@@ -611,6 +617,18 @@ export default function AdminBookings() {
                               >
                                 <FileText className="h-3 w-3" />
                                 Invoice PDF
+                              </Button>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleLicencePDF(booking.id)}
+                                className={`gap-1 ${booking.licenceSignedAt ? 'border-green-300 text-green-700' : ''}`}
+                                title={booking.licenceSignedAt ? 'View signed licence' : 'View latest licence (unsigned)'}
+                              >
+                                <FileSignature className="h-3 w-3" />
+                                Licence PDF
                               </Button>
                             </TableCell>
                             <TableCell>

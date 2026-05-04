@@ -4,6 +4,28 @@ import { getLogoAsBase64, getOwnerIdFromContext } from './logoHelper';
 import * as assetDb from './assetDb';
 
 /**
+ * Convert rich-text/HTML description (as stored for sites, assets, centres) into
+ * plain text suitable for jsPDF rendering. Preserves paragraph breaks as `\n`.
+ */
+function htmlToPlainText(html: string | null | undefined): string {
+  if (!html) return '';
+  return html
+    .replace(/<\s*br\s*\/?>/gi, '\n')
+    .replace(/<\/\s*p\s*>/gi, '\n')
+    .replace(/<\/\s*div\s*>/gi, '\n')
+    .replace(/<\/\s*li\s*>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/**
  * Generate invoice PDF for a booking
  * Returns base64 encoded PDF string
  */
@@ -122,9 +144,11 @@ export async function generateInvoicePDF(bookingId: number): Promise<string> {
   yPos += 7;
   doc.text(`Site: ${site.siteNumber}`, 20, yPos);
   yPos += 7;
-  if (site.description) {
-    doc.text(`Description: ${site.description}`, 20, yPos);
-    yPos += 7;
+  const siteDescriptionText = htmlToPlainText(site.description);
+  if (siteDescriptionText) {
+    const lines = doc.splitTextToSize(`Description: ${siteDescriptionText}`, 170);
+    doc.text(lines, 20, yPos);
+    yPos += 7 * lines.length;
   }
   doc.text(`Start Date: ${formatDate(booking.startDate)}`, 20, yPos);
   yPos += 7;
@@ -556,9 +580,11 @@ export async function generateTLIInvoicePDF(bookingId: number): Promise<string> 
   yPos += 7;
   doc.text(`Third Line Asset: ${asset.assetNumber}`, 20, yPos);
   yPos += 7;
-  if (asset.description) {
-    doc.text(`Description: ${asset.description}`, 20, yPos);
-    yPos += 7;
+  const assetDescriptionText = htmlToPlainText(asset.description);
+  if (assetDescriptionText) {
+    const lines = doc.splitTextToSize(`Description: ${assetDescriptionText}`, 170);
+    doc.text(lines, 20, yPos);
+    yPos += 7 * lines.length;
   }
   doc.text(`Start Date: ${formatDate(booking.startDate)}`, 20, yPos);
   yPos += 7;

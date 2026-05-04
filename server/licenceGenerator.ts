@@ -12,6 +12,7 @@ import {
 } from './db';
 import { getLogoAsBase64, getOwnerIdFromContext } from './logoHelper';
 import { getConfigValue } from './systemConfigDb';
+import { getLicenceStatus } from './licenceService';
 import {
   vacantShops,
   vacantShopBookings,
@@ -41,6 +42,10 @@ type LicenceData = {
   insurancePolicyNo: string | null;
   insuranceExpiry: Date | string | null;
   ownerIdForLogo: number | undefined;
+  // E-signature info — when present, the PDF is rendered as a signed copy
+  signedAt?: Date | string | null;
+  signedByName?: string | null;
+  signedByIp?: string | null;
 };
 
 /**
@@ -309,11 +314,36 @@ async function _generateLicencePDF(data: LicenceData): Promise<string> {
   doc.text(`Name: ${data.customerName}`, 20, y);
   y += 6;
 
-  doc.setDrawColor(180, 180, 180);
-  doc.line(20, y, 100, y);
-  doc.setFontSize(8);
-  doc.setTextColor(120, 120, 120);
-  doc.text('Signature (Electronic Signature)', 20, y + 4);
+  if (data.signedAt) {
+    // Signed copy — show e-signature confirmation
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(0, 128, 0);
+    doc.text('SIGNED ELECTRONICALLY', 20, y);
+    y += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Signed by: ${data.signedByName || data.customerName}`, 20, y);
+    y += 5;
+    doc.text(`Signed on: ${formatDate(data.signedAt)}`, 20, y);
+    y += 5;
+    if (data.signedByIp) {
+      doc.setFontSize(8);
+      doc.setTextColor(120, 120, 120);
+      doc.text(`IP address: ${data.signedByIp}`, 20, y);
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(9);
+      y += 5;
+    }
+  } else {
+    doc.setDrawColor(180, 180, 180);
+    doc.line(20, y, 100, y);
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text('Signature (Electronic Signature)', 20, y + 4);
+    y += 6;
+  }
 
   y += 12;
 
@@ -403,6 +433,7 @@ export async function generateLicencePDFForBooking(bookingId: number): Promise<s
   const profile = await getCustomerProfileByUserId(customer.id);
   const ownerId = await getOwnerIdFromContext({ bookingId });
   const permittedUse = await resolvePermittedUse(booking);
+  const signature = await getLicenceStatus(bookingId, 'cl');
 
   const days = Math.ceil(
     (new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) /
@@ -432,6 +463,9 @@ export async function generateLicencePDFForBooking(bookingId: number): Promise<s
     insurancePolicyNo: profile?.insurancePolicyNo ?? null,
     insuranceExpiry: profile?.insuranceExpiry ?? null,
     ownerIdForLogo: ownerId,
+    signedAt: signature?.signedAt ?? null,
+    signedByName: signature?.signedByName ?? null,
+    signedByIp: signature?.signedByIp ?? null,
   });
 }
 
