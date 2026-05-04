@@ -506,7 +506,7 @@ export default function AdminBookings() {
                         <TableHead>Trading Name</TableHead>
                         <TableHead>Centre Name</TableHead>
                         <TableHead>Category</TableHead>
-                        <TableHead>Site #</TableHead>
+                        <TableHead className="w-[90px]">Site #</TableHead>
                         <TableHead>Start Date</TableHead>
                         <TableHead>End Date</TableHead>
                         <TableHead>Date Entered</TableHead>
@@ -551,10 +551,13 @@ export default function AdminBookings() {
                             <TableCell>{booking.tradingName || booking.companyName || "—"}</TableCell>
                             <TableCell>{booking.centreName || "—"}</TableCell>
                             <TableCell>{booking.productCategory || "—"}</TableCell>
-                            <TableCell>
-                              <div>
-                                <div className="font-medium">{booking.siteNumber || "—"}</div>
-                                <div className="text-sm text-muted-foreground">{cleanHtmlDescription(booking.siteName)}</div>
+                            <TableCell className="w-[90px] max-w-[90px]">
+                              <div className="font-medium whitespace-nowrap">{booking.siteNumber || "—"}</div>
+                              <div
+                                className="text-xs text-muted-foreground truncate"
+                                title={cleanHtmlDescription(booking.siteName)}
+                              >
+                                {cleanHtmlDescription(booking.siteName)}
                               </div>
                             </TableCell>
                             <TableCell className="whitespace-nowrap">
