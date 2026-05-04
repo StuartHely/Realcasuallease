@@ -42,6 +42,13 @@ export default function AdminBookings() {
     status: selectedStatus === "all" ? undefined : selectedStatus,
   });
 
+  // Search box should look across ALL bookings, not just the active status tab.
+  // This second query is fetched only when there's an active search query.
+  const { data: allBookings } = trpc.bookings.list.useQuery(
+    { status: undefined },
+    { enabled: searchQuery.trim().length > 0 && selectedStatus !== "all" },
+  );
+
   const { data: countData } = trpc.bookings.statusCounts.useQuery();
 
   const statusCounts = countData ?? { all: 0, pending: 0, confirmed: 0, cancelled: 0, rejected: 0, completed: 0, unpaid: 0 };
@@ -107,13 +114,15 @@ export default function AdminBookings() {
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(amount);
 
-  // Filter and sort bookings based on search query
+  // Filter and sort bookings based on search query.
+  // When the user types a search, look across ALL bookings (any status), not
+  // just the active tab — typing a booking number from any status should find it.
   const filteredBookings = useMemo(() => {
     const query = searchQuery.trim();
-    const searchSource = bookings || [];
-    
-    if (searchSource.length === 0) return [];
     if (!query) return bookings || [];
+
+    const searchSource = (selectedStatus === "all" ? bookings : allBookings) || bookings || [];
+    if (searchSource.length === 0) return [];
 
     const isBookingNumberSearch = /^[A-Z0-9]+-\d{8,}-[A-Z0-9]+$/i.test(query) || /^BK\d+[A-Z]+$/i.test(query);
 
@@ -137,7 +146,7 @@ export default function AdminBookings() {
       const centreB = b.centreName?.toLowerCase() || "";
       return centreA.localeCompare(centreB);
     });
-  }, [bookings, searchQuery]);
+  }, [bookings, allBookings, searchQuery, selectedStatus]);
 
   const licenceStatus = trpc.licence.getStatus.useQuery(
     { bookingId: licenceBookingId!, assetType: "cl" },
@@ -465,8 +474,10 @@ export default function AdminBookings() {
               <CardTitle>{selectedStatus === "all" ? "All" : selectedStatus.charAt(0).toUpperCase() + selectedStatus.slice(1)} Bookings</CardTitle>
               <CardDescription>
                 {isLoading ? "Loading bookings..." : (
-                  searchQuery 
-                    ? `${filteredBookings.length} of ${bookings?.length || 0} booking(s) match "${searchQuery}"`
+                  searchQuery
+                    ? selectedStatus === "all"
+                      ? `${filteredBookings.length} of ${bookings?.length || 0} booking(s) match "${searchQuery}"`
+                      : `${filteredBookings.length} booking(s) match "${searchQuery}" (across all statuses)`
                     : `${bookings?.length || 0} booking(s) found`
                 )}
               </CardDescription>
