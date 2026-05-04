@@ -745,14 +745,24 @@ export default function AdminBookings() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center gap-2 text-muted-foreground font-medium">
                   <FileSignature className="h-5 w-5" />
                   Not Yet Sent
                 </div>
                 <p className="text-sm text-muted-foreground">
                   The licence agreement has not been dispatched for this booking.
+                  Click below to generate a signing link and email it to the customer.
                 </p>
+                <Button
+                  onClick={() => resendMutation.mutate({ bookingId: licenceBookingId!, assetType: "cl" })}
+                  disabled={resendMutation.isPending}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  {resendMutation.isPending ? "Sending..." : "Send Signing Link"}
+                </Button>
               </div>
             )}
           </div>

@@ -80,6 +80,17 @@ export async function dispatchBookingDocuments(
       return;
     }
 
+    // --- Assign signing token EARLY ------------------------------------------
+    // Done before PDF/email work so that even if those fail (e.g. SMTP not
+    // configured in dev, or a transient PDF generation error), the booking
+    // still ends up with a usable signing link. The licence-status dialog can
+    // then show "Awaiting Signature" instead of "Not Yet Sent".
+    const { assignLicenceToken } = await import("./licenceService");
+    const token = await assignLicenceToken(bookingId, assetType);
+    const { getOperatorAppUrl } = await import("./tenantScope");
+    const appUrl = emailOwnerId ? await getOperatorAppUrl(emailOwnerId) : ENV.appUrl;
+    const signingUrl = `${appUrl}/sign/${token}`;
+
     // --- Generate Licence PDF -----------------------------------------------
     const {
       generateLicencePDFForBooking,
@@ -164,13 +175,6 @@ export async function dispatchBookingDocuments(
         console.error("[DocumentDispatch] Failed to create Stripe session:", stripeError);
       }
     }
-
-    // --- Assign signing token -----------------------------------------------
-    const { assignLicenceToken } = await import("./licenceService");
-    const token = await assignLicenceToken(bookingId, assetType);
-    const { getOperatorAppUrl } = await import("./tenantScope");
-    const appUrl = emailOwnerId ? await getOperatorAppUrl(emailOwnerId) : ENV.appUrl;
-    const signingUrl = `${appUrl}/sign/${token}`;
 
     // --- Resolve branding ---------------------------------------------------
     const { getOperatorBranding } = await import("./_core/emailTemplate");
